@@ -10,6 +10,18 @@ AGIJobManager is an Ethereum smart-contract system for escrowed AGI work agreeme
 
 > **Operational policy:** intended for autonomous AI-agent execution with accountable human owner/operator oversight. This is policy intent and is not fully enforced on-chain.
 
+## Prime upgrade status (production successor)
+
+This repository now includes the Prime split architecture:
+
+- `contracts/AGIJobManagerPrime.sol` — settlement-first kernel (escrow, bonds, validator/dispute flow, solvency/accounting).
+- `contracts/AGIJobDiscoveryPrime.sol` — procurement-first premium discovery (sealed commit/reveal applications, shortlist, paid trial, validator score commit/reveal, winner designation, fallback promotion).
+- `contracts/interfaces/IAGIJobManagerPrime.sol` — bridge interface used by discovery for clean handoff.
+
+Why Prime exists: legacy `AGIJobManager` could assign immediately to the first eligible agent, which is unacceptable for premium best-agent procurement. Prime fixes this by running procurement first and starting settlement execution only after winner designation/acceptance.
+
+Legacy `contracts/AGIJobManager.sol` is intentionally preserved for backwards compatibility and reference; Prime deployment defaults are under `hardhat/` and target `AGIJobManagerPrime` + `AGIJobDiscoveryPrime`.
+
 ## Start here by role (30-second routing)
 
 - **New operator / deployer:** start with [`hardhat/README.md`](hardhat/README.md) (**official path**) and then the deployment index [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md).
