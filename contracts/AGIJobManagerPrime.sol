@@ -1210,7 +1210,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         AgentStats memory s = agentStats[agent];
 
         uint256 totalVolume = uint256(s.successVolume) + uint256(s.failVolume);
-        uint256 reliabilityBps = totalVolume == 0 ? 0 : (uint256(s.successVolume) * 10_000) / totalVolume;
+        uint256 reliabilityBps = totalVolume < 1 ? 0 : (uint256(s.successVolume) * 10_000) / totalVolume;
 
         uint256 dampedRepBps = Math.sqrt(reputation[agent] * 10_000);
         if (dampedRepBps > 10_000) dampedRepBps = 10_000;
