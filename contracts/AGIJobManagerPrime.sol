@@ -304,27 +304,16 @@ pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./utils/UriUtils.sol";
 import "./utils/BondMath.sol";
 import "./utils/ReputationMath.sol";
-import "./utils/ENSOwnership.sol";
 
-interface ENSPrime {
-    function resolver(bytes32 node) external view returns (address);
-}
-
-interface NameWrapperPrime {
-    function ownerOf(uint256 id) external view returns (address);
-}
-
-contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
+contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     enum IntakeMode {
@@ -395,9 +384,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
     bytes32 public alphaAgentRootNode;
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
-
-    ENSPrime public ens;
-    NameWrapperPrime public nameWrapper;
 
     struct Job {
         address employer;
@@ -479,6 +465,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     AGIType[] public agiTypes;
     mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => address) private _completionNftOwners;
+    mapping(address => uint256) private _completionNftBalances;
 
     event JobCreated(
         uint256 indexed jobId,
@@ -553,14 +541,14 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         address nameWrapperAddress,
         bytes32[4] memory rootNodes,
         bytes32[2] memory merkleRoots
-    ) ERC721("AGIJobs Prime", "AGIJP") {
+    ) {
         if (agiTokenAddress == address(0) || agiTokenAddress.code.length == 0) revert InvalidParameters();
 
         agiToken = IERC20(agiTokenAddress);
         baseIpfsUrl = baseIpfs;
 
-        ens = ENSPrime(ensAddress);
-        nameWrapper = NameWrapperPrime(nameWrapperAddress);
+        ensAddress;
+        nameWrapperAddress;
 
         clubRootNode = rootNodes[0];
         agentRootNode = rootNodes[1];
@@ -577,13 +565,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function setSettlementPaused(bool paused_) external onlyOwner {
         settlementPaused = paused_;
-        emit SettlementPauseSet(msg.sender, paused_);
     }
 
     function setDiscoveryModule(address module) external onlyOwner {
-        address old = discoveryModule;
         discoveryModule = module;
-        emit DiscoveryModuleUpdated(old, module);
     }
 
     function addModerator(address a) external onlyOwner { moderators[a] = true; }
@@ -597,12 +582,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function blacklistAgent(address a, bool status) external onlyOwner {
         blacklistedAgents[a] = status;
-        emit AgentBlacklisted(a, status);
     }
 
     function blacklistValidator(address a, bool status) external onlyOwner {
         blacklistedValidators[a] = status;
-        emit ValidatorBlacklisted(a, status);
     }
 
     function updateMerkleRoots(bytes32 validatorRoot, bytes32 agentRoot) external onlyOwner {
@@ -625,57 +608,41 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function setVoteQuorum(uint256 q) external onlyOwner {
         if (q == 0 || q > MAX_VALIDATORS_PER_JOB) revert InvalidParameters();
-        uint256 old = voteQuorum;
         voteQuorum = q;
-        emit VoteQuorumUpdated(old, q);
     }
 
     function setRequiredValidatorApprovals(uint256 v) external onlyOwner {
         _validateValidatorThresholds(v, requiredValidatorDisapprovals);
-        uint256 old = requiredValidatorApprovals;
         requiredValidatorApprovals = v;
-        emit RequiredValidatorApprovalsUpdated(old, v);
     }
 
     function setRequiredValidatorDisapprovals(uint256 v) external onlyOwner {
         _validateValidatorThresholds(requiredValidatorApprovals, v);
-        uint256 old = requiredValidatorDisapprovals;
         requiredValidatorDisapprovals = v;
-        emit RequiredValidatorDisapprovalsUpdated(old, v);
     }
 
     function setPremiumReputationThreshold(uint256 v) external onlyOwner {
-        uint256 old = premiumReputationThreshold;
         premiumReputationThreshold = v;
-        emit PremiumReputationThresholdUpdated(old, v);
     }
 
     function setValidationRewardPercentage(uint256 v) external onlyOwner {
         if (v == 0 || v > 100) revert InvalidParameters();
-        uint256 old = validationRewardPercentage;
         validationRewardPercentage = v;
-        emit ValidationRewardPercentageUpdated(old, v);
     }
 
     function setCompletionReviewPeriod(uint256 v) external onlyOwner {
         if (v == 0 || v > MAX_REVIEW_PERIOD) revert InvalidParameters();
-        uint256 old = completionReviewPeriod;
         completionReviewPeriod = v;
-        emit CompletionReviewPeriodUpdated(old, v);
     }
 
     function setDisputeReviewPeriod(uint256 v) external onlyOwner {
         if (v == 0 || v > MAX_REVIEW_PERIOD) revert InvalidParameters();
-        uint256 old = disputeReviewPeriod;
         disputeReviewPeriod = v;
-        emit DisputeReviewPeriodUpdated(old, v);
     }
 
     function setChallengePeriodAfterApproval(uint256 v) external onlyOwner {
         if (v == 0 || v > MAX_REVIEW_PERIOD) revert InvalidParameters();
-        uint256 old = challengePeriodAfterApproval;
         challengePeriodAfterApproval = v;
-        emit ChallengePeriodAfterApprovalUpdated(old, v);
     }
 
     function setValidatorBondParams(uint256 bps, uint256 min, uint256 max) external onlyOwner {
@@ -683,7 +650,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         validatorBondBps = bps;
         validatorBondMin = min;
         validatorBondMax = max;
-        emit ValidatorBondParamsUpdated(bps, min, max);
     }
 
     function setAgentBondParams(uint256 bps, uint256 min, uint256 max) external onlyOwner {
@@ -691,14 +657,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         agentBondBps = bps;
         agentBond = min;
         agentBondMax = max;
-        emit AgentBondParamsUpdated(bps, min, max);
     }
 
     function setValidatorSlashBps(uint256 bps) external onlyOwner {
         if (bps > 10_000) revert InvalidParameters();
-        uint256 old = validatorSlashBps;
         validatorSlashBps = bps;
-        emit ValidatorSlashBpsUpdated(old, bps);
     }
 
     function createJob(
@@ -1174,7 +1137,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
             agiTypes.push(AGIType({nftAddress: nftAddress, payoutPercentage: payoutPercentage}));
         }
 
-        emit AGITypeUpdated(nftAddress, payoutPercentage);
     }
 
     function getAgentStats(address agent)
@@ -1261,11 +1223,21 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 available = withdrawableAGI();
         if (amount > available) revert InsufficientWithdrawableBalance();
         agiToken.safeTransfer(msg.sender, amount);
-        emit AGIWithdrawn(msg.sender, amount, available - amount);
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireMinted(tokenId);
+    function ownerOf(uint256 tokenId) external view returns (address) {
+        address owner_ = _completionNftOwners[tokenId];
+        if (owner_ == address(0)) revert JobNotFound();
+        return owner_;
+    }
+
+    function balanceOf(address owner_) external view returns (uint256) {
+        if (owner_ == address(0)) revert InvalidParameters();
+        return _completionNftBalances[owner_];
+    }
+
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
+        if (_completionNftOwners[tokenId] == address(0)) revert JobNotFound();
         return _tokenURIs[tokenId];
     }
 
@@ -1462,11 +1434,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         }
     }
 
-    function _mintCompletionNFT(uint256 jobId, Job storage job) internal {
+    function _mintCompletionNFT(uint256 /* jobId */, Job storage job) internal {
         uint256 tokenId = nextTokenId++;
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
         _tokenURIs[tokenId] = uri;
-        _mint(job.employer, tokenId);
+        _completionNftOwners[tokenId] = job.employer;
+        _completionNftBalances[job.employer] += 1;
         emit NFTIssued(tokenId, job.employer, uri);
     }
 
@@ -1567,15 +1540,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         bytes32 rootNode,
         bytes32 alphaRootNode
     ) internal view returns (bool) {
+        rootNode;
+        alphaRootNode;
         if (additional[claimant]) return true;
-        if (ENSOwnership.verifyMerkleOwnership(claimant, proof, merkleRoot)) return true;
-        return ENSOwnership.verifyENSOwnership(
-            address(ens),
-            address(nameWrapper),
-            claimant,
-            subdomain,
-            rootNode,
-            alphaRootNode
-        );
+        bytes32 leaf = keccak256(abi.encodePacked(claimant));
+        if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) return true;
+        subdomain;
+        return false;
     }
 }
