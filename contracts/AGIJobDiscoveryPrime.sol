@@ -436,6 +436,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     mapping(uint256 => mapping(address => uint8[])) internal revealedScores;
     mapping(address => DiscoveryStats) public discoveryStats;
     mapping(address => uint256) public claimable;
+    mapping(uint256 => uint256) public procurementByJobId;
 
     event ProcurementCreated(uint256 indexed procurementId, uint256 indexed jobId, address indexed employer);
     event PremiumJobCreated(uint256 indexed procurementId, uint256 indexed jobId, address indexed employer);
@@ -496,6 +497,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         ProcurementParams calldata proc
     ) external whenNotPaused nonReentrant returns (uint256 procurementId) {
         if (msg.sender != settlement.jobEmployerOf(jobId)) revert NotAuthorized();
+        if (procurementByJobId[jobId] != 0) revert InvalidState();
 
         (
             uint8 intakeMode,
@@ -982,6 +984,9 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             revert InvalidParameters();
         }
         if (proc.historicalWeightBps + proc.trialWeightBps != 10_000) revert InvalidParameters();
+        if (proc.selectedAcceptanceWindow == 0) revert InvalidParameters();
+
+        if (procurementByJobId[jobId] != 0) revert InvalidState();
 
         if (
             !(block.timestamp < proc.commitDeadline &&
@@ -1000,6 +1005,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         procurementId = nextProcurementId++;
+        procurementByJobId[jobId] = procurementId + 1;
         Procurement storage p = procurements[procurementId];
 
         p.employer = employer;
