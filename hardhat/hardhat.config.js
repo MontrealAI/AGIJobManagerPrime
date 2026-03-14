@@ -23,7 +23,7 @@ module.exports = {
     settings: {
       optimizer: { enabled: true, runs: 40 },
       evmVersion: 'shanghai',
-      viaIR: false,
+      viaIR: true,
       metadata: { bytecodeHash: 'none' },
       debug: { revertStrings: 'strip' },
     },
