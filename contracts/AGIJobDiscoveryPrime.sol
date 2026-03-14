@@ -596,7 +596,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             uint256 insertAt = finalistsToTake;
 
             for (uint256 j = 0; j < finalistsToTake; ++j) {
-                if (historical > topScores[j]) {
+                if (historical >= topScores[j]) {
                     insertAt = j;
                     break;
                 }

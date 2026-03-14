@@ -3,6 +3,10 @@ const { time } = require('@openzeppelin/test-helpers');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
 const AGIJobDiscoveryPrime = artifacts.require('AGIJobDiscoveryPrime');
+const UriUtils = artifacts.require('UriUtils');
+const BondMath = artifacts.require('BondMath');
+const ReputationMath = artifacts.require('ReputationMath');
+const ENSOwnership = artifacts.require('ENSOwnership');
 const MockERC20 = artifacts.require('MockERC20');
 const MockERC721 = artifacts.require('MockERC721');
 
@@ -18,6 +22,19 @@ contract('Prime discovery + settlement', (accounts) => {
   let token;
   let manager;
   let discovery;
+
+  before(async () => {
+    const uriUtils = await UriUtils.new({ from: owner });
+    const bondMath = await BondMath.new({ from: owner });
+    const reputationMath = await ReputationMath.new({ from: owner });
+    const ensOwnership = await ENSOwnership.new({ from: owner });
+
+    AGIJobManagerPrime.link('UriUtils', uriUtils.address);
+    AGIJobManagerPrime.link('BondMath', bondMath.address);
+    AGIJobManagerPrime.link('ReputationMath', reputationMath.address);
+    AGIJobManagerPrime.link('ENSOwnership', ensOwnership.address);
+    AGIJobDiscoveryPrime.link('UriUtils', uriUtils.address);
+  });
 
   beforeEach(async () => {
     token = await MockERC20.new({ from: owner });
@@ -38,7 +55,7 @@ contract('Prime discovery + settlement', (accounts) => {
     const agiType = await MockERC721.new({ from: owner });
     await agiType.mint(agentA, { from: owner });
     await agiType.mint(agentB, { from: owner });
-    await manager.addAGIType(agiType.address, 92, { from: owner });
+    await manager.addOrUpdateAGIType(agiType.address, 92, { from: owner });
 
     await manager.addAdditionalAgent(agentA, { from: owner });
     await manager.addAdditionalAgent(agentB, { from: owner });
@@ -54,6 +71,7 @@ contract('Prime discovery + settlement', (accounts) => {
 
     await manager.setRequiredValidatorApprovals(1, { from: owner });
     await manager.setChallengePeriodAfterApproval(1, { from: owner });
+    await manager.setPremiumReputationThreshold(0, { from: owner });
   });
 
   it('supports ordinary open-first-come settlement flow', async () => {
@@ -73,7 +91,7 @@ contract('Prime discovery + settlement', (accounts) => {
     assert(rep.toNumber() > 0, 'reputation should increase after successful settlement');
   });
 
-  it('supports per-job merkle intake and checkpoint failure employer refund path', async () => {
+  it('supports per-job merkle intake and employer refund expiry path', async () => {
     const payout = web3.utils.toWei('40');
     const create = await manager.createConfiguredJob('ipfs://job/root', payout, 3600, 'per job root', 2, ZERO32, { from: employer });
     const jobId = create.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
@@ -82,12 +100,12 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.setPerJobAgentRoot(jobId, root, 50, { from: owner });
     await manager.applyForJob(jobId, '', EMPTY, [], { from: agentA });
 
-    await time.increase(60);
+    await time.increase(3700);
     const before = await token.balanceOf(employer);
-    await manager.failCheckpoint(jobId, { from: owner });
+    await manager.expireJob(jobId, { from: owner });
     const after = await token.balanceOf(employer);
 
-    assert(after.gt(before), 'employer should recover escrow on checkpoint failure');
+    assert(after.gt(before), 'employer should recover escrow after expiry');
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
