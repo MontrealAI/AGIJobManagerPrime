@@ -103,7 +103,12 @@ Irreversible actions (delay until validated):
 ## Recommended vs legacy deployment paths
 
 ### Recommended (official): Hardhat
-Use Hardhat for production deployment and verification of `AGIJobManager`, and for additive `ENSJobPages` deployment/replacement.
+Use Hardhat for production deployment and verification of the **Prime suite**:
+
+- `AGIJobManagerPrime` (settlement kernel)
+- `AGIJobDiscoveryPrime` (premium procurement layer)
+
+Legacy `AGIJobManager` remains available for historical reproducibility and legacy operations.
 
 Start here: [`hardhat/README.md`](hardhat/README.md)
 
@@ -128,23 +133,41 @@ Legacy docs:
 
 See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_JOB_PAGES_OVERVIEW.md)
 
-## Operator quickstart
+## Operator quickstart (Prime canonical)
 
 1. Read the official Hardhat guide and prepare `.env` + deploy config.
 2. From `hardhat/`, compile (`cd hardhat && npx hardhat compile`) and dry-run (`DRY_RUN=1 ...`).
-3. Deploy `AGIJobManager` with mainnet confirmation gate.
-4. If replacing ENS pages, deploy `ENSJobPages` via `hardhat/scripts/deploy-ens-job-pages.js`.
-5. Perform manual post-deploy wiring on mainnet:
-   - `NameWrapper.setApprovalForAll(newEnsJobPages, true)` by wrapped-root owner.
-   - `AGIJobManager.setEnsJobPages(newEnsJobPages)` by AGIJobManager owner.
-6. If legacy jobs must retain historical labels, run per-job migration (`migrateLegacyWrappedJobPage(jobId, exactLabel)`).
-7. Verify results on Etherscan using `Read Contract` + events.
-8. Only lock configuration after validation is complete.
+3. Deploy the Prime suite (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) with the mainnet confirmation gate.
+4. Verify deployment outputs on Etherscan and in `hardhat/deployments/<network>/` artifacts.
+5. Transfer ownership to the intended final owner if required by your operational policy.
 
-Expected result after safe cutover:
-- New jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob...alpha.jobs.agi.eth`).
+Expected result after Prime deployment:
+- Premium jobs use procurement-first winner discovery before assignment (not first-touch lock capture).
+- Settlement retains conservative escrow/bond/dispute/finalization behavior.
+
+### Optional legacy ENS wiring path (legacy contract only)
+
+If you are also operating legacy `AGIJobManager` + `ENSJobPages`, use the separate legacy ENS runbook flow:
+1. Deploy/replace `ENSJobPages` via `hardhat/scripts/deploy-ens-job-pages.js`.
+2. Perform manual wiring on mainnet:
+   - `NameWrapper.setApprovalForAll(newEnsJobPages, true)` by wrapped-root owner.
+   - `AGIJobManager.setEnsJobPages(newEnsJobPages)` by **legacy AGIJobManager owner**.
+3. If legacy jobs must retain historical labels, run per-job migration (`migrateLegacyWrappedJobPage(jobId, exactLabel)`).
+4. Only lock ENS/identity configuration after post-cutover validation.
+
+Expected result after legacy ENS cutover:
+- New legacy-manager jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob...alpha.jobs.agi.eth`).
 - AGIJobManager lifecycle and settlement continue even if an ENS side-effect fails.
 - Legacy labels remain stable unless explicitly migrated/imported.
+
+## Job creation modes (operator-facing mental model)
+
+- **Ordinary job:** create directly on `AGIJobManagerPrime` and allow open applications (first valid taker path).
+- **Premium job:** create through `AGIJobDiscoveryPrime.createPremiumJobWithDiscovery(...)` so procurement is completed first.
+- **Existing job upgrade (eligible jobs only):** use `AGIJobDiscoveryPrime.attachProcurementToExistingJob(...)` only when the caller is the employer and the target job is still unassigned in SelectedAgentOnly intake mode; ordinary OpenFirstCome jobs are not attach-compatible and will revert.
+- **Budget planning:** pre-quote procurement requirements via `AGIJobDiscoveryPrime.quoteProcurementBudget(...)`.
+
+Premium handoff sequence is: commit/reveal applications -> shortlist -> paid finalist trial -> validator commit/reveal scoring -> designated winner assignment into settlement -> fallback finalist promotion if the designated winner fails to take the job within the configured acceptance window.
 
 ### Never-do-this-by-accident checklist
 
