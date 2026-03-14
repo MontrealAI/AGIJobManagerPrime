@@ -11,21 +11,21 @@ const COMPILER_SETTINGS = {
   version: '0.8.23',
   optimizer: { enabled: true, runs: 40 },
   evmVersion: 'shanghai',
-  viaIR: false,
+  viaIR: true,
   metadata: { bytecodeHash: 'none' },
   debug: { revertStrings: 'strip' },
 };
 
 const FQNS = {
-  AGIJobManager: 'contracts/AGIJobManager.sol:AGIJobManager',
+  AGIJobManagerPrime: 'contracts/AGIJobManagerPrime.sol:AGIJobManagerPrime',
+  AGIJobDiscoveryPrime: 'contracts/AGIJobDiscoveryPrime.sol:AGIJobDiscoveryPrime',
   UriUtils: 'contracts/utils/UriUtils.sol:UriUtils',
-  TransferUtils: 'contracts/utils/TransferUtils.sol:TransferUtils',
   BondMath: 'contracts/utils/BondMath.sol:BondMath',
   ReputationMath: 'contracts/utils/ReputationMath.sol:ReputationMath',
   ENSOwnership: 'contracts/utils/ENSOwnership.sol:ENSOwnership',
 };
 
-const LIBRARIES = ['UriUtils', 'TransferUtils', 'BondMath', 'ReputationMath', 'ENSOwnership'];
+const LIBRARIES = ['UriUtils', 'BondMath', 'ReputationMath', 'ENSOwnership'];
 
 function stableObject(value) {
   if (Array.isArray(value)) return value.map(stableObject);
@@ -40,9 +40,7 @@ function stableObject(value) {
   return value;
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 function getExplorerAddressBase(chainId) {
   if (chainId === 1) return 'https://etherscan.io/address/';
@@ -91,7 +89,7 @@ function loadDeployConfig() {
   return { config, configPath };
 }
 
-function resolveConstructor(networkName, profile) {
+function resolvePrimeConstructor(networkName, profile) {
   if (!profile || typeof profile !== 'object') {
     throw new Error(`Missing deployment profile for network "${networkName}".`);
   }
@@ -109,7 +107,7 @@ function resolveConstructor(networkName, profile) {
     throw new Error('baseIpfsUrl must be a non-empty string.');
   }
   if (!Array.isArray(constructorArgs.ensConfig) || constructorArgs.ensConfig.length !== 2) {
-    throw new Error('ensConfig must be an array of exactly 2 addresses.');
+    throw new Error('ensConfig must be an array of exactly 2 addresses: [ensRegistry, nameWrapper].');
   }
   if (!Array.isArray(constructorArgs.rootNodes) || constructorArgs.rootNodes.length !== 4) {
     throw new Error('rootNodes must be an array of exactly 4 bytes32 values.');
@@ -151,12 +149,7 @@ async function deployContract(name, args = [], options = {}, confirmations = DEF
 
 async function verifyWithRetry(params, verifyDelayMs) {
   const { name, record } = params;
-  const verificationEntry = {
-    contract: name,
-    status: 'pending',
-    attempts: 0,
-    error: null,
-  };
+  const verificationEntry = { contract: name, status: 'pending', attempts: 0, error: null };
 
   for (let attempt = 1; attempt <= DEFAULT_VERIFY_RETRIES; attempt += 1) {
     verificationEntry.attempts = attempt;
@@ -179,9 +172,7 @@ async function verifyWithRetry(params, verifyDelayMs) {
         return verificationEntry;
       }
       verificationEntry.error = message;
-      if (attempt < DEFAULT_VERIFY_RETRIES) {
-        await sleep(verifyDelayMs);
-      }
+      if (attempt < DEFAULT_VERIFY_RETRIES) await sleep(verifyDelayMs);
     }
   }
 
@@ -220,6 +211,9 @@ function copySolcInput(outDir) {
 async function main() {
   const confirmations = parsePositiveInt(process.env.CONFIRMATIONS, 'CONFIRMATIONS', DEFAULT_CONFIRMATIONS, 1);
   const verifyDelayMs = parsePositiveInt(process.env.VERIFY_DELAY_MS, 'VERIFY_DELAY_MS', DEFAULT_VERIFY_DELAY_MS, 0);
+  const shouldVerify = process.env.VERIFY === '1';
+  const dryRun = process.env.DRY_RUN === '1';
+
   const [deployer] = await ethers.getSigners();
   const providerNetwork = await ethers.provider.getNetwork();
   const chainId = Number(providerNetwork.chainId);
@@ -228,9 +222,8 @@ async function main() {
 
   const { config, configPath } = loadDeployConfig();
   const profile = config[network.name];
-  const constructorArgs = resolveConstructor(network.name, profile);
+  const constructorArgs = resolvePrimeConstructor(network.name, profile);
   const resolvedFinalOwner = resolveFinalOwner(profile);
-  const dryRun = process.env.DRY_RUN === '1';
 
   if (chainId === 1) {
     if (process.env.DEPLOY_CONFIRM_MAINNET !== MAINNET_CONFIRMATION_VALUE) {
@@ -249,13 +242,23 @@ async function main() {
     configPath,
     confirmations,
     verifyDelayMs,
+    verifyEnabled: shouldVerify,
     constructorArgs,
     libraries: LIBRARIES,
     compiler: COMPILER_SETTINGS,
+    steps: [
+      'Deploy linked libraries',
+      'Deploy AGIJobManagerPrime',
+      'Deploy AGIJobDiscoveryPrime',
+      'Wire manager.setDiscoveryModule(discovery)',
+      'Optional transferOwnership(finalOwner)',
+      'Optional etherscan verification',
+      'Persist deployment receipts + verify targets',
+    ],
     dryRun,
   };
 
-  console.log('=== Deployment Plan ===');
+  console.log('=== Prime Deployment Plan ===');
   console.log(JSON.stringify(plan, null, 2));
 
   if (dryRun) {
@@ -274,7 +277,6 @@ async function main() {
 
   const linkedLibraries = {
     [FQNS.UriUtils]: deployments.UriUtils.address,
-    [FQNS.TransferUtils]: deployments.TransferUtils.address,
     [FQNS.BondMath]: deployments.BondMath.address,
     [FQNS.ReputationMath]: deployments.ReputationMath.address,
     [FQNS.ENSOwnership]: deployments.ENSOwnership.address,
@@ -283,49 +285,88 @@ async function main() {
   const managerArgs = [
     constructorArgs.agiTokenAddress,
     constructorArgs.baseIpfsUrl,
-    constructorArgs.ensConfig,
+    constructorArgs.ensConfig[0],
+    constructorArgs.ensConfig[1],
     constructorArgs.rootNodes,
     constructorArgs.merkleRoots,
   ];
 
-  const managerDeployment = await deployContract('AGIJobManager', managerArgs, { libraries: linkedLibraries }, confirmations);
-  deployments.AGIJobManager = managerDeployment;
-  console.log(`[deployed] AGIJobManager ${managerDeployment.address} tx=${managerDeployment.txHash}`);
+  const managerDeployment = await deployContract('AGIJobManagerPrime', managerArgs, { libraries: linkedLibraries }, confirmations);
+  deployments.AGIJobManagerPrime = managerDeployment;
+  console.log(`[deployed] AGIJobManagerPrime ${managerDeployment.address} tx=${managerDeployment.txHash}`);
 
-  for (const libName of LIBRARIES) {
-    await sleep(verifyDelayMs);
-    verificationResults[libName] = await verifyWithRetry({ name: libName, record: deployments[libName] }, verifyDelayMs);
-  }
-  await sleep(verifyDelayMs);
-  verificationResults.AGIJobManager = await verifyWithRetry(
-    {
-      name: 'AGIJobManager',
-      record: managerDeployment,
-      constructorArguments: managerArgs,
-      libraries: linkedLibraries,
-    },
-    verifyDelayMs
-  );
+  const discoveryArgs = [managerDeployment.address];
+  const discoveryDeployment = await deployContract('AGIJobDiscoveryPrime', discoveryArgs, {}, confirmations);
+  deployments.AGIJobDiscoveryPrime = discoveryDeployment;
+  console.log(`[deployed] AGIJobDiscoveryPrime ${discoveryDeployment.address} tx=${discoveryDeployment.txHash}`);
 
-  const manager = await ethers.getContractAt('AGIJobManager', managerDeployment.address, deployer);
+  const manager = await ethers.getContractAt('AGIJobManagerPrime', managerDeployment.address, deployer);
+  const setDiscoveryTx = await manager.setDiscoveryModule(discoveryDeployment.address);
+  const setDiscoveryReceipt = await setDiscoveryTx.wait(confirmations);
+  const discoveryModuleWiring = {
+    txHash: setDiscoveryTx.hash,
+    blockNumber: setDiscoveryReceipt.blockNumber,
+    discoveryModule: discoveryDeployment.address,
+  };
+  console.log(`[wired] AGIJobManagerPrime.setDiscoveryModule(${discoveryDeployment.address}) tx=${setDiscoveryTx.hash}`);
+
   let ownershipTransfer = {
     executed: false,
     txHash: null,
     blockNumber: null,
     reason: 'deployer_is_final_owner',
+    contracts: [],
   };
   if (deployer.address.toLowerCase() !== resolvedFinalOwner.toLowerCase()) {
-    const tx = await manager.transferOwnership(resolvedFinalOwner);
-    const transferReceipt = await tx.wait(confirmations);
+    const managerOwnerTx = await manager.transferOwnership(resolvedFinalOwner);
+    const managerOwnerRcpt = await managerOwnerTx.wait(confirmations);
+
+    const discovery = await ethers.getContractAt('AGIJobDiscoveryPrime', discoveryDeployment.address, deployer);
+    const discoveryOwnerTx = await discovery.transferOwnership(resolvedFinalOwner);
+    const discoveryOwnerRcpt = await discoveryOwnerTx.wait(confirmations);
+
     ownershipTransfer = {
       executed: true,
-      txHash: tx.hash,
-      blockNumber: transferReceipt.blockNumber,
+      txHash: null,
+      blockNumber: null,
       reason: null,
+      contracts: [
+        { contract: 'AGIJobManagerPrime', txHash: managerOwnerTx.hash, blockNumber: managerOwnerRcpt.blockNumber },
+        { contract: 'AGIJobDiscoveryPrime', txHash: discoveryOwnerTx.hash, blockNumber: discoveryOwnerRcpt.blockNumber },
+      ],
     };
-    console.log(`[owner] transferOwnership(${resolvedFinalOwner}) tx=${tx.hash}`);
+    console.log(`[owner] AGIJobManagerPrime.transferOwnership(${resolvedFinalOwner}) tx=${managerOwnerTx.hash}`);
+    console.log(`[owner] AGIJobDiscoveryPrime.transferOwnership(${resolvedFinalOwner}) tx=${discoveryOwnerTx.hash}`);
   } else {
     console.log('[owner] transferOwnership skipped (deployer is final owner).');
+  }
+
+  if (shouldVerify) {
+    for (const libName of LIBRARIES) {
+      await sleep(verifyDelayMs);
+      verificationResults[libName] = await verifyWithRetry({ name: libName, record: deployments[libName] }, verifyDelayMs);
+    }
+
+    await sleep(verifyDelayMs);
+    verificationResults.AGIJobManagerPrime = await verifyWithRetry(
+      {
+        name: 'AGIJobManagerPrime',
+        record: managerDeployment,
+        constructorArguments: managerArgs,
+        libraries: linkedLibraries,
+      },
+      verifyDelayMs
+    );
+
+    await sleep(verifyDelayMs);
+    verificationResults.AGIJobDiscoveryPrime = await verifyWithRetry(
+      {
+        name: 'AGIJobDiscoveryPrime',
+        record: discoveryDeployment,
+        constructorArguments: discoveryArgs,
+      },
+      verifyDelayMs
+    );
   }
 
   const stablePayload = stableObject({ constructorArgs, libraries: linkedLibraries, finalOwner: resolvedFinalOwner });
@@ -349,17 +390,20 @@ async function main() {
       }])
     ),
     constructorArgs,
+    managerConstructorArgs: managerArgs,
+    discoveryConstructorArgs: discoveryArgs,
     libraries: linkedLibraries,
+    setDiscoveryModule: discoveryModuleWiring,
     ownershipTransfer,
-    verification: verificationResults,
+    verification: shouldVerify ? verificationResults : { skipped: true },
     configHash,
   };
 
-  const receiptPath = path.join(outDir, `deployment.${chainId}.${managerDeployment.blockNumber}.json`);
+  const receiptPath = path.join(outDir, `deployment.prime.${chainId}.${managerDeployment.blockNumber}.json`);
   fs.writeFileSync(receiptPath, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
 
   const solcInputPath = copySolcInput(outDir);
-  const verifyTargetsPath = path.join(outDir, 'verify-targets.json');
+  const verifyTargetsPath = path.join(outDir, 'verify-targets.prime.json');
   const verifyTargets = {
     network: network.name,
     chainId,
@@ -371,17 +415,16 @@ async function main() {
   };
   fs.writeFileSync(verifyTargetsPath, `${JSON.stringify(verifyTargets, null, 2)}\n`, 'utf8');
 
-  console.log('\n=== Deployment Summary ===');
+  console.log('\n=== Prime Deployment Summary ===');
   Object.entries(record.contracts).forEach(([name, contract]) => {
     const explorerLink = explorerAddressBase ? ` ${explorerAddressBase}${contract.address}` : '';
-    const verifyStatus = verificationResults[name]?.status || 'not_attempted';
+    const verifyStatus = shouldVerify ? (verificationResults[name]?.status || 'not_attempted') : 'skipped';
     console.log(`${name}: ${contract.address}${explorerLink} [verify=${verifyStatus}]`);
   });
+  console.log(`setDiscoveryModule tx: ${discoveryModuleWiring.txHash}`);
   console.log(`receipt: ${receiptPath}`);
   console.log(`solc-input: ${solcInputPath}`);
   console.log(`verify-targets: ${verifyTargetsPath}`);
-  console.log('Post-deploy on-chain actions performed: deployment + optional transferOwnership(finalOwner) only.');
-  console.log('All other operational configuration is manual via Etherscan runbook.');
 }
 
 main().catch((error) => {

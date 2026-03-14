@@ -1,4 +1,4 @@
-# AGIJobManager
+# AGIJobManager Prime
 
 [![CI][ci-badge]][ci-url]
 [![Security Verification][security-verification-badge]][security-verification-url]
@@ -9,6 +9,18 @@
 AGIJobManager is an Ethereum smart-contract system for escrowed AGI work agreements, with optional ENS-backed job pages managed by `ENSJobPages`.
 
 > **Operational policy:** intended for autonomous AI-agent execution with accountable human owner/operator oversight. This is policy intent and is not fully enforced on-chain.
+
+## Prime upgrade architecture (production direction)
+
+This repository now contains both the legacy settlement contract and the Prime two-layer architecture:
+
+- `contracts/AGIJobManagerPrime.sol`: settlement-first kernel preserving escrow, bonds, validator review, disputes, challenge windows, conservative pause/owner controls, and solvency accounting.
+- `contracts/AGIJobDiscoveryPrime.sol`: procurement-first premium discovery (sealed commit, reveal, shortlist from bounded historical signal, paid finalist trials, validator commit/reveal scoring, designated winner handoff, fallback promotion).
+- `contracts/interfaces/IAGIJobManagerPrime.sol`: canonical bridge interface used by discovery to invoke settlement safely.
+
+Why Prime exists: legacy first-touch assignment could let a merely fast applicant lock high-value jobs before best-agent discovery. Prime introduces procurement-first premium selection while keeping settlement guarantees conservative and auditable.
+
+Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.js`, documented in `hardhat/README.md`). Legacy Truffle deployment remains for compatibility and historical reproducibility.
 
 ## Start here by role (30-second routing)
 
