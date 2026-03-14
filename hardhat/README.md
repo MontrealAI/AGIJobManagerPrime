@@ -89,6 +89,19 @@ cd hardhat
 VERIFY=1 npm run deploy:prime:sepolia
 ```
 
+
+## Prime entrypoints for operators
+
+Discovery exposes three canonical premium helpers:
+- `quoteProcurementBudget(...)`
+- `createPremiumJobWithDiscovery(...)`
+- `attachProcurementToExistingJob(...)`
+
+Operational split:
+- Ordinary/open jobs can be created directly on `AGIJobManagerPrime`.
+- Premium jobs should be created through discovery so procurement completes before assignment.
+- Discovery then assigns the designated winner into settlement and supports fallback promotion if the winner stalls.
+
 ## Output artifacts
 
 Deploy outputs are written to `hardhat/deployments/<network>/`:

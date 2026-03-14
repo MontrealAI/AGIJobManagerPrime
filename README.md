@@ -103,7 +103,12 @@ Irreversible actions (delay until validated):
 ## Recommended vs legacy deployment paths
 
 ### Recommended (official): Hardhat
-Use Hardhat for production deployment and verification of `AGIJobManager`, and for additive `ENSJobPages` deployment/replacement.
+Use Hardhat for production deployment and verification of the **Prime suite**:
+
+- `AGIJobManagerPrime` (settlement kernel)
+- `AGIJobDiscoveryPrime` (premium procurement layer)
+
+Legacy `AGIJobManager` remains available for historical reproducibility and legacy operations.
 
 Start here: [`hardhat/README.md`](hardhat/README.md)
 
@@ -128,11 +133,11 @@ Legacy docs:
 
 See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_JOB_PAGES_OVERVIEW.md)
 
-## Operator quickstart
+## Operator quickstart (Prime canonical)
 
 1. Read the official Hardhat guide and prepare `.env` + deploy config.
 2. From `hardhat/`, compile (`cd hardhat && npx hardhat compile`) and dry-run (`DRY_RUN=1 ...`).
-3. Deploy `AGIJobManager` with mainnet confirmation gate.
+3. Deploy the Prime suite (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) with the mainnet confirmation gate.
 4. If replacing ENS pages, deploy `ENSJobPages` via `hardhat/scripts/deploy-ens-job-pages.js`.
 5. Perform manual post-deploy wiring on mainnet:
    - `NameWrapper.setApprovalForAll(newEnsJobPages, true)` by wrapped-root owner.
@@ -142,9 +147,20 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 8. Only lock configuration after validation is complete.
 
 Expected result after safe cutover:
+- Prime premium flow uses procurement-first winner discovery before assignment (not first-touch lock capture).
+- Prime settlement flow retains conservative escrow/bond/dispute/finalization behavior.
 - New jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob...alpha.jobs.agi.eth`).
 - AGIJobManager lifecycle and settlement continue even if an ENS side-effect fails.
 - Legacy labels remain stable unless explicitly migrated/imported.
+
+## Job creation modes (operator-facing mental model)
+
+- **Ordinary job:** create directly on `AGIJobManagerPrime` and allow open applications (first valid taker path).
+- **Premium job:** create through `AGIJobDiscoveryPrime.createPremiumJobWithDiscovery(...)` so procurement is completed first.
+- **Existing job upgrade:** attach procurement to an existing settlement job via `AGIJobDiscoveryPrime.attachProcurementToExistingJob(...)`.
+- **Budget planning:** pre-quote procurement requirements via `AGIJobDiscoveryPrime.quoteProcurementBudget(...)`.
+
+Premium handoff sequence is: commit/reveal applications -> shortlist -> paid finalist trial -> validator commit/reveal scoring -> designated winner assignment into settlement -> fallback finalist promotion if the designated winner fails to take the job within the configured acceptance window.
 
 ### Never-do-this-by-accident checklist
 
