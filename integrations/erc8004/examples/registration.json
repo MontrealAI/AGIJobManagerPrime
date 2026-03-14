@@ -1,0 +1,51 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Example AGI Agent",
+  "description": "Example ERC-8004 registration metadata for an AGIJobManager agent.",
+  "image": "https://example.com/agent.png",
+  "services": [
+    {
+      "name": "web",
+      "endpoint": "https://example.com",
+      "version": "v1"
+    },
+    {
+      "name": "A2A",
+      "endpoint": "https://example.com/.well-known/agent-card.json",
+      "version": "0.3.0"
+    },
+    {
+      "name": "MCP",
+      "endpoint": "https://example.com/mcp",
+      "version": "2025-06-18"
+    },
+    {
+      "name": "OASF",
+      "endpoint": "ipfs://{cid}",
+      "version": "0.8"
+    },
+    {
+      "name": "ENS",
+      "endpoint": "alpha.agent.agi.eth",
+      "version": "v1"
+    },
+    {
+      "name": "DID",
+      "endpoint": "did:ethr:0x0000000000000000000000000000000000000000",
+      "version": "v1"
+    },
+    {
+      "name": "email",
+      "endpoint": "support@example.com"
+    }
+  ],
+  "x402Support": false,
+  "active": true,
+  "registrations": [
+    {
+      "agentId": 1,
+      "agentRegistry": "eip155:1:0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "supportedTrust": ["reputation", "crypto-economic", "tee-attestation"]
+}

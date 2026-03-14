@@ -1,0 +1,44 @@
+{
+  "name": "agijobmanager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single-contract AGIJobManager",
+  "scripts": {
+    "build": "truffle compile",
+    "size": "node scripts/check-bytecode-size.js",
+    "check:no-binaries": "node scripts/check-no-binaries.mjs",
+    "docs:gen": "node scripts/docs/gen-docs.mjs",
+    "docs:check": "node scripts/docs/check-docs.mjs",
+    "docs:ens:gen": "node scripts/docs/generate-ens-reference.mjs",
+    "docs:ens:check": "node scripts/docs/check-ens-docs.mjs",
+    "docs:interface": "node scripts/generate-interface-doc.js",
+    "lint": "solhint \"contracts/**/*.sol\"",
+    "test": "truffle compile --all && truffle test --network test && node test/AGIJobManager.test.js && node scripts/check-contract-sizes.js",
+    "test:ui": "node scripts/ui/run_ui_smoke_test.js",
+    "ui:abi": "node scripts/ui/export_abi.js",
+    "ui:abi:check": "node scripts/ui/check_ui_abi.js",
+    "merkle:proof": "node scripts/merkle/generate_merkle_proof.js",
+    "merkle:export": "node scripts/merkle/export_merkle_proofs.js",
+    "etherscan:prep": "node scripts/etherscan/prepare_inputs.js",
+    "advisor:job": "node scripts/advisor/state_advisor.js",
+    "forge:build": "forge build",
+    "forge:test": "forge test",
+    "forge:invariant": "FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol",
+    "slither": "./scripts/security/run-slither.sh",
+    "deploy:agijobmanager:prod": "AGIJOBMANAGER_DEPLOY=1 npx truffle migrate --f 6 --to 6"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "4.9.6"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.16",
+    "@playwright/test": "^1.49.1",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "dotenv": "^16.6.1",
+    "ganache": "^7.9.2",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.6.0",
+    "solhint": "^5.0.3",
+    "truffle": "^5.11.5"
+  }
+}

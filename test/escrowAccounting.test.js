@@ -1,0 +1,501 @@
+const assert = require("assert");
+
+const { expectRevert, time } = require("@openzeppelin/test-helpers");
+
+const AGIJobManager = artifacts.require("AGIJobManager");
+const MockERC20 = artifacts.require("MockERC20");
+const MockENS = artifacts.require("MockENS");
+const MockERC721 = artifacts.require("MockERC721");
+const MockNameWrapper = artifacts.require("MockNameWrapper");
+
+const { expectCustomError } = require("./helpers/errors");
+const { buildInitConfig } = require("./helpers/deploy");
+const {
+  fundValidators,
+  fundAgents,
+  fundDisputeBond,
+  computeValidatorBond,
+  computeAgentBond,
+} = require("./helpers/bonds");
+
+const ZERO_ROOT = "0x" + "00".repeat(32);
+const EMPTY_PROOF = [];
+const { toBN, toWei } = web3.utils;
+
+contract("AGIJobManager escrow accounting", (accounts) => {
+  const [owner, employer, agent, validator, moderator, validatorTwo, validatorThree] = accounts;
+  let token;
+  let ens;
+  let nameWrapper;
+  let manager;
+
+  beforeEach(async () => {
+    token = await MockERC20.new({ from: owner });
+    ens = await MockENS.new({ from: owner });
+    nameWrapper = await MockNameWrapper.new({ from: owner });
+
+    manager = await AGIJobManager.new(...buildInitConfig(
+        token.address,
+        "ipfs://base",
+        ens.address,
+        nameWrapper.address,
+        ZERO_ROOT,
+        ZERO_ROOT,
+        ZERO_ROOT,
+        ZERO_ROOT,
+        ZERO_ROOT,
+        ZERO_ROOT,
+      ),
+      { from: owner }
+    );
+
+    const agiType = await MockERC721.new({ from: owner });
+    await agiType.mint(agent, { from: owner });
+    await manager.addAGIType(agiType.address, 50, { from: owner });
+
+    await manager.addAdditionalAgent(agent, { from: owner });
+    await manager.addAdditionalValidator(validator, { from: owner });
+    await manager.addAdditionalValidator(validatorTwo, { from: owner });
+    await manager.addAdditionalValidator(validatorThree, { from: owner });
+    await manager.addModerator(moderator, { from: owner });
+    await manager.setRequiredValidatorApprovals(1, { from: owner });
+
+    await fundValidators(token, manager, [validator, validatorTwo, validatorThree], owner);
+    await fundAgents(token, manager, [agent], owner);
+  });
+
+  const createJob = async (payout, duration = 1000) => {
+    await token.mint(employer, payout, { from: owner });
+    await token.approve(manager.address, payout, { from: employer });
+    const receipt = await manager.createJob("ipfs", payout, duration, "details", { from: employer });
+    return receipt.logs[0].args.jobId.toNumber();
+  };
+
+  it("prevents withdrawing escrowed funds", async () => {
+    const payout = toBN(toWei("5"));
+    await createJob(payout);
+
+    const lockedEscrow = await manager.lockedEscrow();
+    assert.equal(lockedEscrow.toString(), payout.toString(), "locked escrow should track job payout");
+
+    const withdrawable = await manager.withdrawableAGI();
+    assert.equal(withdrawable.toString(), "0", "withdrawable should exclude escrow");
+
+    await manager.pause({ from: owner });
+    await expectRevert.unspecified(manager.withdrawAGI(payout, { from: owner }));
+
+  });
+
+  it("allows withdrawing surplus only", async () => {
+    const payout = toBN(toWei("4"));
+    const surplus = toBN(toWei("2"));
+    await createJob(payout);
+    await token.mint(manager.address, surplus, { from: owner });
+
+    const withdrawable = await manager.withdrawableAGI();
+    assert.equal(withdrawable.toString(), surplus.toString(), "withdrawable should be surplus only");
+
+    await expectRevert.unspecified(manager.withdrawAGI(surplus, { from: owner }));
+    await manager.pause({ from: owner });
+    await manager.withdrawAGI(surplus, { from: owner });
+
+    const remainingWithdrawable = await manager.withdrawableAGI();
+    assert.equal(remainingWithdrawable.toString(), "0", "surplus should be fully withdrawn");
+    const lockedEscrow = await manager.lockedEscrow();
+    assert.equal(lockedEscrow.toString(), payout.toString(), "escrow remains locked");
+  });
+
+  it("prevents withdrawing bonded validator funds before settlement", async () => {
+    await manager.setRequiredValidatorApprovals(2, { from: owner });
+    const payout = toBN(toWei("6"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validator });
+
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    const bond = await computeValidatorBond(manager, payout);
+    const lockedValidatorBonds = await manager.lockedValidatorBonds();
+    const lockedAgentBonds = await manager.lockedAgentBonds();
+    assert.equal(
+      lockedValidatorBonds.toString(),
+      bond.toString(),
+      "validator bond should be locked"
+    );
+    assert.equal(
+      lockedAgentBonds.toString(),
+      agentBond.toString(),
+      "agent bond should be locked"
+    );
+
+    const surplus = toBN(toWei("1"));
+    await token.mint(manager.address, surplus, { from: owner });
+
+    const withdrawable = await manager.withdrawableAGI();
+    assert.equal(
+      withdrawable.toString(),
+      surplus.toString(),
+      "withdrawable should exclude locked escrow and bonds"
+    );
+
+  });
+
+  it("excludes locked dispute bonds from withdrawable AGI", async () => {
+    const payout = toBN(toWei("9"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const disputeBond = await fundDisputeBond(token, manager, employer, payout, owner);
+    await manager.disputeJob(jobId, { from: employer });
+
+    const lockedDisputeBonds = await manager.lockedDisputeBonds();
+    assert.equal(lockedDisputeBonds.toString(), disputeBond.toString(), "dispute bond should be locked");
+
+    const withdrawable = await manager.withdrawableAGI();
+    assert.equal(withdrawable.toString(), "0", "withdrawable should exclude locked dispute bond");
+  });
+
+  it("requires validator bond allowance for votes", async () => {
+    const payout = toBN(toWei("5"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    await token.approve(manager.address, 0, { from: validatorTwo });
+    await expectCustomError(
+      manager.validateJob.call(jobId, "", EMPTY_PROOF, { from: validatorTwo }),
+      "TransferFailed"
+    );
+    await expectCustomError(
+      manager.disapproveJob.call(jobId, "", EMPTY_PROOF, { from: validatorTwo }),
+      "TransferFailed"
+    );
+  });
+
+  it("slashes incorrect validators and rewards correct validators", async () => {
+    await manager.setRequiredValidatorApprovals(1, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(2, { from: owner });
+    await manager.setChallengePeriodAfterApproval(1, { from: owner });
+
+    const payout = toBN(toWei("100"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const bond = await computeValidatorBond(manager, payout);
+    const validatorBefore = await token.balanceOf(validator);
+    const validatorTwoBefore = await token.balanceOf(validatorTwo);
+    const validatorThreeBefore = await token.balanceOf(validatorThree);
+
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorTwo });
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validatorThree });
+
+    await time.increase(2);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    const validatorAfter = await token.balanceOf(validator);
+    const validatorTwoAfter = await token.balanceOf(validatorTwo);
+    const validatorThreeAfter = await token.balanceOf(validatorThree);
+    const rewardPool = payout.mul(await manager.validationRewardPercentage()).divn(100);
+    const validatorSlashBps = await manager.validatorSlashBps();
+    const slashedPerIncorrect = bond.mul(validatorSlashBps).divn(10000);
+    const poolForCorrect = rewardPool.add(slashedPerIncorrect);
+    const perCorrectReward = poolForCorrect.divn(2);
+    assert.equal(
+      validatorAfter.sub(validatorBefore).toString(),
+      perCorrectReward.toString(),
+      "correct validator should gain reward plus slashed bond"
+    );
+    assert.equal(
+      validatorThreeAfter.sub(validatorThreeBefore).toString(),
+      perCorrectReward.toString(),
+      "second correct validator should gain reward plus slashed bond"
+    );
+    assert.equal(
+      validatorTwoBefore.sub(validatorTwoAfter).toString(),
+      slashedPerIncorrect.toString(),
+      "incorrect validator should lose slashed amount"
+    );
+  });
+
+  it("refunds employer minus validator rewards when validators participate", async () => {
+    await manager.setRequiredValidatorApprovals(2, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(4, { from: owner });
+    await manager.setCompletionReviewPeriod(1, { from: owner });
+
+    const payout = toBN(toWei("12"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const employerBefore = await token.balanceOf(employer);
+    const validatorBefore = await token.balanceOf(validator);
+    const validatorTwoBefore = await token.balanceOf(validatorTwo);
+    const validatorThreeBefore = await token.balanceOf(validatorThree);
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorTwo });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorThree });
+
+    await time.increase(2);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    const employerAfter = await token.balanceOf(employer);
+    const validatorAfter = await token.balanceOf(validator);
+    const validatorTwoAfter = await token.balanceOf(validatorTwo);
+    const validatorThreeAfter = await token.balanceOf(validatorThree);
+    const rewardPool = payout.mul(await manager.validationRewardPercentage()).divn(100);
+    const expectedReward = rewardPool.divn(3);
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    assert.equal(
+      employerAfter.sub(employerBefore).toString(),
+      payout.sub(rewardPool).add(agentBond).toString(),
+      "employer refund should exclude validator rewards and include agent bond"
+    );
+    assert.equal(
+      validatorAfter.sub(validatorBefore).toString(),
+      expectedReward.toString(),
+      "correct disapprover should earn one third of the reward pool"
+    );
+    assert.equal(
+      validatorTwoAfter.sub(validatorTwoBefore).toString(),
+      expectedReward.toString(),
+      "second disapprover should earn one third of the reward pool"
+    );
+  });
+
+  it("routes agent bond to employer when disapprovals are below the threshold", async () => {
+    await manager.setRequiredValidatorApprovals(2, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(4, { from: owner });
+    await manager.setCompletionReviewPeriod(1, { from: owner });
+
+    const payout = toBN(toWei("9"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const employerBefore = await token.balanceOf(employer);
+    const validatorBefore = await token.balanceOf(validator);
+    const validatorTwoBefore = await token.balanceOf(validatorTwo);
+    const validatorThreeBefore = await token.balanceOf(validatorThree);
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorTwo });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorThree });
+    await time.increase(2);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    const employerAfter = await token.balanceOf(employer);
+    const validatorAfter = await token.balanceOf(validator);
+    const validatorTwoAfter = await token.balanceOf(validatorTwo);
+    const validatorThreeAfter = await token.balanceOf(validatorThree);
+    const rewardPool = payout.mul(await manager.validationRewardPercentage()).divn(100);
+    const expectedReward = rewardPool.divn(3);
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    assert.equal(
+      employerAfter.sub(employerBefore).toString(),
+      payout.sub(rewardPool).add(agentBond).toString(),
+      "employer refund should include agent bond when below disapproval threshold"
+    );
+    assert.equal(
+      validatorAfter.sub(validatorBefore).toString(),
+      expectedReward.toString(),
+      "first disapprover should receive one third of the validator reward pool"
+    );
+    assert.equal(
+      validatorTwoAfter.sub(validatorTwoBefore).toString(),
+      expectedReward.toString(),
+      "second disapprover should receive one third of the validator reward pool"
+    );
+    assert.equal(
+      validatorThreeAfter.sub(validatorThreeBefore).toString(),
+      expectedReward.toString(),
+      "third disapprover should receive one third of the validator reward pool"
+    );
+  });
+
+  it("routes agent bond to validator pool when disapprovals reach the threshold", async () => {
+    await manager.setRequiredValidatorApprovals(1, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(3, { from: owner });
+
+    const payout = toBN(toWei("15"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const validatorBefore = await token.balanceOf(validator);
+    const validatorTwoBefore = await token.balanceOf(validatorTwo);
+    const validatorThreeBefore = await token.balanceOf(validatorThree);
+
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorTwo });
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorThree });
+
+    const jobAfterDisapproval = await manager.getJobCore(jobId);
+    assert.equal(jobAfterDisapproval.disputed, true, "job should enter dispute at disapproval threshold");
+
+    await manager.resolveDisputeWithCode(jobId, 2, "employer win", { from: moderator });
+
+    const validatorAfter = await token.balanceOf(validator);
+    const validatorTwoAfter = await token.balanceOf(validatorTwo);
+    const validatorThreeAfter = await token.balanceOf(validatorThree);
+    const rewardPool = payout.mul(await manager.validationRewardPercentage()).divn(100);
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    const expectedReward = rewardPool.add(agentBond).divn(3);
+    assert.equal(
+      validatorAfter.sub(validatorBefore).toString(),
+      expectedReward.toString(),
+      "validator should receive reward pool plus agent bond share"
+    );
+    assert.equal(
+      validatorTwoAfter.sub(validatorTwoBefore).toString(),
+      expectedReward.toString(),
+      "second validator should receive reward pool plus agent bond share"
+    );
+    assert.equal(
+      validatorThreeAfter.sub(validatorThreeBefore).toString(),
+      expectedReward.toString(),
+      "third validator should receive reward pool plus agent bond share"
+    );
+  });
+
+  it("enforces the challenge window after validator approval", async () => {
+    await manager.setRequiredValidatorApprovals(1, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(1, { from: owner });
+    await manager.setChallengePeriodAfterApproval(100, { from: owner });
+
+    const payout = toBN(toWei("8"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await expectCustomError(
+      manager.finalizeJob.call(jobId, { from: employer }),
+      "InvalidState"
+    );
+
+    await manager.disapproveJob(jobId, "", EMPTY_PROOF, { from: validatorTwo });
+    const job = await manager.getJobCore(jobId);
+    assert.equal(job.disputed, true, "dispute should be allowed during the challenge window");
+  });
+
+  it("refunds agent bond on agent-win completion", async () => {
+    await manager.setChallengePeriodAfterApproval(1, { from: owner });
+    const payout = toBN(toWei("8"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    const agentBefore = await token.balanceOf(agent);
+
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await time.increase(2);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    const agentAfter = await token.balanceOf(agent);
+    const expectedPayout = payout.muln(50).divn(100).add(agentBond);
+    assert.equal(agentAfter.sub(agentBefore).toString(), expectedPayout.toString());
+  });
+
+  it("slashes agent bond on employer win and expiry", async () => {
+    const payout = toBN(toWei("7"));
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+
+    const agentBond = await computeAgentBond(manager, payout, toBN(1000));
+    const disputeBond = await fundDisputeBond(token, manager, employer, payout, owner);
+    await manager.disputeJob(jobId, { from: employer });
+    const employerBefore = await token.balanceOf(employer);
+    await manager.resolveDisputeWithCode(jobId, 2, "employer win", { from: moderator });
+    const employerAfter = await token.balanceOf(employer);
+    assert.equal(employerAfter.sub(employerBefore).toString(), payout.add(agentBond).add(disputeBond).toString());
+
+    const payoutExpire = toBN(toWei("6"));
+    const expireJobId = await createJob(payoutExpire, 5);
+    await manager.applyForJob(expireJobId, "", EMPTY_PROOF, { from: agent });
+    const expireBond = await computeAgentBond(manager, payoutExpire, toBN(5));
+    await time.increase(6);
+    const employerBeforeExpire = await token.balanceOf(employer);
+    await manager.expireJob(expireJobId, { from: employer });
+    const employerAfterExpire = await token.balanceOf(employer);
+    assert.equal(employerAfterExpire.sub(employerBeforeExpire).toString(), payoutExpire.add(expireBond).toString());
+  });
+
+  it("releases escrow on terminal transitions", async () => {
+    const payout = toBN(toWei("3"));
+
+    const delistJobId = await createJob(payout);
+    assert.equal((await manager.lockedEscrow()).toString(), payout.toString());
+    await manager.delistJob(delistJobId, { from: owner });
+    assert.equal((await manager.lockedEscrow()).toString(), "0");
+
+    const cancelJobId = await createJob(payout);
+    assert.equal((await manager.lockedEscrow()).toString(), payout.toString());
+    await manager.cancelJob(cancelJobId, { from: employer });
+    assert.equal((await manager.lockedEscrow()).toString(), "0");
+
+    const completeJobId = await createJob(payout);
+    await manager.applyForJob(completeJobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(completeJobId, "ipfs-complete", { from: agent });
+    await manager.validateJob(completeJobId, "", EMPTY_PROOF, { from: validator });
+    await time.increase((await manager.challengePeriodAfterApproval()).addn(1));
+    await manager.finalizeJob(completeJobId, { from: employer });
+    assert.equal((await manager.lockedEscrow()).toString(), "0");
+
+    const disputeJobId = await createJob(payout);
+    await manager.applyForJob(disputeJobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(disputeJobId, "ipfs-dispute", { from: agent });
+    await fundDisputeBond(token, manager, employer, payout, owner);
+    await manager.disputeJob(disputeJobId, { from: employer });
+    await manager.resolveDisputeWithCode(disputeJobId, 2, "employer win", { from: moderator });
+    assert.equal((await manager.lockedEscrow()).toString(), "0");
+
+    const expireJobId = await createJob(payout, 1);
+    await manager.applyForJob(expireJobId, "", EMPTY_PROOF, { from: agent });
+    await time.increase(2);
+    await manager.expireJob(expireJobId, { from: employer });
+    assert.equal((await manager.lockedEscrow()).toString(), "0");
+  });
+
+  it("treats completion remainder and reward pool contributions as treasury", async () => {
+    const payout = toBN(toWei("10"));
+    await manager.setChallengePeriodAfterApproval(1, { from: owner });
+    const jobId = await createJob(payout);
+    await manager.applyForJob(jobId, "", EMPTY_PROOF, { from: agent });
+    await manager.requestJobCompletion(jobId, "ipfs-complete", { from: agent });
+    await manager.validateJob(jobId, "", EMPTY_PROOF, { from: validator });
+    await time.increase(2);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    const agentPct = await manager.getHighestPayoutPercentage(agent);
+    const validatorPct = await manager.validationRewardPercentage();
+    const remainderPct = toBN("100").sub(agentPct).sub(validatorPct);
+    const expectedRemainder = payout.mul(remainderPct).divn(100);
+
+    const withdrawableAfterCompletion = await manager.withdrawableAGI();
+    assert.equal(
+      withdrawableAfterCompletion.toString(),
+      expectedRemainder.toString(),
+      "withdrawable should equal completion remainder"
+    );
+
+    const contribution = toBN(toWei("1"));
+    await token.mint(manager.address, contribution, { from: owner });
+
+    const withdrawableAfterContribution = await manager.withdrawableAGI();
+    assert.equal(
+      withdrawableAfterContribution.toString(),
+      expectedRemainder.add(contribution).toString(),
+      "reward pool contributions should increase treasury"
+    );
+
+    await manager.pause({ from: owner });
+    await manager.withdrawAGI(expectedRemainder.add(contribution), { from: owner });
+    const remainingWithdrawable = await manager.withdrawableAGI();
+    assert.equal(remainingWithdrawable.toString(), "0", "treasury should be withdrawable when paused");
+  });
+});

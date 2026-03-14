@@ -1,0 +1,4355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGIJobManager — On‑chain Job Escrow & NFT Issuance</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #0b0f14;
+      --panel: #111826;
+      --panel-2: #0f1522;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --border: #1f2937;
+      --link: #7dd3fc;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 32px 24px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(120deg, rgba(56, 189, 248, 0.15), transparent 50%);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-top: 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    a {
+      color: var(--link);
+    }
+
+    main {
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .banner {
+      background: rgba(248, 113, 113, 0.16);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      padding: 14px 16px;
+      border-radius: 10px;
+      color: #fecaca;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      align-items: start;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid transparent;
+    }
+
+    .pill.ok {
+      background: rgba(34, 197, 94, 0.15);
+      color: #bbf7d0;
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .pill.warn {
+      background: rgba(251, 191, 36, 0.16);
+      color: #fde68a;
+      border-color: rgba(251, 191, 36, 0.4);
+    }
+
+    .pill.danger {
+      background: rgba(248, 113, 113, 0.2);
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    input, textarea, select, button {
+      font: inherit;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 88px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    button.secondary {
+      border-color: rgba(148, 163, 184, 0.4);
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    button.danger {
+      border-color: rgba(248, 113, 113, 0.5);
+      background: rgba(248, 113, 113, 0.2);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    code {
+      background: rgba(148, 163, 184, 0.2);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .log {
+      background: #0a0f1a;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 280px;
+      overflow: auto;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .metadata-preview,
+    .markdown-preview {
+      background: #0a0f1a;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 120px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3 {
+      margin-top: 0;
+    }
+
+    .inline {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .checkbox-label {
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .checkbox-label input {
+      margin-right: 6px;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .fix-list {
+      margin: 6px 0 0 18px;
+      padding: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .eligibility-note {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    details summary {
+      cursor: pointer;
+      list-style: none;
+    }
+
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details summary .summary-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AGIJobManager — On‑chain Job Escrow & NFT Issuance</h1>
+    <p class="muted">Non-custodial interface for employers, agents, validators, and moderators.</p>
+    <div class="banner">
+      Experimental research software. Verify addresses and contract code; do not use with real funds unless you know what you are doing.
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-row">
+        <div>
+          <h2>Connection</h2>
+          <p class="muted">This page never auto-connects. Use the buttons below when you are ready.</p>
+          <div class="inline">
+            <button id="connectButton">Connect Wallet</button>
+            <button id="disconnectButton" class="secondary">Disconnect</button>
+            <span id="networkPill" class="pill warn">Not connected</span>
+          </div>
+        </div>
+        <div>
+          <h2>Contract address</h2>
+          <label for="contractAddress">Contract address (Mainnet)</label>
+          <input id="contractAddress" placeholder="0x..." autocomplete="off" />
+          <div class="inline">
+            <button id="saveContract">Save address</button>
+            <button id="clearContract" class="secondary">Clear</button>
+            <button id="legacyContract" class="secondary">Use legacy v0 (opt-in)</button>
+          </div>
+          <p class="muted">
+            Preferred mainnet deployment (config/deployments): <span id="mainnetDeployment">TBD</span>. Legacy reference:
+            <code id="legacyAddress">0x0178B6baD606aaF908f72135B8eC32Fc1D5bA477</code> (opt-in only).
+          </p>
+          <p class="muted">Active source: <span id="contractSource">—</span></p>
+          <p class="muted">Supported sources: query param <code>?contract=0x...</code>, localStorage, deployments/config file, or manual legacy selection.</p>
+          <p class="muted">No contract is selected by default until you explicitly choose one.</p>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div>
+          <h3>Wallet</h3>
+          <p><strong>Account:</strong> <span id="walletAddress">Not connected</span></p>
+          <p><strong>Chain:</strong> <span id="walletChain">—</span></p>
+        </div>
+        <div>
+          <h3>Network actions</h3>
+          <button id="switchMainnet">Switch to Mainnet</button>
+          <p class="muted">If you are not on Ethereum Mainnet, interactions may revert.</p>
+        </div>
+      </div>
+      <div id="mainnetWarning" class="banner" hidden>
+        You are connected to <strong><span id="mainnetWarningNetwork">—</span></strong>, not Ethereum Mainnet.
+        Please switch networks before using production contracts.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Contract snapshot</h2>
+      <div class="panel-row">
+        <div>
+          <p><strong>Name:</strong> <span id="contractName">—</span></p>
+          <p><strong>Symbol:</strong> <span id="contractSymbol">—</span></p>
+          <p><strong>Owner:</strong> <span id="contractOwner">—</span></p>
+          <p><strong>Paused:</strong> <span id="contractPaused">—</span></p>
+          <p><strong>Next Job ID:</strong> <span id="contractNextJob">—</span></p>
+          <p><strong>Next Token ID:</strong> <span id="contractNextToken">—</span></p>
+        </div>
+        <div>
+          <p><strong>AGI Token:</strong> <span id="agiToken">—</span></p>
+          <p><strong>Token Decimals:</strong> <span id="agiTokenDecimals">—</span></p>
+          <p><strong>Token Symbol:</strong> <span id="agiTokenSymbol">—</span></p>
+          <p><strong>Validation approvals:</strong> <span id="requiredApprovals">—</span></p>
+          <p><strong>Validation disapprovals:</strong> <span id="requiredDisapprovals">—</span></p>
+          <p><strong>Validation reward %:</strong> <span id="validationReward">—</span></p>
+        </div>
+        <div>
+          <p><strong>Max Job Payout:</strong> <span id="maxJobPayout">—</span></p>
+          <p><strong>Job Duration Limit:</strong> <span id="jobDurationLimit">—</span></p>
+          <p><strong>Premium Reputation Threshold:</strong> <span id="premiumThreshold">—</span></p>
+          <p><strong>Agent Root Node:</strong> <span id="agentRootNode">—</span></p>
+          <p><strong>Club Root Node:</strong> <span id="clubRootNode">—</span></p>
+          <p><strong>Agent Merkle Root:</strong> <span id="agentMerkleRoot">—</span></p>
+          <p><strong>Validator Merkle Root:</strong> <span id="validatorMerkleRoot">—</span></p>
+        </div>
+      </div>
+      <button id="refreshSnapshot">Refresh snapshot</button>
+    </section>
+
+    <section class="panel">
+      <h2>Your role flags</h2>
+      <div class="panel-row">
+        <div>
+          <p><strong>Moderator:</strong> <span id="isModerator">—</span></p>
+          <p><strong>Additional agent:</strong> <span id="isAdditionalAgent">—</span></p>
+          <p><strong>Additional validator:</strong> <span id="isAdditionalValidator">—</span></p>
+          <p><strong>Blacklisted agent:</strong> <span id="isBlacklistedAgent">—</span></p>
+          <p><strong>Blacklisted validator:</strong> <span id="isBlacklistedValidator">—</span></p>
+        </div>
+        <div>
+          <p><strong>Reputation:</strong> <span id="reputation">—</span></p>
+          <p><strong>Premium access:</strong> <span id="premiumAccess">—</span></p>
+          <p><strong>AGI Token balance:</strong> <span id="agiBalance">—</span></p>
+          <p><strong>AGI allowance:</strong> <span id="agiAllowance">—</span></p>
+        </div>
+      </div>
+      <button id="refreshRoles">Refresh role flags</button>
+    </section>
+
+    <section class="panel">
+      <h2>Identity checks (preflight only)</h2>
+      <p class="muted">The contract will verify authorization on-chain. These checks mirror the OR-logic order: blacklist → additional → Merkle proof → NameWrapper ownerOf → ENS resolver addr.</p>
+      <div class="panel-row">
+        <div>
+          <div class="inline">
+            <strong>Agent eligibility</strong>
+            <span id="agentEligibilityPill" class="pill warn">—</span>
+            <button id="evaluateAgentEligibility">Evaluate Agent Eligibility</button>
+          </div>
+          <p id="agentEligibilityMessage" class="muted">—</p>
+          <ul id="agentEligibilityFixes" class="fix-list"></ul>
+        </div>
+        <div>
+          <div class="inline">
+            <strong>Validator eligibility</strong>
+            <span id="validatorEligibilityPill" class="pill warn">—</span>
+            <button id="evaluateValidatorEligibility">Evaluate Validator Eligibility</button>
+          </div>
+          <p id="validatorEligibilityMessage" class="muted">—</p>
+          <ul id="validatorEligibilityFixes" class="fix-list"></ul>
+        </div>
+      </div>
+      <p class="eligibility-note">Eligibility only checks role gating; job-specific state (e.g., job status or timing) can still cause a revert.</p>
+      <div class="panel-row">
+        <div>
+          <label for="identityType">Identity type</label>
+          <select id="identityType">
+            <option value="agent">Agent (agentRootNode)</option>
+            <option value="validator">Validator / Club (clubRootNode)</option>
+          </select>
+          <label for="identityLabel">Label only (e.g., “helper”)</label>
+          <input id="identityLabel" placeholder="label" />
+          <label for="proofJson">Merkle proof (JSON bytes32 array)</label>
+          <textarea id="proofJson" placeholder='["0xabc...","0xdef..."]'></textarea>
+          <button id="runIdentityCheck">Run identity check</button>
+        </div>
+        <div>
+          <p><strong>Computed subnode:</strong> <span id="identitySubnode">—</span></p>
+          <p><strong>Merkle proof valid:</strong> <span id="identityMerkle">—</span></p>
+          <p><strong>NameWrapper ownerOf:</strong> <span id="identityNameWrapper">—</span></p>
+          <p><strong>ENS resolver addr:</strong> <span id="identityResolver">—</span></p>
+          <p class="muted">These are best-effort checks. The contract is authoritative.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Metadata upload credentials (local only)</h2>
+      <p class="muted">Optional: store Pinata or NFT.Storage credentials in <code>localStorage</code>. These are never sent anywhere except directly to the provider APIs during upload.</p>
+      <div class="panel-row">
+        <div>
+          <h3>Pinata (JWT)</h3>
+          <label for="pinataJwt">Pinata JWT</label>
+          <input id="pinataJwt" type="password" placeholder="eyJ..." />
+          <div class="inline">
+            <button id="savePinataJwt" class="secondary">Save</button>
+            <button id="clearPinataJwt" class="danger">Clear</button>
+          </div>
+          <p class="muted" id="pinataStatus">Not set.</p>
+        </div>
+        <div>
+          <h3>NFT.Storage</h3>
+          <label for="nftStorageKey">NFT.Storage API key</label>
+          <input id="nftStorageKey" type="password" placeholder="nft..." />
+          <div class="inline">
+            <button id="saveNftStorageKey" class="secondary">Save</button>
+            <button id="clearNftStorageKey" class="danger">Clear</button>
+          </div>
+          <p class="muted" id="nftStorageStatus">Not set.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Employer actions</h2>
+      <div class="two-col">
+        <div>
+          <h3>Approve AGI token</h3>
+          <label for="approveAmount">Amount (token units)</label>
+          <input id="approveAmount" placeholder="0.0" />
+          <button id="approveToken">Approve token</button>
+        </div>
+        <div>
+          <h3>Create job</h3>
+          <label for="jobMetaSource">Metadata source</label>
+          <select id="jobMetaSource">
+            <option value="generated" selected>Generate job spec metadata</option>
+            <option value="existing">Use existing job spec URI (advanced)</option>
+          </select>
+          <div id="jobMetaForm">
+            <label for="jobTitle">Title</label>
+            <input id="jobTitle" placeholder="e.g., Build a data pipeline" />
+            <label for="jobSummary">Short summary</label>
+            <input id="jobSummary" placeholder="One-sentence summary" />
+            <label for="jobDescription">Full description (Markdown)</label>
+            <textarea id="jobDescription" placeholder="Describe the job requirements, scope, and success criteria."></textarea>
+            <label>Markdown preview</label>
+            <div id="jobDescriptionPreview" class="markdown-preview"></div>
+            <label for="jobLinks">Links (one per line: label | url)</label>
+            <textarea id="jobLinks" placeholder="Repo | https://github.com/...&#10;Spec | https://..."></textarea>
+            <label for="jobAttachments">Attachments (one URL per line)</label>
+            <textarea id="jobAttachments" placeholder="https://..."></textarea>
+            <label for="jobImage">Image URL (optional)</label>
+            <input id="jobImage" placeholder="ipfs://... or https://..." />
+            <label for="jobAnimation">Animation URL (optional)</label>
+            <input id="jobAnimation" placeholder="ipfs://... or https://..." />
+            <label for="jobExternalUrl">External URL override (optional)</label>
+            <input id="jobExternalUrl" placeholder="https://... (defaults to the job page)" />
+          </div>
+          <details class="panel-row" id="jobMetaAdvanced">
+            <summary class="muted">Advanced: use an existing job spec URI</summary>
+            <div>
+              <label for="jobSpecUriExisting">Job spec URI</label>
+              <input id="jobSpecUriExisting" placeholder="ipfs://... or https://..." />
+            </div>
+          </details>
+          <label for="jobPayout">Payout (token units)</label>
+          <input id="jobPayout" placeholder="0.0" />
+          <label for="jobDuration">Duration (seconds)</label>
+          <input id="jobDuration" placeholder="0" />
+          <label for="jobDetails">Details</label>
+          <textarea id="jobDetails" placeholder="Optional description"></textarea>
+          <div class="panel-row">
+            <div>
+              <label>Job spec metadata JSON</label>
+              <textarea id="jobSpecPreview" class="metadata-preview" readonly></textarea>
+              <div class="inline">
+                <button id="jobSpecValidate" class="secondary">Validate required fields</button>
+                <span id="jobSpecStatus" class="pill warn">Not validated</span>
+              </div>
+            </div>
+            <div>
+              <h3>Upload job spec metadata</h3>
+              <p class="muted">Manual upload: download the JSON, upload to your preferred IPFS pinning service, and paste the resulting URI.</p>
+              <button id="jobSpecDownload" class="secondary">Download JSON</button>
+              <label for="jobSpecUri">Job spec URI</label>
+              <input id="jobSpecUri" placeholder="ipfs://... or https://..." />
+              <div class="inline">
+                <button id="uploadJobSpecPinata" class="secondary">Upload via Pinata</button>
+                <button id="uploadJobSpecNftStorage" class="secondary">Upload via NFT.Storage</button>
+              </div>
+              <p class="muted" id="jobSpecUploadStatus">No upload attempted.</p>
+            </div>
+          </div>
+          <button id="createJob">Create job</button>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div>
+          <h3>Cancel job</h3>
+          <label for="cancelJobId">Job ID</label>
+          <input id="cancelJobId" placeholder="0" />
+          <button id="cancelJob" class="danger">Cancel job</button>
+          <p class="muted">Employer-only; only before assignment; no cancel after completion. Disputes do not block cancellation if the job is still unassigned.</p>
+        </div>
+        <div>
+          <h3>Dispute job (employer)</h3>
+          <label for="employerDisputeJobId">Job ID</label>
+          <input id="employerDisputeJobId" placeholder="0" />
+          <button id="employerDisputeJob">Dispute job</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Agent actions</h2>
+      <div class="two-col">
+        <div>
+          <h3>Apply for job</h3>
+          <label for="applyJobId">Job ID</label>
+          <input id="applyJobId" placeholder="0" />
+          <label for="applySubdomain">Agent label (subdomain only)</label>
+          <input id="applySubdomain" placeholder="helper" />
+          <label for="applyProof">Merkle proof</label>
+          <textarea id="applyProof" placeholder="0xabc...,0xdef..."></textarea>
+          <button id="applyForJob">Apply</button>
+        </div>
+        <div>
+          <h3>Request completion</h3>
+          <label for="completionJobId">Job ID</label>
+          <input id="completionJobId" placeholder="0" />
+          <label for="completionMetaSource">Metadata source</label>
+          <select id="completionMetaSource">
+            <option value="generated" selected>Generate completion metadata</option>
+            <option value="existing">Use existing completion URI (advanced)</option>
+          </select>
+          <div id="completionMetaForm">
+            <label for="completionTitle">Completion title</label>
+            <input id="completionTitle" placeholder="e.g., Job #12 completion" />
+            <label for="completionSummary">Completion summary</label>
+            <input id="completionSummary" placeholder="Short summary of the delivered work" />
+            <label for="completionDescription">Completion notes (Markdown)</label>
+            <textarea id="completionDescription" placeholder="Describe deliverables, testing, and any important notes."></textarea>
+            <label>Markdown preview</label>
+            <div id="completionDescriptionPreview" class="markdown-preview"></div>
+            <label for="completionSpecUri">Job spec URI reference</label>
+            <input id="completionSpecUri" placeholder="ipfs://... or https://..." />
+            <label for="completionDeliverables">Deliverables (one URL per line)</label>
+            <textarea id="completionDeliverables" placeholder="https://..."></textarea>
+            <label for="completionLinks">Links (one per line: label | url)</label>
+            <textarea id="completionLinks" placeholder="Submission | https://...&#10;Repo | https://..."></textarea>
+            <label for="completionAttachments">Attachments (one URL per line)</label>
+            <textarea id="completionAttachments" placeholder="https://..."></textarea>
+            <label for="completionImage">Image URL (optional)</label>
+            <input id="completionImage" placeholder="ipfs://... or https://..." />
+            <label for="completionAnimation">Animation URL (optional)</label>
+            <input id="completionAnimation" placeholder="ipfs://... or https://..." />
+            <label for="completionExternalUrl">External URL override (optional)</label>
+            <input id="completionExternalUrl" placeholder="https://... (defaults to the job page)" />
+          </div>
+          <details class="panel-row" id="completionMetaAdvanced">
+            <summary class="muted">Advanced: use an existing completion URI</summary>
+            <div>
+              <label for="completionUriExisting">Completion URI</label>
+              <input id="completionUriExisting" placeholder="ipfs://... or https://..." />
+            </div>
+          </details>
+          <div class="panel-row">
+            <div>
+              <label>Completion metadata JSON</label>
+              <textarea id="completionPreview" class="metadata-preview" readonly></textarea>
+              <div class="inline">
+                <button id="completionValidate" class="secondary">Validate required fields</button>
+                <span id="completionStatus" class="pill warn">Not validated</span>
+              </div>
+              <div class="muted">
+                <strong>Mint preview:</strong>
+                <div>Name: <span id="completionMintName">—</span></div>
+                <div>Description: <span id="completionMintDescription">—</span></div>
+                <div>Image/Animation: <span id="completionMintImage">—</span></div>
+                <div>External URL: <span id="completionMintExternalUrl">—</span></div>
+              </div>
+            </div>
+            <div>
+              <h3>Upload completion metadata</h3>
+              <p class="muted">Manual upload: download the JSON, upload to your preferred IPFS pinning service, and paste the resulting URI.</p>
+              <button id="completionDownload" class="secondary">Download JSON</button>
+              <label for="completionUri">Completion URI</label>
+              <input id="completionUri" placeholder="ipfs://... or https://..." />
+              <div class="inline">
+                <button id="uploadCompletionPinata" class="secondary">Upload via Pinata</button>
+                <button id="uploadCompletionNftStorage" class="secondary">Upload via NFT.Storage</button>
+              </div>
+              <p class="muted" id="completionUploadStatus">No upload attempted.</p>
+            </div>
+          </div>
+          <button id="requestCompletion">Request completion</button>
+        </div>
+      </div>
+      <div>
+        <h3>Dispute job (agent)</h3>
+        <label for="agentDisputeJobId">Job ID</label>
+        <input id="agentDisputeJobId" placeholder="0" />
+        <button id="agentDisputeJob">Dispute job</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Validator actions</h2>
+      <div class="two-col">
+        <div>
+          <h3>Validate job</h3>
+          <label for="validateJobId">Job ID</label>
+          <input id="validateJobId" placeholder="0" />
+          <label for="validateSubdomain">Validator label (subdomain only)</label>
+          <input id="validateSubdomain" placeholder="validator" />
+          <label for="validateProof">Merkle proof</label>
+          <textarea id="validateProof" placeholder="0xabc...,0xdef..."></textarea>
+          <button id="validateJob">Validate</button>
+          <p id="validateJobNotice" class="muted" hidden>Awaiting completion submission from agent.</p>
+        </div>
+        <div>
+          <h3>Disapprove job</h3>
+          <label for="disapproveJobId">Job ID</label>
+          <input id="disapproveJobId" placeholder="0" />
+          <label for="disapproveSubdomain">Validator label (subdomain only)</label>
+          <input id="disapproveSubdomain" placeholder="validator" />
+          <label for="disapproveProof">Merkle proof</label>
+          <textarea id="disapproveProof" placeholder="0xabc...,0xdef..."></textarea>
+          <button id="disapproveJob">Disapprove</button>
+          <p id="disapproveJobNotice" class="muted" hidden>Awaiting completion submission from agent.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Moderator actions</h2>
+      <label for="resolveJobId">Job ID</label>
+      <input id="resolveJobId" placeholder="0" />
+      <label for="resolveAction">Resolution action</label>
+      <select id="resolveAction">
+        <option value="0">No action (note only)</option>
+        <option value="1">Agent wins</option>
+        <option value="2">Employer wins</option>
+      </select>
+      <label for="resolveReason">Resolution reason (optional)</label>
+      <textarea id="resolveReason" placeholder="Reason for audit logs / UI only (freeform)"></textarea>
+      <button id="resolveDispute">Resolve dispute</button>
+      <p class="muted">Settlement is controlled by the action code. The reason text is freeform and does not move funds.</p>
+    </section>
+
+    <details class="panel" id="adminPanel">
+      <summary>
+        <div class="summary-title">
+          <h2>Admin / Owner</h2>
+          <p class="muted">Owner-only operational controls. Collapsed by default.</p>
+        </div>
+      </summary>
+      <div class="panel-row">
+        <div>
+          <p><strong>Contract:</strong> <span id="adminContractAddress">—</span></p>
+          <p><strong>Paused:</strong> <span id="adminPaused">—</span></p>
+          <p><strong>Owner status:</strong> <span id="adminOwnerStatus">—</span></p>
+        </div>
+        <div>
+          <p class="muted">All admin actions use staticCall preflight and require explicit confirmation.</p>
+          <p class="muted">Double-check chain and contract address before signing.</p>
+        </div>
+      </div>
+      <div id="adminNotice" class="muted">Connect as the contract owner to use admin controls.</div>
+      <div id="adminControls" hidden>
+        <div class="panel-row">
+          <div>
+            <h3>Pause control</h3>
+            <div class="inline">
+              <button id="pauseContract" class="danger">Pause</button>
+              <button id="unpauseContract">Unpause</button>
+            </div>
+            <p class="muted">Pausing blocks state-changing actions except owner-only admin calls.</p>
+          </div>
+          <div>
+            <h3>Moderator management (owner)</h3>
+            <label for="moderatorAddress">Moderator address</label>
+            <input id="moderatorAddress" placeholder="0x..." />
+            <div class="inline">
+              <button id="addModerator">Add moderator</button>
+              <button id="removeModerator" class="secondary">Remove moderator</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel-row">
+          <div>
+            <h3>Blacklist management (owner)</h3>
+            <label for="blacklistAddress">Target address</label>
+            <input id="blacklistAddress" placeholder="0x..." />
+            <label for="blacklistRole">Role</label>
+            <select id="blacklistRole">
+              <option value="agent">Agent</option>
+              <option value="validator">Validator</option>
+            </select>
+            <label for="blacklistStatus">Status</label>
+            <select id="blacklistStatus">
+              <option value="true">Blacklist</option>
+              <option value="false">Unblacklist</option>
+            </select>
+            <button id="updateBlacklist">Update blacklist</button>
+          </div>
+          <div>
+            <h3>Protocol parameters (owner)</h3>
+            <label for="paramApprovals">Required validator approvals</label>
+            <input id="paramApprovals" placeholder="0" />
+            <button id="setApprovals">Set approvals</button>
+            <label for="paramDisapprovals">Required validator disapprovals</label>
+            <input id="paramDisapprovals" placeholder="0" />
+            <button id="setDisapprovals">Set disapprovals</button>
+            <label for="paramRewardPct">Validation reward percentage</label>
+            <input id="paramRewardPct" placeholder="0" />
+            <button id="setRewardPct">Set reward percentage</button>
+            <label for="paramMaxPayout">Max job payout (token units)</label>
+            <input id="paramMaxPayout" placeholder="0.0" />
+            <button id="setMaxPayout">Set max payout</button>
+            <label for="paramDurationLimit">Job duration limit (seconds)</label>
+            <input id="paramDurationLimit" placeholder="0" />
+            <button id="setDurationLimit">Set duration limit</button>
+            <label for="paramPremiumThreshold">Premium reputation threshold</label>
+            <input id="paramPremiumThreshold" placeholder="0" />
+            <button id="setPremiumThreshold">Set premium threshold</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <section class="panel">
+      <h2>NFT trading</h2>
+      <p class="muted">
+        This contract no longer includes an internal NFT marketplace. AGI Jobs are standard ERC-721 NFTs and can be
+        traded on external marketplaces using normal approvals and transfers.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Jobs table</h2>
+      <div class="panel-row">
+        <div>
+          <label for="jobsFilter">Filter</label>
+          <select id="jobsFilter">
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In progress</option>
+            <option value="completion_requested">Completion requested</option>
+            <option value="disputed">Disputed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled/Deleted</option>
+          </select>
+        </div>
+        <div>
+          <label for="jobsPageSize">Page size</label>
+          <select id="jobsPageSize">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div>
+          <label>Page</label>
+          <div class="inline">
+            <button id="jobsPrev" class="secondary">Prev</button>
+            <button id="jobsNext" class="secondary">Next</button>
+          </div>
+          <div class="muted" id="jobsPageInfo">Page 1 of 1</div>
+          <div class="inline">
+            <input id="jobsPageJump" type="number" min="1" placeholder="1" style="max-width:120px;" />
+            <button id="jobsJump" class="secondary">Go</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-row">
+        <div>
+          <label for="indexFromBlock">Index from block</label>
+          <input id="indexFromBlock" placeholder="latest-20000" />
+        </div>
+        <div>
+          <label for="indexToBlock">Index to block</label>
+          <input id="indexToBlock" placeholder="latest" />
+        </div>
+        <div class="inline">
+          <button id="syncIndex">Sync events</button>
+          <button id="clearCache" class="secondary">Clear cache</button>
+        </div>
+      </div>
+      <div class="muted" id="indexStatus">Indexer not synced yet.</div>
+      <button id="loadJobs">Load jobs</button>
+      <div class="muted">Large datasets may take time. Cancelled jobs are shown as deleted.</div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Employer</th>
+              <th>Agent</th>
+              <th>Payout</th>
+              <th>Duration</th>
+              <th>Approvals/Disapprovals</th>
+              <th>Completion Requested</th>
+              <th>Disputed</th>
+              <th>Job spec URI</th>
+              <th>Completion URI</th>
+              <th>Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>NFTs table</h2>
+      <div class="panel-row">
+        <div>
+          <label>Filters</label>
+          <div class="inline">
+            <label class="checkbox-label"><input type="checkbox" id="nftsMyOnly" /> My NFTs only</label>
+          </div>
+          <div class="muted" id="nftsFilterStatus"></div>
+        </div>
+        <div>
+          <label for="nftsPageSize">Page size</label>
+          <select id="nftsPageSize">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div>
+          <label>Page</label>
+          <div class="inline">
+            <button id="nftsPrev" class="secondary">Prev</button>
+            <button id="nftsNext" class="secondary">Next</button>
+          </div>
+          <div class="muted" id="nftsPageInfo">Page 1 of 1</div>
+          <div class="inline">
+            <input id="nftsPageJump" type="number" min="1" placeholder="1" style="max-width:120px;" />
+            <button id="nftsJump" class="secondary">Go</button>
+          </div>
+        </div>
+      </div>
+      <button id="loadNfts">Load NFTs</button>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Token ID</th>
+              <th>Owner</th>
+              <th>Token URI</th>
+            </tr>
+          </thead>
+          <tbody id="nftsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Activity log</h2>
+      <div class="panel-row">
+        <div>
+          <label for="fromBlock">From block</label>
+          <input id="fromBlock" placeholder="latest-20000" />
+        </div>
+        <div>
+          <label for="toBlock">To block</label>
+          <input id="toBlock" placeholder="latest" />
+        </div>
+        <div class="inline">
+          <button id="loadEvents">Load recent events</button>
+          <button id="subscribeEvents" class="secondary">Start live updates</button>
+          <button id="clearLog" class="secondary">Clear log</button>
+        </div>
+      </div>
+      <div class="log" id="activityLog"></div>
+    </section>
+  </main>
+
+  <script src="./lib/ethers.umd.min.js"></script>
+  <script src="./lib/errorDecoder.js"></script>
+  <script src="./lib/indexer.js"></script>
+  <script>
+    const { ethers } = window;
+
+    const state = {
+      provider: null,
+      signer: null,
+      walletAddress: null,
+      chainId: null,
+      chainName: null,
+      contractAddress: null,
+      contractSource: null,
+      config: null,
+      deployments: null,
+      legacyAddress: null,
+      agiTokenAddress: null,
+      agiTokenDecimals: 18,
+      agiTokenSymbol: "",
+      token: null,
+      ens: null,
+      nameWrapper: null,
+      contract: null,
+      readContract: null,
+      eventSubscribed: false,
+      legacyDisputeListener: null,
+      contractDeployed: null,
+      contractOwner: null,
+      contractPaused: null,
+      capabilities: {},
+      nftCache: {},
+      metadata: {
+        jobSpec: { json: null, hash: null },
+        completion: { json: null },
+      },
+      ui: {
+        jobsPage: 0,
+        jobsPageSize: 50,
+        jobsFilter: "all",
+        jobsSort: "newest",
+        nftsPage: 0,
+        nftsPageSize: 50,
+        nftsMyOnly: false,
+      },
+      index: {
+        jobs: {},
+        nfts: {},
+        meta: {
+          fromBlock: null,
+          toBlock: null,
+          lastIndexedBlock: null,
+          lastSyncTime: null,
+        },
+      },
+    };
+
+    const legacyAddress = "0x0178B6baD606aaF908f72135B8eC32Fc1D5bA477";
+    const configDefaults = {
+      defaultNetwork: "mainnet",
+      legacyContract: legacyAddress,
+      preferredContract: "",
+      notes: "",
+    };
+    const storageKey = "agijobmanager_contract";
+    const uiSettingsKey = "agijobmanager_ui_settings_v1";
+    const indexCacheKey = "agijobmanager_index_cache_v1";
+    const defaultPageSize = 50;
+    const defaultIndexLookback = 20000;
+    const supportedChainIds = new Set([1n, 11155111n, 1337n]);
+    const { sortLogs, applyEventToIndex } = window.AGIJobManagerIndexer;
+    const legacyDisputeResolvedFragment = "event DisputeResolved(uint256 indexed jobId, address indexed resolver, string resolution)";
+    const legacyDisputeResolvedIface = new ethers.Interface([legacyDisputeResolvedFragment]);
+    const legacyDisputeResolvedTopic = ethers.id("DisputeResolved(uint256,address,string)");
+    const writeButtonIds = [
+      "approveToken",
+      "createJob",
+      "cancelJob",
+      "applyForJob",
+      "requestCompletion",
+      "employerDisputeJob",
+      "agentDisputeJob",
+      "validateJob",
+      "disapproveJob",
+      "resolveDispute",
+      "pauseContract",
+      "unpauseContract",
+      "addModerator",
+      "removeModerator",
+      "updateBlacklist",
+      "setApprovals",
+      "setDisapprovals",
+      "setRewardPct",
+      "setMaxPayout",
+      "setDurationLimit",
+      "setPremiumThreshold",
+    ];
+
+    let walletEventsBound = false;
+    const walletEventHandlers = {};
+
+    const fallbackAbi = [
+      "function name() view returns (string)",
+      "function symbol() view returns (string)",
+      "function owner() view returns (address)",
+      "function paused() view returns (bool)",
+      "function agiToken() view returns (address)",
+      "function agentRootNode() view returns (bytes32)",
+      "function clubRootNode() view returns (bytes32)",
+      "function agentMerkleRoot() view returns (bytes32)",
+      "function validatorMerkleRoot() view returns (bytes32)",
+      "function ens() view returns (address)",
+      "function nameWrapper() view returns (address)",
+      "function requiredValidatorApprovals() view returns (uint256)",
+      "function requiredValidatorDisapprovals() view returns (uint256)",
+      "function validationRewardPercentage() view returns (uint256)",
+      "function maxJobPayout() view returns (uint256)",
+      "function jobDurationLimit() view returns (uint256)",
+      "function premiumReputationThreshold() view returns (uint256)",
+      "function nextJobId() view returns (uint256)",
+      "function nextTokenId() view returns (uint256)",
+      "function reputation(address) view returns (uint256)",
+      "function moderators(address) view returns (bool)",
+      "function additionalAgents(address) view returns (bool)",
+      "function additionalValidators(address) view returns (bool)",
+      "function blacklistedAgents(address) view returns (bool)",
+      "function blacklistedValidators(address) view returns (bool)",
+      "function getJobCore(uint256) view returns (address,address,uint256,uint256,uint256,bool,bool,bool,uint8)",
+      "function getJobValidation(uint256) view returns (bool,uint256,uint256,uint256,uint256)",
+      "function getJobSpecURI(uint256) view returns (string)",
+      "function getJobCompletionURI(uint256) view returns (string)",
+      "function ownerOf(uint256) view returns (address)",
+      "function tokenURI(uint256) view returns (string)",
+      "function createJob(string,uint256,uint256,string)",
+      "function cancelJob(uint256)",
+      "function pause()",
+      "function unpause()",
+      "function addModerator(address)",
+      "function removeModerator(address)",
+      "function blacklistAgent(address,bool)",
+      "function blacklistValidator(address,bool)",
+      "function setRequiredValidatorApprovals(uint256)",
+      "function setRequiredValidatorDisapprovals(uint256)",
+      "function setValidationRewardPercentage(uint256)",
+      "function setMaxJobPayout(uint256)",
+      "function setJobDurationLimit(uint256)",
+      "function setPremiumReputationThreshold(uint256)",
+      "function applyForJob(uint256,string,bytes32[])",
+      "function requestJobCompletion(uint256,string)",
+      "function validateJob(uint256,string,bytes32[])",
+      "function disapproveJob(uint256,string,bytes32[])",
+      "function disputeJob(uint256)",
+      "function resolveDispute(uint256,string)",
+      "function resolveDisputeWithCode(uint256,uint8,string)",
+      "event JobCreated(uint256 jobId, string jobSpecURI, uint256 payout, uint256 duration, string details)",
+      "event JobApplied(uint256 jobId, address agent)",
+      "event JobCompletionRequested(uint256 jobId, address agent, string jobCompletionURI)",
+      "event JobValidated(uint256 jobId, address validator)",
+      "event JobDisapproved(uint256 jobId, address validator)",
+      "event JobCompleted(uint256 jobId, address agent, uint256 reputationPoints)",
+      "event JobCancelled(uint256 jobId)",
+      "event JobDisputed(uint256 jobId, address disputant)",
+      "event DisputeResolved(uint256 indexed jobId, address indexed resolver, string resolution)",
+      "event DisputeResolvedWithCode(uint256 jobId, address resolver, uint8 resolutionCode, string reason)",
+      "event NFTIssued(uint256 tokenId, address employer, string tokenURI)",
+    ];
+
+    let abi = fallbackAbi;
+
+    async function loadAbi() {
+      try {
+        const response = await fetch("./abi/AGIJobManager.json", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`ABI fetch failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        const fetchedAbi = Array.isArray(data) ? data : data.abi;
+        if (!Array.isArray(fetchedAbi)) {
+          throw new Error("ABI payload missing.");
+        }
+        abi = fetchedAbi;
+        logEvent("External ABI loaded.");
+      } catch (error) {
+        abi = fallbackAbi;
+        logEvent("Fallback ABI used.");
+      }
+    }
+
+    const erc20Abi = [
+      "function decimals() view returns (uint8)",
+      "function symbol() view returns (string)",
+      "function balanceOf(address) view returns (uint256)",
+      "function allowance(address,address) view returns (uint256)",
+      "function approve(address,uint256) returns (bool)",
+    ];
+
+    const ensAbi = ["function resolver(bytes32) view returns (address)"];
+    const resolverAbi = ["function addr(bytes32) view returns (address)"];
+    const nameWrapperAbi = ["function ownerOf(uint256) view returns (address)"];
+
+    const ids = (id) => document.getElementById(id);
+
+    function setText(id, value) {
+      ids(id).textContent = value;
+    }
+
+    const contractSourceLabels = {
+      query: "Query param",
+      localStorage: "LocalStorage",
+      config: "Config file",
+      deployments: "Deployments registry",
+      legacy: "Legacy v0 (opt-in)",
+      manual: "Manual entry",
+    };
+
+    function updateContractSourceDisplay() {
+      const label = state.contractSource ? contractSourceLabels[state.contractSource] : null;
+      setText("contractSource", label || "—");
+    }
+
+    function setLegacyAddress(value) {
+      const parsed = parseAddress(value, "Legacy contract address");
+      state.legacyAddress = parsed;
+      setText("legacyAddress", parsed);
+      return parsed;
+    }
+
+    function showAlert(message) {
+      window.alert(message);
+    }
+
+    function resetSnapshot() {
+      const snapshotFields = [
+        "contractName",
+        "contractSymbol",
+        "contractOwner",
+        "contractPaused",
+        "contractNextJob",
+        "contractNextToken",
+        "agiToken",
+        "agiTokenDecimals",
+        "agiTokenSymbol",
+        "requiredApprovals",
+        "requiredDisapprovals",
+        "validationReward",
+        "maxJobPayout",
+        "jobDurationLimit",
+        "premiumThreshold",
+        "agentRootNode",
+        "clubRootNode",
+        "agentMerkleRoot",
+        "validatorMerkleRoot",
+      ];
+      snapshotFields.forEach((field) => setText(field, "—"));
+      setText("adminContractAddress", state.contractAddress || "—");
+      setText("adminPaused", "—");
+      setText("adminOwnerStatus", "—");
+      state.contractOwner = null;
+      state.contractPaused = null;
+      updateAdminPanel();
+    }
+
+    function resetRoleFlags() {
+      const roleFields = [
+        "isModerator",
+        "isAdditionalAgent",
+        "isAdditionalValidator",
+        "isBlacklistedAgent",
+        "isBlacklistedValidator",
+        "reputation",
+        "premiumAccess",
+        "agiBalance",
+        "agiAllowance",
+      ];
+      roleFields.forEach((field) => setText(field, "—"));
+    }
+
+    function updateNetworkPill() {
+      const pill = ids("networkPill");
+      if (!state.walletAddress) {
+        pill.textContent = "Disconnected";
+        pill.className = "pill danger";
+        updateMainnetWarning();
+        return;
+      }
+      if (!state.chainId) {
+        pill.textContent = "Connected (unknown network)";
+        pill.className = "pill warn";
+        updateMainnetWarning();
+        return;
+      }
+      if (!supportedChainIds.has(state.chainId)) {
+        pill.textContent = `Unsupported chain (chain ${state.chainId})`;
+        pill.className = "pill danger";
+        updateMainnetWarning();
+        return;
+      }
+      if (state.contractAddress && state.contractDeployed === false) {
+        pill.textContent = "Contract not found on this chain";
+        pill.className = "pill danger";
+        updateMainnetWarning();
+        return;
+      }
+      const label = state.chainName ? state.chainName : `chain ${state.chainId}`;
+      pill.textContent = `Connected (${label})`;
+      pill.className = "pill ok";
+      updateMainnetWarning();
+    }
+
+    function updateMainnetWarning() {
+      const warning = ids("mainnetWarning");
+      if (!warning) return;
+      if (!state.chainId) {
+        warning.hidden = true;
+        return;
+      }
+      if (state.chainId === 1n) {
+        warning.hidden = true;
+        return;
+      }
+      const label = state.chainName ? `${state.chainName} (${state.chainId})` : `chain ${state.chainId}`;
+      setText("mainnetWarningNetwork", label);
+      warning.hidden = false;
+    }
+
+    function getExplorerTxUrl(txHash) {
+      if (state.chainId === 1n) return `https://etherscan.io/tx/${txHash}`;
+      if (state.chainId === 11155111n) return `https://sepolia.etherscan.io/tx/${txHash}`;
+      return null;
+    }
+
+    function formatTxLog(txHash) {
+      const url = getExplorerTxUrl(txHash);
+      return url ? `${txHash} (${url})` : txHash;
+    }
+
+    function explorerBase() {
+      if (state.chainId === 1n) return "https://etherscan.io/address/";
+      if (state.chainId === 11155111n) return "https://sepolia.etherscan.io/address/";
+      return null;
+    }
+
+    function shortAddr(address) {
+      if (!address) return "—";
+      return `${address.slice(0, 6)}…${address.slice(-4)}`;
+    }
+
+    function isMe(address) {
+      if (!state.walletAddress || !address) return false;
+      return address.toLowerCase() === state.walletAddress.toLowerCase();
+    }
+
+    function createAddressNode(address) {
+      if (!address || address === "—") {
+        const span = document.createElement("span");
+        span.textContent = "—";
+        return span;
+      }
+      if (!address.startsWith("0x")) {
+        const span = document.createElement("span");
+        span.textContent = address;
+        return span;
+      }
+      const base = explorerBase();
+      if (!base) {
+        const span = document.createElement("span");
+        span.textContent = address;
+        return span;
+      }
+      const link = document.createElement("a");
+      link.href = `${base}${address}`;
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      link.textContent = shortAddr(address);
+      link.title = address;
+      return link;
+    }
+
+    function setAddressValue(elementId, address) {
+      const el = ids(elementId);
+      el.innerHTML = "";
+      el.appendChild(createAddressNode(address));
+    }
+
+    function buildPill(text, tone) {
+      const pill = document.createElement("span");
+      pill.className = `pill ${tone}`;
+      pill.textContent = text;
+      return pill;
+    }
+
+    function setWriteEnabled(enabled, reasonText) {
+      writeButtonIds.forEach((id) => {
+        const button = ids(id);
+        if (button) {
+          button.disabled = !enabled;
+        }
+      });
+      if (!enabled && reasonText) {
+        logEvent(`⚠️ ${reasonText}`);
+      }
+      updateNetworkPill();
+      updateCancelButtonState();
+      updateAdminPanel();
+    }
+
+    function hasWriteAccess() {
+      return Boolean(
+        state.walletAddress
+        && state.chainId
+        && supportedChainIds.has(state.chainId)
+        && state.contractAddress
+        && state.contractDeployed !== false
+      );
+    }
+
+    function updateCancelButtonState() {
+      const button = ids("cancelJob");
+      if (!button) return;
+      if (!hasWriteAccess()) {
+        button.disabled = true;
+        return;
+      }
+      const value = ids("cancelJobId").value.trim();
+      button.disabled = !/^\\d+$/.test(value);
+    }
+
+    function updateAdminPanel() {
+      const ownerStatus = ids("adminOwnerStatus");
+      const notice = ids("adminNotice");
+      const controls = ids("adminControls");
+      const isOwner = Boolean(state.walletAddress && state.contractOwner && state.walletAddress === state.contractOwner);
+
+      if (ownerStatus) {
+        ownerStatus.textContent = isOwner ? "Connected as owner" : "Not owner";
+      }
+      if (notice) {
+        notice.textContent = isOwner
+          ? "Owner controls unlocked."
+          : "Connect as the contract owner to use admin controls.";
+      }
+      if (controls) {
+        controls.hidden = !isOwner;
+      }
+      [
+        "pauseContract",
+        "unpauseContract",
+        "addModerator",
+        "removeModerator",
+        "updateBlacklist",
+        "setApprovals",
+        "setDisapprovals",
+        "setRewardPct",
+        "setMaxPayout",
+        "setDurationLimit",
+        "setPremiumThreshold",
+      ].forEach((id) => {
+        const button = ids(id);
+        if (button) {
+          button.disabled = !isOwner || !hasWriteAccess();
+        }
+      });
+    }
+
+    async function checkContractDeployment() {
+      if (!state.contractAddress || !state.provider) {
+        state.contractDeployed = null;
+        return false;
+      }
+      const code = await state.provider.getCode(state.contractAddress);
+      const deployed = code && code !== "0x";
+      state.contractDeployed = deployed;
+      return deployed;
+    }
+
+    async function updateWriteAccess() {
+      if (!state.walletAddress) {
+        setWriteEnabled(false, "Wallet disconnected.");
+        return;
+      }
+      if (!state.chainId) {
+        setWriteEnabled(false, "Network not detected.");
+        return;
+      }
+      if (!supportedChainIds.has(state.chainId)) {
+        setWriteEnabled(false, `Unsupported chainId ${state.chainId}.`);
+        return;
+      }
+      if (!state.contractAddress) {
+        setWriteEnabled(false, "Contract address not set.");
+        return;
+      }
+      const deployed = await checkContractDeployment();
+      if (!deployed) {
+        setWriteEnabled(false, "Contract not found at the configured address.");
+        return;
+      }
+      setWriteEnabled(true);
+    }
+
+    function parseAddress(value, fieldLabel) {
+      try {
+        return ethers.getAddress(value);
+      } catch (error) {
+        throw new Error(`${fieldLabel} is not a valid address.`);
+      }
+    }
+
+    function applyContractAddress(address, { source = "manual", persist = false } = {}) {
+      const parsed = parseAddress(address, "Contract address");
+      state.contractAddress = parsed;
+      state.contractSource = source;
+      ids("contractAddress").value = parsed;
+      updateContractSourceDisplay();
+      if (persist) {
+        localStorage.setItem(storageKey, parsed);
+      }
+      maybeInitProvider();
+      setContracts();
+    }
+
+    function parseUint(value, fieldLabel) {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error(`${fieldLabel} is required.`);
+      }
+      if (!/^\d+$/.test(trimmed)) {
+        throw new Error(`${fieldLabel} must be an integer.`);
+      }
+      return BigInt(trimmed);
+    }
+
+    function parseTokenAmount(value, fieldLabel) {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error(`${fieldLabel} is required.`);
+      }
+      try {
+        return ethers.parseUnits(trimmed, state.agiTokenDecimals);
+      } catch (error) {
+        throw new Error(`${fieldLabel} must be a valid number.`);
+      }
+    }
+
+    function parseProof(input) {
+      if (!input.trim()) return [];
+      const parts = input.split(",").map((p) => p.trim()).filter(Boolean);
+      for (const part of parts) {
+        if (!/^0x[0-9a-fA-F]{64}$/.test(part)) {
+          throw new Error(`Invalid proof element: ${part}`);
+        }
+      }
+      return parts;
+    }
+
+    function parseProofJson(input) {
+      if (!input.trim()) return [];
+      let parsed;
+      try {
+        parsed = JSON.parse(input);
+      } catch (error) {
+        throw new Error("Merkle proof must be valid JSON.");
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error("Merkle proof must be a JSON array of bytes32 strings.");
+      }
+      for (const item of parsed) {
+        if (typeof item !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(item)) {
+          throw new Error(`Invalid proof element: ${item}`);
+        }
+      }
+      return parsed;
+    }
+
+    const metadataStorageKeys = {
+      pinataJwt: "agijobmanager_pinata_jwt",
+      nftStorageKey: "agijobmanager_nft_storage_key",
+    };
+
+    function updatePill(id, text, tone = "warn") {
+      const pill = ids(id);
+      pill.textContent = text;
+      pill.className = `pill ${tone}`;
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderMarkdown(markdown) {
+      const safe = escapeHtml(markdown || "");
+      const lines = safe.split("\n");
+      const rendered = lines.map((line) => {
+        if (line.startsWith("### ")) return `<h3>${line.slice(4)}</h3>`;
+        if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
+        if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
+        let htmlLine = line
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/`(.+?)`/g, "<code>$1</code>")
+          .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer noopener">$1</a>');
+        return `<div>${htmlLine}</div>`;
+      });
+      return rendered.join("");
+    }
+
+    function parseLinkLines(input) {
+      return input
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [label, url] = line.split("|").map((part) => part.trim());
+          if (url) {
+            return { label, url };
+          }
+          return { label: "Link", url: label };
+        })
+        .filter((entry) => entry.url);
+    }
+
+    function parseUrlLines(input) {
+      return input
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+
+    function generateDefaultImage(title) {
+      const safeTitle = escapeHtml(title || "AGI Job");
+      const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+  <rect width="100%" height="100%" fill="#0b0f14"/>
+  <rect x="80" y="80" width="864" height="864" rx="48" fill="#111826" stroke="#38bdf8" stroke-width="6"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#e5e7eb" font-size="42" font-family="Inter, system-ui, sans-serif">${safeTitle}</text>
+  <text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="22" font-family="Inter, system-ui, sans-serif">AGIJobManager</text>
+</svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    function buildExternalUrl(jobId) {
+      const baseUrl = `${window.location.origin}${window.location.pathname}`;
+      const params = new URLSearchParams();
+      if (state.contractAddress) params.set("contract", state.contractAddress);
+      if (state.chainId) params.set("chainId", state.chainId.toString());
+      if (jobId != null) params.set("jobId", jobId.toString());
+      const query = params.toString();
+      return query ? `${baseUrl}?${query}` : baseUrl;
+    }
+
+    function validateUri(value, fieldLabel) {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error(`${fieldLabel} is required.`);
+      }
+      if (/\s/.test(trimmed)) {
+        throw new Error(`${fieldLabel} cannot contain whitespace.`);
+      }
+      return trimmed;
+    }
+
+    async function sha256Hex(message) {
+      const data = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function buildJobSpecMetadata() {
+      const title = ids("jobTitle").value.trim();
+      const summary = ids("jobSummary").value.trim();
+      const description = ids("jobDescription").value.trim();
+      const payout = parseTokenAmount(ids("jobPayout").value, "Payout");
+      const duration = parseUint(ids("jobDuration").value, "Duration");
+      const links = parseLinkLines(ids("jobLinks").value);
+      const attachments = parseUrlLines(ids("jobAttachments").value);
+      const animationUrl = ids("jobAnimation").value.trim();
+      const imageUrl = ids("jobImage").value.trim();
+      const image = imageUrl || (animationUrl ? "" : generateDefaultImage(title || "AGI Job"));
+      const jobId = state.readContract ? await state.readContract.nextJobId() : null;
+      const externalUrl = ids("jobExternalUrl").value.trim() || buildExternalUrl(jobId);
+      let validatorRewardPct = null;
+      let additionalAgentPayoutPct = null;
+      if (state.readContract) {
+        try {
+          validatorRewardPct = (await state.readContract.validationRewardPercentage()).toString();
+          additionalAgentPayoutPct = (await state.readContract.additionalAgentPayoutPercentage()).toString();
+        } catch (error) {
+          validatorRewardPct = null;
+          additionalAgentPayoutPct = null;
+        }
+      }
+
+      const attributes = [
+        { trait_type: "Type", value: "Job Spec" },
+        { trait_type: "Chain ID", value: state.chainId ? state.chainId.toString() : "unknown" },
+        { trait_type: "Contract", value: state.contractAddress || "unknown" },
+        { trait_type: "Job ID", value: jobId != null ? jobId.toString() : "pending" },
+        { trait_type: "Payout", value: formatToken(payout) },
+        { trait_type: "Duration (seconds)", value: duration.toString() },
+      ];
+
+      const metadata = {
+        schema_version: "agijobmanager.job.v1",
+        name: title || `Job #${jobId != null ? jobId.toString() : "pending"}`,
+        description: summary ? `${summary}\n\n${description}`.trim() : description,
+        image: image || undefined,
+        animation_url: animationUrl || undefined,
+        external_url: externalUrl,
+        attributes,
+        properties: {
+          type: "job_spec",
+          job: {
+            job_id: jobId != null ? jobId.toString() : null,
+            chain_id: state.chainId ? state.chainId.toString() : null,
+            contract_address: state.contractAddress || null,
+            payout: formatToken(payout),
+            payout_raw: payout.toString(),
+            duration_seconds: duration.toString(),
+            summary,
+            description,
+          },
+          payouts: {
+            escrow_amount: formatToken(payout),
+            escrow_raw: payout.toString(),
+            agent_payout_pct: null,
+            validator_reward_pct: validatorRewardPct,
+            additional_agent_payout_pct: additionalAgentPayoutPct,
+          },
+          links,
+          attachments,
+        },
+      };
+      return metadata;
+    }
+
+    async function buildCompletionMetadata() {
+      const jobId = parseUint(ids("completionJobId").value, "Job ID");
+      const title = ids("completionTitle").value.trim();
+      const summary = ids("completionSummary").value.trim();
+      const description = ids("completionDescription").value.trim();
+      const deliverables = parseUrlLines(ids("completionDeliverables").value);
+      const links = parseLinkLines(ids("completionLinks").value);
+      const attachments = parseUrlLines(ids("completionAttachments").value);
+      const animationUrl = ids("completionAnimation").value.trim();
+      const imageUrl = ids("completionImage").value.trim();
+      const image = imageUrl || (animationUrl ? "" : generateDefaultImage(title || `Job #${jobId} completion`));
+      const externalUrl = ids("completionExternalUrl").value.trim() || buildExternalUrl(jobId);
+      const jobSpecUri = ids("completionSpecUri").value.trim();
+
+      let onchain = {};
+      if (state.readContract) {
+        try {
+          const jobCore = await state.readContract.getJobCore(jobId);
+          const jobValidation = await state.readContract.getJobValidation(jobId);
+          onchain = {
+            payout_raw: jobCore[2].toString(),
+            payout: formatToken(jobCore[2]),
+            agent_payout_pct: jobCore[8]?.toString?.() ?? null,
+            completion_requested: jobValidation[0],
+            disputed: jobCore[6],
+          };
+        } catch (error) {
+          onchain = {};
+        }
+      }
+      let validatorRewardPct = null;
+      let additionalAgentPayoutPct = null;
+      if (state.readContract) {
+        try {
+          validatorRewardPct = (await state.readContract.validationRewardPercentage()).toString();
+          additionalAgentPayoutPct = (await state.readContract.additionalAgentPayoutPercentage()).toString();
+        } catch (error) {
+          validatorRewardPct = null;
+          additionalAgentPayoutPct = null;
+        }
+      }
+
+      const attributes = [
+        { trait_type: "Type", value: "Job Completion" },
+        { trait_type: "Chain ID", value: state.chainId ? state.chainId.toString() : "unknown" },
+        { trait_type: "Contract", value: state.contractAddress || "unknown" },
+        { trait_type: "Job ID", value: jobId.toString() },
+        { trait_type: "Status", value: "Completed" },
+      ];
+
+      const metadata = {
+        schema_version: "agijobmanager.job.v1",
+        name: title || `Job #${jobId} completion`,
+        description: summary ? `${summary}\n\n${description}`.trim() : description,
+        image: image || undefined,
+        animation_url: animationUrl || undefined,
+        external_url: externalUrl,
+        attributes,
+        properties: {
+          type: "job_completion",
+          job: {
+            job_id: jobId.toString(),
+            chain_id: state.chainId ? state.chainId.toString() : null,
+            contract_address: state.contractAddress || null,
+            token_id: null,
+            job_spec_uri: jobSpecUri || null,
+            job_spec_sha256: state.metadata?.jobSpec?.hash || null,
+            tx_hash: null,
+          },
+          payouts: {
+            escrow_amount: onchain.payout || null,
+            escrow_raw: onchain.payout_raw || null,
+            agent_payout_pct: onchain.agent_payout_pct || null,
+            validator_reward_pct: validatorRewardPct,
+            additional_agent_payout_pct: additionalAgentPayoutPct,
+          },
+          deliverables,
+          links,
+          attachments,
+        },
+      };
+      return metadata;
+    }
+
+    function validateMetadata(metadata) {
+      const missing = [];
+      if (!metadata.name) missing.push("name");
+      if (!metadata.description) missing.push("description");
+      if (!metadata.external_url) missing.push("external_url");
+      if (!metadata.image && !metadata.animation_url) missing.push("image or animation_url");
+      if (!Array.isArray(metadata.attributes) || metadata.attributes.length === 0) missing.push("attributes");
+      return missing;
+    }
+
+    async function refreshJobSpecPreview() {
+      const formVisible = ids("jobMetaSource").value === "generated";
+      if (!formVisible) {
+        ids("jobSpecPreview").value = "Using existing job spec URI.";
+        return;
+      }
+      if (!ids("jobPayout").value.trim() || !ids("jobDuration").value.trim()) {
+        ids("jobSpecPreview").value = "Enter payout and duration to generate preview.";
+        return;
+      }
+      try {
+        const metadata = await buildJobSpecMetadata();
+        const json = JSON.stringify(metadata, null, 2);
+        ids("jobSpecPreview").value = json;
+        state.metadata = state.metadata || {};
+        state.metadata.jobSpec = state.metadata.jobSpec || {};
+        state.metadata.jobSpec.json = metadata;
+        state.metadata.jobSpec.hash = await sha256Hex(json);
+      } catch (error) {
+        ids("jobSpecPreview").value = `Error: ${error.message}`;
+      }
+    }
+
+    async function refreshCompletionPreview() {
+      const formVisible = ids("completionMetaSource").value === "generated";
+      if (!formVisible) {
+        ids("completionPreview").value = "Using existing completion URI.";
+        return;
+      }
+      if (!ids("completionJobId").value.trim()) {
+        ids("completionPreview").value = "Enter a Job ID to generate preview.";
+        return;
+      }
+      try {
+        const metadata = await buildCompletionMetadata();
+        const json = JSON.stringify(metadata, null, 2);
+        ids("completionPreview").value = json;
+        state.metadata = state.metadata || {};
+        state.metadata.completion = state.metadata.completion || {};
+        state.metadata.completion.json = metadata;
+        const image = metadata.animation_url || metadata.image || "—";
+        setText("completionMintName", metadata.name || "—");
+        setText("completionMintDescription", metadata.description ? metadata.description.slice(0, 120) : "—");
+        setText("completionMintImage", image);
+        setText("completionMintExternalUrl", metadata.external_url || "—");
+      } catch (error) {
+        ids("completionPreview").value = `Error: ${error.message}`;
+      }
+    }
+
+    function downloadJson(filename, json) {
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function setStoredCredential(key, value) {
+      if (!value) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, value);
+      }
+    }
+
+    function getStoredCredential(key) {
+      return localStorage.getItem(key) || "";
+    }
+
+    function refreshCredentialStatus() {
+      setText("pinataStatus", getStoredCredential(metadataStorageKeys.pinataJwt) ? "Saved locally." : "Not set.");
+      setText("nftStorageStatus", getStoredCredential(metadataStorageKeys.nftStorageKey) ? "Saved locally." : "Not set.");
+    }
+
+    async function uploadToPinata(json, filename) {
+      const jwt = getStoredCredential(metadataStorageKeys.pinataJwt);
+      if (!jwt) throw new Error("Pinata JWT not set.");
+      const response = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({ pinataContent: json, pinataMetadata: { name: filename } }),
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(`Pinata upload failed (${response.status}): ${message}`);
+      }
+      const payload = await response.json();
+      if (!payload.IpfsHash) throw new Error("Pinata response missing IpfsHash.");
+      return `ipfs://${payload.IpfsHash}`;
+    }
+
+    async function uploadToNftStorage(json) {
+      const apiKey = getStoredCredential(metadataStorageKeys.nftStorageKey);
+      if (!apiKey) throw new Error("NFT.Storage API key not set.");
+      const response = await fetch("https://api.nft.storage/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(json),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message || `NFT.Storage upload failed (${response.status})`);
+      }
+      const cid = payload.value?.cid || payload.value?.ipnft || payload.value?.ipfs?.cid;
+      if (!cid) throw new Error("NFT.Storage response missing CID.");
+      return `ipfs://${cid}`;
+    }
+
+    function syncMarkdownPreview() {
+      ids("jobDescriptionPreview").innerHTML = renderMarkdown(ids("jobDescription").value);
+      ids("completionDescriptionPreview").innerHTML = renderMarkdown(ids("completionDescription").value);
+    }
+
+    function applyMetadataSourceVisibility() {
+      const jobGenerated = ids("jobMetaSource").value === "generated";
+      ids("jobMetaForm").style.display = jobGenerated ? "block" : "none";
+      ids("jobMetaAdvanced").open = !jobGenerated;
+      const completionGenerated = ids("completionMetaSource").value === "generated";
+      ids("completionMetaForm").style.display = completionGenerated ? "block" : "none";
+      ids("completionMetaAdvanced").open = !completionGenerated;
+    }
+
+    function describeCancelIneligibility({ employer, assignedAgent, completed }) {
+      if (employer === ethers.ZeroAddress) {
+        return "Job not found or already cancelled.";
+      }
+      if (employer !== state.walletAddress) {
+        return "Only the employer who created the job can cancel it.";
+      }
+      if (assignedAgent !== ethers.ZeroAddress) {
+        return "Job already assigned; cancellation is only allowed before assignment.";
+      }
+      if (completed) {
+        return "Job already completed; cancellation is no longer possible.";
+      }
+      return null;
+    }
+
+    function isCancelEligible(job) {
+      const employer = job.employer ?? job[1];
+      const assignedAgent = job.assignedAgent ?? job[7];
+      const completed = job.completed ?? job[9];
+      if (!state.walletAddress) return false;
+      return employer !== ethers.ZeroAddress
+        && employer === state.walletAddress
+        && assignedAgent === ethers.ZeroAddress
+        && !completed;
+    }
+
+    function maybeInitProvider() {
+      if (state.provider) return state.provider;
+      if (!window.ethereum) return null;
+      state.provider = new ethers.BrowserProvider(window.ethereum);
+      return state.provider;
+    }
+
+    async function initNetwork() {
+      if (!window.ethereum) return;
+      try {
+        maybeInitProvider();
+        await refreshNetwork();
+      } catch (error) {
+        // Ignore network detection errors until the user connects.
+      }
+    }
+
+    function getProvider() {
+      if (!window.ethereum) {
+        throw new Error("No wallet detected. Install a browser wallet like MetaMask.");
+      }
+      if (!state.provider) {
+        state.provider = new ethers.BrowserProvider(window.ethereum);
+      }
+      return state.provider;
+    }
+
+    function setContracts() {
+      if (!state.contractAddress) {
+        if (state.contract) {
+          state.contract.removeAllListeners();
+        }
+        if (state.readContract) {
+          state.readContract.removeAllListeners();
+        }
+        clearLegacyDisputeListener();
+        state.contract = null;
+        state.readContract = null;
+        state.eventSubscribed = false;
+        state.token = null;
+        state.ens = null;
+        state.nameWrapper = null;
+        state.contractDeployed = null;
+        state.nftCache = {};
+        state.capabilities = {};
+        state.index = {
+          jobs: {},
+          nfts: {},
+          meta: {
+            fromBlock: null,
+            toBlock: null,
+            lastIndexedBlock: null,
+            lastSyncTime: null,
+          },
+        };
+        updateIndexStatus("Indexer not synced yet.");
+        return;
+      }
+      if (!state.provider) return;
+      if (state.contract) {
+        state.contract.removeAllListeners();
+      }
+      if (state.readContract) {
+        state.readContract.removeAllListeners();
+      }
+      clearLegacyDisputeListener();
+      state.eventSubscribed = false;
+      state.token = null;
+      state.ens = null;
+      state.nameWrapper = null;
+      state.nftCache = {};
+      state.capabilities = {};
+      state.readContract = new ethers.Contract(state.contractAddress, abi, state.provider);
+      if (state.signer) {
+        state.contract = new ethers.Contract(state.contractAddress, abi, state.signer);
+      } else {
+        state.contract = null;
+      }
+      loadIndexCache();
+      updateIndexStatus();
+    }
+
+    function requireContract() {
+      if (!state.contractAddress) {
+        throw new Error("Set a contract address before interacting.");
+      }
+      if (!state.readContract) {
+        throw new Error("Provider not ready.");
+      }
+    }
+
+    function hasContractEvent(contract, eventName) {
+      if (!contract || !contract.interface) return false;
+      try {
+        return !!contract.interface.getEvent(eventName);
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function pushFilterIfPresent(filters, contract, eventName) {
+      if (!hasContractEvent(contract, eventName)) return;
+      const factory = contract.filters[eventName];
+      if (typeof factory === "function") {
+        filters.push(factory());
+      }
+    }
+
+    async function fetchLegacyDisputeResolvedLogs(fromBlock, toBlock) {
+      if (hasContractEvent(state.readContract, "DisputeResolved")) return [];
+      const logs = await state.provider.getLogs({
+        address: state.contractAddress,
+        fromBlock,
+        toBlock,
+        topics: [legacyDisputeResolvedTopic],
+      });
+      return logs.map((log) => {
+        const parsed = legacyDisputeResolvedIface.parseLog(log);
+        return {
+          ...log,
+          eventName: "DisputeResolved",
+          args: parsed.args,
+        };
+      });
+    }
+
+    async function subscribeLegacyDisputeResolved(contract) {
+      if (hasContractEvent(contract, "DisputeResolved")) return;
+      if (state.legacyDisputeListener || !state.provider) return;
+      const filter = {
+        address: state.contractAddress,
+        topics: [legacyDisputeResolvedTopic],
+      };
+      const handler = (log) => {
+        try {
+          const parsed = legacyDisputeResolvedIface.parseLog(log);
+          const jobId = parsed.args?.jobId ?? parsed.args?.[0];
+          const resolver = parsed.args?.resolver ?? parsed.args?.[1];
+          const resolution = parsed.args?.resolution ?? parsed.args?.[2];
+          logEvent(`DisputeResolved #${jobId} by ${resolver}: ${resolution}`);
+        } catch (error) {
+          logEvent(`DisputeResolved — decode failed: ${error.message || error}`);
+        }
+      };
+      state.provider.on(filter, handler);
+      state.legacyDisputeListener = { provider: state.provider, filter, handler };
+    }
+
+    function clearLegacyDisputeListener() {
+      if (!state.legacyDisputeListener) return;
+      const boundProvider = state.legacyDisputeListener.provider;
+      if (boundProvider) {
+        boundProvider.off(state.legacyDisputeListener.filter, state.legacyDisputeListener.handler);
+      }
+      state.legacyDisputeListener = null;
+    }
+
+
+    async function refreshNetwork() {
+      const provider = getProvider();
+      const network = await provider.getNetwork();
+      state.chainId = network.chainId;
+      state.chainName = network.name;
+      setText("walletChain", `${network.name} (${network.chainId})`);
+      updateNetworkPill();
+    }
+
+    async function bindWalletAccount(account) {
+      state.provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = state.provider;
+      state.walletAddress = ethers.getAddress(account);
+      state.signer = await provider.getSigner();
+      setText("walletAddress", state.walletAddress);
+      await refreshNetwork();
+      setContracts();
+      await updateWriteAccess();
+    }
+
+    async function connectWallet() {
+      const provider = getProvider();
+      const accounts = await provider.send("eth_requestAccounts", []);
+      if (!accounts || !accounts.length) {
+        throw new Error("No accounts returned from wallet.");
+      }
+      await bindWalletAccount(accounts[0]);
+    }
+
+    function disconnectWallet({ clearChain = true } = {}) {
+      state.signer = null;
+      state.walletAddress = null;
+      state.token = null;
+      state.ens = null;
+      state.nameWrapper = null;
+      state.contractDeployed = null;
+      if (clearChain) {
+        state.chainId = null;
+        state.chainName = null;
+        setText("walletChain", "—");
+      }
+      setText("walletAddress", "Not connected");
+      setContracts();
+      resetRoleFlags();
+      setWriteEnabled(false, "Wallet disconnected.");
+      updateNetworkPill();
+      updateAdminPanel();
+    }
+
+    async function ensureToken() {
+      requireContract();
+      const tokenAddress = await state.readContract.agiToken();
+      state.agiTokenAddress = tokenAddress;
+      const token = new ethers.Contract(tokenAddress, erc20Abi, state.provider);
+      state.agiTokenDecimals = Number(await token.decimals());
+      state.agiTokenSymbol = await token.symbol();
+      state.token = token;
+      return token;
+    }
+
+    async function updateSnapshot() {
+      requireContract();
+      const [name, symbol, owner, paused, approvals, disapprovals, reward, maxPayout, durationLimit, premium, nextJobId, nextTokenId, agentRoot, clubRoot, agentMerkleRoot, validatorMerkleRoot] = await Promise.all([
+        state.readContract.name(),
+        state.readContract.symbol(),
+        state.readContract.owner(),
+        state.readContract.paused(),
+        state.readContract.requiredValidatorApprovals(),
+        state.readContract.requiredValidatorDisapprovals(),
+        state.readContract.validationRewardPercentage(),
+        state.readContract.maxJobPayout(),
+        state.readContract.jobDurationLimit(),
+        state.readContract.premiumReputationThreshold(),
+        state.readContract.nextJobId(),
+        state.readContract.nextTokenId(),
+        state.readContract.agentRootNode(),
+        state.readContract.clubRootNode(),
+        state.readContract.agentMerkleRoot(),
+        state.readContract.validatorMerkleRoot(),
+      ]);
+
+      setText("contractName", name);
+      setText("contractSymbol", symbol);
+      setText("contractOwner", owner);
+      setText("contractPaused", paused ? "Yes" : "No");
+      state.contractOwner = owner;
+      state.contractPaused = paused;
+      setText("adminContractAddress", state.contractAddress || "—");
+      setText("adminPaused", paused ? "Yes" : "No");
+      setText("requiredApprovals", approvals.toString());
+      setText("requiredDisapprovals", disapprovals.toString());
+      setText("validationReward", `${reward.toString()}%`);
+      setText("maxJobPayout", formatToken(maxPayout));
+      setText("jobDurationLimit", durationLimit.toString());
+      setText("premiumThreshold", premium.toString());
+      setText("contractNextJob", nextJobId.toString());
+      setText("contractNextToken", nextTokenId.toString());
+      setText("agentRootNode", agentRoot);
+      setText("clubRootNode", clubRoot);
+      setText("agentMerkleRoot", agentMerkleRoot);
+      setText("validatorMerkleRoot", validatorMerkleRoot);
+
+      const token = await ensureToken();
+      setText("agiToken", state.agiTokenAddress);
+      setText("agiTokenDecimals", state.agiTokenDecimals.toString());
+      setText("agiTokenSymbol", state.agiTokenSymbol);
+      updateAdminPanel();
+    }
+
+    function formatToken(amount) {
+      try {
+        return `${ethers.formatUnits(amount, state.agiTokenDecimals)} ${state.agiTokenSymbol || ""}`.trim();
+      } catch (error) {
+        return amount.toString();
+      }
+    }
+
+    function formatTokenInput(amount) {
+      try {
+        return ethers.formatUnits(amount, state.agiTokenDecimals);
+      } catch (error) {
+        return amount.toString();
+      }
+    }
+
+    async function updateRoleFlags() {
+      requireContract();
+      if (!state.walletAddress) {
+        throw new Error("Connect a wallet to load role flags.");
+      }
+      const token = await ensureToken();
+      const [isModerator, isAgent, isValidator, isBlacklistedAgent, isBlacklistedValidator, reputation, premiumThreshold, balance, allowance] = await Promise.all([
+        state.readContract.moderators(state.walletAddress),
+        state.readContract.additionalAgents(state.walletAddress),
+        state.readContract.additionalValidators(state.walletAddress),
+        state.readContract.blacklistedAgents(state.walletAddress),
+        state.readContract.blacklistedValidators(state.walletAddress),
+        state.readContract.reputation(state.walletAddress),
+        state.readContract.premiumReputationThreshold(),
+        token.balanceOf(state.walletAddress),
+        token.allowance(state.walletAddress, state.contractAddress),
+      ]);
+      const premiumAccess = reputation >= premiumThreshold;
+
+      setText("isModerator", isModerator ? "Yes" : "No");
+      setText("isAdditionalAgent", isAgent ? "Yes" : "No");
+      setText("isAdditionalValidator", isValidator ? "Yes" : "No");
+      setText("isBlacklistedAgent", isBlacklistedAgent ? "Yes" : "No");
+      setText("isBlacklistedValidator", isBlacklistedValidator ? "Yes" : "No");
+      setText("reputation", reputation.toString());
+      setText("premiumAccess", premiumAccess ? "Yes" : "No");
+      setText("agiBalance", formatToken(balance));
+      setText("agiAllowance", formatToken(allowance));
+    }
+
+    function computeSubnode(rootNode, label) {
+      const labelHash = ethers.keccak256(ethers.toUtf8Bytes(label));
+      return ethers.solidityPackedKeccak256(["bytes32", "bytes32"], [rootNode, labelHash]);
+    }
+
+    function hashPair(a, b) {
+      return ethers.keccak256(
+        ethers.concat([
+          BigInt(a) < BigInt(b) ? a : b,
+          BigInt(a) < BigInt(b) ? b : a,
+        ])
+      );
+    }
+
+    function verifyMerkleProof(root, leaf, proof) {
+      return proof.reduce((hash, p) => hashPair(hash, p), leaf) === root;
+    }
+
+    function getPreferredLabel(role) {
+      if (role === "agent") {
+        return ids("applySubdomain").value.trim() || ids("identityLabel").value.trim();
+      }
+      return ids("validateSubdomain").value.trim()
+        || ids("disapproveSubdomain").value.trim()
+        || ids("identityLabel").value.trim();
+    }
+
+    async function runIdentityCheck() {
+      requireContract();
+      if (!state.walletAddress) {
+        throw new Error("Connect a wallet to run identity checks.");
+      }
+      const label = ids("identityLabel").value.trim();
+      if (!label) {
+        throw new Error("Label is required.");
+      }
+      const proof = parseProofJson(ids("proofJson").value);
+      const identityType = ids("identityType").value;
+      const rootNode = identityType === "agent" ? await state.readContract.agentRootNode() : await state.readContract.clubRootNode();
+      const merkleRoot = identityType === "agent" ? await state.readContract.agentMerkleRoot() : await state.readContract.validatorMerkleRoot();
+
+      const leaf = ethers.keccak256(ethers.solidityPacked(["address"], [state.walletAddress]));
+      const subnode = computeSubnode(rootNode, label);
+      setText("identitySubnode", subnode);
+      const merkleValid = verifyMerkleProof(merkleRoot, leaf, proof);
+      const merkleStatus = merkleValid ? "Yes" : "No";
+      setText("identityMerkle", proof.length ? merkleStatus : `${merkleStatus} (empty proof)`);
+
+      const ensAddress = await state.readContract.ens();
+      const nameWrapperAddress = await state.readContract.nameWrapper();
+      const nameWrapper = new ethers.Contract(nameWrapperAddress, nameWrapperAbi, state.provider);
+      const ens = new ethers.Contract(ensAddress, ensAbi, state.provider);
+      state.ens = ens;
+      state.nameWrapper = nameWrapper;
+
+      let nameWrapperOwner = "—";
+      try {
+        const owner = await nameWrapper.ownerOf(BigInt(subnode));
+        nameWrapperOwner = owner === state.walletAddress ? `${owner} (match)` : owner;
+      } catch (error) {
+        nameWrapperOwner = "NameWrapper lookup failed";
+      }
+      setText("identityNameWrapper", nameWrapperOwner);
+
+      let resolverText = "—";
+      try {
+        const resolverAddress = await ens.resolver(subnode);
+        if (resolverAddress === ethers.ZeroAddress) {
+          resolverText = "No resolver";
+        } else {
+          const resolver = new ethers.Contract(resolverAddress, resolverAbi, state.provider);
+          const resolved = await resolver.addr(subnode);
+          resolverText = resolved === state.walletAddress ? `${resolved} (match)` : resolved;
+        }
+      } catch (error) {
+        resolverText = "Resolver lookup failed";
+      }
+      setText("identityResolver", resolverText);
+    }
+
+    function buildEligibilityMessage(result) {
+      if (result.eligible) {
+        const methodLabel = result.method === "nameWrapper" ? "NameWrapper" : result.method;
+        return `Eligible via ${methodLabel}.`;
+      }
+      if (result.method === "blacklisted") {
+        return "You are blacklisted for this role; transactions will revert.";
+      }
+      if (result.method === "none" && !result.details.label) {
+        return "Enter a label to evaluate ENS/NameWrapper ownership.";
+      }
+      if (result.details.ensUnavailable) {
+        return "ENS/NameWrapper not available on this network.";
+      }
+      return "No matching allowlist, Merkle proof, or ENS ownership found.";
+    }
+
+    function renderEligibility(role, result) {
+      const pillId = role === "agent" ? "agentEligibilityPill" : "validatorEligibilityPill";
+      const messageId = role === "agent" ? "agentEligibilityMessage" : "validatorEligibilityMessage";
+      const fixesId = role === "agent" ? "agentEligibilityFixes" : "validatorEligibilityFixes";
+      const pill = ids(pillId);
+      const messageEl = ids(messageId);
+      const fixesEl = ids(fixesId);
+
+      const methodLabel = result.method === "nameWrapper" ? "nameWrapper" : result.method;
+      if (result.eligible) {
+        pill.className = "pill ok";
+        pill.textContent = `✅ Eligible — via ${methodLabel}`;
+      } else {
+        pill.className = "pill danger";
+        const reason = result.method === "blacklisted"
+          ? "blacklisted"
+          : (result.details.label ? "no match" : "missing label");
+        pill.textContent = `❌ Not eligible — ${reason}`;
+      }
+      messageEl.textContent = result.message;
+      fixesEl.innerHTML = "";
+      if (!result.eligible && result.howToFix.length) {
+        for (const item of result.howToFix) {
+          const li = document.createElement("li");
+          li.textContent = item;
+          fixesEl.appendChild(li);
+        }
+      }
+    }
+
+    async function evaluateEligibility(role) {
+      requireContract();
+      if (!state.walletAddress) {
+        throw new Error("Connect a wallet to evaluate eligibility.");
+      }
+      const label = getPreferredLabel(role);
+      const proof = parseProofJson(ids("proofJson").value);
+      const user = state.walletAddress;
+      const isAgent = role === "agent";
+      const roleLabel = isAgent ? "agent" : "validator";
+
+      const [blacklisted, additionalOk, merkleRoot, rootNode, ensAddress, nameWrapperAddress] = await Promise.all([
+        isAgent ? state.readContract.blacklistedAgents(user) : state.readContract.blacklistedValidators(user),
+        isAgent ? state.readContract.additionalAgents(user) : state.readContract.additionalValidators(user),
+        isAgent ? state.readContract.agentMerkleRoot() : state.readContract.validatorMerkleRoot(),
+        isAgent ? state.readContract.agentRootNode() : state.readContract.clubRootNode(),
+        state.readContract.ens(),
+        state.readContract.nameWrapper(),
+      ]);
+
+      const leaf = ethers.solidityPackedKeccak256(["address"], [user]);
+      const details = {
+        user,
+        label,
+        rootNode,
+        merkleRoot,
+        leaf,
+        subnode: null,
+        proofProvided: proof.length > 0,
+        proofOk: false,
+        additionalOk,
+        blacklisted,
+        nameWrapperOwner: null,
+        resolverAddress: null,
+        resolverAddrRecord: null,
+        ensUnavailable: false,
+      };
+
+      if (blacklisted) {
+        return {
+          eligible: false,
+          role: roleLabel,
+          method: "blacklisted",
+          details,
+          message: buildEligibilityMessage({ eligible: false, method: "blacklisted", details }),
+          howToFix: ["Ask the owner to remove the blacklist entry for this role."],
+        };
+      }
+
+      if (additionalOk) {
+        return {
+          eligible: true,
+          role: roleLabel,
+          method: "additional",
+          details,
+          message: buildEligibilityMessage({ eligible: true, method: "additional", details }),
+          howToFix: [],
+        };
+      }
+
+      details.proofOk = verifyMerkleProof(merkleRoot, leaf, proof);
+      if (details.proofOk) {
+        return {
+          eligible: true,
+          role: roleLabel,
+          method: "merkle",
+          details,
+          message: buildEligibilityMessage({ eligible: true, method: "merkle", details }),
+          howToFix: [],
+        };
+      }
+
+      if (!label) {
+        return {
+          eligible: false,
+          role: roleLabel,
+          method: "none",
+          details,
+          message: buildEligibilityMessage({ eligible: false, method: "none", details }),
+          howToFix: [
+            "Enter the subdomain label you would submit on-chain.",
+            "Double-check you are connected to the intended wallet address.",
+          ],
+        };
+      }
+
+      details.subnode = ethers.solidityPackedKeccak256(
+        ["bytes32", "bytes32"],
+        [rootNode, ethers.id(label)]
+      );
+
+      const [ensCode, nameWrapperCode] = await Promise.all([
+        ensAddress !== ethers.ZeroAddress ? state.provider.getCode(ensAddress) : "0x",
+        nameWrapperAddress !== ethers.ZeroAddress ? state.provider.getCode(nameWrapperAddress) : "0x",
+      ]);
+      const ensAvailable = ensAddress !== ethers.ZeroAddress && ensCode !== "0x";
+      const nameWrapperAvailable = nameWrapperAddress !== ethers.ZeroAddress && nameWrapperCode !== "0x";
+      if (!ensAvailable || !nameWrapperAvailable) {
+        details.ensUnavailable = true;
+      }
+
+      if (nameWrapperAvailable) {
+        try {
+          const nameWrapper = new ethers.Contract(nameWrapperAddress, nameWrapperAbi, state.provider);
+          const owner = await nameWrapper.ownerOf(BigInt(details.subnode));
+          details.nameWrapperOwner = owner;
+          if (owner === user) {
+            return {
+              eligible: true,
+              role: roleLabel,
+              method: "nameWrapper",
+              details,
+              message: buildEligibilityMessage({ eligible: true, method: "nameWrapper", details }),
+              howToFix: [],
+            };
+          }
+        } catch (error) {
+          details.nameWrapperOwner = null;
+        }
+      }
+
+      if (ensAvailable) {
+        try {
+          const ens = new ethers.Contract(ensAddress, ensAbi, state.provider);
+          const resolverAddress = await ens.resolver(details.subnode);
+          details.resolverAddress = resolverAddress;
+          if (resolverAddress !== ethers.ZeroAddress) {
+            const resolver = new ethers.Contract(resolverAddress, resolverAbi, state.provider);
+            try {
+              details.resolverAddrRecord = await resolver.addr(details.subnode);
+            } catch (error) {
+              details.resolverAddrRecord = null;
+            }
+            if (details.resolverAddrRecord === user) {
+              return {
+                eligible: true,
+                role: roleLabel,
+                method: "resolver",
+                details,
+                message: buildEligibilityMessage({ eligible: true, method: "resolver", details }),
+                howToFix: [],
+              };
+            }
+          }
+        } catch (error) {
+          details.resolverAddress = null;
+        }
+      }
+
+      const howToFix = [
+        "If you’re allowlisted: ask the owner to add you as an additional agent/validator.",
+        "If you’re Merkle allowlisted: paste your Merkle proof (JSON bytes32 array).",
+        `If you use ENS: ensure you control “${label}” under the correct root and that NameWrapper owner or resolver.addr points to your wallet.`,
+        "Double-check you’re connected to the intended wallet address.",
+      ];
+      if (details.ensUnavailable) {
+        howToFix.unshift("ENS/NameWrapper not available on this network.");
+      }
+      return {
+        eligible: false,
+        role: roleLabel,
+        method: "none",
+        details,
+        message: buildEligibilityMessage({ eligible: false, method: "none", details }),
+        howToFix,
+      };
+    }
+
+    function buildErrorContext(action) {
+      return {
+        jm: state.contract,
+        token: state.token,
+        chainId: state.chainId,
+        userAddress: state.walletAddress,
+        action,
+      };
+    }
+
+    function resetContractListeners() {
+      if (state.contract) {
+        state.contract.removeAllListeners();
+      }
+      if (state.readContract) {
+        state.readContract.removeAllListeners();
+      }
+      clearLegacyDisputeListener();
+      state.eventSubscribed = false;
+    }
+
+    async function refreshDashboard() {
+      if (!state.contractAddress) {
+        resetSnapshot();
+        resetRoleFlags();
+        return;
+      }
+      if (state.contractDeployed === false) {
+        resetSnapshot();
+        resetRoleFlags();
+        return;
+      }
+      await updateSnapshot();
+      if (state.walletAddress) {
+        await updateRoleFlags();
+      }
+    }
+
+    async function handleAccountsChanged(accounts) {
+      if (!accounts || !accounts.length) {
+        logEvent("Wallet disconnected");
+        disconnectWallet();
+        return;
+      }
+      logEvent(`Account changed to ${accounts[0]}`);
+      resetContractListeners();
+      await bindWalletAccount(accounts[0]);
+      await refreshDashboard();
+    }
+
+    async function handleChainChanged(chainIdHex) {
+      const chainId = BigInt(chainIdHex);
+      logEvent(`Network changed to chainId=${chainId}; rebinding...`);
+      state.provider = null;
+      state.chainId = chainId;
+      resetContractListeners();
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (!accounts || !accounts.length) {
+        disconnectWallet();
+        return;
+      }
+      await bindWalletAccount(accounts[0]);
+      await refreshDashboard();
+    }
+
+    function handleDisconnectEvent(error) {
+      logEvent("Wallet disconnected");
+      if (error?.message) {
+        logEvent(`⚠️ Disconnect reason: ${error.message}`);
+      }
+      disconnectWallet();
+    }
+
+    function bindWalletEvents() {
+      if (!window.ethereum || walletEventsBound) return;
+      walletEventHandlers.accountsChanged = (accounts) => {
+        handleAccountsChanged(accounts).catch((error) => showAlert(error.message));
+      };
+      walletEventHandlers.chainChanged = (chainIdHex) => {
+        handleChainChanged(chainIdHex).catch((error) => showAlert(error.message));
+      };
+      walletEventHandlers.disconnect = (error) => {
+        handleDisconnectEvent(error);
+      };
+      walletEventHandlers.connect = () => {
+        logEvent("Wallet connected");
+      };
+      window.ethereum.on("accountsChanged", walletEventHandlers.accountsChanged);
+      window.ethereum.on("chainChanged", walletEventHandlers.chainChanged);
+      window.ethereum.on("disconnect", walletEventHandlers.disconnect);
+      window.ethereum.on("connect", walletEventHandlers.connect);
+      walletEventsBound = true;
+    }
+
+    function unbindWalletEvents() {
+      if (!window.ethereum || !walletEventsBound) return;
+      window.ethereum.removeListener("accountsChanged", walletEventHandlers.accountsChanged);
+      window.ethereum.removeListener("chainChanged", walletEventHandlers.chainChanged);
+      window.ethereum.removeListener("disconnect", walletEventHandlers.disconnect);
+      window.ethereum.removeListener("connect", walletEventHandlers.connect);
+      walletEventsBound = false;
+    }
+
+    async function preflight(contract, method, args) {
+      try {
+        await contract.getFunction(method).staticCall(...args);
+      } catch (error) {
+        const friendly = AGIJMErrorDecoder?.friendlyError
+          ? AGIJMErrorDecoder.friendlyError(error, buildErrorContext({ type: "preflight", method }))
+          : (error.shortMessage || error.message || "Transaction would revert.");
+        throw new Error(friendly);
+      }
+    }
+
+    async function sendTx(method, args, description) {
+      if (!state.contract) {
+        throw new Error("Connect a wallet to send transactions.");
+      }
+      try {
+        await preflight(state.contract, method, args);
+        const tx = await state.contract.getFunction(method)(...args);
+        logEvent(`⏳ ${description} — ${tx.hash}`);
+        await tx.wait();
+        logEvent(`✅ ${description} confirmed`);
+      } catch (error) {
+        const friendly = AGIJMErrorDecoder?.friendlyError
+          ? AGIJMErrorDecoder.friendlyError(error, buildErrorContext({ type: "transaction", method, description }))
+          : (error.shortMessage || error.message || "Transaction failed.");
+        throw new Error(friendly);
+      }
+    }
+
+    async function sendAdminTx(method, args, description, confirmLines) {
+      if (!state.contract) {
+        throw new Error("Connect a wallet to send transactions.");
+      }
+      if (!state.contractOwner || state.walletAddress !== state.contractOwner) {
+        throw new Error("Connect as the contract owner to use admin controls.");
+      }
+      await preflight(state.contract, method, args);
+      const message = [
+        `Admin action: ${description}`,
+        `Contract: ${state.contractAddress}`,
+        ...(confirmLines || []),
+        "Proceed with caution (mainnet transactions are irreversible).",
+      ].join("\\n");
+      if (!window.confirm(message)) {
+        logEvent(`⚠️ ${description} cancelled by user.`);
+        return;
+      }
+      const tx = await state.contract.getFunction(method)(...args);
+      logEvent(`⏳ ${description} — ${formatTxLog(tx.hash)}`);
+      await tx.wait();
+      logEvent(`✅ ${description} confirmed`);
+    }
+
+    async function handleCancelJobFlow(jobId) {
+      requireContract();
+      if (!state.walletAddress) {
+        throw new Error("Connect a wallet to cancel a job.");
+      }
+      if (!hasWriteAccess()) {
+        throw new Error("Unsupported network or contract not available for cancellation.");
+      }
+      if (!state.contract) {
+        throw new Error("Wallet signer not available.");
+      }
+      const jobCore = await state.readContract.getJobCore(jobId);
+      const eligibilityMessage = describeCancelIneligibility({
+        employer: jobCore[0],
+        assignedAgent: jobCore[1],
+        completed: jobCore[5],
+      });
+      if (eligibilityMessage) {
+        throw new Error(eligibilityMessage);
+      }
+      await preflight(state.contract, "cancelJob", [jobId]);
+      const payout = formatToken(jobCore[2]);
+      const confirmMessage = [
+        `Cancel job ${jobId}`,
+        `Contract: ${state.contractAddress}`,
+        `Refund: ${payout}`,
+        "Employer-only; only before assignment; no cancel after completion.",
+        "Proceed with cancellation?",
+      ].join("\\n");
+      if (!window.confirm(confirmMessage)) {
+        logEvent(`⚠️ Cancel job #${jobId} aborted by user.`);
+        return;
+      }
+      const tx = await state.contract.getFunction("cancelJob")(jobId);
+      logEvent(`⏳ Cancel job #${jobId} — ${formatTxLog(tx.hash)}`);
+      await tx.wait();
+      logEvent(`✅ Cancel job #${jobId} confirmed`);
+      await refreshDashboard();
+      await loadJobs();
+    }
+
+    function logEvent(message) {
+      const log = ids("activityLog");
+      const line = document.createElement("div");
+      line.textContent = `[${new Date().toISOString()}] ${message}`;
+      log.prepend(line);
+    }
+
+    function saveUiSettings() {
+      const payload = {
+        jobsPage: state.ui.jobsPage,
+        jobsPageSize: state.ui.jobsPageSize,
+        jobsFilter: state.ui.jobsFilter,
+        jobsSort: state.ui.jobsSort,
+        nftsPage: state.ui.nftsPage,
+        nftsPageSize: state.ui.nftsPageSize,
+        nftsMyOnly: state.ui.nftsMyOnly,
+      };
+      localStorage.setItem(uiSettingsKey, JSON.stringify(payload));
+    }
+
+    function loadUiSettings() {
+      const raw = localStorage.getItem(uiSettingsKey);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        state.ui.jobsPage = Number(parsed.jobsPage) || 0;
+        state.ui.jobsPageSize = Number(parsed.jobsPageSize) || defaultPageSize;
+        state.ui.jobsFilter = parsed.jobsFilter || "all";
+        state.ui.jobsSort = parsed.jobsSort || "newest";
+        state.ui.nftsPage = Number(parsed.nftsPage) || 0;
+        state.ui.nftsPageSize = Number(parsed.nftsPageSize) || defaultPageSize;
+        state.ui.nftsMyOnly = Boolean(parsed.nftsMyOnly);
+      } catch (error) {
+        localStorage.removeItem(uiSettingsKey);
+      }
+    }
+
+    function hydrateUiControls() {
+      ids("jobsPageSize").value = state.ui.jobsPageSize.toString();
+      ids("jobsFilter").value = state.ui.jobsFilter;
+      ids("nftsPageSize").value = state.ui.nftsPageSize.toString();
+      ids("nftsMyOnly").checked = state.ui.nftsMyOnly;
+    }
+
+    function saveIndexCache() {
+      if (!state.contractAddress) return;
+      const payload = {
+        contractAddress: state.contractAddress,
+        meta: state.index.meta,
+        jobs: state.index.jobs,
+        nfts: state.index.nfts,
+      };
+      const serialized = JSON.stringify(payload, (_, value) => (
+        typeof value === "bigint" ? value.toString() : value
+      ));
+      localStorage.setItem(indexCacheKey, serialized);
+    }
+
+    function loadIndexCache() {
+      const raw = localStorage.getItem(indexCacheKey);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.contractAddress || parsed.contractAddress !== state.contractAddress) {
+          return;
+        }
+        state.index.meta = parsed.meta || state.index.meta;
+        state.index.jobs = parsed.jobs || {};
+        state.index.nfts = parsed.nfts || {};
+      } catch (error) {
+        localStorage.removeItem(indexCacheKey);
+      }
+    }
+
+    function clearIndexCache() {
+      localStorage.removeItem(indexCacheKey);
+      localStorage.removeItem(uiSettingsKey);
+      state.index = {
+        jobs: {},
+        nfts: {},
+        meta: {
+          fromBlock: null,
+          toBlock: null,
+          lastIndexedBlock: null,
+          lastSyncTime: null,
+        },
+      };
+      state.nftCache = {};
+      updateIndexStatus("Indexer cache cleared.");
+    }
+
+    function updateIndexStatus(message) {
+      const meta = state.index.meta || {};
+      const jobsCount = Object.keys(state.index.jobs || {}).length;
+      const nftsCount = Object.keys(state.index.nfts || {}).length;
+      const summary = [
+        `Indexed blocks: ${meta.fromBlock ?? "—"} → ${meta.toBlock ?? "—"}`,
+        `Jobs indexed: ${jobsCount}`,
+        `NFTs indexed: ${nftsCount}`,
+        `Last sync: ${meta.lastSyncTime ?? "—"}`,
+      ].join(" · ");
+      ids("indexStatus").textContent = message ? `${message} ${summary}` : summary;
+    }
+
+    function parseBlockInput(value, latest) {
+      if (!value) return null;
+      if (value.includes("latest")) {
+        const parts = value.split("-");
+        if (parts.length === 2) {
+          const offset = Number(parts[1]);
+          return Math.max(0, latest - (Number.isFinite(offset) ? offset : 0));
+        }
+        return latest;
+      }
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    }
+
+    async function asyncPool(limit, items, iteratorFn) {
+      const ret = [];
+      const executing = [];
+      for (const item of items) {
+        const p = Promise.resolve().then(() => iteratorFn(item));
+        ret.push(p);
+        if (limit <= items.length) {
+          const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+          executing.push(e);
+          if (executing.length >= limit) {
+            await Promise.race(executing);
+          }
+        }
+      }
+      return Promise.all(ret);
+    }
+
+    async function fetchLogsInChunks({ filter, fromBlock, toBlock, initialChunkSize = 5000, minChunkSize = 500 }) {
+      let chunkSize = initialChunkSize;
+      let start = fromBlock;
+      const logs = [];
+      while (start <= toBlock) {
+        const end = Math.min(toBlock, start + chunkSize - 1);
+        try {
+          const chunkLogs = await state.readContract.queryFilter(filter, start, end);
+          logs.push(...chunkLogs);
+          start = end + 1;
+        } catch (error) {
+          if (chunkSize <= minChunkSize) {
+            const message = error.shortMessage || error.message || "Failed to fetch logs.";
+            throw new Error(`Log query failed for blocks ${start}-${end}: ${message}`);
+          }
+          chunkSize = Math.max(minChunkSize, Math.floor(chunkSize / 2));
+        }
+      }
+      return logs;
+    }
+
+    async function syncIndex() {
+      requireContract();
+      const latest = await state.provider.getBlockNumber();
+      const fromValue = ids("indexFromBlock").value.trim();
+      const toValue = ids("indexToBlock").value.trim();
+      let fromBlock = parseBlockInput(fromValue, latest);
+      let toBlock = parseBlockInput(toValue, latest);
+
+      if (toBlock == null) {
+        toBlock = latest;
+      }
+      if (fromBlock == null) {
+        if (state.index.meta.lastIndexedBlock != null) {
+          fromBlock = state.index.meta.lastIndexedBlock + 1;
+        } else {
+          fromBlock = Math.max(0, latest - defaultIndexLookback);
+        }
+      }
+
+      if (!Number.isFinite(fromBlock) || !Number.isFinite(toBlock)) {
+        throw new Error("Block range must be valid numbers.");
+      }
+      if (fromBlock > toBlock) {
+        throw new Error("From block must be less than or equal to to block.");
+      }
+      if (fromBlock > latest) {
+        updateIndexStatus("No new blocks to sync.");
+        return;
+      }
+
+      updateIndexStatus("Syncing...");
+      const filters = [
+        state.readContract.filters.JobCreated(),
+        state.readContract.filters.JobApplied(),
+        state.readContract.filters.JobCompletionRequested(),
+        state.readContract.filters.JobDisputed(),
+      ];
+      pushFilterIfPresent(filters, state.readContract, "DisputeResolved");
+      pushFilterIfPresent(filters, state.readContract, "DisputeResolvedWithCode");
+      filters.push(
+        state.readContract.filters.JobCompleted(),
+        state.readContract.filters.JobCancelled(),
+        state.readContract.filters.NFTIssued(),
+      );
+
+      let allLogs = [];
+      for (const filter of filters) {
+        const logs = await fetchLogsInChunks({
+          filter,
+          fromBlock,
+          toBlock,
+        });
+        allLogs = allLogs.concat(logs);
+      }
+      const legacyDisputeLogs = await fetchLegacyDisputeResolvedLogs(fromBlock, toBlock);
+      allLogs = allLogs.concat(legacyDisputeLogs);
+      const ordered = sortLogs(allLogs);
+      for (const evt of ordered) {
+        applyEventToIndex(state.index, evt);
+      }
+
+      const meta = state.index.meta;
+      meta.fromBlock = meta.fromBlock == null ? fromBlock : Math.min(meta.fromBlock, fromBlock);
+      meta.toBlock = toBlock;
+      meta.lastIndexedBlock = toBlock;
+      meta.lastSyncTime = new Date().toISOString();
+      saveIndexCache();
+      updateIndexStatus();
+      logEvent(`Indexed ${ordered.length} events from blocks ${fromBlock} to ${toBlock}.`);
+    }
+
+    const disputeResolutionLabels = {
+      0: "No action (note only)",
+      1: "Agent wins",
+      2: "Employer wins",
+    };
+
+    function formatResolutionCode(code) {
+      const key = Number(code);
+      return disputeResolutionLabels[key] || `Unknown (${code})`;
+    }
+
+    function normalizeJobStatusLabel(status) {
+      if (!status) return status;
+      const normalized = status.toString();
+      if (normalized === "DeletedOrCancelled") return "Deleted";
+      if (normalized === "InProgress") return "In Progress";
+      if (normalized === "CompletionRequested") return "Completion Requested";
+      return normalized;
+    }
+
+    function jobStatusFromIndex(entry) {
+      if (!entry) return "Unknown";
+      if (entry.cancelled) return "Deleted";
+      if (entry.completed) return "Completed";
+      if (entry.disputed) return "Disputed";
+      if (entry.completionRequested) return "Completion Requested";
+      if (entry.applied) return "In Progress";
+      if (entry.created) return "Open";
+      return "Unknown";
+    }
+
+    function deriveJobStatus(job, indexEntry) {
+      const employer = job.employer;
+      const assignedAgent = job.assignedAgent;
+      const completed = job.completed;
+      const completionRequested = job.completionRequested;
+      const disputed = job.disputed;
+      const expired = job.expired;
+      let status = jobStatusFromIndex(indexEntry);
+      if (employer === ethers.ZeroAddress) {
+        status = "Deleted";
+      } else if (completed) {
+        status = "Completed";
+      } else if (expired) {
+        status = "Expired";
+      } else if (disputed) {
+        status = "Disputed";
+      } else if (assignedAgent === ethers.ZeroAddress) {
+        status = "Open";
+      } else if (completionRequested) {
+        status = "Completion Requested";
+      } else if (assignedAgent !== ethers.ZeroAddress) {
+        status = "In Progress";
+      }
+      return status;
+    }
+
+    async function resolveJobStatus(jobId, job, indexEntry) {
+      return deriveJobStatus(job, indexEntry);
+    }
+
+    function getSortedJobIds() {
+      const entries = Object.values(state.index.jobs || {});
+      return entries
+        .sort((a, b) => {
+          const blockA = a.createdBlock ?? a.lastActivityBlock ?? 0;
+          const blockB = b.createdBlock ?? b.lastActivityBlock ?? 0;
+          if (blockA !== blockB) return blockB - blockA;
+          const idA = BigInt(a.jobId);
+          const idB = BigInt(b.jobId);
+          return idA === idB ? 0 : idA > idB ? -1 : 1;
+        })
+        .map((entry) => entry.jobId);
+    }
+
+    function getSortedNftIds() {
+      const entries = Object.values(state.index.nfts || {});
+      return entries
+        .sort((a, b) => {
+          const blockA = a.issuedBlock ?? a.lastActivityBlock ?? 0;
+          const blockB = b.issuedBlock ?? b.lastActivityBlock ?? 0;
+          if (blockA !== blockB) return blockB - blockA;
+          const idA = BigInt(a.tokenId);
+          const idB = BigInt(b.tokenId);
+          return idA === idB ? 0 : idA > idB ? -1 : 1;
+        })
+        .map((entry) => entry.tokenId);
+    }
+
+    function getFilteredJobIds() {
+      const filter = state.ui.jobsFilter;
+      const jobIds = getSortedJobIds();
+      if (filter === "all") return jobIds;
+      return jobIds.filter((jobId) => {
+        const entry = state.index.jobs[jobId];
+        const status = jobStatusFromIndex(entry);
+        if (filter === "open") return status === "Open";
+        if (filter === "in_progress") return status === "In Progress";
+        if (filter === "completion_requested") return status === "Completion Requested";
+        if (filter === "disputed") return status === "Disputed";
+        if (filter === "completed") return status === "Completed";
+        if (filter === "cancelled") return status === "Deleted";
+        return true;
+      });
+    }
+
+    async function ensureNftOwners(tokenIds) {
+      const missing = tokenIds.filter((tokenId) => !state.nftCache[tokenId]?.owner);
+      if (!missing.length) return;
+      await asyncPool(6, missing, async (tokenId) => {
+        const cached = state.nftCache[tokenId] || {};
+        try {
+          const owner = await state.readContract.ownerOf(BigInt(tokenId));
+          state.nftCache[tokenId] = { ...cached, owner };
+        } catch (error) {
+          state.nftCache[tokenId] = {
+            ...cached,
+            owner: null,
+            ownerError: error.shortMessage || error.message || "Owner lookup failed.",
+          };
+        }
+      });
+    }
+
+    async function getFilteredNftIds() {
+      let nftIds = getSortedNftIds();
+      if (state.ui.nftsMyOnly) {
+        if (!state.walletAddress) {
+          ids("nftsFilterStatus").textContent = "Connect a wallet to filter My NFTs.";
+          return [];
+        }
+        await ensureNftOwners(nftIds);
+        nftIds = nftIds.filter((tokenId) => isMe(state.nftCache[tokenId]?.owner));
+      }
+      return nftIds;
+    }
+
+    function paginateIds(idsList, page, pageSize) {
+      const total = idsList.length;
+      const maxPage = Math.max(1, Math.ceil(total / pageSize));
+      const safePage = Math.min(Math.max(page, 0), maxPage - 1);
+      const start = safePage * pageSize;
+      const end = start + pageSize;
+      return {
+        items: idsList.slice(start, end),
+        total,
+        page: safePage,
+        maxPage,
+      };
+    }
+
+    async function approveToken(amount, context) {
+      if (!state.walletAddress) {
+        throw new Error("Connect a wallet to approve tokens.");
+      }
+      const token = await ensureToken();
+      if (!state.contractAddress) {
+        throw new Error("Set a contract address first.");
+      }
+      try {
+        await token.getFunction("approve").staticCall(state.contractAddress, amount);
+      } catch (error) {
+        const friendly = AGIJMErrorDecoder?.friendlyError
+          ? AGIJMErrorDecoder.friendlyError(error, buildErrorContext({ type: "preflight", method: "approve", description: context }))
+          : (error.shortMessage || error.message || "Approve would revert.");
+        throw new Error(friendly);
+      }
+      const tx = await token.connect(state.signer).approve(state.contractAddress, amount);
+      logEvent(`⏳ ${context} approve — ${tx.hash}`);
+      await tx.wait();
+      logEvent(`✅ ${context} approve confirmed`);
+    }
+
+    async function loadJobs() {
+      requireContract();
+      await ensureToken();
+      const tbody = ids("jobsTable");
+      tbody.innerHTML = "";
+      let pageData = null;
+      let jobIds = [];
+      const hasIndex = Object.keys(state.index.jobs || {}).length > 0;
+
+      if (hasIndex) {
+        const filtered = getFilteredJobIds();
+        pageData = paginateIds(filtered, state.ui.jobsPage, state.ui.jobsPageSize);
+        state.ui.jobsPage = pageData.page;
+        jobIds = pageData.items;
+      } else {
+        if (state.ui.jobsFilter !== "all") {
+          state.ui.jobsFilter = "all";
+          ids("jobsFilter").value = "all";
+          logEvent("Indexer unavailable: job filters require indexed events.");
+        }
+        const nextJobId = await state.readContract.nextJobId();
+        const total = Number(nextJobId);
+        const maxPage = Math.max(1, Math.ceil(total / state.ui.jobsPageSize));
+        state.ui.jobsPage = Math.min(state.ui.jobsPage, maxPage - 1);
+        const startId = total - 1 - state.ui.jobsPage * state.ui.jobsPageSize;
+        const endId = Math.max(-1, startId - state.ui.jobsPageSize);
+        for (let i = startId; i > endId; i -= 1) {
+          if (i < 0) break;
+          jobIds.push(i.toString());
+        }
+        pageData = { total, maxPage, page: state.ui.jobsPage };
+      }
+
+      const jobs = await asyncPool(6, jobIds, async (jobId) => {
+        try {
+          const [jobCore, jobValidation, jobSpecURI, jobCompletionURI] = await Promise.all([
+            state.readContract.getJobCore(BigInt(jobId)),
+            state.readContract.getJobValidation(BigInt(jobId)),
+            state.readContract.getJobSpecURI(BigInt(jobId)),
+            state.readContract.getJobCompletionURI(BigInt(jobId)),
+          ]);
+          const job = {
+            employer: jobCore[0],
+            assignedAgent: jobCore[1],
+            payout: jobCore[2],
+            duration: jobCore[3],
+            completed: jobCore[5],
+            disputed: jobCore[6],
+            expired: jobCore[7],
+            completionRequested: jobValidation[0],
+            approvals: jobValidation[1],
+            disapprovals: jobValidation[2],
+            jobSpecURI,
+            jobCompletionURI,
+            details: "",
+          };
+          const indexEntry = state.index.jobs[jobId];
+          const status = await resolveJobStatus(jobId, job, indexEntry);
+          return { jobId, job, status };
+        } catch (error) {
+          const status = "Deleted";
+          const job = {
+            employer: ethers.ZeroAddress,
+            assignedAgent: ethers.ZeroAddress,
+            payout: 0n,
+            duration: 0n,
+            completed: false,
+            disputed: false,
+            expired: false,
+            completionRequested: false,
+            approvals: 0n,
+            disapprovals: 0n,
+            jobSpecURI: "",
+            jobCompletionURI: "",
+            details: "",
+          };
+          return { jobId, job, status };
+        }
+      });
+
+      for (const { jobId, job, status } of jobs) {
+        const employer = job.employer;
+        const assignedAgent = job.assignedAgent;
+        const completed = job.completed;
+        const completionRequested = job.completionRequested;
+        const approvals = job.approvals;
+        const disapprovals = job.disapprovals;
+        const disputed = job.disputed;
+
+        const row = document.createElement("tr");
+        const cells = [
+          jobId.toString(),
+          status,
+          employer,
+          assignedAgent,
+          formatToken(job.payout),
+          job.duration.toString(),
+          `${approvals.toString()} / ${disapprovals.toString()}`,
+          completionRequested ? "Yes" : "No",
+          disputed ? "Yes" : "No",
+          job.jobSpecURI,
+          job.jobCompletionURI,
+          job.details,
+        ];
+        for (const cell of cells) {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          row.appendChild(td);
+        }
+        const actionCell = document.createElement("td");
+        if (isCancelEligible(job)) {
+          const button = document.createElement("button");
+          button.textContent = "Cancel";
+          button.className = "danger";
+          button.addEventListener("click", async () => {
+            ids("cancelJobId").value = jobId.toString();
+            updateCancelButtonState();
+            try {
+              await handleCancelJobFlow(BigInt(jobId));
+            } catch (error) {
+              showAlert(error.message);
+            }
+          });
+          actionCell.appendChild(button);
+        } else {
+          actionCell.textContent = "—";
+        }
+        row.appendChild(actionCell);
+        tbody.appendChild(row);
+      }
+
+      if (pageData) {
+        ids("jobsPageInfo").textContent = `Page ${pageData.page + 1} of ${pageData.maxPage}`;
+        ids("jobsPrev").disabled = pageData.page <= 0;
+        ids("jobsNext").disabled = pageData.page >= pageData.maxPage - 1;
+      }
+      saveUiSettings();
+      logEvent(`Hydrated ${jobIds.length} jobs with bounded calls.`);
+    }
+
+    async function loadNfts() {
+      requireContract();
+      await ensureToken();
+      const tbody = ids("nftsTable");
+      tbody.innerHTML = "";
+      ids("nftsFilterStatus").textContent = "";
+      let pageData = null;
+      let tokenIds = [];
+      const hasIndex = Object.keys(state.index.nfts || {}).length > 0;
+
+      if (hasIndex) {
+        const filtered = await getFilteredNftIds();
+        pageData = paginateIds(filtered, state.ui.nftsPage, state.ui.nftsPageSize);
+        state.ui.nftsPage = pageData.page;
+        tokenIds = pageData.items;
+      } else {
+        if (state.ui.nftsMyOnly) {
+          state.ui.nftsMyOnly = false;
+          ids("nftsMyOnly").checked = false;
+          ids("nftsFilterStatus").textContent = "Indexer unavailable: NFT filters require indexed events.";
+          logEvent("Indexer unavailable: NFT filters require indexed events.");
+        }
+        const nextTokenId = await state.readContract.nextTokenId();
+        const total = Number(nextTokenId);
+        const maxPage = Math.max(1, Math.ceil(total / state.ui.nftsPageSize));
+        state.ui.nftsPage = Math.min(state.ui.nftsPage, maxPage - 1);
+        const startId = total - 1 - state.ui.nftsPage * state.ui.nftsPageSize;
+        const endId = Math.max(-1, startId - state.ui.nftsPageSize);
+        for (let i = startId; i > endId; i -= 1) {
+          if (i < 0) break;
+          tokenIds.push(i.toString());
+        }
+        pageData = { total, maxPage, page: state.ui.nftsPage };
+      }
+
+      const nfts = await asyncPool(6, tokenIds, async (tokenId) => {
+        const cached = state.nftCache[tokenId] || {};
+        let owner = cached.owner;
+        let tokenUri = cached.tokenUri;
+        try {
+          owner = await state.readContract.ownerOf(BigInt(tokenId));
+          if (!tokenUri) {
+            tokenUri = await state.readContract.tokenURI(BigInt(tokenId));
+          }
+        } catch (error) {
+          owner = null;
+          if (!tokenUri) {
+            tokenUri = null;
+          }
+        }
+        state.nftCache[tokenId] = { ...cached, owner, tokenUri };
+        return { tokenId, owner, tokenUri };
+      });
+
+      for (const entry of nfts) {
+        const row = document.createElement("tr");
+        const tokenCell = document.createElement("td");
+        tokenCell.textContent = entry.tokenId.toString();
+        row.appendChild(tokenCell);
+
+        const ownerCell = document.createElement("td");
+        ownerCell.appendChild(createAddressNode(entry.owner || "Unknown"));
+        if (isMe(entry.owner)) {
+          ownerCell.appendChild(buildPill("You", "ok"));
+        }
+        row.appendChild(ownerCell);
+
+        const uriCell = document.createElement("td");
+        uriCell.textContent = entry.tokenUri || "—";
+        row.appendChild(uriCell);
+
+        tbody.appendChild(row);
+      }
+
+      if (pageData) {
+        ids("nftsPageInfo").textContent = `Page ${pageData.page + 1} of ${pageData.maxPage}`;
+        ids("nftsPrev").disabled = pageData.page <= 0;
+        ids("nftsNext").disabled = pageData.page >= pageData.maxPage - 1;
+      }
+      saveUiSettings();
+      logEvent(`Hydrated ${tokenIds.length} NFTs with bounded calls.`);
+    }
+
+    async function loadEvents() {
+      requireContract();
+      const fromBlockInput = ids("fromBlock").value.trim();
+      const toBlockInput = ids("toBlock").value.trim();
+      const latest = await state.provider.getBlockNumber();
+      let fromBlock = parseBlockInput(fromBlockInput, latest);
+      let toBlock = parseBlockInput(toBlockInput, latest);
+      if (fromBlock == null) {
+        fromBlock = Math.max(0, latest - 20000);
+      }
+      if (toBlock == null) {
+        toBlock = latest;
+      }
+      if (!Number.isFinite(fromBlock) || fromBlock < 0 || !Number.isFinite(toBlock) || toBlock < 0) {
+        throw new Error("Block range must be valid numbers.");
+      }
+      if (fromBlock > toBlock) {
+        throw new Error("From block must be less than or equal to to block.");
+      }
+
+      const filters = [
+        state.readContract.filters.JobCreated(),
+        state.readContract.filters.JobApplied(),
+        state.readContract.filters.JobCompletionRequested(),
+        state.readContract.filters.JobValidated(),
+        state.readContract.filters.JobDisapproved(),
+        state.readContract.filters.JobCompleted(),
+        state.readContract.filters.JobCancelled(),
+        state.readContract.filters.JobDisputed(),
+      ];
+      pushFilterIfPresent(filters, state.readContract, "DisputeResolved");
+      pushFilterIfPresent(filters, state.readContract, "DisputeResolvedWithCode");
+      filters.push(state.readContract.filters.NFTIssued());
+
+      for (const filter of filters) {
+        const events = await state.readContract.queryFilter(filter, fromBlock, toBlock);
+        for (const evt of events) {
+          logEvent(`${evt.eventName} — block ${evt.blockNumber}`);
+        }
+      }
+      const legacyDisputeLogs = await fetchLegacyDisputeResolvedLogs(fromBlock, toBlock);
+      for (const evt of legacyDisputeLogs) {
+        logEvent(`${evt.eventName} — block ${evt.blockNumber}`);
+      }
+    }
+
+    function subscribeEvents() {
+      requireContract();
+      if (state.eventSubscribed) return;
+      const contract = state.contract || state.readContract;
+      if (!contract) throw new Error("Contract not ready.");
+      state.eventSubscribed = true;
+      contract.on("JobCreated", (jobId, jobSpecURI) => logEvent(`JobCreated #${jobId} (${jobSpecURI})`));
+      contract.on("JobApplied", (jobId, agent) => logEvent(`JobApplied #${jobId} by ${agent}`));
+      contract.on("JobCompletionRequested", (jobId, agent, jobCompletionURI) => logEvent(`JobCompletionRequested #${jobId} by ${agent} (${jobCompletionURI})`));
+      contract.on("JobValidated", (jobId, validator) => logEvent(`JobValidated #${jobId} by ${validator}`));
+      contract.on("JobDisapproved", (jobId, validator) => logEvent(`JobDisapproved #${jobId} by ${validator}`));
+      contract.on("JobCompleted", (jobId) => logEvent(`JobCompleted #${jobId}`));
+      contract.on("JobCancelled", (jobId) => logEvent(`JobCancelled #${jobId}`));
+      contract.on("JobDisputed", (jobId) => logEvent(`JobDisputed #${jobId}`));
+      if (hasContractEvent(contract, "DisputeResolved")) {
+        contract.on("DisputeResolved", (jobId, resolver, resolution) => logEvent(`DisputeResolved #${jobId} by ${resolver}: ${resolution}`));
+      }
+      if (hasContractEvent(contract, "DisputeResolvedWithCode")) {
+        contract.on("DisputeResolvedWithCode", (jobId, resolver, resolutionCode, reason) => {
+          const action = formatResolutionCode(resolutionCode);
+          const detail = reason ? ` — ${reason}` : "";
+          logEvent(`DisputeResolvedWithCode #${jobId} by ${resolver}: ${action}${detail}`);
+        });
+      }
+      contract.on("NFTIssued", (tokenId) => logEvent(`NFTIssued #${tokenId}`));
+      subscribeLegacyDisputeResolved(contract);
+    }
+
+    async function loadUiConfig() {
+      let config = { ...configDefaults };
+      try {
+        const response = await fetch("./agijobmanager.config.json", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          config = { ...configDefaults, ...(data || {}) };
+        }
+      } catch (error) {
+        // Non-fatal: fall back to defaults.
+      }
+
+      let preferred = "";
+      if (config.preferredContract) {
+        try {
+          preferred = parseAddress(config.preferredContract, "Preferred contract address");
+        } catch (error) {
+          logEvent(`⚠️ Config preferredContract invalid: ${error.message}`);
+        }
+      }
+      let deployments = null;
+      let deploymentPreferred = "";
+      try {
+        const response = await fetch("../deployments/mainnet.json", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          deployments = data || null;
+        }
+      } catch (error) {
+        deployments = null;
+      }
+      if (deployments?.agiJobManager) {
+        try {
+          deploymentPreferred = parseAddress(deployments.agiJobManager, "Deployments contract address");
+        } catch (error) {
+          logEvent(`⚠️ Deployments agiJobManager invalid: ${error.message}`);
+        }
+      }
+      let legacy = "";
+      const legacyCandidate = config.legacyContract || deployments?.legacyV0 || legacyAddress;
+      if (legacyCandidate) {
+        try {
+          legacy = setLegacyAddress(legacyCandidate);
+        } catch (error) {
+          logEvent(`⚠️ Legacy contract invalid: ${error.message}`);
+        }
+      }
+
+      state.config = {
+        ...config,
+        preferredContract: preferred,
+        legacyContract: legacy,
+      };
+      state.deployments = deployments;
+      setText("mainnetDeployment", preferred || deploymentPreferred || "TBD");
+      if (!legacy) {
+        state.legacyAddress = null;
+        setText("legacyAddress", "Unavailable");
+      }
+      return state.config;
+    }
+
+    function resolveInitialContractAddress() {
+      const url = new URL(window.location.href);
+      const contract = url.searchParams.get("contract");
+      if (contract) {
+        try {
+          applyContractAddress(contract, { source: "query", persist: true });
+          return;
+        } catch (error) {
+          showAlert("Invalid contract address in query string.");
+        }
+      }
+
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          applyContractAddress(stored, { source: "localStorage" });
+          return;
+        } catch (error) {
+          localStorage.removeItem(storageKey);
+        }
+      }
+
+      if (state.config?.preferredContract) {
+        try {
+          applyContractAddress(state.config.preferredContract, { source: "config" });
+          return;
+        } catch (error) {
+          logEvent(`⚠️ Config preferredContract invalid: ${error.message}`);
+        }
+      }
+
+      if (state.deployments?.agiJobManager) {
+        try {
+          applyContractAddress(state.deployments.agiJobManager, { source: "deployments" });
+          return;
+        } catch (error) {
+          logEvent(`⚠️ Deployments agiJobManager invalid: ${error.message}`);
+        }
+      }
+
+      updateContractSourceDisplay();
+    }
+
+    async function handleSaveContract() {
+      const value = ids("contractAddress").value.trim();
+      if (!value) {
+        throw new Error("Contract address cannot be empty.");
+      }
+      applyContractAddress(value, { source: "manual", persist: true });
+      const provider = maybeInitProvider();
+      if (provider) {
+        await updateWriteAccess();
+        await refreshDashboard();
+      } else {
+        resetSnapshot();
+      }
+    }
+
+    async function handleSwitchMainnet() {
+      if (!window.ethereum) {
+        throw new Error("Wallet not available.");
+      }
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x1" }],
+      });
+    }
+
+    ids("connectButton").addEventListener("click", async () => {
+      try {
+        await connectWallet();
+        await refreshDashboard();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("disconnectButton").addEventListener("click", () => {
+      disconnectWallet();
+    });
+
+    ids("saveContract").addEventListener("click", async () => {
+      try {
+        await handleSaveContract();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("clearContract").addEventListener("click", () => {
+      ids("contractAddress").value = "";
+      state.contractAddress = null;
+      state.contractSource = null;
+      localStorage.removeItem(storageKey);
+      setContracts();
+      setWriteEnabled(false, "Contract address not set.");
+      resetSnapshot();
+      resetRoleFlags();
+      updateContractSourceDisplay();
+    });
+
+    ids("legacyContract").addEventListener("click", () => {
+      if (!state.legacyAddress) {
+        showAlert("Legacy address unavailable. Check UI config.");
+        return;
+      }
+      applyContractAddress(state.legacyAddress, { source: "legacy", persist: true });
+    });
+
+    ids("switchMainnet").addEventListener("click", async () => {
+      try {
+        await handleSwitchMainnet();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("refreshSnapshot").addEventListener("click", async () => {
+      try {
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("refreshRoles").addEventListener("click", async () => {
+      try {
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("runIdentityCheck").addEventListener("click", async () => {
+      try {
+        await runIdentityCheck();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("evaluateAgentEligibility").addEventListener("click", async () => {
+      try {
+        const result = await evaluateEligibility("agent");
+        renderEligibility("agent", result);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("evaluateValidatorEligibility").addEventListener("click", async () => {
+      try {
+        const result = await evaluateEligibility("validator");
+        renderEligibility("validator", result);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("approveToken").addEventListener("click", async () => {
+      try {
+        await ensureToken();
+        const amount = parseTokenAmount(ids("approveAmount").value, "Approve amount");
+        await approveToken(amount, "Employer");
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("savePinataJwt").addEventListener("click", () => {
+      setStoredCredential(metadataStorageKeys.pinataJwt, ids("pinataJwt").value.trim());
+      ids("pinataJwt").value = "";
+      refreshCredentialStatus();
+    });
+
+    ids("clearPinataJwt").addEventListener("click", () => {
+      setStoredCredential(metadataStorageKeys.pinataJwt, "");
+      refreshCredentialStatus();
+    });
+
+    ids("saveNftStorageKey").addEventListener("click", () => {
+      setStoredCredential(metadataStorageKeys.nftStorageKey, ids("nftStorageKey").value.trim());
+      ids("nftStorageKey").value = "";
+      refreshCredentialStatus();
+    });
+
+    ids("clearNftStorageKey").addEventListener("click", () => {
+      setStoredCredential(metadataStorageKeys.nftStorageKey, "");
+      refreshCredentialStatus();
+    });
+
+    ids("jobMetaSource").addEventListener("change", () => {
+      applyMetadataSourceVisibility();
+      refreshJobSpecPreview();
+    });
+
+    ids("completionMetaSource").addEventListener("change", () => {
+      applyMetadataSourceVisibility();
+      refreshCompletionPreview();
+    });
+
+    [
+      "jobTitle",
+      "jobSummary",
+      "jobDescription",
+      "jobLinks",
+      "jobAttachments",
+      "jobImage",
+      "jobAnimation",
+      "jobExternalUrl",
+      "jobPayout",
+      "jobDuration",
+    ].forEach((id) => {
+      ids(id).addEventListener("input", () => {
+        syncMarkdownPreview();
+        refreshJobSpecPreview();
+      });
+    });
+
+    [
+      "completionJobId",
+      "completionTitle",
+      "completionSummary",
+      "completionDescription",
+      "completionSpecUri",
+      "completionDeliverables",
+      "completionLinks",
+      "completionAttachments",
+      "completionImage",
+      "completionAnimation",
+      "completionExternalUrl",
+    ].forEach((id) => {
+      ids(id).addEventListener("input", () => {
+        syncMarkdownPreview();
+        refreshCompletionPreview();
+      });
+    });
+
+    ["jobSpecUri", "jobSpecUriExisting"].forEach((id) => {
+      ids(id).addEventListener("input", () => {
+        if (!ids("completionSpecUri").value.trim()) {
+          ids("completionSpecUri").value = ids(id).value.trim();
+        }
+      });
+    });
+
+    ids("jobSpecValidate").addEventListener("click", async () => {
+      try {
+        const metadata = await buildJobSpecMetadata();
+        const missing = validateMetadata(metadata);
+        if (missing.length) {
+          updatePill("jobSpecStatus", `Missing: ${missing.join(", ")}`, "danger");
+        } else {
+          updatePill("jobSpecStatus", "Valid", "ok");
+        }
+        await refreshJobSpecPreview();
+      } catch (error) {
+        updatePill("jobSpecStatus", error.message, "danger");
+      }
+    });
+
+    ids("completionValidate").addEventListener("click", async () => {
+      try {
+        const metadata = await buildCompletionMetadata();
+        const missing = validateMetadata(metadata);
+        if (missing.length) {
+          updatePill("completionStatus", `Missing: ${missing.join(", ")}`, "danger");
+        } else {
+          updatePill("completionStatus", "Valid", "ok");
+        }
+        await refreshCompletionPreview();
+      } catch (error) {
+        updatePill("completionStatus", error.message, "danger");
+      }
+    });
+
+    ids("jobSpecDownload").addEventListener("click", async () => {
+      try {
+        const metadata = await buildJobSpecMetadata();
+        const json = JSON.stringify(metadata, null, 2);
+        downloadJson("jobSpec.v1.json", json);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("completionDownload").addEventListener("click", async () => {
+      try {
+        const metadata = await buildCompletionMetadata();
+        const json = JSON.stringify(metadata, null, 2);
+        downloadJson("jobCompletion.v1.json", json);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("uploadJobSpecPinata").addEventListener("click", async () => {
+      try {
+        const metadata = await buildJobSpecMetadata();
+        const uri = await uploadToPinata(metadata, "jobSpec.v1.json");
+        ids("jobSpecUri").value = uri;
+        setText("jobSpecUploadStatus", `Uploaded via Pinata: ${uri}`);
+      } catch (error) {
+        setText("jobSpecUploadStatus", error.message);
+      }
+    });
+
+    ids("uploadJobSpecNftStorage").addEventListener("click", async () => {
+      try {
+        const metadata = await buildJobSpecMetadata();
+        const uri = await uploadToNftStorage(metadata);
+        ids("jobSpecUri").value = uri;
+        setText("jobSpecUploadStatus", `Uploaded via NFT.Storage: ${uri}`);
+      } catch (error) {
+        setText("jobSpecUploadStatus", error.message);
+      }
+    });
+
+    ids("uploadCompletionPinata").addEventListener("click", async () => {
+      try {
+        const metadata = await buildCompletionMetadata();
+        const uri = await uploadToPinata(metadata, "jobCompletion.v1.json");
+        ids("completionUri").value = uri;
+        setText("completionUploadStatus", `Uploaded via Pinata: ${uri}`);
+      } catch (error) {
+        setText("completionUploadStatus", error.message);
+      }
+    });
+
+    ids("uploadCompletionNftStorage").addEventListener("click", async () => {
+      try {
+        const metadata = await buildCompletionMetadata();
+        const uri = await uploadToNftStorage(metadata);
+        ids("completionUri").value = uri;
+        setText("completionUploadStatus", `Uploaded via NFT.Storage: ${uri}`);
+      } catch (error) {
+        setText("completionUploadStatus", error.message);
+      }
+    });
+
+    ids("createJob").addEventListener("click", async () => {
+      try {
+        const metaSource = ids("jobMetaSource").value;
+        let jobSpecUri = "";
+        if (metaSource === "existing") {
+          jobSpecUri = validateUri(ids("jobSpecUriExisting").value, "Job spec URI");
+        } else {
+          const metadata = await buildJobSpecMetadata();
+          const missing = validateMetadata(metadata);
+          if (missing.length) {
+            throw new Error(`Job spec metadata missing required fields: ${missing.join(", ")}`);
+          }
+          jobSpecUri = validateUri(ids("jobSpecUri").value, "Job spec URI");
+        }
+        await ensureToken();
+        const payout = parseTokenAmount(ids("jobPayout").value, "Payout");
+        const duration = parseUint(ids("jobDuration").value, "Duration");
+        const summary = ids("jobSummary").value.trim();
+        const title = ids("jobTitle").value.trim();
+        const details = ids("jobDetails").value.trim() || summary || title;
+        await sendTx("createJob", [jobSpecUri, payout, duration, details], "Create job");
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("cancelJobId").addEventListener("input", () => {
+      updateCancelButtonState();
+    });
+
+    ids("cancelJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("cancelJobId").value, "Job ID");
+        await handleCancelJobFlow(jobId);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("employerDisputeJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("employerDisputeJobId").value, "Job ID");
+        await sendTx("disputeJob", [jobId], "Dispute job");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("applyForJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("applyJobId").value, "Job ID");
+        const label = ids("applySubdomain").value.trim();
+        if (!label) throw new Error("Label is required.");
+        const proof = parseProof(ids("applyProof").value);
+        await sendTx("applyForJob", [jobId, label, proof], "Apply for job");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    async function updateValidatorActionState(jobIdInputId, buttonId, noticeId) {
+      const button = ids(buttonId);
+      const notice = ids(noticeId);
+      if (!state.readContract) {
+        button.disabled = true;
+        if (notice) {
+          notice.textContent = "Connect a wallet to check completion status.";
+          notice.hidden = false;
+        }
+        return;
+      }
+      const rawJobId = ids(jobIdInputId).value.trim();
+      if (!rawJobId) {
+        button.disabled = true;
+        if (notice) {
+          notice.textContent = "Enter a job ID to check completion status.";
+          notice.hidden = false;
+        }
+        return;
+      }
+      let jobId;
+      try {
+        jobId = parseUint(rawJobId, "Job ID");
+      } catch (error) {
+        button.disabled = true;
+        if (notice) {
+          notice.textContent = error.message;
+          notice.hidden = false;
+        }
+        return;
+      }
+      try {
+        const jobValidation = await state.readContract.getJobValidation(BigInt(jobId));
+        const completionRequested = jobValidation[0];
+        if (completionRequested) {
+          button.disabled = false;
+          if (notice) notice.hidden = true;
+        } else {
+          button.disabled = true;
+          if (notice) {
+            notice.textContent = "Awaiting completion submission from agent.";
+            notice.hidden = false;
+          }
+        }
+      } catch (error) {
+        button.disabled = true;
+        if (notice) {
+          notice.textContent = "Unable to load job status.";
+          notice.hidden = false;
+        }
+      }
+    }
+
+    ids("requestCompletion").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("completionJobId").value, "Job ID");
+        const metaSource = ids("completionMetaSource").value;
+        let completionUri = "";
+        if (metaSource === "existing") {
+          completionUri = validateUri(ids("completionUriExisting").value, "Completion URI");
+        } else {
+          const metadata = await buildCompletionMetadata();
+          const missing = validateMetadata(metadata);
+          if (missing.length) {
+            throw new Error(`Completion metadata missing required fields: ${missing.join(", ")}`);
+          }
+          completionUri = validateUri(ids("completionUri").value, "Completion URI");
+        }
+        await sendTx("requestJobCompletion", [jobId, completionUri], "Request completion");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("agentDisputeJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("agentDisputeJobId").value, "Job ID");
+        await sendTx("disputeJob", [jobId], "Dispute job");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("validateJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("validateJobId").value, "Job ID");
+        await updateValidatorActionState("validateJobId", "validateJob", "validateJobNotice");
+        if (ids("validateJob").disabled) {
+          return;
+        }
+        const label = ids("validateSubdomain").value.trim();
+        if (!label) throw new Error("Label is required.");
+        const proof = parseProof(ids("validateProof").value);
+        await sendTx("validateJob", [jobId, label, proof], "Validate job");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("disapproveJob").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("disapproveJobId").value, "Job ID");
+        await updateValidatorActionState("disapproveJobId", "disapproveJob", "disapproveJobNotice");
+        if (ids("disapproveJob").disabled) {
+          return;
+        }
+        const label = ids("disapproveSubdomain").value.trim();
+        if (!label) throw new Error("Label is required.");
+        const proof = parseProof(ids("disapproveProof").value);
+        await sendTx("disapproveJob", [jobId, label, proof], "Disapprove job");
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("resolveDispute").addEventListener("click", async () => {
+      try {
+        const jobId = parseUint(ids("resolveJobId").value, "Job ID");
+        const resolutionCode = parseInt(ids("resolveAction").value, 10);
+        if (!Number.isFinite(resolutionCode)) throw new Error("Resolution action is required.");
+        const reason = ids("resolveReason").value.trim();
+        const actionLabel = formatResolutionCode(resolutionCode);
+        if (resolutionCode === 1 || resolutionCode === 2) {
+          const confirmMessage = [
+            `Resolve dispute for job ${jobId}`,
+            `Action: ${actionLabel}`,
+            `Reason: ${reason || "—"}`,
+            "This will move funds and finalize the job.",
+            "Proceed?",
+          ].join("\\n");
+          if (!window.confirm(confirmMessage)) {
+            logEvent(`⚠️ Resolve dispute #${jobId} aborted by user.`);
+            return;
+          }
+        }
+        await sendTx("resolveDisputeWithCode", [jobId, resolutionCode, reason], `Resolve dispute (${actionLabel})`);
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("validateJobId").addEventListener("input", () => {
+      updateValidatorActionState("validateJobId", "validateJob", "validateJobNotice");
+    });
+
+    ids("disapproveJobId").addEventListener("input", () => {
+      updateValidatorActionState("disapproveJobId", "disapproveJob", "disapproveJobNotice");
+    });
+
+    updateValidatorActionState("validateJobId", "validateJob", "validateJobNotice");
+    updateValidatorActionState("disapproveJobId", "disapproveJob", "disapproveJobNotice");
+
+    ids("pauseContract").addEventListener("click", async () => {
+      try {
+        await sendAdminTx("pause", [], "Pause contract", [`Paused: true`]);
+        await updateSnapshot();
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("unpauseContract").addEventListener("click", async () => {
+      try {
+        await sendAdminTx("unpause", [], "Unpause contract", [`Paused: false`]);
+        await updateSnapshot();
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("addModerator").addEventListener("click", async () => {
+      try {
+        const moderator = parseAddress(ids("moderatorAddress").value.trim(), "Moderator address");
+        await sendAdminTx("addModerator", [moderator], "Add moderator", [`Moderator: ${moderator}`]);
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("removeModerator").addEventListener("click", async () => {
+      try {
+        const moderator = parseAddress(ids("moderatorAddress").value.trim(), "Moderator address");
+        await sendAdminTx("removeModerator", [moderator], "Remove moderator", [`Moderator: ${moderator}`]);
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("updateBlacklist").addEventListener("click", async () => {
+      try {
+        const target = parseAddress(ids("blacklistAddress").value.trim(), "Target address");
+        const role = ids("blacklistRole").value;
+        const status = ids("blacklistStatus").value === "true";
+        const method = role === "agent" ? "blacklistAgent" : "blacklistValidator";
+        const label = role === "agent" ? "Agent" : "Validator";
+        await sendAdminTx(method, [target, status], `${label} blacklist`, [
+          `Target: ${target}`,
+          `Status: ${status ? "blacklisted" : "unblacklisted"}`,
+        ]);
+        await updateRoleFlags();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setApprovals").addEventListener("click", async () => {
+      try {
+        const approvals = parseUint(ids("paramApprovals").value, "Required approvals");
+        await sendAdminTx("setRequiredValidatorApprovals", [approvals], "Set validator approvals", [
+          `New approvals: ${approvals.toString()}`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setDisapprovals").addEventListener("click", async () => {
+      try {
+        const disapprovals = parseUint(ids("paramDisapprovals").value, "Required disapprovals");
+        await sendAdminTx("setRequiredValidatorDisapprovals", [disapprovals], "Set validator disapprovals", [
+          `New disapprovals: ${disapprovals.toString()}`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setRewardPct").addEventListener("click", async () => {
+      try {
+        const rewardPct = parseUint(ids("paramRewardPct").value, "Validation reward percentage");
+        await sendAdminTx("setValidationRewardPercentage", [rewardPct], "Set validation reward percentage", [
+          `New percentage: ${rewardPct.toString()}%`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setMaxPayout").addEventListener("click", async () => {
+      try {
+        await ensureToken();
+        const maxPayout = parseTokenAmount(ids("paramMaxPayout").value, "Max job payout");
+        await sendAdminTx("setMaxJobPayout", [maxPayout], "Set max job payout", [
+          `New max payout: ${formatToken(maxPayout)}`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setDurationLimit").addEventListener("click", async () => {
+      try {
+        const duration = parseUint(ids("paramDurationLimit").value, "Job duration limit");
+        await sendAdminTx("setJobDurationLimit", [duration], "Set job duration limit", [
+          `New duration limit: ${duration.toString()} seconds`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("setPremiumThreshold").addEventListener("click", async () => {
+      try {
+        const threshold = parseUint(ids("paramPremiumThreshold").value, "Premium reputation threshold");
+        await sendAdminTx("setPremiumReputationThreshold", [threshold], "Set premium reputation threshold", [
+          `New threshold: ${threshold.toString()}`,
+        ]);
+        await updateSnapshot();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("jobsFilter").addEventListener("change", async (event) => {
+      state.ui.jobsFilter = event.target.value;
+      state.ui.jobsPage = 0;
+      saveUiSettings();
+      try {
+        await loadJobs();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("jobsPageSize").addEventListener("change", async (event) => {
+      state.ui.jobsPageSize = Number(event.target.value) || defaultPageSize;
+      state.ui.jobsPage = 0;
+      saveUiSettings();
+      try {
+        await loadJobs();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("jobsPrev").addEventListener("click", async () => {
+      state.ui.jobsPage = Math.max(0, state.ui.jobsPage - 1);
+      saveUiSettings();
+      try {
+        await loadJobs();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("jobsNext").addEventListener("click", async () => {
+      state.ui.jobsPage += 1;
+      saveUiSettings();
+      try {
+        await loadJobs();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("jobsJump").addEventListener("click", async () => {
+      const page = Number(ids("jobsPageJump").value);
+      if (Number.isFinite(page) && page > 0) {
+        state.ui.jobsPage = page - 1;
+        saveUiSettings();
+        try {
+          await loadJobs();
+        } catch (error) {
+          showAlert(error.message);
+        }
+      }
+    });
+
+    function handleNftFilterChange() {
+      state.ui.nftsMyOnly = ids("nftsMyOnly").checked;
+      state.ui.nftsPage = 0;
+      saveUiSettings();
+      loadNfts().catch((error) => showAlert(error.message));
+    }
+
+    ids("nftsMyOnly").addEventListener("change", handleNftFilterChange);
+
+    ids("nftsPageSize").addEventListener("change", async (event) => {
+      state.ui.nftsPageSize = Number(event.target.value) || defaultPageSize;
+      state.ui.nftsPage = 0;
+      saveUiSettings();
+      try {
+        await loadNfts();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("nftsPrev").addEventListener("click", async () => {
+      state.ui.nftsPage = Math.max(0, state.ui.nftsPage - 1);
+      saveUiSettings();
+      try {
+        await loadNfts();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("nftsNext").addEventListener("click", async () => {
+      state.ui.nftsPage += 1;
+      saveUiSettings();
+      try {
+        await loadNfts();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("nftsJump").addEventListener("click", async () => {
+      const page = Number(ids("nftsPageJump").value);
+      if (Number.isFinite(page) && page > 0) {
+        state.ui.nftsPage = page - 1;
+        saveUiSettings();
+        try {
+          await loadNfts();
+        } catch (error) {
+          showAlert(error.message);
+        }
+      }
+    });
+
+    ids("syncIndex").addEventListener("click", async () => {
+      try {
+        await syncIndex();
+        await loadJobs();
+        await loadNfts();
+      } catch (error) {
+        updateIndexStatus("Indexing failed.");
+        showAlert(error.message);
+      }
+    });
+
+    ids("clearCache").addEventListener("click", () => {
+      clearIndexCache();
+    });
+
+    ids("loadJobs").addEventListener("click", async () => {
+      try {
+        await loadJobs();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("loadNfts").addEventListener("click", async () => {
+      try {
+        await loadNfts();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("loadEvents").addEventListener("click", async () => {
+      try {
+        await loadEvents();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("subscribeEvents").addEventListener("click", () => {
+      try {
+        subscribeEvents();
+      } catch (error) {
+        showAlert(error.message);
+      }
+    });
+
+    ids("clearLog").addEventListener("click", () => {
+      ids("activityLog").innerHTML = "";
+    });
+
+    async function bootstrap() {
+      await loadAbi();
+      await loadUiConfig();
+      loadUiSettings();
+      hydrateUiControls();
+      refreshCredentialStatus();
+      applyMetadataSourceVisibility();
+      syncMarkdownPreview();
+      await refreshJobSpecPreview();
+      await refreshCompletionPreview();
+      resolveInitialContractAddress();
+      initNetwork();
+      unbindWalletEvents();
+      bindWalletEvents();
+      updateNetworkPill();
+      setWriteEnabled(false);
+      updateIndexStatus("Indexer not synced yet.");
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

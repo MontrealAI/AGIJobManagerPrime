@@ -1,0 +1,35 @@
+{
+  "source": {
+    "chainId": 1337,
+    "network": "development",
+    "contractAddress": "0x0000000000000000000000000000000000000001",
+    "fromBlock": 0,
+    "toBlock": 42,
+    "generatedAt": "2026-01-29T00:00:00.000Z",
+    "toolVersion": "agijobmanager-erc8004-adapter@0.1.0"
+  },
+  "generatedAt": "2026-01-29T00:00:10.000Z",
+  "actions": [
+    {
+      "contractAddress": "0x0000000000000000000000000000000000000002",
+      "functionName": null,
+      "args": {
+        "agentRegistry": "eip155:1337:0x0000000000000000000000000000000000000003",
+        "agentId": 1,
+        "feedback": {
+          "clientAddress": "0x0000000000000000000000000000000000000001",
+          "tag1": "successRate",
+          "tag2": null,
+          "value": 5000,
+          "valueDecimals": 2,
+          "reason": "Completed jobs / assigned jobs",
+          "timestamp": 1700000000
+        }
+      },
+      "calldata": null,
+      "chainId": 1337,
+      "summary": "Feedback successRate for agentId 1"
+    }
+  ],
+  "notes": "Dry-run output only. Provide registry ABI + function name from 8004.org/build for submission."
+}
