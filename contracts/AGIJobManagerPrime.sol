@@ -1387,7 +1387,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
             _settleValidators(job, true, reputationPoints, validatorBudget, 0);
         }
 
-        _mintCompletionNFT(jobId, job);
+        _mintCompletionNFT(job);
         _returnDisputeBond(job, job.assignedAgent);
 
         emit JobCompleted(jobId, job.assignedAgent, reputationPoints);
@@ -1462,7 +1462,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC721 {
         }
     }
 
-    function _mintCompletionNFT(uint256 jobId, Job storage job) internal {
+    function _mintCompletionNFT(Job storage job) internal {
         uint256 tokenId = nextTokenId++;
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
         _tokenURIs[tokenId] = uri;
