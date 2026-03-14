@@ -97,6 +97,8 @@ Discovery exposes three canonical premium helpers:
 - `createPremiumJobWithDiscovery(...)`
 - `attachProcurementToExistingJob(...)`
 
+`attachProcurementToExistingJob(...)` is only valid for employer-called upgrades on jobs that are still unassigned and configured for SelectedAgentOnly intake; OpenFirstCome jobs are not eligible and will revert.
+
 Operational split:
 - Ordinary/open jobs can be created directly on `AGIJobManagerPrime`.
 - Premium jobs should be created through discovery so procurement completes before assignment.

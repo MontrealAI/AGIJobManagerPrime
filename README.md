@@ -164,7 +164,7 @@ Expected result after legacy ENS cutover:
 
 - **Ordinary job:** create directly on `AGIJobManagerPrime` and allow open applications (first valid taker path).
 - **Premium job:** create through `AGIJobDiscoveryPrime.createPremiumJobWithDiscovery(...)` so procurement is completed first.
-- **Existing job upgrade:** attach procurement to an existing settlement job via `AGIJobDiscoveryPrime.attachProcurementToExistingJob(...)`.
+- **Existing job upgrade (eligible jobs only):** use `AGIJobDiscoveryPrime.attachProcurementToExistingJob(...)` only when the caller is the employer and the target job is still unassigned in SelectedAgentOnly intake mode; ordinary OpenFirstCome jobs are not attach-compatible and will revert.
 - **Budget planning:** pre-quote procurement requirements via `AGIJobDiscoveryPrime.quoteProcurementBudget(...)`.
 
 Premium handoff sequence is: commit/reveal applications -> shortlist -> paid finalist trial -> validator commit/reveal scoring -> designated winner assignment into settlement -> fallback finalist promotion if the designated winner fails to take the job within the configured acceptance window.
