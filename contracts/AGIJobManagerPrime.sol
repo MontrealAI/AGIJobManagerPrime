@@ -580,7 +580,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function setDiscoveryModule(address module) external onlyOwner {
-        if (module == address(0)) revert InvalidParameters();
+        if (module == address(0) || module.code.length == 0) revert InvalidParameters();
         address old = discoveryModule;
         discoveryModule = module;
         emit DiscoveryModuleUpdated(old, module);

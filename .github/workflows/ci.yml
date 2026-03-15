@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  prime-canonical:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -23,26 +23,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-      - name: Bytecode size check
-        run: npm run size
-
-      - name: Test
-        run: npm run test
-
-      - name: Prime Hardhat compile check
+      - name: Install hardhat dependencies
         run: |
           cd hardhat
           npm ci
-          npm run compile
+
+      - name: Prime canonical compile/test/size/smoke
+        run: npm run test:prime:ci
 
       - name: UI smoke test
         run: npm run test:ui

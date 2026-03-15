@@ -76,14 +76,14 @@ Dry-run mainnet plan:
 
 ```bash
 cd hardhat
-DRY_RUN=1 DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT npm run deploy:prime:mainnet
+npm run deploy:prime:dry-run:mainnet
 ```
 
 Broadcast mainnet deployment:
 
 ```bash
 cd hardhat
-DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT VERIFY=1 npm run deploy:prime:mainnet
+VERIFY=1 npm run deploy:prime:mainnet
 ```
 
 Deploy to Sepolia:
@@ -135,3 +135,11 @@ Deployment summaries also print `completionNFT` (instantiated by `AGIJobManagerP
 - Legacy settlement contract `contracts/AGIJobManager.sol` remains in-repo.
 - `scripts/deploy-ens-job-pages.js` remains available for additive ENSJobPages operations.
 - Prime deploy script is now the canonical default for this repository.
+
+
+Deployment smoke check (local hardhat):
+
+```bash
+cd hardhat
+npm run deploy:prime:smoke
+```

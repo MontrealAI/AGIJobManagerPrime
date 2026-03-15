@@ -29,6 +29,8 @@ const LIBRARIES = ['UriUtils', 'BondMath', 'ReputationMath', 'ENSOwnership'];
 const SUPPORTED_NETWORKS = {
   mainnet: 1,
   sepolia: 11155111,
+  hardhat: 31337,
+  localhost: 31337,
 };
 
 function stableObject(value) {
@@ -313,7 +315,12 @@ async function main() {
   console.log(`[deployed] AGIJobManagerPrime ${managerDeployment.address} tx=${managerDeployment.txHash}`);
 
   const discoveryArgs = [managerDeployment.address];
-  const discoveryDeployment = await deployContract('AGIJobDiscoveryPrime', discoveryArgs, {}, confirmations);
+  const discoveryDeployment = await deployContract(
+    'AGIJobDiscoveryPrime',
+    discoveryArgs,
+    { libraries: { [FQNS.UriUtils]: deployments.UriUtils.address } },
+    confirmations
+  );
   deployments.AGIJobDiscoveryPrime = discoveryDeployment;
   console.log(`[deployed] AGIJobDiscoveryPrime ${discoveryDeployment.address} tx=${discoveryDeployment.txHash}`);
 
@@ -385,6 +392,7 @@ async function main() {
         name: 'AGIJobDiscoveryPrime',
         record: discoveryDeployment,
         constructorArguments: discoveryArgs,
+        libraries: { [FQNS.UriUtils]: deployments.UriUtils.address },
       },
       verifyDelayMs
     );

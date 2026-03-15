@@ -7,17 +7,16 @@ Legacy Truffle deployment notes are retained in [`docs/Deployment.md`](docs/Depl
 
 - Confirm `hardhat/.env` has `MAINNET_RPC_URL`, `PRIVATE_KEY`, `FINAL_OWNER`, and `DEPLOY_CONFIRM_MAINNET`.
 - Confirm deploy config values in `hardhat/deploy.config.example.js` are copied into your real deploy config and validated.
-- Run compile and bytecode checks before any broadcast:
-  - `cd hardhat && npm run compile`
-  - `cd .. && npx truffle compile --all`
-  - `node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('hardhat/artifacts/contracts/AGIJobManagerPrime.sol/AGIJobManagerPrime.json'));const b=(a.deployedBytecode||'').replace(/^0x/,'');console.log('runtime',b.length/2);"`
+- Run compile, size, and deploy-smoke checks before any broadcast:
+  - `npm run test:size`
+  - `npm run test:prime:deploy-smoke`
 
 ## Dry-run then broadcast
 
 - Dry-run mainnet plan first:
-  - `cd hardhat && npm run deploy:prime:mainnet:dry-run`
+  - `npm run deploy:prime:dry-run:mainnet`
 - Broadcast mainnet only after review:
-  - `cd hardhat && VERIFY=1 npm run deploy:prime:mainnet:live`
+  - `VERIFY=1 npm run deploy:prime:mainnet`
 
 ## Post-deploy verification and wiring checks
 
