@@ -144,6 +144,7 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 Expected result after Prime deployment:
 - Premium jobs use procurement-first winner discovery before assignment (not first-touch lock capture).
 - Settlement retains conservative escrow/bond/dispute/finalization behavior.
+- Optional ENSJobPages lifecycle hooks can be configured on Prime via `setEnsJobPages(...)` and remain best-effort/non-fatal.
 
 ### Optional legacy ENS wiring path (legacy contract only)
 
@@ -179,6 +180,7 @@ Premium handoff sequence is: commit/reveal applications -> shortlist -> paid fin
 Detailed procedures and expected outputs:
 - [`hardhat/README.md`](hardhat/README.md)
 - [`docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`](docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md)
+- [`docs/PRIME_ECONOMIC_GAME_THEORY_REVIEW.md`](docs/PRIME_ECONOMIC_GAME_THEORY_REVIEW.md)
 
 ## Canonical Prime checks and deploy ergonomics
 
