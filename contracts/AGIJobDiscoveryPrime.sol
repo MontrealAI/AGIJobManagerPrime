@@ -1033,6 +1033,12 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _isSelectionSlotOpen(uint256 jobId) internal view returns (bool) {
+        (bool ok, bytes memory data) = address(settlement).staticcall(
+            abi.encodeWithSelector(IAGIJobManagerPrime.getJobSelectionInfo.selector, jobId)
+        );
+
+        if (!ok || data.length == 0) return false;
+
         (
             uint8 intakeMode,
             ,
@@ -1042,7 +1048,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             ,
             ,
             address assignedAgent
-        ) = settlement.getJobSelectionInfo(jobId);
+        ) = abi.decode(data, (uint8, address, bytes32, uint64, uint64, uint64, bool, address));
 
         if (intakeMode != 1) return false;
         if (assignedAgent != address(0)) return false;

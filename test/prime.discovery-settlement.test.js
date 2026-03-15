@@ -367,4 +367,84 @@ contract('Prime discovery + settlement', (accounts) => {
     const claimableValidator = await discovery.canClaim(validatorA);
     assert(claimableValidator.gt(web3.utils.toBN(0)), 'validator reveal reward should be claimable');
   });
+
+  it('does not revert winner-finalizable helpers if linked settlement job was cancelled', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/cancelled',
+      payout: web3.utils.toWei('25'),
+      duration: 3600,
+      details: 'cancelled settlement job',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 30,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
+    const jobId = premiumEvent.args.jobId.toNumber();
+
+    const salt = web3.utils.soliditySha3('CANCEL');
+    const uri = 'ipfs://application/CANCEL';
+    const commitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uri },
+      { type: 'bytes32', value: salt }
+    );
+
+    await discovery.commitApplication(procurementId, commitment, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
+
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/CANCEL', { from: agentA });
+
+    const scoreSalt = web3.utils.soliditySha3('score-cancel');
+    const scoreCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 95 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    await discovery.commitFinalistScore(procurementId, agentA, scoreCommitment, '', EMPTY, { from: validatorA });
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 95, scoreSalt, '', EMPTY, { from: validatorA });
+
+    await manager.cancelJob(jobId, { from: employer });
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+
+    assert.equal(
+      await discovery.isWinnerFinalizable(procurementId),
+      false,
+      'winner finalizable should return false (not revert) when linked job no longer exists'
+    );
+
+    const status = await discovery.getAutonomyStatus(procurementId);
+    assert.equal(status.winnerFinalizable, false, 'autonomy status should remain readable after linked-job cancellation');
+  });
 });
