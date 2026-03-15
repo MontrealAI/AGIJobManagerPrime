@@ -1044,38 +1044,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
 
-    function isCheckpointFailed(uint256 jobId) public view returns (bool) {
-        if (settlementPaused) return false;
-        Job storage job = _job(jobId);
-        if (job.assignedAgent == address(0) || job.completed || job.expired || job.completionRequested) return false;
-        if (job.checkpointDeadline == 0 || job.checkpointSubmitted) return false;
-        return block.timestamp > job.checkpointDeadline;
-    }
-
-    function isFinalizable(uint256 jobId) public view returns (bool) {
-        if (settlementPaused) return false;
-        Job storage job = _job(jobId);
-        if (job.completed || job.expired || job.disputed || !job.completionRequested) return false;
-
-        uint256 approvals = job.validatorApprovals;
-        uint256 disapprovals = job.validatorDisapprovals;
-
-        if (job.validatorApproved) {
-            if (block.timestamp <= uint256(job.validatorApprovedAt) + challengePeriodAfterApproval) return false;
-            if (approvals > disapprovals) return true;
-        }
-
-        if (block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) return false;
-        return true;
-    }
-
-    function isExpirable(uint256 jobId) public view returns (bool) {
-        if (settlementPaused) return false;
-        Job storage job = _job(jobId);
-        if (job.completed || job.expired || job.disputed || job.completionRequested) return false;
-        if (job.assignedAgent == address(0)) return false;
-        return block.timestamp > uint256(job.assignedAt) + job.duration;
-    }
 
 
 
