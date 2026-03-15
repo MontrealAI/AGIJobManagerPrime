@@ -1047,6 +1047,84 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
 
 
+
+    function isFinalizable(uint256 jobId) public view returns (bool) {
+        if (settlementPaused) return false;
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) return false;
+        if (job.completed || job.expired || job.disputed || !job.completionRequested) return false;
+
+        uint256 approvals = job.validatorApprovals;
+        uint256 disapprovals = job.validatorDisapprovals;
+
+        if (job.validatorApproved) {
+            if (block.timestamp <= uint256(job.validatorApprovedAt) + challengePeriodAfterApproval) return false;
+            if (approvals > disapprovals) return true;
+        }
+
+        if (block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) return false;
+        return true;
+    }
+
+    function isExpirable(uint256 jobId) public view returns (bool) {
+        if (settlementPaused) return false;
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) return false;
+        if (job.completed || job.expired || job.disputed || job.completionRequested) return false;
+        if (job.assignedAgent == address(0)) return false;
+        return block.timestamp > uint256(job.assignedAt) + job.duration;
+    }
+
+    function isCheckpointFailed(uint256 jobId) public view returns (bool) {
+        if (settlementPaused) return false;
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) return false;
+        if (job.assignedAgent == address(0) || job.completed || job.expired || job.completionRequested) return false;
+        if (job.checkpointDeadline == 0 || job.checkpointSubmitted) return false;
+        return block.timestamp > job.checkpointDeadline;
+    }
+
+    function nextActionCodeForJob(uint256 jobId) external view returns (uint8) {
+        if (settlementPaused || paused()) return 1; // globally_paused
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) return 2; // job_not_found
+        if (job.completed) return 3; // completed
+        if (job.expired) return 4; // expired
+        if (job.disputed) return 5; // await_dispute_resolution
+
+        if (job.assignedAgent == address(0)) {
+            if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
+                if (job.selectedAgent == address(0)) return 6; // designate_or_promote_selected_agent
+                if (job.selectionExpiresAt != 0 && block.timestamp > job.selectionExpiresAt) {
+                    return 6; // designate_or_promote_selected_agent
+                }
+                return 7; // selected_agent_apply
+            }
+            if (job.intakeMode == IntakeMode.PerJobMerkleRoot) {
+                if (job.perJobAgentRoot == bytes32(0) || job.selectionExpiresAt == 0 || block.timestamp > job.selectionExpiresAt) {
+                    return 15; // configure_per_job_root
+                }
+            }
+            return 8; // agent_apply
+        }
+
+        if (!job.completionRequested) {
+            if (job.checkpointDeadline != 0 && !job.checkpointSubmitted) {
+                if (block.timestamp > job.checkpointDeadline) return 9; // fail_checkpoint
+                return 10; // submit_checkpoint
+            }
+            if (block.timestamp > uint256(job.assignedAt) + job.duration) return 11; // expire_job
+            return 12; // request_completion
+        }
+
+        if (isFinalizable(jobId)) return 13; // finalize_job
+        return 14; // await_validation_or_review_timeout
+    }
+
+    function canClaim(address) external pure returns (uint256) {
+        return 0;
+    }
+
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,
