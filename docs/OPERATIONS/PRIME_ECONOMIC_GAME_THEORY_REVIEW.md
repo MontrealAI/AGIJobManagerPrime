@@ -16,7 +16,7 @@ This memo captures a pre-mainnet adversarial review for Prime procurement + sett
 | Finalist stalling | Selected finalists accept then do not submit trials | Locked finalist stake forfeiture + default penalty paths; winner requires minimum reveal count. | Employer can still experience delay cost until deadlines elapse. |
 | Validator scoring | Commit but do not reveal to censor score set | Non-reveal validator bond slashing in discovery finalization. | If validator set is too small, liveness degrades. |
 | Winner handoff | Stale designated winner blocks settlement | Selection timeout (`selectionExpiresAt`) + permissionless `promoteFallbackFinalist`. | Poor parameterization of acceptance windows can still increase latency. |
-| Settlement finalization | Ambiguity for keepers and UIs causes liveness misses | Added explicit autonomy helper views in settlement: `isFinalizable`, `isExpirable`, `isCheckpointFailed`, `nextActionForJob`. | Keeper implementation quality remains an operator responsibility. |
+| Settlement finalization | Ambiguity for keepers and UIs causes liveness misses | Added explicit autonomy helper views in settlement: `isFinalizable`, `isExpirable`, `isCheckpointFailed`. | Keeper implementation quality remains an operator responsibility. |
 | Solvency accounting | Locked-fund leakage across dispute/expiry/finalization | Pull-based claim accounting and explicit locked bond buckets retained; no new externalized settlement side effects were introduced. | Full formal verification still recommended for mainnet TVL growth. |
 
 ## Code-level hardening done in this upgrade
@@ -25,7 +25,6 @@ This memo captures a pre-mainnet adversarial review for Prime procurement + sett
    - `isFinalizable(jobId)`
    - `isExpirable(jobId)`
    - `isCheckpointFailed(jobId)`
-   - `nextActionForJob(jobId)`
 2. Exposed those methods in `IAGIJobManagerPrime` for discovery/periphery/operator interoperability.
 
 ## Residual risks requiring human review

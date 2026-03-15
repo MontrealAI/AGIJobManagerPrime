@@ -1045,6 +1045,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
 
     function isCheckpointFailed(uint256 jobId) public view returns (bool) {
+        if (settlementPaused) return false;
         Job storage job = _job(jobId);
         if (job.assignedAgent == address(0) || job.completed || job.expired || job.completionRequested) return false;
         if (job.checkpointDeadline == 0 || job.checkpointSubmitted) return false;
@@ -1076,42 +1077,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         return block.timestamp > uint256(job.assignedAt) + job.duration;
     }
 
-    function nextActionForJob(uint256 jobId) external view returns (string memory) {
-        Job storage job = _job(jobId);
-        if (paused()) return "paused";
-        if (settlementPaused) return "settlement_paused";
-        if (job.completed) return "completed";
-        if (job.expired) return "expired";
-        if (job.disputed) {
-            if (block.timestamp > uint256(job.disputedAt) + disputeReviewPeriod) return "resolve_stale_dispute";
-            return "await_dispute_resolution";
-        }
-        if (job.assignedAgent == address(0)) {
-            if (job.intakeMode == IntakeMode.SelectedAgentOnly && job.selectionExpiresAt != 0 && block.timestamp > job.selectionExpiresAt) {
-                return "await_discovery_fallback";
-            }
-            if (job.intakeMode == IntakeMode.PerJobMerkleRoot && job.selectionExpiresAt != 0 && block.timestamp > job.selectionExpiresAt) {
-                return "per_job_window_expired";
-            }
-            return "await_assignment";
-        }
 
-        if (isCheckpointFailed(jobId)) return "fail_checkpoint";
-
-        if (job.completionRequested) {
-            if (isFinalizable(jobId)) return "finalize";
-            if (!job.disputed && block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) return "await_validator_window";
-            return "await_settlement_window";
-        }
-
-        if (isExpirable(jobId)) return "expire";
-
-        if (job.checkpointDeadline != 0 && !job.checkpointSubmitted) {
-            return "await_checkpoint";
-        }
-
-        return "await_completion_request";
-    }
 
     function isAuthorizedAgent(
         address claimant,

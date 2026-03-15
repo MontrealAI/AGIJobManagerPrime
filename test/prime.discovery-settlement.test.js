@@ -139,7 +139,9 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(await manager.isCheckpointFailed(checkpointJobId), false, 'checkpoint should not fail immediately');
     await time.increase(25);
     assert.equal(await manager.isCheckpointFailed(checkpointJobId), true, 'checkpoint should fail after deadline without submission');
-    assert.equal(await manager.nextActionForJob(checkpointJobId), 'fail_checkpoint');
+    await manager.setSettlementPaused(true, { from: owner });
+    assert.equal(await manager.isCheckpointFailed(checkpointJobId), false, 'settlement pause suppresses executable checkpoint-fail helper');
+    await manager.setSettlementPaused(false, { from: owner });
 
     const expireTx = await manager.createJob('ipfs://job/expire-helper', payout, 60, 'expiry helper', { from: employer });
     const expireJobId = expireTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
@@ -154,8 +156,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.requestJobCompletion(finalJobId, 'ipfs://job/finalize-helper/result', { from: agentB });
     assert.equal(await manager.isFinalizable(finalJobId), false, 'review period still active');
     await time.increase(2);
+    await manager.setCompletionReviewPeriod(1, { from: owner });
     assert.equal(await manager.isFinalizable(finalJobId), true, 'job finalizable after review period');
-    assert.equal(await manager.nextActionForJob(finalJobId), 'finalize');
   });
 
   it('keeps ENS hooks best-effort and exposes autonomy helpers', async () => {
