@@ -184,6 +184,7 @@ Detailed procedures and expected outputs:
 
 ```bash
 npm ci
+cd hardhat && npm ci && cd ..
 npm run test:prime:ci
 ```
 
