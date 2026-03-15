@@ -143,3 +143,13 @@ Deployment smoke check (local hardhat):
 cd hardhat
 npm run deploy:prime:smoke
 ```
+
+## Prime ENS wiring (optional, post-deploy)
+
+Prime settlement works without ENS wiring. If operators want ENS-backed public job pages, wire an ENSJobPages-compatible target manually after deployment:
+
+1. Deploy/prepare ENSJobPages target contract.
+2. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
+3. Validate hooks by creating/applying/completing a small canary job.
+
+Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail.
