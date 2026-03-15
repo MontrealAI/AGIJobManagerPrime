@@ -144,7 +144,7 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 Expected result after Prime deployment:
 - Premium jobs use procurement-first winner discovery before assignment (not first-touch lock capture).
 - Settlement retains conservative escrow/bond/dispute/finalization behavior.
-- Optional ENSJobPages lifecycle hooks can be configured on Prime via `setEnsJobPages(...)` and remain best-effort/non-fatal.
+- ENS optionality remains a documented production requirement; implementation is currently being reworked to keep Prime below EIP-170 runtime limits.
 
 ### Optional legacy ENS wiring path (legacy contract only)
 

@@ -9,7 +9,6 @@ const ReputationMath = artifacts.require('ReputationMath');
 const ENSOwnership = artifacts.require('ENSOwnership');
 const MockERC20 = artifacts.require('MockERC20');
 const MockERC721 = artifacts.require('MockERC721');
-const MockENSJobPages = artifacts.require('MockENSJobPages');
 
 const ZERO32 = `0x${'00'.repeat(32)}`;
 const EMPTY = [];
@@ -23,7 +22,6 @@ contract('Prime discovery + settlement', (accounts) => {
   let token;
   let manager;
   let discovery;
-  let ensJobPages;
 
   before(async () => {
     const uriUtils = await UriUtils.new({ from: owner });
@@ -54,8 +52,6 @@ contract('Prime discovery + settlement', (accounts) => {
     discovery = await AGIJobDiscoveryPrime.new(manager.address, { from: owner });
     await manager.setDiscoveryModule(discovery.address, { from: owner });
 
-    ensJobPages = await MockENSJobPages.new({ from: owner });
-    await manager.setEnsJobPages(ensJobPages.address, { from: owner });
 
     const agiType = await MockERC721.new({ from: owner });
     await agiType.mint(agentA, { from: owner });
@@ -127,24 +123,73 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
 
-  it('keeps ENS hooks best-effort and exposes autonomy helpers', async () => {
-    const payout = web3.utils.toWei('30');
-    const tx = await manager.createJob('ipfs://job/ens', payout, 100, 'ens hooks', { from: employer });
-    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
 
-    assert.equal((await ensJobPages.createCalls()).toString(), '1', 'create hook should fire');
+  it('reports non-promotable when remaining finalists have zero composite score', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = { jobSpecURI: 'ipfs://job/zero', payout: web3.utils.toWei('20'), duration: 3600, details: 'zero score' };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 0,
+      trialWeightBps: 10000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('1'),
+      validatorRewardPerReveal: web3.utils.toWei('0.1'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
 
-    await ensJobPages.setRevertHook(2, true, { from: owner });
-    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
 
-    assert.equal((await ensJobPages.assignCalls()).toString(), '0', 'reverting assign hook should not brick apply');
+    const saltA = web3.utils.soliditySha3('ZA');
+    const uriA = 'ipfs://application/ZA';
+    const cA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uriA },
+      { type: 'bytes32', value: saltA }
+    );
 
-    await manager.requestJobCompletion(jobId, 'ipfs://job/ens/completion', { from: agentA });
-    await time.increase(8 * 24 * 3600);
+    await discovery.commitApplication(procurementId, cA, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
 
-    await manager.finalizeJob(jobId, { from: employer });
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/ZA', { from: agentA });
 
-    assert.equal((await ensJobPages.lockCalls()).toString(), '1', 'lock hook should run on terminal completion');
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    const scoreSalt = web3.utils.soliditySha3('ZS');
+    const commit = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 0 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+    await discovery.commitFinalistScore(procurementId, agentA, commit, '', EMPTY, { from: validatorA });
+
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 0, scoreSalt, '', EMPTY, { from: validatorA });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+    await time.increase(6);
+
+    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalist should not be promotable');
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {

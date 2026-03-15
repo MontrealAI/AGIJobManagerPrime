@@ -14,17 +14,15 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 | Stale winner option abuse | Designated winner waits indefinitely | `selectionExpiresAt` plus permissionless `promoteFallbackFinalist`. | If no fallback satisfies min reveals, procurement closes without winner. |
 | Discovery budget leakage | Over-locking stipend/reward budget | Explicit budget quote + post-finalization budget refund to employer (`claimable`). | Employer must claim; funds are pull-based. |
 | Settlement insolvency drift | Locked balances not tracked through edge outcomes | Strict `lockedEscrow/locked*Bonds` accounting and `withdrawableAGI` solvency check. | External ERC20 anomalies (fee-on-transfer/reverting tokens) remain an operator risk. |
-| ENS integration bricking settlement | ENS/job-page target reverts | ENS hooks are best-effort and bounded; failures are ignored so settlement state remains authoritative. | Public page consistency can lag settlement truth. |
+| ENS integration bricking settlement | ENS/job-page target reverts | Prime ENS parity is intentionally deferred while bytecode is brought under EIP-170; legacy manager path remains the active ENS integration reference. | Prime ENS parity still requires follow-up implementation and review. |
 
 ## Changes implemented from this review
 
-1. Reintroduced optional ENSJobPages wiring on Prime manager (`setEnsJobPages`) and bounded best-effort lifecycle hooks (create/assign/completion/revoke/lock).
-2. Ensured terminal settlement paths invoke revoke/lock hooks while keeping settlement authoritative and non-fatal.
-3. Added discovery autonomy/readability helpers:
+1. Added discovery autonomy/readability helpers:
    - `canClaim(address)`
    - `isFallbackPromotable(procurementId)`
    - `nextActionForProcurement(procurementId)`
-4. Added tests covering ENS best-effort semantics and fallback promotability status.
+2. Added tests covering fallback promotability status and keeper-facing claim/read surfaces.
 
 ## Residual risks requiring human pre-mainnet review
 

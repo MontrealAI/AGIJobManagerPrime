@@ -904,6 +904,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             Application storage a = applications[procurementId][finalist];
             if (a.everPromoted || !a.trialSubmitted) continue;
             if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
+            if (a.compositeScoreBps == 0) continue;
             return true;
         }
         return false;
