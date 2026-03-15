@@ -1093,6 +1093,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.disputed) return 5; // await_dispute_resolution
 
         if (job.assignedAgent == address(0)) {
+            if (paused()) return 15; // global_paused_pre_assignment
             if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
                 if (job.selectedAgent == address(0)) return 6; // designate_or_promote_selected_agent
                 if (job.selectionExpiresAt != 0 && block.timestamp > job.selectionExpiresAt) {

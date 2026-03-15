@@ -256,8 +256,12 @@ contract('Prime discovery + settlement', (accounts) => {
   
 
 
-  it('keeps settlement action routing available during global pause', async () => {
+  it('returns global-pause code pre-assignment but keeps settlement routing for assigned jobs', async () => {
     const payout = web3.utils.toWei('9');
+
+    const unassignedTx = await manager.createJob('ipfs://job/paused-unassigned', payout, 100, 'paused unassigned', { from: employer });
+    const unassignedJobId = unassignedTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
     const tx = await manager.createJob('ipfs://job/paused-settlement', payout, 100, 'paused settlement', { from: employer });
     const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
 
@@ -266,6 +270,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increase(8 * 24 * 3600);
 
     await manager.pause({ from: owner });
+    assert.equal((await manager.nextActionCodeForJob(unassignedJobId)).toString(), '15');
     assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '13');
     await manager.finalizeJob(jobId, { from: owner });
     await manager.unpause({ from: owner });
