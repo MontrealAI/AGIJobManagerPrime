@@ -83,6 +83,11 @@ async function main() {
     const suffix = result.error ? ` :: ${result.error}` : '';
     console.log(`${result.name} [${result.status}]${suffix}`);
   }
+
+  const hasErrors = results.some((result) => result.status === 'failed' || result.status === 'skipped');
+  if (hasErrors) {
+    throw new Error('Prime verification did not complete successfully for all contracts. See per-contract statuses above.');
+  }
 }
 
 main().catch((error) => {

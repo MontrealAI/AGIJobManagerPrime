@@ -107,6 +107,8 @@ cd hardhat
 NETWORK=mainnet DEPLOYMENT_ARTIFACT=deployments/mainnet/deployment.prime.1.<block>.json npm run verify:prime
 ```
 
+`verify:prime` exits non-zero if any contract verify attempt is `failed` or `skipped`, so CI/ops pipelines cannot silently pass with partial verification.
+
 ## Prime entrypoints for operators
 
 Discovery exposes three canonical premium helpers:
