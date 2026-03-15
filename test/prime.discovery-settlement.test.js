@@ -253,6 +253,43 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
   });
 
+  
+  it('exposes deterministic job autonomy helpers for checkpoint, completion, and expiry', async () => {
+    const payout = web3.utils.toWei('10');
+    const tx = await manager.createConfiguredJob('ipfs://job/helpers', payout, 50, 'helpers', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.designateSelectedAgent(jobId, agentA, 100, 5, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal(await manager.isCheckpointFailed(jobId), false);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '10');
+
+    await time.increase(8);
+    assert.equal(await manager.isCheckpointFailed(jobId), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '9');
+
+    await manager.failCheckpoint(jobId, { from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '3');
+
+    const tx2 = await manager.createJob('ipfs://job/finalizable', payout, 80, 'final helper', { from: employer });
+    const jobId2 = tx2.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(jobId2, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId2, 'ipfs://job/finalizable/completion', { from: agentA });
+    assert.equal(await manager.isFinalizable(jobId2), false);
+    await time.increase(8 * 24 * 3600);
+    assert.equal(await manager.isFinalizable(jobId2), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId2)).toString(), '13');
+
+    const tx3 = await manager.createJob('ipfs://job/exp', payout, 20, 'exp helper', { from: employer });
+    const jobId3 = tx3.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(jobId3, '', EMPTY, EMPTY, { from: agentB });
+    await time.increase(25);
+    assert.equal(await manager.isExpirable(jobId3), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId3)).toString(), '11');
+  });
+
+
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
