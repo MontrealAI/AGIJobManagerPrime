@@ -137,8 +137,8 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 
 1. Read the official Hardhat guide and prepare `.env` + deploy config.
 2. From `hardhat/`, compile (`cd hardhat && npx hardhat compile`) and dry-run (`DRY_RUN=1 ...`).
-3. Deploy the Prime suite (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) with the mainnet confirmation gate.
-4. Verify deployment outputs on Etherscan and in `hardhat/deployments/<network>/` artifacts.
+3. Deploy the Prime suite (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) with the mainnet confirmation gate. Network/chainId mismatches are rejected by the canonical deploy script.
+4. Verify deployment outputs on Etherscan and in `hardhat/deployments/<network>/` artifacts (including persisted `completionNFT` from the manager constructor).
 5. Transfer ownership to the intended final owner if required by your operational policy.
 
 Expected result after Prime deployment:

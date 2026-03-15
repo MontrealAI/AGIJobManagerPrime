@@ -26,6 +26,10 @@ const FQNS = {
 };
 
 const LIBRARIES = ['UriUtils', 'BondMath', 'ReputationMath', 'ENSOwnership'];
+const SUPPORTED_NETWORKS = {
+  mainnet: 1,
+  sepolia: 11155111,
+};
 
 function stableObject(value) {
   if (Array.isArray(value)) return value.map(stableObject);
@@ -61,6 +65,18 @@ function parsePositiveInt(value, label, fallback, min = 0) {
     throw new Error(`${label} must be an integer >= ${min}. Received: ${value}`);
   }
   return parsed;
+}
+
+function validateExecutionNetwork(networkName, chainId) {
+  const expectedChainId = SUPPORTED_NETWORKS[networkName];
+  if (!expectedChainId) {
+    throw new Error(
+      `Unsupported network "${networkName}". Allowed networks: ${Object.keys(SUPPORTED_NETWORKS).join(', ')}`
+    );
+  }
+  if (expectedChainId !== chainId) {
+    throw new Error(`Network mismatch: network="${networkName}" expects chainId=${expectedChainId}, received chainId=${chainId}.`);
+  }
 }
 
 function validateAddress(label, value, { allowZero = false } = {}) {
@@ -217,6 +233,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const providerNetwork = await ethers.provider.getNetwork();
   const chainId = Number(providerNetwork.chainId);
+  validateExecutionNetwork(network.name, chainId);
   const explorerBase = getExplorerBase(chainId);
   const explorerAddressBase = getExplorerAddressBase(chainId);
 
@@ -310,6 +327,10 @@ async function main() {
   };
   console.log(`[wired] AGIJobManagerPrime.setDiscoveryModule(${discoveryDeployment.address}) tx=${setDiscoveryTx.hash}`);
 
+  const completionNFTAddress = await manager.completionNFT();
+  validateAddress('completionNFT', completionNFTAddress);
+  console.log(`[derived] completionNFT ${completionNFTAddress}`);
+
   let ownershipTransfer = {
     executed: false,
     txHash: null,
@@ -394,6 +415,7 @@ async function main() {
     discoveryConstructorArgs: discoveryArgs,
     libraries: linkedLibraries,
     setDiscoveryModule: discoveryModuleWiring,
+    completionNFT: completionNFTAddress,
     ownershipTransfer,
     verification: shouldVerify ? verificationResults : { skipped: true },
     configHash,
@@ -421,6 +443,7 @@ async function main() {
     const verifyStatus = shouldVerify ? (verificationResults[name]?.status || 'not_attempted') : 'skipped';
     console.log(`${name}: ${contract.address}${explorerLink} [verify=${verifyStatus}]`);
   });
+  console.log(`CompletionNFT: ${record.completionNFT}${explorerAddressBase ? ` ${explorerAddressBase}${record.completionNFT}` : ''}`);
   console.log(`setDiscoveryModule tx: ${discoveryModuleWiring.txHash}`);
   console.log(`receipt: ${receiptPath}`);
   console.log(`solc-input: ${solcInputPath}`);
