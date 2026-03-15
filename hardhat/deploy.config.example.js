@@ -21,6 +21,7 @@ module.exports = {
   },
 
   // Fill with real Sepolia addresses before any broadcast.
+  // The deploy script enforces network/chainId matching and strict address/bytes32 validation.
   sepolia: {
     agiTokenAddress: '0x0000000000000000000000000000000000000001',
     baseIpfsUrl: 'https://ipfs.io/ipfs/',
