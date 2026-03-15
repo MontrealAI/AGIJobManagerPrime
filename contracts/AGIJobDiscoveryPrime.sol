@@ -889,9 +889,47 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
-        if (paused() || settlement.settlementPaused()) return false;
         Procurement storage p = procurements[procurementId];
-        return !p.cancelled && p.shortlistFinalized && !p.winnerFinalized && block.timestamp > p.scoreRevealDeadline;
+        if (paused()) return false;
+        if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || block.timestamp <= p.scoreRevealDeadline) return false;
+
+        if (!settlement.settlementPaused()) return true;
+        return !_hasDesignatableWinner(procurementId, p);
+    }
+
+    function _hasDesignatableWinner(uint256 procurementId, Procurement storage p) internal view returns (bool) {
+        address best;
+        uint256 bestComposite;
+        uint256 bestTrial;
+        uint256 bestHistorical;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+            if (!a.finalistAccepted || !a.trialSubmitted) continue;
+
+            uint8[] storage scores = revealedScores[procurementId][finalist];
+            if (scores.length < p.minValidatorReveals) continue;
+
+            uint256 trialScoreBps = _medianScoreBps(scores);
+            uint256 composite = (
+                a.historicalScoreBps * p.historicalWeightBps +
+                trialScoreBps * p.trialWeightBps
+            ) / 10_000;
+
+            if (
+                composite > bestComposite ||
+                (composite == bestComposite && trialScoreBps > bestTrial) ||
+                (composite == bestComposite && trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
+            ) {
+                best = finalist;
+                bestComposite = composite;
+                bestTrial = trialScoreBps;
+                bestHistorical = a.historicalScoreBps;
+            }
+        }
+
+        return best != address(0);
     }
 
     function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
