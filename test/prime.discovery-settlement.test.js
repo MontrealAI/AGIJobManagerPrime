@@ -215,6 +215,14 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealFinalistScore(procurementId, agentA, 0, scoreSalt, '', EMPTY, { from: validatorA });
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'winner should be finalizable after reveal window');
+    await manager.setSettlementPaused(true, { from: owner });
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'settlement pause should suppress winner finalizable helper');
+    await manager.setSettlementPaused(false, { from: owner });
+    await discovery.pause({ from: owner });
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'paused discovery should suppress winner finalizable helper');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'paused');
+    await discovery.unpause({ from: owner });
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalists should not appear promotable');
@@ -280,6 +288,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
 
     await time.increaseTo(proc.revealDeadline + 1);
+    assert.equal(await discovery.isShortlistFinalizable(procurementId), true, 'shortlist should become finalizable at reveal timeout');
     await discovery.finalizeShortlist(procurementId, { from: owner });
 
     await discovery.acceptFinalist(procurementId, { from: agentA });
@@ -313,6 +322,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealFinalistScore(procurementId, agentB, 80, scoreSaltB, '', EMPTY, { from: validatorB });
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
+    const autonomy = await discovery.getAutonomyStatus(procurementId);
+    assert.equal(autonomy.winnerFinalizable, true, 'autonomy status should expose winner finalization readiness');
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     let info = await manager.getJobSelectionInfo(jobId);
