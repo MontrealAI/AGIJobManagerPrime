@@ -256,16 +256,19 @@ contract('Prime discovery + settlement', (accounts) => {
   
 
 
-  it('returns paused action code when global pause is active', async () => {
+  it('keeps settlement action routing available during global pause', async () => {
     const payout = web3.utils.toWei('9');
-    const tx = await manager.createJob('ipfs://job/paused', payout, 100, 'paused', { from: employer });
+    const tx = await manager.createJob('ipfs://job/paused-settlement', payout, 100, 'paused settlement', { from: employer });
     const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
 
-    await manager.pause({ from: owner });
-    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '15');
-    await manager.unpause({ from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId, 'ipfs://job/paused-settlement/out', { from: agentA });
+    await time.increase(8 * 24 * 3600);
 
-    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '8');
+    await manager.pause({ from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '13');
+    await manager.finalizeJob(jobId, { from: owner });
+    await manager.unpause({ from: owner });
   });
 
   it('returns per-job-root configuration action code when root is missing or expired', async () => {

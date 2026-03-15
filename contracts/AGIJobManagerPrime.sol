@@ -1086,7 +1086,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function nextActionCodeForJob(uint256 jobId) external view returns (uint8) {
         if (settlementPaused) return 1; // settlement_paused
-        if (paused()) return 15; // global_paused
         Job storage job = jobs[jobId];
         if (job.employer == address(0)) return 2; // job_not_found
         if (job.completed) return 3; // completed
