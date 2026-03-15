@@ -889,7 +889,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
-        if (paused()) return false;
+        if (paused() || settlement.settlementPaused()) return false;
         Procurement storage p = procurements[procurementId];
         return !p.cancelled && p.shortlistFinalized && !p.winnerFinalized && block.timestamp > p.scoreRevealDeadline;
     }
@@ -945,6 +945,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             if (block.timestamp <= p.trialDeadline) return "submit_trials";
             if (block.timestamp <= p.scoreCommitDeadline) return "commit_scores";
             if (block.timestamp <= p.scoreRevealDeadline) return "reveal_scores";
+            if (settlement.settlementPaused()) return "wait_settlement_unpaused";
             return "finalize_winner";
         }
 
