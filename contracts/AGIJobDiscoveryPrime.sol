@@ -895,9 +895,29 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         if (settlement.paused()) return false;
 
-        if (!settlement.settlementPaused()) return true;
+        bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+        if (!hasDesignatableWinner) return true;
 
-        return !_hasDesignatableWinner(procurementId, p);
+        if (settlement.settlementPaused()) return false;
+
+        return _isSettlementSelectionReadyForDesignation(p.jobId);
+    }
+
+    function _isSettlementSelectionReadyForDesignation(uint256 jobId) internal view returns (bool) {
+        (
+            uint8 intakeMode,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = settlement.getJobSelectionInfo(jobId);
+
+        if (intakeMode != 1) return false;
+        if (assignedAgent != address(0)) return false;
+        return selectionExpiresAt == 0 || block.timestamp > selectionExpiresAt;
     }
 
     function isFallbackPromotable(uint256 procurementId) external view returns (bool) {

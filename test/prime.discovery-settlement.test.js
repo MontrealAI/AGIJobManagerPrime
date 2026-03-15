@@ -331,6 +331,16 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     const autonomy = await discovery.getAutonomyStatus(procurementId);
     assert.equal(autonomy.winnerFinalizable, true, 'autonomy status should expose winner finalization readiness');
+
+    await manager.designateSelectedAgent(jobId, agentA, 100, 0, { from: owner });
+    assert.equal(
+      await discovery.isWinnerFinalizable(procurementId),
+      false,
+      'active manager-side selection window should suppress winner finalizable helper'
+    );
+    await time.increase(101);
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'winner should be finalizable once selection window elapses');
+
     await manager.setSettlementPaused(true, { from: owner });
     assert.equal(
       await discovery.isWinnerFinalizable(procurementId),
