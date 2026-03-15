@@ -14,7 +14,8 @@ Prime architecture:
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
 5. Optionally transfer ownership of both contracts to `FINAL_OWNER`.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
-7. Write deployment artifacts and verify-target manifests.
+7. Read and persist the manager-created completion NFT address for operators and indexers.
+8. Write deployment artifacts and verify-target manifests.
 
 ## Mainnet safety posture
 
@@ -24,6 +25,7 @@ Prime architecture:
 - Dry-run mode:
   - `DRY_RUN=1`
 - Plan summary printed before execution.
+- Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
 
 ## Environment setup
 
@@ -46,6 +48,8 @@ Common deploy controls:
 - `VERIFY_DELAY_MS` (default `3500`)
 - `VERIFY=1` (set `0` or unset to skip verification)
 - `DRY_RUN=1`
+- `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
+- `NETWORK` (optional helper for `npm run verify:prime`, default `sepolia`)
 
 ## Deploy config
 
@@ -89,6 +93,19 @@ cd hardhat
 VERIFY=1 npm run deploy:prime:sepolia
 ```
 
+Verify deployed contracts from the latest deployment artifact:
+
+```bash
+cd hardhat
+NETWORK=mainnet npm run verify:prime
+```
+
+Or verify a specific artifact:
+
+```bash
+cd hardhat
+NETWORK=mainnet DEPLOYMENT_ARTIFACT=deployments/mainnet/deployment.prime.1.<block>.json npm run verify:prime
+```
 
 ## Prime entrypoints for operators
 
@@ -110,6 +127,8 @@ Deploy outputs are written to `hardhat/deployments/<network>/`:
 - `deployment.prime.<chainId>.<blockNumber>.json`
 - `solc-input.json`
 - `verify-targets.prime.json`
+
+Deployment summaries also print `completionNFT` (instantiated by `AGIJobManagerPrime`) and explorer links when available.
 
 ## Legacy compatibility
 
