@@ -93,7 +93,7 @@ cd hardhat
 VERIFY=1 npm run deploy:prime:sepolia
 ```
 
-Verify deployed contracts from the latest deployment artifact:
+Verify deployed contracts (libraries + manager + discovery + completion NFT) from the latest deployment artifact:
 
 ```bash
 cd hardhat

@@ -28,7 +28,7 @@ Legacy Truffle deployment notes are retained in [`docs/Deployment.md`](docs/Depl
   - `setDiscoveryModule` tx,
   - `completionNFT` address,
   - ownership transfer status.
-- Re-run verification from artifact:
+- Re-run verification from artifact (includes completion NFT verification):
   - `cd hardhat && npm run verify:prime -- --network mainnet`
 - Verify `setDiscoveryModule(discoveryAddress)` completed and addresses match deployment summary.
 

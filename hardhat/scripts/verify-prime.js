@@ -9,6 +9,7 @@ const FQNS = {
   BondMath: 'contracts/utils/BondMath.sol:BondMath',
   ReputationMath: 'contracts/utils/ReputationMath.sol:ReputationMath',
   ENSOwnership: 'contracts/utils/ENSOwnership.sol:ENSOwnership',
+  AGIJobCompletionNFT: 'contracts/periphery/AGIJobCompletionNFT.sol:AGIJobCompletionNFT',
 };
 
 function latestDeploymentRecord(networkName) {
@@ -53,27 +54,40 @@ async function main() {
   const libraries = deployment.libraries;
 
   const checks = [
-    ['UriUtils', []],
-    ['BondMath', []],
-    ['ReputationMath', []],
-    ['ENSOwnership', []],
-    ['AGIJobManagerPrime', managerArgs],
-    ['AGIJobDiscoveryPrime', discoveryArgs],
+    { name: 'UriUtils', constructorArguments: [], address: deployment.contracts?.UriUtils?.address },
+    { name: 'BondMath', constructorArguments: [], address: deployment.contracts?.BondMath?.address },
+    { name: 'ReputationMath', constructorArguments: [], address: deployment.contracts?.ReputationMath?.address },
+    { name: 'ENSOwnership', constructorArguments: [], address: deployment.contracts?.ENSOwnership?.address },
+    {
+      name: 'AGIJobManagerPrime',
+      constructorArguments: managerArgs,
+      address: deployment.contracts?.AGIJobManagerPrime?.address,
+      libraries,
+    },
+    {
+      name: 'AGIJobDiscoveryPrime',
+      constructorArguments: discoveryArgs,
+      address: deployment.contracts?.AGIJobDiscoveryPrime?.address,
+    },
+    {
+      name: 'AGIJobCompletionNFT',
+      constructorArguments: [deployment.contracts?.AGIJobManagerPrime?.address],
+      address: deployment.completionNFT,
+    },
   ];
 
   const results = [];
-  for (const [name, constructorArguments] of checks) {
-    const address = deployment.contracts?.[name]?.address;
-    if (!address || !ethers.isAddress(address)) {
-      results.push({ name, status: 'skipped', error: 'missing address in deployment artifact' });
+  for (const check of checks) {
+    if (!check.address || !ethers.isAddress(check.address)) {
+      results.push({ name: check.name, status: 'skipped', error: 'missing address in deployment artifact' });
       continue;
     }
     results.push(
       await verifyContract({
-        name,
-        address,
-        constructorArguments,
-        libraries: name === 'AGIJobManagerPrime' ? libraries : undefined,
+        name: check.name,
+        address: check.address,
+        constructorArguments: check.constructorArguments,
+        libraries: check.libraries,
       })
     );
   }
