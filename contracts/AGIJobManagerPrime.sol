@@ -1153,7 +1153,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
 
     function _sqrt(uint256 x) internal pure returns (uint256 z) {
-        if (x == 0) return 0;
+        if (x < 2) return x;
         z = x;
         uint256 y = (x >> 1) + 1;
         while (y < z) {
