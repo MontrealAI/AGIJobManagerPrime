@@ -32,7 +32,10 @@ async function verifyContract({ name, address, constructorArguments = [], librar
     return { name, status: 'verified' };
   } catch (error) {
     const message = String(error?.message || error);
-    if (message.toLowerCase().includes('already verified')) return { name, status: 'already_verified' };
+    const lowered = message.toLowerCase();
+    if (lowered.includes('already verified') || lowered.includes('already been verified')) {
+      return { name, status: 'already_verified' };
+    }
     return { name, status: 'failed', error: message };
   }
 }
