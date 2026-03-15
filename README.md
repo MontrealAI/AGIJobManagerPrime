@@ -182,11 +182,21 @@ Detailed procedures and expected outputs:
 
 ## Local development checks
 
+Canonical Prime readiness checks:
+
 ```bash
 npm ci
+cd hardhat && npm ci && npm run compile:size
+cd ..
+npm run test:prime
+```
+
+Full repository checks (Prime + legacy compatibility + docs):
+
+```bash
 npm run lint
 npm run build
-npm run size
+npm run test:size
 npm test
 npm run docs:check
 npm run docs:ens:check

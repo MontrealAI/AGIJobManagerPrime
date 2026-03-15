@@ -69,7 +69,7 @@ Compile:
 
 ```bash
 cd hardhat
-npm run compile
+npm run compile:size
 ```
 
 Dry-run mainnet plan:
