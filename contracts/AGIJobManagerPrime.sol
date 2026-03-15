@@ -332,6 +332,21 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         PerJobMerkleRoot
     }
 
+
+    enum NextJobAction {
+        None,
+        AwaitingApplication,
+        AwaitingSelectedAcceptance,
+        AwaitingCheckpoint,
+        CheckpointFailEligible,
+        AwaitingCompletion,
+        AwaitingValidationOrFinalize,
+        FinalizeEligible,
+        ExpireEligible,
+        Disputed,
+        Settled
+    }
+
     error NotModerator();
     error NotAuthorized();
     error NotDiscovery();
@@ -1077,6 +1092,94 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             job.checkpointSubmitted,
             job.assignedAgent
         );
+    }
+
+
+    function isFinalizable(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        if (job.completed || job.expired || job.disputed || !job.completionRequested) return false;
+
+        if (job.validatorApproved) {
+            if (block.timestamp <= uint256(job.validatorApprovedAt) + challengePeriodAfterApproval) return false;
+            if (job.validatorApprovals > job.validatorDisapprovals) return true;
+        }
+
+        if (block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) return false;
+
+        uint256 approvals = job.validatorApprovals;
+        uint256 disapprovals = job.validatorDisapprovals;
+        uint256 totalVotes = approvals + disapprovals;
+        if (totalVotes == 0) return true;
+        if (totalVotes < voteQuorum || approvals == disapprovals) return true;
+        return true;
+    }
+
+    function isExpirable(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        return (
+            !job.completed &&
+            !job.expired &&
+            !job.disputed &&
+            !job.completionRequested &&
+            job.assignedAgent != address(0) &&
+            block.timestamp > uint256(job.assignedAt) + job.duration
+        );
+    }
+
+    function isCheckpointFailed(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        return (
+            job.assignedAgent != address(0) &&
+            !job.completed &&
+            !job.expired &&
+            !job.completionRequested &&
+            job.checkpointDeadline != 0 &&
+            !job.checkpointSubmitted &&
+            block.timestamp > job.checkpointDeadline
+        );
+    }
+
+    function nextActionForJob(uint256 jobId) public view returns (NextJobAction) {
+        Job storage job = _job(jobId);
+
+        if (job.completed || job.expired) return NextJobAction.Settled;
+        if (job.disputed) return NextJobAction.Disputed;
+
+        if (job.assignedAgent == address(0)) {
+            if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
+                if (job.selectedAgent != address(0) && block.timestamp <= job.selectionExpiresAt) {
+                    return NextJobAction.AwaitingSelectedAcceptance;
+                }
+            }
+            return NextJobAction.AwaitingApplication;
+        }
+
+        if (isCheckpointFailed(jobId)) return NextJobAction.CheckpointFailEligible;
+
+        if (!job.completionRequested) {
+            if (isExpirable(jobId)) return NextJobAction.ExpireEligible;
+            if (job.checkpointDeadline != 0 && !job.checkpointSubmitted) return NextJobAction.AwaitingCheckpoint;
+            return NextJobAction.AwaitingCompletion;
+        }
+
+        if (isFinalizable(jobId)) return NextJobAction.FinalizeEligible;
+        return NextJobAction.AwaitingValidationOrFinalize;
+    }
+
+    function getAutonomyStatus(uint256 jobId)
+        external
+        view
+        returns (
+            bool finalizable,
+            bool expirable,
+            bool checkpointFailEligible,
+            NextJobAction nextAction
+        )
+    {
+        finalizable = isFinalizable(jobId);
+        expirable = isExpirable(jobId);
+        checkpointFailEligible = isCheckpointFailed(jobId);
+        nextAction = nextActionForJob(jobId);
     }
 
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {

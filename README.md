@@ -205,6 +205,7 @@ Legacy Truffle build/test flows remain available for reference compatibility (`n
 - Standalone HTML UI guide (v21): [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - UI directory inventory: [`ui/README.md`](ui/README.md)
 - Quintessential walkthrough: [`docs/QUINTESSENTIAL_USE_CASE.md`](docs/QUINTESSENTIAL_USE_CASE.md)
+- Prime autonomy + economic review memo: [`docs/PRIME_AUTONOMY_AND_ECONOMIC_REVIEW.md`](docs/PRIME_AUTONOMY_AND_ECONOMIC_REVIEW.md)
 
 Maintenance commands:
 

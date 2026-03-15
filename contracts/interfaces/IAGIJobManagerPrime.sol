@@ -303,6 +303,20 @@ OVERRIDING AUTHORITY: AGI.ETH
 pragma solidity ^0.8.23;
 
 interface IAGIJobManagerPrime {
+    enum NextJobAction {
+        None,
+        AwaitingApplication,
+        AwaitingSelectedAcceptance,
+        AwaitingCheckpoint,
+        CheckpointFailEligible,
+        AwaitingCompletion,
+        AwaitingValidationOrFinalize,
+        FinalizeEligible,
+        ExpireEligible,
+        Disputed,
+        Settled
+    }
+
     function agiToken() external view returns (address);
     function premiumReputationThreshold() external view returns (uint256);
 
@@ -360,4 +374,19 @@ interface IAGIJobManagerPrime {
         bytes32 root,
         uint64 applicationWindow
     ) external;
+
+    function isFinalizable(uint256 jobId) external view returns (bool);
+    function isExpirable(uint256 jobId) external view returns (bool);
+    function isCheckpointFailed(uint256 jobId) external view returns (bool);
+    function nextActionForJob(uint256 jobId) external view returns (NextJobAction);
+
+    function getAutonomyStatus(uint256 jobId)
+        external
+        view
+        returns (
+            bool finalizable,
+            bool expirable,
+            bool checkpointFailEligible,
+            NextJobAction nextAction
+        );
 }

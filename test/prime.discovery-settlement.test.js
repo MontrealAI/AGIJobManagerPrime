@@ -230,4 +230,62 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increase(2);
     await manager.finalizeJob(jobId, { from: employer });
   });
+
+  it('exposes deterministic autonomy status helpers for jobs and procurements', async () => {
+    const payout = web3.utils.toWei('10');
+    const tx = await manager.createJob('ipfs://job/autonomy', payout, 100, 'autonomy', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    let status = await manager.getAutonomyStatus(jobId);
+    assert.equal(status.nextAction.toString(), '1', 'open job should await application');
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    status = await manager.getAutonomyStatus(jobId);
+    assert.equal(status.nextAction.toString(), '5', 'assigned job should await completion');
+
+    await time.increase(101);
+    status = await manager.getAutonomyStatus(jobId);
+    assert.equal(status.expirable, true, 'job should be expirable after duration');
+    assert.equal(status.nextAction.toString(), '8', 'expired-eligible action should be exposed');
+
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/proc-autonomy',
+      payout: web3.utils.toWei('10'),
+      duration: 3600,
+      details: 'proc-autonomy',
+    };
+    const proc = {
+      commitDeadline: now + 30,
+      revealDeadline: now + 60,
+      finalistAcceptDeadline: now + 90,
+      trialDeadline: now + 120,
+      scoreCommitDeadline: now + 150,
+      scoreRevealDeadline: now + 180,
+      selectedAcceptanceWindow: 10,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('1'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.2'),
+    };
+
+    const created = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = created.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    let procAction = await discovery.nextActionForProcurement(procurementId);
+    assert.equal(procAction.toString(), '1', 'procurement should begin in commit phase');
+
+    await time.increaseTo(proc.revealDeadline + 1);
+    procAction = await discovery.nextActionForProcurement(procurementId);
+    assert.equal(procAction.toString(), '3', 'shortlist finalizable should be discoverable');
+  });
+
 });

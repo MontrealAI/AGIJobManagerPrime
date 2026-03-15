@@ -320,6 +320,21 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     error TooManyApplicants();
     error NoWinner();
 
+
+    enum NextProcurementAction {
+        None,
+        AwaitingCommits,
+        AwaitingReveals,
+        ShortlistFinalizable,
+        AwaitingFinalistAcceptance,
+        AwaitingTrials,
+        AwaitingScoreCommits,
+        AwaitingScoreReveals,
+        WinnerFinalizable,
+        FallbackPromotable,
+        Closed
+    }
+
     uint8 public constant MAX_APPLICANTS = 64;
     uint8 public constant MAX_FINALISTS = 8;
     uint8 public constant MAX_VALIDATOR_REVEALS_PER_FINALIST = 32;
@@ -859,7 +874,10 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             if (!a.trialSubmitted) continue;
             if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
 
-            if (a.compositeScoreBps > bestComposite) {
+            if (
+                a.compositeScoreBps > bestComposite ||
+                (a.compositeScoreBps == bestComposite && uint160(finalist) < uint160(best))
+            ) {
                 bestComposite = a.compositeScoreBps;
                 best = finalist;
             }
@@ -876,6 +894,66 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         );
 
         emit FallbackPromoted(procurementId, best, bestComposite);
+    }
+
+
+    function isFallbackPromotable(uint256 procurementId) public view returns (bool) {
+        Procurement storage p = procurements[procurementId];
+        if (!p.winnerFinalized || p.cancelled) return false;
+
+        (
+            ,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = settlement.getJobSelectionInfo(p.jobId);
+
+        if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+            if (a.everPromoted || !a.trialSubmitted) continue;
+            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
+            return true;
+        }
+
+        return false;
+    }
+
+    function nextActionForProcurement(uint256 procurementId) public view returns (NextProcurementAction) {
+        Procurement storage p = procurements[procurementId];
+        if (p.cancelled) return NextProcurementAction.Closed;
+
+        if (!p.shortlistFinalized) {
+            if (block.timestamp <= p.commitDeadline) return NextProcurementAction.AwaitingCommits;
+            if (block.timestamp <= p.revealDeadline) return NextProcurementAction.AwaitingReveals;
+            return NextProcurementAction.ShortlistFinalizable;
+        }
+
+        if (!p.winnerFinalized) {
+            if (block.timestamp <= p.finalistAcceptDeadline) return NextProcurementAction.AwaitingFinalistAcceptance;
+            if (block.timestamp <= p.trialDeadline) return NextProcurementAction.AwaitingTrials;
+            if (block.timestamp <= p.scoreCommitDeadline) return NextProcurementAction.AwaitingScoreCommits;
+            if (block.timestamp <= p.scoreRevealDeadline) return NextProcurementAction.AwaitingScoreReveals;
+            return NextProcurementAction.WinnerFinalizable;
+        }
+
+        if (isFallbackPromotable(procurementId)) return NextProcurementAction.FallbackPromotable;
+        return NextProcurementAction.Closed;
+    }
+
+    function getAutonomyStatus(uint256 procurementId)
+        external
+        view
+        returns (bool fallbackPromotable, NextProcurementAction nextAction)
+    {
+        fallbackPromotable = isFallbackPromotable(procurementId);
+        nextAction = nextActionForProcurement(procurementId);
     }
 
     function claim() external nonReentrant {
