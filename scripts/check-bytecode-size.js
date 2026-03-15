@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const MAX_RUNTIME_BYTES = 24575;
 
@@ -22,6 +23,31 @@ function deployedSizeBytes(artifact) {
   return hex.length / 2;
 }
 
+function artifactPathFor(contractFile, contractName) {
+  return path.join(
+    __dirname,
+    "..",
+    "hardhat",
+    "artifacts",
+    "contracts",
+    contractFile,
+    `${contractName}.json`
+  );
+}
+
+function ensurePrimeArtifacts(checks) {
+  const missing = checks.filter((check) => !fs.existsSync(check.artifactPath));
+  if (!missing.length) {
+    return;
+  }
+
+  console.log("Hardhat Prime artifacts missing; running compile...");
+  execSync("npm run compile", {
+    cwd: path.join(__dirname, "..", "hardhat"),
+    stdio: "inherit",
+  });
+}
+
 function loadJson(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Missing artifact: ${filePath}`);
@@ -32,29 +58,15 @@ function loadJson(filePath) {
 const checks = [
   {
     name: "AGIJobManagerPrime",
-    artifactPath: path.join(
-      __dirname,
-      "..",
-      "hardhat",
-      "artifacts",
-      "contracts",
-      "AGIJobManagerPrime.sol",
-      "AGIJobManagerPrime.json"
-    ),
+    artifactPath: artifactPathFor("AGIJobManagerPrime.sol", "AGIJobManagerPrime"),
   },
   {
     name: "AGIJobDiscoveryPrime",
-    artifactPath: path.join(
-      __dirname,
-      "..",
-      "hardhat",
-      "artifacts",
-      "contracts",
-      "AGIJobDiscoveryPrime.sol",
-      "AGIJobDiscoveryPrime.json"
-    ),
+    artifactPath: artifactPathFor("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime"),
   },
 ];
+
+ensurePrimeArtifacts(checks);
 
 const oversized = [];
 for (const check of checks) {
