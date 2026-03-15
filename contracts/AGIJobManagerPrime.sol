@@ -1085,7 +1085,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function nextActionCodeForJob(uint256 jobId) external view returns (uint8) {
-        if (settlementPaused) return 1; // settlement_paused
+        if (settlementPaused || paused()) return 1; // globally_paused
         Job storage job = jobs[jobId];
         if (job.employer == address(0)) return 2; // job_not_found
         if (job.completed) return 3; // completed
@@ -1099,6 +1099,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                     return 6; // designate_or_promote_selected_agent
                 }
                 return 7; // selected_agent_apply
+            }
+            if (job.intakeMode == IntakeMode.PerJobMerkleRoot) {
+                if (job.perJobAgentRoot == bytes32(0) || job.selectionExpiresAt == 0 || block.timestamp > job.selectionExpiresAt) {
+                    return 15; // configure_per_job_root
+                }
             }
             return 8; // agent_apply
         }

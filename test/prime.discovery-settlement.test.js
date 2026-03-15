@@ -280,6 +280,33 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '14');
   });
 
+
+  it('returns paused action code when contract pause blocks intake actions', async () => {
+    const payout = web3.utils.toWei('9');
+    const tx = await manager.createJob('ipfs://job/paused-intake', payout, 100, 'paused intake', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '8');
+    await manager.pause({ from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '1');
+    await manager.unpause({ from: owner });
+  });
+
+  it('returns per-job-root configuration code when per-job intake is unset or expired', async () => {
+    const payout = web3.utils.toWei('11');
+    const tx = await manager.createConfiguredJob('ipfs://job/perroot-action', payout, 100, 'per-root action', 2, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '15');
+
+    const root = leafFor(agentA);
+    await manager.setPerJobAgentRoot(jobId, root, 5, { from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '8');
+
+    await time.increase(6);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '15');
+  });
+
   it('exposes deterministic job autonomy helpers for checkpoint, completion, and expiry', async () => {
     const payout = web3.utils.toWei('10');
     const tx = await manager.createConfiguredJob('ipfs://job/helpers', payout, 50, 'helpers', 1, ZERO32, { from: employer });
