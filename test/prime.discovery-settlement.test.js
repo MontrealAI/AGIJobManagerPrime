@@ -81,6 +81,12 @@ contract('Prime discovery + settlement', (accounts) => {
     );
   });
 
+  it('rejects non-contract discovery module wiring', async () => {
+    await expectRevert.unspecified(
+      manager.setDiscoveryModule(agentA, { from: owner })
+    );
+  });
+
   it('supports ordinary open-first-come settlement flow', async () => {
     const payout = web3.utils.toWei('100');
     const tx = await manager.createJob('ipfs://job/open', payout, 3600, 'open flow', { from: employer });

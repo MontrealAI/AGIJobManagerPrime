@@ -25,7 +25,15 @@
     "forge:test": "forge test",
     "forge:invariant": "FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol",
     "slither": "./scripts/security/run-slither.sh",
-    "deploy:agijobmanager:prod": "AGIJOBMANAGER_DEPLOY=1 npx truffle migrate --f 6 --to 6"
+    "deploy:agijobmanager:prod": "AGIJOBMANAGER_DEPLOY=1 npx truffle migrate --f 6 --to 6",
+    "test:prime": "npm run test:prime:unit",
+    "test:prime:ci": "npm run test:prime && npm run test:size && npm run test:prime:deploy-smoke",
+    "test:size": "cd hardhat && npm run compile && cd .. && node scripts/check-bytecode-size.js",
+    "test:prime:deploy-smoke": "cd hardhat && npm run compile && npm run deploy:prime:smoke",
+    "deploy:prime:dry-run:mainnet": "cd hardhat && npm run deploy:prime:dry-run:mainnet",
+    "deploy:prime:mainnet": "cd hardhat && npm run deploy:prime:mainnet",
+    "deploy:prime:sepolia": "cd hardhat && npm run deploy:prime:sepolia",
+    "test:prime:unit": "npx truffle test --network test test/prime.discovery-settlement.test.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.9.6"

@@ -180,17 +180,23 @@ Detailed procedures and expected outputs:
 - [`hardhat/README.md`](hardhat/README.md)
 - [`docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`](docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md)
 
-## Local development checks
+## Canonical Prime checks and deploy ergonomics
 
 ```bash
 npm ci
-npm run lint
-npm run build
-npm run size
-npm test
-npm run docs:check
-npm run docs:ens:check
+cd hardhat && npm ci && cd ..
+npm run test:prime:ci
 ```
+
+Useful operator commands:
+
+```bash
+npm run deploy:prime:dry-run:mainnet
+npm run deploy:prime:mainnet
+npm run deploy:prime:sepolia
+```
+
+Legacy Truffle build/test flows remain available for reference compatibility (`npm run build`, `npm test`), but Prime hardening/deployment should use the Hardhat-first commands above.
 
 ## Documentation
 

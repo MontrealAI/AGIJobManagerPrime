@@ -1,9 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const MAX_RUNTIME_BYTES = 24575;
-const artifactsDir = path.join(__dirname, "..", "build", "contracts");
-const defaultContracts = ["AGIJobManager"];
 
 function deployedSizeBytes(artifact) {
   const deployedBytecode =
@@ -24,30 +23,58 @@ function deployedSizeBytes(artifact) {
   return hex.length / 2;
 }
 
-function loadArtifact(contractName) {
-  const artifactPath = path.join(artifactsDir, `${contractName}.json`);
-  if (!fs.existsSync(artifactPath)) {
-    throw new Error(`Missing artifact for ${contractName}: ${artifactPath}`);
+function artifactPathFor(contractFile, contractName) {
+  return path.join(
+    __dirname,
+    "..",
+    "hardhat",
+    "artifacts",
+    "contracts",
+    contractFile,
+    `${contractName}.json`
+  );
+}
+
+function ensurePrimeArtifacts(checks) {
+  const missing = checks.filter((check) => !fs.existsSync(check.artifactPath));
+  if (!missing.length) {
+    return;
   }
-  return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+
+  console.log("Hardhat Prime artifacts missing; running compile...");
+  execSync("npm run compile", {
+    cwd: path.join(__dirname, "..", "hardhat"),
+    stdio: "inherit",
+  });
 }
 
-const targets = process.env.BYTECODE_CONTRACTS
-  ? process.env.BYTECODE_CONTRACTS.split(",").map((entry) => entry.trim()).filter(Boolean)
-  : defaultContracts;
-
-if (!fs.existsSync(artifactsDir)) {
-  console.error(`Missing Truffle artifacts directory: ${artifactsDir}`);
-  process.exit(1);
+function loadJson(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Missing artifact: ${filePath}`);
+  }
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
+
+const checks = [
+  {
+    name: "AGIJobManagerPrime",
+    artifactPath: artifactPathFor("AGIJobManagerPrime.sol", "AGIJobManagerPrime"),
+  },
+  {
+    name: "AGIJobDiscoveryPrime",
+    artifactPath: artifactPathFor("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime"),
+  },
+];
+
+ensurePrimeArtifacts(checks);
 
 const oversized = [];
-for (const contractName of targets) {
-  const artifact = loadArtifact(contractName);
+for (const check of checks) {
+  const artifact = loadJson(check.artifactPath);
   const sizeBytes = deployedSizeBytes(artifact);
-  console.log(`${contractName} runtime bytecode size: ${sizeBytes} bytes`);
+  console.log(`${check.name} runtime bytecode size: ${sizeBytes} bytes`);
   if (sizeBytes > MAX_RUNTIME_BYTES) {
-    oversized.push({ name: contractName, sizeBytes });
+    oversized.push({ name: check.name, sizeBytes });
   }
 }
 
