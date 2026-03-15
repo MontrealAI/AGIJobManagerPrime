@@ -146,9 +146,7 @@ Expected result after Prime deployment:
 - Settlement retains conservative escrow/bond/dispute/finalization behavior.
 - Optional ENSJobPages lifecycle hooks can be configured on Prime via `setEnsJobPages(...)` and remain best-effort/non-fatal.
 
-Prime also exposes keeper/bot-friendly autonomy views for deterministic progress checks:
-- Settlement (`AGIJobManagerPrime`): `isFinalizable`, `isCheckpointFailed`, `isExpirable`, `nextActionForJob`, `getAutonomyStatus`.
-- Discovery (`AGIJobDiscoveryPrime`): `isShortlistFinalizable`, `isWinnerFinalizable`, `isFallbackPromotable`, `nextActionForProcurement`, `getAutonomyStatus`.
+Prime also exposes keeper/bot-friendly autonomy views for deterministic progress checks in discovery (`AGIJobDiscoveryPrime`): `isShortlistFinalizable`, `isWinnerFinalizable`, `isFallbackPromotable`, `nextActionForProcurement`, and `getAutonomyStatus`.
 
 ### Optional legacy ENS wiring path (legacy contract only)
 

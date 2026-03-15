@@ -883,16 +883,23 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
+        if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && block.timestamp > p.revealDeadline;
     }
 
     function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
+        if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         return !p.cancelled && p.shortlistFinalized && !p.winnerFinalized && block.timestamp > p.scoreRevealDeadline;
     }
 
     function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
+        return _isFallbackPromotable(procurementId);
+    }
+
+    function _isFallbackPromotable(uint256 procurementId) internal view returns (bool) {
+        if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
 
@@ -921,6 +928,11 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function nextActionForProcurement(uint256 procurementId) external view returns (string memory) {
+        return _nextActionForProcurement(procurementId);
+    }
+
+    function _nextActionForProcurement(uint256 procurementId) internal view returns (string memory) {
+        if (paused()) return "paused";
         Procurement storage p = procurements[procurementId];
         if (p.cancelled) return "cancelled";
         if (!p.shortlistFinalized) {
@@ -972,8 +984,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     {
         shortlistFinalizable = isShortlistFinalizable(procurementId);
         winnerFinalizable = isWinnerFinalizable(procurementId);
-        fallbackPromotable = this.isFallbackPromotable(procurementId);
-        nextAction = this.nextActionForProcurement(procurementId);
+        fallbackPromotable = _isFallbackPromotable(procurementId);
+        nextAction = _nextActionForProcurement(procurementId);
     }
 
     function claim() external nonReentrant {
