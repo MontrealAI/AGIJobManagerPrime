@@ -9,6 +9,7 @@ const ReputationMath = artifacts.require('ReputationMath');
 const ENSOwnership = artifacts.require('ENSOwnership');
 const MockERC20 = artifacts.require('MockERC20');
 const MockERC721 = artifacts.require('MockERC721');
+const MockENSJobPages = artifacts.require('MockENSJobPages');
 
 const ZERO32 = `0x${'00'.repeat(32)}`;
 const EMPTY = [];
@@ -119,6 +120,74 @@ contract('Prime discovery + settlement', (accounts) => {
     const after = await token.balanceOf(employer);
 
     assert(after.gt(before), 'employer should recover escrow after expiry');
+  });
+
+
+  it('keeps settlement live with best-effort ENS hooks and exposes autonomy helpers', async () => {
+    const hooks = await MockENSJobPages.new({ from: owner });
+    await manager.setEnsJobPages(hooks.address, { from: owner });
+
+    const payout = web3.utils.toWei('30');
+    const tx = await manager.createJob('ipfs://job/ens', payout, 100, 'ens flow', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await hooks.createCalls()).toString(), '1', 'create hook should be called');
+    assert.equal(await manager.nextActionForJob(jobId), 'awaiting_application');
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    assert.equal((await hooks.assignCalls()).toString(), '1', 'assign hook should be called');
+
+    await manager.requestJobCompletion(jobId, 'ipfs://job/ens/done', { from: agentA });
+    assert.equal((await hooks.completionCalls()).toString(), '1', 'completion hook should be called');
+
+    await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
+    await time.increase(2);
+    assert.equal(await manager.isFinalizable(jobId), true, 'finalizable helper should return true');
+
+    await hooks.setRevertHook(4, true, { from: owner });
+    await hooks.setRevertHook(5, true, { from: owner });
+    await manager.finalizeJob(jobId, { from: employer });
+
+    assert.equal((await hooks.revokeCalls()).toString(), '0', 'reverting ENS hook should not brick settlement');
+    const rep = await manager.reputation(agentA);
+    assert(rep.toNumber() > 0, 'finalization should still succeed');
+  });
+
+  it('exposes discovery autonomy helper views', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/autonomy',
+      payout: web3.utils.toWei('10'),
+      duration: 200,
+      details: 'autonomy flow',
+    };
+    const proc = {
+      commitDeadline: now + 20,
+      revealDeadline: now + 40,
+      finalistAcceptDeadline: now + 60,
+      trialDeadline: now + 80,
+      scoreCommitDeadline: now + 100,
+      scoreRevealDeadline: now + 120,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.1'),
+      validatorScoreBond: web3.utils.toWei('0.2'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'commit_applications');
+    assert.equal(await discovery.canClaim(agentA), false);
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {

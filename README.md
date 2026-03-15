@@ -201,6 +201,7 @@ Legacy Truffle build/test flows remain available for reference compatibility (`n
 ## Documentation
 
 - Main documentation index: [`docs/README.md`](docs/README.md)
+- Prime economic/game-theory memo: [`docs/PRIME_ECONOMIC_GAME_THEORY_REVIEW.md`](docs/PRIME_ECONOMIC_GAME_THEORY_REVIEW.md)
 - UI docs hub (broader UI): [`docs/ui/README.md`](docs/ui/README.md)
 - Standalone HTML UI guide (v21): [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - UI directory inventory: [`ui/README.md`](ui/README.md)

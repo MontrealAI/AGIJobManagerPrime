@@ -360,4 +360,11 @@ interface IAGIJobManagerPrime {
         bytes32 root,
         uint64 applicationWindow
     ) external;
+
+    function setEnsJobPages(address target) external;
+
+    function isFinalizable(uint256 jobId) external view returns (bool);
+    function isExpirable(uint256 jobId) external view returns (bool);
+    function isCheckpointFailed(uint256 jobId) external view returns (bool);
+    function nextActionForJob(uint256 jobId) external view returns (string memory);
 }
