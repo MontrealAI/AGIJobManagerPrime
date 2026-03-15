@@ -74,6 +74,16 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.setPremiumReputationThreshold(0, { from: owner });
   });
 
+
+  it('rejects zero-address discovery module wiring', async () => {
+    try {
+      await manager.setDiscoveryModule('0x0000000000000000000000000000000000000000', { from: owner });
+      assert.fail('expected revert');
+    } catch (error) {
+      assert(String(error.message).includes('InvalidParameters'), `unexpected error: ${error.message}`);
+    }
+  });
+
   it('supports ordinary open-first-come settlement flow', async () => {
     const payout = web3.utils.toWei('100');
     const tx = await manager.createJob('ipfs://job/open', payout, 3600, 'open flow', { from: employer });
