@@ -352,6 +352,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     uint256 internal constant DISPUTE_BOND_MIN = 1e18;
     uint256 internal constant DISPUTE_BOND_MAX = 200e18;
     uint256 internal constant MAX_URI_BYTES = 2048;
+    uint256 internal constant ENS_HOOK_GAS_LIMIT = 500_000;
 
     IERC20 public agiToken;
     address public discoveryModule;
@@ -585,6 +586,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         discoveryModule = module;
         emit DiscoveryModuleUpdated(old, module);
     }
+
 
     function addModerator(address a) external onlyOwner { moderators[a] = true; }
     function removeModerator(address a) external onlyOwner { moderators[a] = false; }
@@ -1048,10 +1050,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         return _job(jobId).employer;
     }
 
-    function jobAssignedAgentOf(uint256 jobId) external view returns (address) {
-        return _job(jobId).assignedAgent;
-    }
-
     function getJobSelectionInfo(uint256 jobId)
         external
         view
@@ -1296,7 +1294,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             _settleValidators(job, true, reputationPoints, validatorBudget, 0);
         }
 
-        _mintCompletionNFT(job);
+        _mintCompletionNFT(jobId, job);
         _returnDisputeBond(job, job.assignedAgent);
 
         emit JobCompleted(jobId, job.assignedAgent, reputationPoints);
@@ -1371,7 +1369,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function _mintCompletionNFT(Job storage job) internal {
+    function _mintCompletionNFT(uint256, Job storage job) internal {
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
         uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
         emit NFTIssued(tokenId, job.employer, uri);

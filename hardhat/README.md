@@ -143,3 +143,9 @@ Deployment smoke check (local hardhat):
 cd hardhat
 npm run deploy:prime:smoke
 ```
+
+## Prime ENS wiring status
+
+ENSJobPages parity remains an explicit Prime requirement, but integration is currently being reworked to preserve strict EIP-170 deployability bounds for `AGIJobManagerPrime`.
+
+Use legacy ENS runbooks for current operator flows until the Prime ENS path is reintroduced in a size-safe periphery pattern.

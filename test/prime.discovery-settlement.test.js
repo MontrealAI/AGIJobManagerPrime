@@ -52,6 +52,7 @@ contract('Prime discovery + settlement', (accounts) => {
     discovery = await AGIJobDiscoveryPrime.new(manager.address, { from: owner });
     await manager.setDiscoveryModule(discovery.address, { from: owner });
 
+
     const agiType = await MockERC721.new({ from: owner });
     await agiType.mint(agentA, { from: owner });
     await agiType.mint(agentB, { from: owner });
@@ -119,6 +120,76 @@ contract('Prime discovery + settlement', (accounts) => {
     const after = await token.balanceOf(employer);
 
     assert(after.gt(before), 'employer should recover escrow after expiry');
+  });
+
+
+
+  it('reports non-promotable when remaining finalists have zero composite score', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = { jobSpecURI: 'ipfs://job/zero', payout: web3.utils.toWei('20'), duration: 3600, details: 'zero score' };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 0,
+      trialWeightBps: 10000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('1'),
+      validatorRewardPerReveal: web3.utils.toWei('0.1'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
+
+    const saltA = web3.utils.soliditySha3('ZA');
+    const uriA = 'ipfs://application/ZA';
+    const cA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uriA },
+      { type: 'bytes32', value: saltA }
+    );
+
+    await discovery.commitApplication(procurementId, cA, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
+
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/ZA', { from: agentA });
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    const scoreSalt = web3.utils.soliditySha3('ZS');
+    const commit = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 0 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+    await discovery.commitFinalistScore(procurementId, agentA, commit, '', EMPTY, { from: validatorA });
+
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 0, scoreSalt, '', EMPTY, { from: validatorA });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+    await time.increase(6);
+
+    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalist should not be promotable');
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
@@ -219,6 +290,7 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(info[1], agentA, 'winner should be designated as selected agent');
 
     await time.increase(6);
+    assert.equal(await discovery.isFallbackPromotable(procurementId), true, 'fallback should become promotable');
     await discovery.promoteFallbackFinalist(procurementId, { from: employer });
 
     info = await manager.getJobSelectionInfo(jobId);
@@ -229,5 +301,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
     await time.increase(2);
     await manager.finalizeJob(jobId, { from: employer });
+
+    const claimableValidator = await discovery.canClaim(validatorA);
+    assert(claimableValidator.gt(web3.utils.toBN(0)), 'validator reveal reward should be claimable');
   });
 });

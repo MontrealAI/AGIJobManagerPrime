@@ -317,7 +317,6 @@ interface IAGIJobManagerPrime {
     ) external returns (uint256 jobId);
 
     function jobEmployerOf(uint256 jobId) external view returns (address);
-    function jobAssignedAgentOf(uint256 jobId) external view returns (address);
 
     function getJobSelectionInfo(uint256 jobId)
         external
@@ -360,4 +359,5 @@ interface IAGIJobManagerPrime {
         bytes32 root,
         uint64 applicationWindow
     ) external;
+
 }
