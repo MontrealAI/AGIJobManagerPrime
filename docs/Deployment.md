@@ -1,4 +1,9 @@
-# Deployment guide (Truffle)
+# Deployment guide (Legacy Truffle Reference)
+
+> **Canonical path:** Prime production deployments are Hardhat-first via `hardhat/scripts/deploy.js`.
+> Use [`hardhat/README.md`](../hardhat/README.md) for mainnet/sepolia Prime deployment commands, artifact outputs, and verification flow.
+>
+> This page is retained as a **legacy reference** for historical `AGIJobManager` Truffle operations only.
 
 This guide documents the deployment and verification workflow defined in `truffle-config.js` and the migration scripts in `migrations/`.
 For the **configure-once, minimal-governance** deployment profile, see [`docs/DEPLOYMENT_PROFILE.md`](DEPLOYMENT_PROFILE.md).
@@ -88,7 +93,7 @@ The constructor now accepts a grouped config tuple (token, base IPFS URL, `[ENS,
    npx truffle migrate --network sepolia
    ```
 
-## Mainnet deployment
+## Mainnet deployment (legacy contract path)
 
 1. Set environment variables (`PRIVATE_KEYS` plus RPC configuration).
 2. Deploy:
