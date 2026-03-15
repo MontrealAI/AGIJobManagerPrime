@@ -882,7 +882,33 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         return claimable[account];
     }
 
+    function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
+        if (paused()) return false;
+        Procurement storage p = procurements[procurementId];
+        return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && block.timestamp > p.revealDeadline;
+    }
+
+    function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
+        if (paused()) return false;
+        Procurement storage p = procurements[procurementId];
+        if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || block.timestamp <= p.scoreRevealDeadline) return false;
+
+        if (settlement.paused()) return false;
+
+        bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+        if (!hasDesignatableWinner) return true;
+
+        if (settlement.settlementPaused()) return false;
+
+        return _isSelectionSlotOpen(p.jobId);
+    }
+
     function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
+        return _isFallbackPromotable(procurementId);
+    }
+
+    function _isFallbackPromotable(uint256 procurementId) internal view returns (bool) {
+        if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
 
@@ -911,6 +937,11 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function nextActionForProcurement(uint256 procurementId) external view returns (string memory) {
+        return _nextActionForProcurement(procurementId);
+    }
+
+    function _nextActionForProcurement(uint256 procurementId) internal view returns (string memory) {
+        if (paused()) return "paused";
         Procurement storage p = procurements[procurementId];
         if (p.cancelled) return "cancelled";
         if (!p.shortlistFinalized) {
@@ -948,6 +979,80 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         return "no_promotable_fallback";
+    }
+
+    function getAutonomyStatus(uint256 procurementId)
+        external
+        view
+        returns (
+            bool shortlistFinalizable,
+            bool winnerFinalizable,
+            bool fallbackPromotable,
+            string memory nextAction
+        )
+    {
+        shortlistFinalizable = isShortlistFinalizable(procurementId);
+        winnerFinalizable = isWinnerFinalizable(procurementId);
+        fallbackPromotable = _isFallbackPromotable(procurementId);
+        nextAction = _nextActionForProcurement(procurementId);
+    }
+
+    function _hasDesignatableWinner(uint256 procurementId, Procurement storage p) internal view returns (bool) {
+        uint256 bestComposite;
+        uint256 bestTrial;
+        uint256 bestHistorical;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+
+            if (!a.finalistAccepted || !a.trialSubmitted) continue;
+
+            uint8[] storage scores = revealedScores[procurementId][finalist];
+            if (scores.length < p.minValidatorReveals) continue;
+
+            uint256 trialScoreBps = _medianScoreBps(scores);
+            uint256 composite = (
+                a.historicalScoreBps * p.historicalWeightBps +
+                trialScoreBps * p.trialWeightBps
+            ) / 10_000;
+
+            if (
+                composite > bestComposite ||
+                (composite == bestComposite && trialScoreBps > bestTrial) ||
+                (composite == bestComposite && trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
+            ) {
+                bestComposite = composite;
+                bestTrial = trialScoreBps;
+                bestHistorical = a.historicalScoreBps;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function _isSelectionSlotOpen(uint256 jobId) internal view returns (bool) {
+        (bool ok, bytes memory data) = address(settlement).staticcall(
+            abi.encodeWithSelector(IAGIJobManagerPrime.getJobSelectionInfo.selector, jobId)
+        );
+
+        if (!ok || data.length == 0) return false;
+
+        (
+            uint8 intakeMode,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = abi.decode(data, (uint8, address, bytes32, uint64, uint64, uint64, bool, address));
+
+        if (intakeMode != 1) return false;
+        if (assignedAgent != address(0)) return false;
+        return selectionExpiresAt == 0 || block.timestamp > selectionExpiresAt;
     }
 
     function claim() external nonReentrant {
