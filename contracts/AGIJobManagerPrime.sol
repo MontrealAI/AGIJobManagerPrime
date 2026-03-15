@@ -1093,7 +1093,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.disputed) return 5; // await_dispute_resolution
 
         if (job.assignedAgent == address(0)) {
-            if (job.intakeMode == IntakeMode.SelectedAgentOnly && job.selectedAgent != address(0)) {
+            if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
+                if (job.selectedAgent == address(0)) return 6; // designate_or_promote_selected_agent
                 if (job.selectionExpiresAt != 0 && block.timestamp > job.selectionExpiresAt) {
                     return 6; // designate_or_promote_selected_agent
                 }
@@ -1102,7 +1103,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             return 8; // agent_apply
         }
 
-        if (job.checkpointDeadline != 0 && !job.checkpointSubmitted) {
+        if (!job.completionRequested && job.checkpointDeadline != 0 && !job.checkpointSubmitted) {
             if (block.timestamp > job.checkpointDeadline) return 9; // fail_checkpoint
             return 10; // submit_checkpoint
         }

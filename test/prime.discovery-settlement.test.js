@@ -256,6 +256,14 @@ contract('Prime discovery + settlement', (accounts) => {
   
   it('exposes deterministic job autonomy helpers for checkpoint, completion, and expiry', async () => {
     const payout = web3.utils.toWei('10');
+    const designateTx = await manager.createConfiguredJob('ipfs://job/designate-needed', payout, 300, 'designation', 1, ZERO32, { from: employer });
+    const designateJobId = designateTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    assert.equal(
+      (await manager.nextActionCodeForJob(designateJobId)).toString(),
+      '6',
+      'selected-agent-only jobs without designated agent should require designation, not generic apply'
+    );
+
     const tx = await manager.createConfiguredJob('ipfs://job/helpers', payout, 50, 'helpers', 1, ZERO32, { from: employer });
     const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
 
@@ -276,6 +284,11 @@ contract('Prime discovery + settlement', (accounts) => {
     const jobId2 = tx2.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
     await manager.applyForJob(jobId2, '', EMPTY, EMPTY, { from: agentA });
     await manager.requestJobCompletion(jobId2, 'ipfs://job/finalizable/completion', { from: agentA });
+    assert.equal(
+      (await manager.nextActionCodeForJob(jobId2)).toString(),
+      '14',
+      'completion requested should suppress checkpoint action codes and wait for review/finalization'
+    );
     assert.equal(await manager.isFinalizable(jobId2), false);
     await time.increase(8 * 24 * 3600);
     assert.equal(await manager.isFinalizable(jobId2), true);
