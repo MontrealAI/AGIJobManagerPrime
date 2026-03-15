@@ -32,17 +32,20 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Bytecode size check
+      - name: Legacy settlement bytecode size check
         run: npm run size
 
-      - name: Test
+      - name: Legacy core tests
         run: npm run test
 
-      - name: Prime Hardhat compile check
+      - name: Prime Hardhat compile + size check
         run: |
           cd hardhat
           npm ci
-          npm run compile
+          npm run compile:size
+
+      - name: Prime integration regression
+        run: npm run test:prime
 
       - name: UI smoke test
         run: npm run test:ui
