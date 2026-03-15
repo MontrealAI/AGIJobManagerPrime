@@ -882,6 +882,16 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         return claimable[account];
     }
 
+    function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
+        Procurement storage p = procurements[procurementId];
+        return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && block.timestamp > p.revealDeadline;
+    }
+
+    function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
+        Procurement storage p = procurements[procurementId];
+        return !p.cancelled && p.shortlistFinalized && !p.winnerFinalized && block.timestamp > p.scoreRevealDeadline;
+    }
+
     function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
@@ -948,6 +958,22 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         return "no_promotable_fallback";
+    }
+
+    function getAutonomyStatus(uint256 procurementId)
+        external
+        view
+        returns (
+            bool shortlistFinalizable,
+            bool winnerFinalizable,
+            bool fallbackPromotable,
+            string memory nextAction
+        )
+    {
+        shortlistFinalizable = isShortlistFinalizable(procurementId);
+        winnerFinalizable = isWinnerFinalizable(procurementId);
+        fallbackPromotable = this.isFallbackPromotable(procurementId);
+        nextAction = this.nextActionForProcurement(procurementId);
     }
 
     function claim() external nonReentrant {

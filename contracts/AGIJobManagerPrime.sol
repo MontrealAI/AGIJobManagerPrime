@@ -1098,6 +1098,89 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         );
     }
 
+    function isCheckpointFailed(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        return
+            job.assignedAgent != address(0) &&
+            !job.completed &&
+            !job.expired &&
+            !job.completionRequested &&
+            job.checkpointDeadline != 0 &&
+            !job.checkpointSubmitted &&
+            block.timestamp > job.checkpointDeadline;
+    }
+
+    function isExpirable(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        return
+            job.assignedAgent != address(0) &&
+            !job.completed &&
+            !job.expired &&
+            !job.disputed &&
+            !job.completionRequested &&
+            block.timestamp > uint256(job.assignedAt) + job.duration;
+    }
+
+    function isFinalizable(uint256 jobId) public view returns (bool) {
+        Job storage job = _job(jobId);
+        if (job.completed || job.expired || job.disputed || !job.completionRequested) return false;
+
+        uint256 approvals = job.validatorApprovals;
+        uint256 disapprovals = job.validatorDisapprovals;
+        if (job.validatorApproved) {
+            if (block.timestamp <= uint256(job.validatorApprovedAt) + challengePeriodAfterApproval) return false;
+            if (approvals > disapprovals) return true;
+        }
+
+        if (block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) return false;
+        return true;
+    }
+
+    function nextActionForJob(uint256 jobId) public view returns (string memory) {
+        Job storage job = _job(jobId);
+
+        if (job.completed) return "completed";
+        if (job.expired) return "expired";
+        if (job.disputed) return "resolve_dispute";
+        if (job.assignedAgent == address(0)) {
+            if (job.intakeMode == IntakeMode.OpenFirstCome) return "apply_for_job";
+            if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
+                if (job.selectedAgent == address(0)) return "designate_selected_agent";
+                if (block.timestamp > job.selectionExpiresAt) return "promote_or_redesignate_selected_agent";
+                return "wait_selected_agent_acceptance";
+            }
+            if (job.perJobAgentRoot == bytes32(0)) return "set_per_job_agent_root";
+            if (block.timestamp > job.selectionExpiresAt) return "refresh_per_job_root_or_window";
+            return "wait_allowlisted_agent_application";
+        }
+
+        if (!job.completionRequested) {
+            if (isCheckpointFailed(jobId)) return "fail_checkpoint";
+            if (isExpirable(jobId)) return "expire_job";
+            if (job.checkpointDeadline != 0 && !job.checkpointSubmitted) return "submit_checkpoint";
+            return "submit_completion";
+        }
+
+        if (isFinalizable(jobId)) return "finalize_job";
+
+        if (job.validatorApproved) {
+            return "wait_challenge_window";
+        }
+
+        return "wait_validator_review_or_dispute";
+    }
+
+    function getAutonomyStatus(uint256 jobId)
+        external
+        view
+        returns (bool finalizable, bool checkpointFailed, bool expirable, string memory nextAction)
+    {
+        finalizable = isFinalizable(jobId);
+        checkpointFailed = isCheckpointFailed(jobId);
+        expirable = isExpirable(jobId);
+        nextAction = nextActionForJob(jobId);
+    }
+
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
         for (uint256 i = 0; i < agiTypes.length; ++i) {
             AGIType storage agiType = agiTypes[i];

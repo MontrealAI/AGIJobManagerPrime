@@ -98,9 +98,13 @@ contract('Prime discovery + settlement', (accounts) => {
     const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
 
     await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    assert.equal(await manager.nextActionForJob(jobId), 'submit_completion');
     await manager.requestJobCompletion(jobId, 'ipfs://job/open/deliverable', { from: agentA });
+    assert.equal(await manager.nextActionForJob(jobId), 'wait_validator_review_or_dispute');
     await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
+    assert.equal(await manager.isFinalizable(jobId), false, 'challenge window should delay finalization');
     await time.increase(2);
+    assert.equal(await manager.isFinalizable(jobId), true, 'job should become finalizable after challenge period');
     await manager.finalizeJob(jobId, { from: employer });
 
     const info = await manager.getJobSelectionInfo(jobId);
@@ -117,8 +121,10 @@ contract('Prime discovery + settlement', (accounts) => {
     const root = leafFor(agentA);
     await manager.setPerJobAgentRoot(jobId, root, 50, { from: owner });
     await manager.applyForJob(jobId, '', EMPTY, [], { from: agentA });
+    assert.equal(await manager.isExpirable(jobId), false, 'job should not be expirable before duration elapses');
 
     await time.increase(3700);
+    assert.equal(await manager.isExpirable(jobId), true, 'job should become expirable after duration');
     const before = await token.balanceOf(employer);
     await manager.expireJob(jobId, { from: owner });
     const after = await token.balanceOf(employer);
@@ -140,6 +146,8 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal((await ensJobPages.assignCalls()).toString(), '0', 'reverting assign hook should not brick apply');
 
     await manager.requestJobCompletion(jobId, 'ipfs://job/ens/completion', { from: agentA });
+    const status = await manager.getAutonomyStatus(jobId);
+    assert.equal(status.nextAction, 'wait_validator_review_or_dispute');
     await time.increase(8 * 24 * 3600);
 
     await manager.finalizeJob(jobId, { from: employer });
@@ -215,6 +223,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealFinalistScore(procurementId, agentA, 0, scoreSalt, '', EMPTY, { from: validatorA });
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'winner should be finalizable after reveal window');
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalists should not appear promotable');
@@ -280,6 +289,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
 
     await time.increaseTo(proc.revealDeadline + 1);
+    assert.equal(await discovery.isShortlistFinalizable(procurementId), true, 'shortlist should become finalizable at reveal timeout');
     await discovery.finalizeShortlist(procurementId, { from: owner });
 
     await discovery.acceptFinalist(procurementId, { from: agentA });
@@ -313,6 +323,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealFinalistScore(procurementId, agentB, 80, scoreSaltB, '', EMPTY, { from: validatorB });
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
+    const autonomy = await discovery.getAutonomyStatus(procurementId);
+    assert.equal(autonomy.winnerFinalizable, true, 'autonomy status should expose winner finalization readiness');
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     let info = await manager.getJobSelectionInfo(jobId);
