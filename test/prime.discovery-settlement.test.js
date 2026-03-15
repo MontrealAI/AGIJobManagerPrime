@@ -442,4 +442,80 @@ contract('Prime discovery + settlement', (accounts) => {
     const status = await discovery.getAutonomyStatus(procurementId);
     assert.equal(status.winnerFinalizable, false, 'autonomy status should remain readable and false after cancellation');
   });
+
+  it('keeps autonomy status readable after winner finalization when linked job is deleted', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-delete-after-winner',
+      payout: web3.utils.toWei('18'),
+      duration: 3600,
+      details: 'deleted linked job path',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 300,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
+    const jobId = premiumEvent.args.jobId.toNumber();
+
+    const salt = web3.utils.soliditySha3('D');
+    const uri = 'ipfs://application/D';
+    const commitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uri },
+      { type: 'bytes32', value: salt }
+    );
+
+    await discovery.commitApplication(procurementId, commitment, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/D', { from: agentA });
+
+    const scoreSalt = web3.utils.soliditySha3('scoreD');
+    const scoreCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 85 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    await discovery.commitFinalistScore(procurementId, agentA, scoreCommitment, '', EMPTY, { from: validatorA });
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 85, scoreSalt, '', EMPTY, { from: validatorA });
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+
+    await manager.cancelJob(jobId, { from: employer });
+
+    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback check should not revert for deleted linked job');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'linked_job_missing');
+    const status = await discovery.getAutonomyStatus(procurementId);
+    assert.equal(status.nextAction, 'linked_job_missing', 'autonomy status should remain readable with deleted linked job');
+  });
 });

@@ -912,16 +912,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
 
-        (
-            ,
-            ,
-            ,
-            uint64 selectionExpiresAt,
-            ,
-            ,
-            ,
-            address assignedAgent
-        ) = settlement.getJobSelectionInfo(p.jobId);
+        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        if (!selectionInfoOk) return false;
 
         if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
 
@@ -957,16 +949,9 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             return "finalize_winner";
         }
 
-        (
-            ,
-            ,
-            ,
-            uint64 selectionExpiresAt,
-            ,
-            ,
-            ,
-            address assignedAgent
-        ) = settlement.getJobSelectionInfo(p.jobId);
+        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        if (!selectionInfoOk) return "linked_job_missing";
+
         if (assignedAgent != address(0)) return "winner_assigned";
         if (block.timestamp <= selectionExpiresAt) return "wait_selected_acceptance";
 
@@ -1052,6 +1037,26 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (intakeMode != 1) return false;
         if (assignedAgent != address(0)) return false;
         return selectionExpiresAt == 0 || block.timestamp > selectionExpiresAt;
+    }
+
+    function _tryGetSelectionState(uint256 jobId) internal view returns (bool ok, uint64 selectionExpiresAt, address assignedAgent) {
+        (bool success, bytes memory data) = address(settlement).staticcall(
+            abi.encodeWithSelector(IAGIJobManagerPrime.getJobSelectionInfo.selector, jobId)
+        );
+        if (!success || data.length == 0) return (false, 0, address(0));
+
+        (
+            ,
+            ,
+            ,
+            uint64 parsedSelectionExpiresAt,
+            ,
+            ,
+            ,
+            address parsedAssignedAgent
+        ) = abi.decode(data, (uint8, address, bytes32, uint64, uint64, uint64, bool, address));
+
+        return (true, parsedSelectionExpiresAt, parsedAssignedAgent);
     }
 
     function claim() external nonReentrant {
