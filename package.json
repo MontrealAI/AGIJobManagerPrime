@@ -4,7 +4,7 @@
   "private": true,
   "description": "Single-contract AGIJobManager",
   "scripts": {
-    "build": "truffle compile",
+    "build": "npx truffle compile",
     "size": "node scripts/check-bytecode-size.js",
     "check:no-binaries": "node scripts/check-no-binaries.mjs",
     "docs:gen": "node scripts/docs/gen-docs.mjs",
@@ -13,7 +13,7 @@
     "docs:ens:check": "node scripts/docs/check-ens-docs.mjs",
     "docs:interface": "node scripts/generate-interface-doc.js",
     "lint": "solhint \"contracts/**/*.sol\"",
-    "test": "truffle compile --all && truffle test --network test && node test/AGIJobManager.test.js && node scripts/check-contract-sizes.js",
+    "test": "npx truffle compile --all && npx truffle test --network test && node test/AGIJobManager.test.js && node scripts/check-contract-sizes.js",
     "test:ui": "node scripts/ui/run_ui_smoke_test.js",
     "ui:abi": "node scripts/ui/export_abi.js",
     "ui:abi:check": "node scripts/ui/check_ui_abi.js",
