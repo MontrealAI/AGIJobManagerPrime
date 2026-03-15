@@ -127,6 +127,37 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
 
+
+  it('exposes settlement autonomy helper views for checkpoint, expiry, and finalization', async () => {
+    const payout = web3.utils.toWei('25');
+
+    const checkpointTx = await manager.createConfiguredJob('ipfs://job/checkpoint', payout, 120, 'checkpoint flow', 1, ZERO32, { from: employer });
+    const checkpointJobId = checkpointTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.designateSelectedAgent(checkpointJobId, agentA, 200, 20, { from: owner });
+    await manager.applyForJob(checkpointJobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal(await manager.isCheckpointFailed(checkpointJobId), false, 'checkpoint should not fail immediately');
+    await time.increase(25);
+    assert.equal(await manager.isCheckpointFailed(checkpointJobId), true, 'checkpoint should fail after deadline without submission');
+    assert.equal(await manager.nextActionForJob(checkpointJobId), 'fail_checkpoint');
+
+    const expireTx = await manager.createJob('ipfs://job/expire-helper', payout, 60, 'expiry helper', { from: employer });
+    const expireJobId = expireTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(expireJobId, '', EMPTY, EMPTY, { from: agentA });
+    assert.equal(await manager.isExpirable(expireJobId), false, 'not expirable before duration');
+    await time.increase(70);
+    assert.equal(await manager.isExpirable(expireJobId), true, 'job becomes expirable after deadline');
+
+    const finalTx = await manager.createJob('ipfs://job/finalize-helper', payout, 3600, 'finalize helper', { from: employer });
+    const finalJobId = finalTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(finalJobId, '', EMPTY, EMPTY, { from: agentB });
+    await manager.requestJobCompletion(finalJobId, 'ipfs://job/finalize-helper/result', { from: agentB });
+    assert.equal(await manager.isFinalizable(finalJobId), false, 'review period still active');
+    await time.increase(2);
+    assert.equal(await manager.isFinalizable(finalJobId), true, 'job finalizable after review period');
+    assert.equal(await manager.nextActionForJob(finalJobId), 'finalize');
+  });
+
   it('keeps ENS hooks best-effort and exposes autonomy helpers', async () => {
     const payout = web3.utils.toWei('30');
     const tx = await manager.createJob('ipfs://job/ens', payout, 100, 'ens hooks', { from: employer });

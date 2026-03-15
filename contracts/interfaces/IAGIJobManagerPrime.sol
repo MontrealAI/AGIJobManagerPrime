@@ -335,6 +335,11 @@ interface IAGIJobManagerPrime {
             address assignedAgent
         );
 
+    function isFinalizable(uint256 jobId) external view returns (bool);
+    function isExpirable(uint256 jobId) external view returns (bool);
+    function isCheckpointFailed(uint256 jobId) external view returns (bool);
+    function nextActionForJob(uint256 jobId) external view returns (string memory);
+
     function reputation(address agent) external view returns (uint256);
     function previewHistoricalScore(address agent) external view returns (uint256);
 
