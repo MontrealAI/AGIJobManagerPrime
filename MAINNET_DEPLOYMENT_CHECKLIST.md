@@ -1,12 +1,45 @@
-# Mainnet Deployment Checklist
+# Mainnet Deployment Checklist (Prime Canonical)
 
-- Transfer contract ownership to a multisig (e.g., Safe), not an EOA.
-- Decide whether to keep `useEnsJobTokenURI` disabled at launch; if enabling, confirm `ensJobPages` is the intended contract.
-- ENS configuration verification:
-  - Jobs root node is owned or wrapped by the expected entity.
-  - Resolver is set correctly for the root and job subdomains.
-  - Job manager address is configured in the ENS job pages contract (if used).
-  - ENS job pages address is non-zero and has contract code when enabled.
-- Run Slither and unit tests; include at least one invariant-style test focused on solvency
-  (contract balance >= lockedEscrow + locked*Bonds) and settlement flows.
-- Obtain an external audit or review before deploying funds at scale.
+This checklist is for **Prime** production deployment via the canonical Hardhat path in [`hardhat/README.md`](hardhat/README.md).
+Legacy Truffle deployment notes are retained in [`docs/Deployment.md`](docs/Deployment.md) as reference-only.
+
+## Preflight
+
+- Confirm `hardhat/.env` has `MAINNET_RPC_URL`, `PRIVATE_KEY`, `FINAL_OWNER`, and `DEPLOY_CONFIRM_MAINNET`.
+- Confirm deploy config values in `hardhat/deploy.config.example.js` are copied into your real deploy config and validated.
+- Run compile and bytecode checks before any broadcast:
+  - `cd hardhat && npm run compile`
+  - `cd .. && npx truffle compile --all`
+  - `node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('hardhat/artifacts/contracts/AGIJobManagerPrime.sol/AGIJobManagerPrime.json'));const b=(a.deployedBytecode||'').replace(/^0x/,'');console.log('runtime',b.length/2);"`
+
+## Dry-run then broadcast
+
+- Dry-run mainnet plan first:
+  - `cd hardhat && npm run deploy:prime:mainnet:dry-run`
+- Broadcast mainnet only after review:
+  - `cd hardhat && VERIFY=1 npm run deploy:prime:mainnet:live`
+
+## Post-deploy verification and wiring checks
+
+- Confirm deployment artifact exists in `hardhat/deployments/mainnet/`.
+- Confirm artifact contains:
+  - linked library addresses,
+  - `AGIJobManagerPrime` and `AGIJobDiscoveryPrime` addresses,
+  - `setDiscoveryModule` tx,
+  - `completionNFT` address,
+  - ownership transfer status.
+- Re-run verification from artifact (includes completion NFT verification):
+  - `cd hardhat && npm run verify:prime -- --network mainnet`
+- Verify `setDiscoveryModule(discoveryAddress)` completed and addresses match deployment summary.
+
+## Operational controls
+
+- Transfer ownership to a multisig (e.g., Safe), not an EOA, unless your explicit policy says otherwise.
+- Confirm pause/emergency controls and key custody runbook before opening production flows.
+- Run Slither and full relevant tests before scaling funds at risk.
+
+## Human security review gates
+
+- Independent review of procurement scoring and fallback-promotion economics.
+- Independent review of solvency accounting and dispute paths.
+- Independent review of mainnet operational runbooks and incident-response paths.

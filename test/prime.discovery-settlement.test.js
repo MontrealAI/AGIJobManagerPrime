@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { time } = require('@openzeppelin/test-helpers');
+const { time, expectRevert } = require('@openzeppelin/test-helpers');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
 const AGIJobDiscoveryPrime = artifacts.require('AGIJobDiscoveryPrime');
@@ -72,6 +72,13 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.setRequiredValidatorApprovals(1, { from: owner });
     await manager.setChallengePeriodAfterApproval(1, { from: owner });
     await manager.setPremiumReputationThreshold(0, { from: owner });
+  });
+
+
+  it('rejects zero-address discovery module wiring', async () => {
+    await expectRevert.unspecified(
+      manager.setDiscoveryModule('0x0000000000000000000000000000000000000000', { from: owner })
+    );
   });
 
   it('supports ordinary open-first-come settlement flow', async () => {

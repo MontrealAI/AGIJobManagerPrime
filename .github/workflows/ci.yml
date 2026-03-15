@@ -38,5 +38,11 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Prime Hardhat compile check
+        run: |
+          cd hardhat
+          npm ci
+          npm run compile
+
       - name: UI smoke test
         run: npm run test:ui

@@ -11,7 +11,10 @@
     "deploy:prime:sepolia": "hardhat run scripts/deploy.js --network sepolia",
     "deploy:prime:mainnet": "hardhat run scripts/deploy.js --network mainnet",
     "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
-    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet"
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
+    "deploy:prime:mainnet:dry-run": "DRY_RUN=1 DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT hardhat run scripts/deploy.js --network mainnet",
+    "deploy:prime:mainnet:live": "DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT hardhat run scripts/deploy.js --network mainnet",
+    "verify:prime": "hardhat run scripts/verify-prime.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
