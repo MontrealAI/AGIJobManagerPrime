@@ -352,6 +352,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     uint256 internal constant DISPUTE_BOND_MIN = 1e18;
     uint256 internal constant DISPUTE_BOND_MAX = 200e18;
     uint256 internal constant MAX_URI_BYTES = 2048;
+    uint8 internal constant ENS_HOOK_CREATE = 1;
+    uint8 internal constant ENS_HOOK_ASSIGN = 2;
+    uint8 internal constant ENS_HOOK_COMPLETION = 3;
+    uint8 internal constant ENS_HOOK_REVOKE = 4;
+    uint8 internal constant ENS_HOOK_LOCK = 5;
+    uint256 internal constant ENS_HOOK_GAS_LIMIT = 500_000;
 
     IERC20 public agiToken;
     address public discoveryModule;
@@ -397,6 +403,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     ENSPrime public ens;
     NameWrapperPrime public nameWrapper;
+    address public ensJobPages;
 
     struct Job {
         address employer;
@@ -528,6 +535,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     event PremiumReputationThresholdUpdated(uint256 oldValue, uint256 newValue);
     event AGITypeUpdated(address indexed nftAddress, uint256 indexed payoutPercentage);
     event AGIWithdrawn(address indexed to, uint256 amount, uint256 remainingWithdrawable);
+    event EnsJobPagesUpdated(address indexed oldTarget, address indexed newTarget);
 
     modifier onlyModerator() {
         if (!moderators[msg.sender]) revert NotModerator();
@@ -585,6 +593,14 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         discoveryModule = module;
         emit DiscoveryModuleUpdated(old, module);
     }
+
+    function setEnsJobPages(address target) external onlyOwner {
+        if (target != address(0) && target.code.length == 0) revert InvalidParameters();
+        address old = ensJobPages;
+        ensJobPages = target;
+        emit EnsJobPagesUpdated(old, target);
+    }
+
 
     function addModerator(address a) external onlyOwner { moderators[a] = true; }
     function removeModerator(address a) external onlyOwner { moderators[a] = false; }
@@ -819,6 +835,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         activeJobsByAgent[msg.sender] += 1;
         emit JobApplied(jobId, msg.sender);
+        _callEnsJobPagesHook(ENS_HOOK_ASSIGN, jobId);
     }
 
     function submitCheckpoint(
@@ -869,6 +886,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.completionRequestedAt = uint64(block.timestamp);
 
         emit JobCompletionRequested(jobId, msg.sender, jobCompletionURI);
+        _callEnsJobPagesHook(ENS_HOOK_COMPLETION, jobId);
     }
 
     function validateJob(
@@ -1010,6 +1028,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _recordFailure(job.assignedAgent, job.payout, false, true);
 
         emit JobExpired(jobId, job.employer, job.assignedAgent, job.payout);
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
     }
 
     function cancelJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
@@ -1021,6 +1041,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         agiToken.safeTransfer(job.employer, job.payout);
 
         emit JobCancelled(jobId);
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
         delete jobs[jobId];
     }
 
@@ -1206,6 +1228,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         lockedEscrow += payout;
 
         emit JobCreated(jobId, employer, payout, duration, jobSpecURI, intakeMode, perJobAgentRoot, details);
+        _callEnsJobPagesHook(ENS_HOOK_CREATE, jobId);
     }
 
     function _recordValidatorVote(
@@ -1296,9 +1319,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             _settleValidators(job, true, reputationPoints, validatorBudget, 0);
         }
 
-        _mintCompletionNFT(job);
+        _mintCompletionNFT(jobId, job);
         _returnDisputeBond(job, job.assignedAgent);
 
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
         emit JobCompleted(jobId, job.assignedAgent, reputationPoints);
     }
 
@@ -1331,6 +1355,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         _recordFailure(job.assignedAgent, job.payout, disputeLoss, false);
 
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
         emit JobEmployerRefunded(jobId, job.employer, job.assignedAgent, employerRefund);
     }
 
@@ -1371,10 +1397,25 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function _mintCompletionNFT(Job storage job) internal {
+    function _mintCompletionNFT(uint256, Job storage job) internal {
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
         uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
         emit NFTIssued(tokenId, job.employer, uri);
+    }
+
+    function _callEnsJobPagesHook(uint8 hook, uint256 jobId) internal {
+        address target = ensJobPages;
+        if (target.code.length == 0) return;
+
+        uint256 success;
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, shl(224, 0x1f76f7a2))
+            mstore(add(ptr, 4), hook)
+            mstore(add(ptr, 36), jobId)
+            success := call(ENS_HOOK_GAS_LIMIT, target, 0, ptr, 0x44, 0, 0)
+        }
+
     }
 
     function _returnAgentBond(Job storage job, address to) internal {

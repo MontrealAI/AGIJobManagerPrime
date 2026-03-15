@@ -9,6 +9,7 @@ const ReputationMath = artifacts.require('ReputationMath');
 const ENSOwnership = artifacts.require('ENSOwnership');
 const MockERC20 = artifacts.require('MockERC20');
 const MockERC721 = artifacts.require('MockERC721');
+const MockENSJobPages = artifacts.require('MockENSJobPages');
 
 const ZERO32 = `0x${'00'.repeat(32)}`;
 const EMPTY = [];
@@ -22,6 +23,7 @@ contract('Prime discovery + settlement', (accounts) => {
   let token;
   let manager;
   let discovery;
+  let ensJobPages;
 
   before(async () => {
     const uriUtils = await UriUtils.new({ from: owner });
@@ -51,6 +53,9 @@ contract('Prime discovery + settlement', (accounts) => {
 
     discovery = await AGIJobDiscoveryPrime.new(manager.address, { from: owner });
     await manager.setDiscoveryModule(discovery.address, { from: owner });
+
+    ensJobPages = await MockENSJobPages.new({ from: owner });
+    await manager.setEnsJobPages(ensJobPages.address, { from: owner });
 
     const agiType = await MockERC721.new({ from: owner });
     await agiType.mint(agentA, { from: owner });
@@ -119,6 +124,27 @@ contract('Prime discovery + settlement', (accounts) => {
     const after = await token.balanceOf(employer);
 
     assert(after.gt(before), 'employer should recover escrow after expiry');
+  });
+
+
+  it('keeps ENS hooks best-effort and exposes autonomy helpers', async () => {
+    const payout = web3.utils.toWei('30');
+    const tx = await manager.createJob('ipfs://job/ens', payout, 100, 'ens hooks', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await ensJobPages.createCalls()).toString(), '1', 'create hook should fire');
+
+    await ensJobPages.setRevertHook(2, true, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal((await ensJobPages.assignCalls()).toString(), '0', 'reverting assign hook should not brick apply');
+
+    await manager.requestJobCompletion(jobId, 'ipfs://job/ens/completion', { from: agentA });
+    await time.increase(8 * 24 * 3600);
+
+    await manager.finalizeJob(jobId, { from: employer });
+
+    assert.equal((await ensJobPages.lockCalls()).toString(), '1', 'lock hook should run on terminal completion');
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
@@ -219,6 +245,7 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(info[1], agentA, 'winner should be designated as selected agent');
 
     await time.increase(6);
+    assert.equal(await discovery.isFallbackPromotable(procurementId), true, 'fallback should become promotable');
     await discovery.promoteFallbackFinalist(procurementId, { from: employer });
 
     info = await manager.getJobSelectionInfo(jobId);
@@ -229,5 +256,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
     await time.increase(2);
     await manager.finalizeJob(jobId, { from: employer });
+
+    const claimableValidator = await discovery.canClaim(validatorA);
+    assert(claimableValidator.gt(web3.utils.toBN(0)), 'validator reveal reward should be claimable');
   });
 });

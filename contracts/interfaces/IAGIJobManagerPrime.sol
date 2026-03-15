@@ -360,4 +360,7 @@ interface IAGIJobManagerPrime {
         bytes32 root,
         uint64 applicationWindow
     ) external;
+
+    function setEnsJobPages(address target) external;
+    function ensJobPages() external view returns (address);
 }

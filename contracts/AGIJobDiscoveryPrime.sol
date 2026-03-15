@@ -878,6 +878,68 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         emit FallbackPromoted(procurementId, best, bestComposite);
     }
 
+    function canClaim(address account) external view returns (uint256) {
+        return claimable[account];
+    }
+
+    function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
+        Procurement storage p = procurements[procurementId];
+        if (!p.winnerFinalized || p.cancelled) return false;
+
+        (
+            ,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = settlement.getJobSelectionInfo(p.jobId);
+
+        if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+            if (a.everPromoted || !a.trialSubmitted) continue;
+            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
+            return true;
+        }
+        return false;
+    }
+
+    function nextActionForProcurement(uint256 procurementId) external view returns (string memory) {
+        Procurement storage p = procurements[procurementId];
+        if (p.cancelled) return "cancelled";
+        if (!p.shortlistFinalized) {
+            if (block.timestamp <= p.commitDeadline) return "wait_commit";
+            if (block.timestamp <= p.revealDeadline) return "reveal_applications";
+            return "finalize_shortlist";
+        }
+        if (!p.winnerFinalized) {
+            if (block.timestamp <= p.finalistAcceptDeadline) return "finalists_accept";
+            if (block.timestamp <= p.trialDeadline) return "submit_trials";
+            if (block.timestamp <= p.scoreCommitDeadline) return "commit_scores";
+            if (block.timestamp <= p.scoreRevealDeadline) return "reveal_scores";
+            return "finalize_winner";
+        }
+
+        (
+            ,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = settlement.getJobSelectionInfo(p.jobId);
+        if (assignedAgent != address(0)) return "winner_assigned";
+        if (block.timestamp <= selectionExpiresAt) return "wait_selected_acceptance";
+        return "promote_fallback";
+    }
+
     function claim() external nonReentrant {
         uint256 amount = claimable[msg.sender];
         if (amount == 0) revert InvalidState();
