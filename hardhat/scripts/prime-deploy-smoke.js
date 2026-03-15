@@ -1,7 +1,6 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
 const hre = require('hardhat');
 
 async function main() {
@@ -26,22 +25,22 @@ async function main() {
 };\n`;
   fs.writeFileSync(configPath, configContents, 'utf8');
 
-  const child = spawnSync(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['hardhat', 'run', 'scripts/deploy.js', '--network', 'hardhat'],
-    {
-      cwd: path.resolve(__dirname, '..'),
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        DEPLOY_CONFIG: configPath,
-        CONFIRMATIONS: '1',
-      },
-    }
-  );
+  const previousDeployConfig = process.env.DEPLOY_CONFIG;
+  const previousConfirmations = process.env.CONFIRMATIONS;
 
-  if (child.status !== 0) {
-    throw new Error(`Prime deploy smoke failed with exit code ${child.status}`);
+  process.env.DEPLOY_CONFIG = configPath;
+  process.env.CONFIRMATIONS = '1';
+
+  try {
+    // Reuse the current in-memory hardhat chain so the mock token address has deployed code.
+    const { main: deployMain } = require('./deploy');
+    await deployMain();
+  } finally {
+    if (previousDeployConfig === undefined) delete process.env.DEPLOY_CONFIG;
+    else process.env.DEPLOY_CONFIG = previousDeployConfig;
+
+    if (previousConfirmations === undefined) delete process.env.CONFIRMATIONS;
+    else process.env.CONFIRMATIONS = previousConfirmations;
   }
 }
 
