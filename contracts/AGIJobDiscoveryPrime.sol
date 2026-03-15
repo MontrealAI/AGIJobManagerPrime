@@ -886,6 +886,56 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         emit Claimed(msg.sender, amount);
     }
 
+    function canClaim(address account) external view returns (bool) {
+        return claimable[account] > 0;
+    }
+
+    function isFallbackPromotable(uint256 procurementId) external view returns (bool) {
+        Procurement storage p = procurements[procurementId];
+        if (!p.winnerFinalized || p.cancelled) return false;
+
+        (
+            ,
+            ,
+            ,
+            uint64 selectionExpiresAt,
+            ,
+            ,
+            ,
+            address assignedAgent
+        ) = settlement.getJobSelectionInfo(p.jobId);
+
+        if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+            if (a.everPromoted || !a.trialSubmitted) continue;
+            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
+            return true;
+        }
+        return false;
+    }
+
+    function nextActionForProcurement(uint256 procurementId) external view returns (string memory) {
+        Procurement storage p = procurements[procurementId];
+        if (p.employer == address(0)) return "not_found";
+        if (p.cancelled) return "cancelled";
+        if (!p.shortlistFinalized) {
+            if (block.timestamp <= p.commitDeadline) return "commit_applications";
+            if (block.timestamp <= p.revealDeadline) return "reveal_applications";
+            return "finalize_shortlist";
+        }
+        if (!p.winnerFinalized) {
+            if (block.timestamp <= p.finalistAcceptDeadline) return "accept_finalists";
+            if (block.timestamp <= p.trialDeadline) return "submit_trials";
+            if (block.timestamp <= p.scoreCommitDeadline) return "commit_scores";
+            if (block.timestamp <= p.scoreRevealDeadline) return "reveal_scores";
+            return "finalize_winner";
+        }
+        return "winner_finalized_or_fallback";
+    }
+
     function procurementApplicants(uint256 procurementId) external view returns (address[] memory) {
         return procurements[procurementId].applicants;
     }
