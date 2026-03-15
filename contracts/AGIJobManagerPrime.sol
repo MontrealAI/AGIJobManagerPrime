@@ -1043,6 +1043,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         delete jobs[jobId];
     }
 
+
+
+
+
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,

@@ -127,6 +127,23 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
 
+
+
+
+  it('supports selected-agent checkpoint timeout handling', async () => {
+    const payout = web3.utils.toWei('25');
+    const tx = await manager.createConfiguredJob('ipfs://job/checkpoint', payout, 120, 'checkpoint flow', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.designateSelectedAgent(jobId, agentA, 200, 20, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    await time.increase(25);
+    await manager.failCheckpoint(jobId, { from: employer });
+
+    const jobInfo = await manager.getJobSelectionInfo(jobId);
+    assert.equal(jobInfo[7], agentA, 'assigned agent remains discoverable after checkpoint failure settlement');
+  });
+
   it('keeps ENS hooks best-effort and exposes autonomy helpers', async () => {
     const payout = web3.utils.toWei('30');
     const tx = await manager.createJob('ipfs://job/ens', payout, 100, 'ens hooks', { from: employer });

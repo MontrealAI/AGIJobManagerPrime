@@ -335,6 +335,7 @@ interface IAGIJobManagerPrime {
             address assignedAgent
         );
 
+
     function reputation(address agent) external view returns (uint256);
     function previewHistoricalScore(address agent) external view returns (uint256);
 
