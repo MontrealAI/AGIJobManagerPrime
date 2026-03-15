@@ -249,8 +249,43 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.unpause({ from: owner });
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalists should not appear promotable');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
+    assert.equal(await discovery.isFallbackPromotable(procurementId), true, 'zero-score finalists should remain fallback-promotable');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'promote_fallback');
+  });
+
+  it('exposes settlement autonomy helpers for checkpoint failure and expiry', async () => {
+    const payout = web3.utils.toWei('30');
+    const tx = await manager.createConfiguredJob('ipfs://job/autonomy', payout, 120, 'autonomy flow', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.designateSelectedAgent(jobId, agentA, 300, 15, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal(await manager.isCheckpointFailed(jobId), false);
+    assert.equal(await manager.isExpirable(jobId), false);
+    assert.equal(await manager.isFinalizable(jobId), false);
+    assert.equal(await manager.nextActionForJob(jobId), 'submit_checkpoint');
+
+    let status = await manager.getAutonomyStatus(jobId);
+    assert.equal(status.finalizable, false);
+    assert.equal(status.expirable, false);
+    assert.equal(status.checkpointFailed, false);
+    assert.equal(status.nextAction, 'submit_checkpoint');
+
+    await time.increase(20);
+
+    assert.equal(await manager.isCheckpointFailed(jobId), true);
+    assert.equal(await manager.nextActionForJob(jobId), 'fail_checkpoint');
+
+    await manager.failCheckpoint(jobId, { from: employer });
+    assert.equal(await manager.nextActionForJob(jobId), 'completed');
+
+    const openTx = await manager.createJob('ipfs://job/expiry', payout, 60, 'expiry flow', { from: employer });
+    const openJobId = openTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(openJobId, '', EMPTY, EMPTY, { from: agentB });
+    await time.increase(70);
+    assert.equal(await manager.isExpirable(openJobId), true);
+    assert.equal(await manager.nextActionForJob(openJobId), 'expire_job');
   });
 
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {

@@ -409,6 +409,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 historicalScoreBps;
         uint256 trialScoreBps;
         uint256 compositeScoreBps;
+        bool hasCompositeScore;
     }
 
     struct ScoreCommit {
@@ -740,6 +741,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 bestComposite;
         uint256 bestTrial;
         uint256 bestHistorical;
+        bool hasBest;
 
         uint256 stipendBudget = uint256(p.stipendPerFinalist) * p.finalistCount;
         uint256 rewardBudget = uint256(p.validatorRewardPerReveal) * p.finalistCount * p.maxValidatorRevealsPerFinalist;
@@ -795,8 +797,10 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             ) / 10_000;
 
             a.compositeScoreBps = composite;
+            a.hasCompositeScore = true;
 
             if (
+                !hasBest ||
                 composite > bestComposite ||
                 (composite == bestComposite && trialScoreBps > bestTrial) ||
                 (composite == bestComposite && trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
@@ -805,6 +809,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 bestComposite = composite;
                 bestTrial = trialScoreBps;
                 bestHistorical = a.historicalScoreBps;
+                hasBest = true;
             }
         }
 
@@ -814,7 +819,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         p.winnerFinalized = true;
 
-        if (best == address(0)) {
+        if (!hasBest) {
             emit ProcurementClosedWithoutWinner(procurementId);
             return;
         }
@@ -850,22 +855,32 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         address best;
         uint256 bestComposite;
+        uint256 bestTrial;
+        uint256 bestHistorical;
+        bool hasBest;
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
 
-            if (a.everPromoted) continue;
-            if (!a.trialSubmitted) continue;
+            if (a.everPromoted || !a.trialSubmitted || !a.hasCompositeScore) continue;
             if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
 
-            if (a.compositeScoreBps > bestComposite) {
+            if (
+                !hasBest ||
+                a.compositeScoreBps > bestComposite ||
+                (a.compositeScoreBps == bestComposite && a.trialScoreBps > bestTrial) ||
+                (a.compositeScoreBps == bestComposite && a.trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
+            ) {
                 bestComposite = a.compositeScoreBps;
+                bestTrial = a.trialScoreBps;
+                bestHistorical = a.historicalScoreBps;
                 best = finalist;
+                hasBest = true;
             }
         }
 
-        if (best == address(0)) revert NoWinner();
+        if (!hasBest) revert NoWinner();
 
         applications[procurementId][best].everPromoted = true;
         settlement.designateSelectedAgent(
@@ -920,9 +935,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
-            if (a.everPromoted || !a.trialSubmitted) continue;
+            if (a.everPromoted || !a.trialSubmitted || !a.hasCompositeScore) continue;
             if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
-            if (a.compositeScoreBps == 0) continue;
             return true;
         }
         return false;
@@ -958,7 +972,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
-            if (a.everPromoted || !a.trialSubmitted || a.compositeScoreBps == 0) continue;
+            if (a.everPromoted || !a.trialSubmitted || !a.hasCompositeScore) continue;
             if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
             return "promote_fallback";
         }
@@ -1089,6 +1103,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             uint256 historicalScoreBps,
             uint256 trialScoreBps,
             uint256 compositeScoreBps,
+            bool hasCompositeScore,
             bool everPromoted
         )
     {
@@ -1104,6 +1119,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             a.historicalScoreBps,
             a.trialScoreBps,
             a.compositeScoreBps,
+            a.hasCompositeScore,
             a.everPromoted
         );
     }

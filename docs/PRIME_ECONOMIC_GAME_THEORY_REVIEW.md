@@ -12,6 +12,7 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 | Validator non-reveal | Commit score then withhold reveal to sabotage median | Unrevealed validator score bonds are slashed to employer in `_slashNonRevealValidatorBonds`. | Small bond settings weaken deterrence. |
 | Cartelized validator outlier scoring | Extreme score manipulation | Median scoring reduces outlier influence; minimum reveal threshold required. | If cartel controls majority of reveals, median still captured. |
 | Stale winner option abuse | Designated winner waits indefinitely | `selectionExpiresAt` plus permissionless `promoteFallbackFinalist`. | If no fallback satisfies min reveals, procurement closes without winner. |
+| Zero-score fallback exclusion | Legit finalist receives low/zero trial score and becomes ineligible for fallback promotion by sentinel collision | Discovery now tracks `hasCompositeScore` separately from numeric score and allows fallback promotion by deterministic tie-breaks even when score is zero. | Very low-quality finalists may still be promoted when all finalists score poorly; governance should tune stakes and validator thresholds. |
 | Discovery budget leakage | Over-locking stipend/reward budget | Explicit budget quote + post-finalization budget refund to employer (`claimable`). | Employer must claim; funds are pull-based. |
 | Settlement insolvency drift | Locked balances not tracked through edge outcomes | Strict `lockedEscrow/locked*Bonds` accounting and `withdrawableAGI` solvency check. | External ERC20 anomalies (fee-on-transfer/reverting tokens) remain an operator risk. |
 | ENS integration bricking settlement | ENS/job-page target reverts | ENS hooks are best-effort and bounded; failures are ignored so settlement state remains authoritative. | Public page consistency can lag settlement truth. |
@@ -25,6 +26,13 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
    - `isFallbackPromotable(procurementId)`
    - `nextActionForProcurement(procurementId)`
 4. Added tests covering ENS best-effort semantics and fallback promotability status.
+5. Hardened fallback and next-action logic to avoid treating `compositeScoreBps == 0` as “unset”; composite availability now uses explicit state (`hasCompositeScore`) and preserves deterministic tie-break ordering in both primary and fallback designation paths.
+6. Added settlement-side autonomy helpers for keeper/operator workflows:
+   - `isFinalizable(jobId)`
+   - `isExpirable(jobId)`
+   - `isCheckpointFailed(jobId)`
+   - `nextActionForJob(jobId)`
+   - `getAutonomyStatus(jobId)`
 
 ## Residual risks requiring human pre-mainnet review
 
