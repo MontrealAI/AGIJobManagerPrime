@@ -306,6 +306,7 @@ interface IAGIJobManagerPrime {
     function agiToken() external view returns (address);
     function premiumReputationThreshold() external view returns (uint256);
     function settlementPaused() external view returns (bool);
+    function paused() external view returns (bool);
 
     function createConfiguredJobFor(
         address employer,

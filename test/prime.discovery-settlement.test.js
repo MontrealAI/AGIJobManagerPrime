@@ -216,6 +216,9 @@ contract('Prime discovery + settlement', (accounts) => {
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'winner should be finalizable after reveal window');
+    await manager.pause({ from: owner });
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'manager pause should suppress winner finalizable helper');
+    await manager.unpause({ from: owner });
     await manager.setSettlementPaused(true, { from: owner });
     assert.equal(
       await discovery.isWinnerFinalizable(procurementId),

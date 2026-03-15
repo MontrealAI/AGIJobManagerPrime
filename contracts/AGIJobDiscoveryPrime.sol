@@ -893,6 +893,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || block.timestamp <= p.scoreRevealDeadline) return false;
 
+        if (settlement.paused()) return false;
+
         if (!settlement.settlementPaused()) return true;
 
         return !_hasDesignatableWinner(procurementId, p);
