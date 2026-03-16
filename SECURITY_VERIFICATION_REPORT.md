@@ -50,7 +50,7 @@ Result: blocker items listed for pre-mainnet hardening were already resolved on 
 
 ## Residual Risks / Human Review
 - Owner key/ops model remains central; production deployment should use hardened key custody and incident playbooks.
-- Discovery economic weights and fallback promotion outcomes still require independent human game-theory review before scaling funds.
+- Discovery and dispute game-theory residuals are tracked in `docs/prime-mechanism-economic-review.md`; run independent simulation before scaling funds at risk.
 - ENS target contract behavior should be canary-tested post-deploy before enabling for production traffic.
 
 ## Commands executed in this verification pass
