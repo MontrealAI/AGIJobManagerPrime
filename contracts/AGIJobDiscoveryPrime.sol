@@ -672,7 +672,18 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         uint256 totalBudget = uint256(p.stipendPerFinalist) * p.finalistCount
             + uint256(p.validatorRewardPerReveal) * p.finalistCount * p.maxValidatorRevealsPerFinalist;
-        if (totalBudget > 0) claimable[p.employer] += totalBudget;
+
+        uint256 paidValidatorRewards;
+        if (p.validatorRewardPerReveal > 0) {
+            for (uint256 i = 0; i < lenFinalists; ++i) {
+                address finalist = p.finalists[i];
+                paidValidatorRewards += uint256(revealedScores[procurementId][finalist].length) * p.validatorRewardPerReveal;
+            }
+        }
+
+        if (totalBudget > paidValidatorRewards) {
+            claimable[p.employer] += totalBudget - paidValidatorRewards;
+        }
 
         p.cancelled = true;
         emit ProcurementCancelled(procurementId, msg.sender);

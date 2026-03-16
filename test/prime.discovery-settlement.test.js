@@ -683,6 +683,92 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(balAfter.toString(), web3.utils.toWei('2'), 'finalist stake should be reclaimable after cancellation');
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'cancelled');
   });
+
+
+  it('refunds only unspent validator reward budget on cancellation', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-cancel-reward-budget',
+      payout: web3.utils.toWei('14'),
+      duration: 3600,
+      details: 'cancel reward budget accounting',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 10,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    const salt = web3.utils.soliditySha3('cancel-budget');
+    const uri = 'ipfs://application/cancel-budget';
+    const commitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uri },
+      { type: 'bytes32', value: salt }
+    );
+
+    await discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/cancel-budget', { from: agentA });
+
+    const scoreSalt = web3.utils.soliditySha3('cancel-budget-score');
+    const scoreCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 87 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    await discovery.commitFinalistScore(procurementId, agentA, scoreCommitment, '', EMPTY, { from: validatorA });
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+
+    const validatorBefore = await discovery.canClaim(validatorA);
+    const employerBefore = await discovery.canClaim(employer);
+
+    await discovery.revealFinalistScore(procurementId, agentA, 87, scoreSalt, '', EMPTY, { from: validatorA });
+
+    const validatorAfterReveal = await discovery.canClaim(validatorA);
+    assert.equal(
+      validatorAfterReveal.sub(validatorBefore).toString(),
+      web3.utils.toWei('0.3'),
+      'validator should receive bond + reward on reveal'
+    );
+
+    await discovery.cancelProcurement(procurementId, { from: employer });
+
+    const employerAfter = await discovery.canClaim(employer);
+    assert.equal(
+      employerAfter.sub(employerBefore).toString(),
+      web3.utils.toWei('0.5'),
+      'employer should only recover remaining budget (stipend), not already paid validator reward'
+    );
+  });
   it('keeps autonomy status readable after winner finalization when linked job is deleted', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
