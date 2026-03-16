@@ -68,7 +68,7 @@ npm run test:prime:unit
 Execution notes:
 - Prime size gate passed for runtime and initcode constraints:
   - `AGIJobManagerPrime`: runtime `24456` (headroom `120`), initcode `29956` (headroom `19196`)
-  - `AGIJobDiscoveryPrime`: runtime `20453` (headroom `4123`), initcode `21011` (headroom `28141`)
+  - `AGIJobDiscoveryPrime`: runtime `21563` (headroom `3013`), initcode `22142` (headroom `27010`)
   - `AGIJobCompletionNFT`: runtime `3334` (headroom `21242`), initcode `4177` (headroom `44975`)
 - Prime deploy smoke passed on local Hardhat network with expected wiring and deployment artifacts.
 - `npm run test:prime:unit` stalled during repeated remote compiler-fetch attempts in this session window; treat deploy/size checks as the reproduced checks in this pass.
