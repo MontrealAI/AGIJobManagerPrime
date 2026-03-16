@@ -19,3 +19,22 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 - No Prime-architecture redesign was required.
 - ENS side effects remain optional and best-effort in the canonical flow.
 - Completion NFT capture remains part of canonical deployment output.
+
+## Verification commands executed in this pass
+
+```bash
+# Toolchain anchors
+node -v
+npm -v
+cd hardhat && npx hardhat --version && cd ..
+npx truffle version
+
+# Prime size and deploy-path checks
+npm run test:size
+npm run test:prime:deploy-smoke
+```
+
+Observed outcomes:
+- `test:size` passed and reported runtime + initcode size/headroom for Prime manager, discovery, and completion NFT.
+- `test:prime:deploy-smoke` passed and validated canonical Prime deploy ordering, completion NFT capture, discovery-module wiring, optional ENS wiring branch, and artifact emission.
+- `test:prime:unit` compilation step was attempted but did not produce terminal output within the non-interactive session window; no blocker evidence contradicted the already-resolved status findings above.
