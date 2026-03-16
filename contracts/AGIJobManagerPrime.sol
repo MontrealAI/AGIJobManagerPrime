@@ -526,10 +526,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     event AgentBlacklisted(address indexed agent, bool status);
     event ValidatorBlacklisted(address indexed validator, bool status);
-    event VoteQuorumUpdated(uint256 oldValue, uint256 newValue);
-    event RequiredValidatorApprovalsUpdated(uint256 oldValue, uint256 newValue);
-    event RequiredValidatorDisapprovalsUpdated(uint256 oldValue, uint256 newValue);
-    event ValidationRewardPercentageUpdated(uint256 oldValue, uint256 newValue);
     event CompletionReviewPeriodUpdated(uint256 oldValue, uint256 newValue);
     event DisputeReviewPeriodUpdated(uint256 oldValue, uint256 newValue);
     event ChallengePeriodAfterApprovalUpdated(uint256 oldValue, uint256 newValue);
@@ -537,7 +533,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     event AgentBondParamsUpdated(uint256 bps, uint256 min, uint256 max);
     event ValidatorSlashBpsUpdated(uint256 oldValue, uint256 newValue);
     event SettlementPauseSet(address indexed setter, bool paused);
-    event PremiumReputationThresholdUpdated(uint256 oldValue, uint256 newValue);
     event AGITypeUpdated(address indexed nftAddress, uint256 indexed payoutPercentage);
     event AGIWithdrawn(address indexed to, uint256 amount, uint256 remainingWithdrawable);
 

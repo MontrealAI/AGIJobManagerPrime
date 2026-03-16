@@ -860,13 +860,11 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 trialScoreBps * p.trialWeightBps
             ) / 10_000;
 
+            if (composite == 0) continue;
+
             a.compositeScoreBps = composite;
 
-            if (
-                composite > bestComposite ||
-                (composite == bestComposite && trialScoreBps > bestTrial) ||
-                (composite == bestComposite && trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
-            ) {
+            if (_isBetterWinnerCandidate(finalist, composite, trialScoreBps, a.historicalScoreBps, best, bestComposite, bestTrial, bestHistorical)) {
                 best = finalist;
                 bestComposite = composite;
                 bestTrial = trialScoreBps;
@@ -1043,6 +1041,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _hasDesignatableWinner(uint256 procurementId, Procurement storage p) internal view returns (bool) {
+        address best;
         uint256 bestComposite;
         uint256 bestTrial;
         uint256 bestHistorical;
@@ -1062,19 +1061,17 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 trialScoreBps * p.trialWeightBps
             ) / 10_000;
 
-            if (
-                composite > bestComposite ||
-                (composite == bestComposite && trialScoreBps > bestTrial) ||
-                (composite == bestComposite && trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
-            ) {
+            if (composite == 0) continue;
+
+            if (_isBetterWinnerCandidate(finalist, composite, trialScoreBps, a.historicalScoreBps, best, bestComposite, bestTrial, bestHistorical)) {
+                best = finalist;
                 bestComposite = composite;
                 bestTrial = trialScoreBps;
                 bestHistorical = a.historicalScoreBps;
-                return true;
             }
         }
 
-        return false;
+        return best != address(0);
     }
 
     function _isBetterShortlistCandidate(
@@ -1086,6 +1083,26 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (incumbent == address(0)) return true;
         if (candidateScore > incumbentScore) return true;
         if (candidateScore < incumbentScore) return false;
+        return uint160(candidate) < uint160(incumbent);
+    }
+
+    function _isBetterWinnerCandidate(
+        address candidate,
+        uint256 candidateComposite,
+        uint256 candidateTrial,
+        uint256 candidateHistorical,
+        address incumbent,
+        uint256 incumbentComposite,
+        uint256 incumbentTrial,
+        uint256 incumbentHistorical
+    ) internal pure returns (bool) {
+        if (incumbent == address(0)) return true;
+        if (candidateComposite > incumbentComposite) return true;
+        if (candidateComposite < incumbentComposite) return false;
+        if (candidateTrial > incumbentTrial) return true;
+        if (candidateTrial < incumbentTrial) return false;
+        if (candidateHistorical > incumbentHistorical) return true;
+        if (candidateHistorical < incumbentHistorical) return false;
         return uint160(candidate) < uint160(incumbent);
     }
 
@@ -1113,11 +1130,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
             if (!_isFallbackCandidate(procurementId, p, a, finalist)) continue;
 
-            if (
-                a.compositeScoreBps > bestComposite ||
-                (a.compositeScoreBps == bestComposite && a.trialScoreBps > bestTrial) ||
-                (a.compositeScoreBps == bestComposite && a.trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
-            ) {
+            if (_isBetterWinnerCandidate(finalist, a.compositeScoreBps, a.trialScoreBps, a.historicalScoreBps, best, bestComposite, bestTrial, bestHistorical)) {
                 bestComposite = a.compositeScoreBps;
                 bestTrial = a.trialScoreBps;
                 bestHistorical = a.historicalScoreBps;

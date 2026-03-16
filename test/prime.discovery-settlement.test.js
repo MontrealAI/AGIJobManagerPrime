@@ -551,6 +551,110 @@ contract('Prime discovery + settlement', (accounts) => {
     assert(claimableValidator.gt(web3.utils.toBN(0)), 'validator reveal reward should be claimable');
   });
 
+  it('uses deterministic address tie-breakers for winner designation and fallback promotion', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-tie',
+      payout: web3.utils.toWei('30'),
+      duration: 3600,
+      details: 'deterministic tie flow',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 2,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 2,
+      historicalWeightBps: 5000,
+      trialWeightBps: 5000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('2'),
+      stipendPerFinalist: web3.utils.toWei('1'),
+      validatorRewardPerReveal: web3.utils.toWei('0.5'),
+      validatorScoreBond: web3.utils.toWei('0.2'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const event = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = event.args.procurementId.toNumber();
+    const jobId = event.args.jobId.toNumber();
+
+    const uriA = 'ipfs://application/tie/A';
+    const uriB = 'ipfs://application/tie/B';
+    const saltA = web3.utils.soliditySha3('tie-A');
+    const saltB = web3.utils.soliditySha3('tie-B');
+    const cA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uriA },
+      { type: 'bytes32', value: saltA }
+    );
+    const cB = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'string', value: uriB },
+      { type: 'bytes32', value: saltB }
+    );
+
+    await discovery.commitApplication(procurementId, cA, '', EMPTY, { from: agentA });
+    await discovery.commitApplication(procurementId, cB, '', EMPTY, { from: agentB });
+
+    await time.increaseTo(proc.revealDeadline - 5);
+    await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
+    await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
+
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.acceptFinalist(procurementId, { from: agentB });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/tie/A', { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/tie/B', { from: agentB });
+
+    await time.increaseTo(proc.scoreCommitDeadline - 2);
+    const scoreSaltA = web3.utils.soliditySha3('tie-scoreA');
+    const scoreSaltB = web3.utils.soliditySha3('tie-scoreB');
+    const commitA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 90 },
+      { type: 'bytes32', value: scoreSaltA }
+    );
+    const commitB = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'address', value: validatorB },
+      { type: 'uint8', value: 90 },
+      { type: 'bytes32', value: scoreSaltB }
+    );
+
+    await discovery.commitFinalistScore(procurementId, agentA, commitA, '', EMPTY, { from: validatorA });
+    await discovery.commitFinalistScore(procurementId, agentB, commitB, '', EMPTY, { from: validatorB });
+
+    await time.increaseTo(proc.scoreRevealDeadline - 2);
+    await discovery.revealFinalistScore(procurementId, agentA, 90, scoreSaltA, '', EMPTY, { from: validatorA });
+    await discovery.revealFinalistScore(procurementId, agentB, 90, scoreSaltB, '', EMPTY, { from: validatorB });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+
+    let info = await manager.getJobSelectionInfo(jobId);
+    assert.equal(info[1], agentA, 'lower address should deterministically win exact ties');
+
+    await time.increase(6);
+    await discovery.promoteFallbackFinalist(procurementId, { from: employer });
+    info = await manager.getJobSelectionInfo(jobId);
+    assert.equal(info[1], agentB, 'remaining finalist should be promoted in deterministic fallback order');
+  });
+
   it('returns non-finalizable (without reverting) if linked job is cancelled before winner finalization', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
