@@ -155,6 +155,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.requestJobCompletion(jobId, 'ipfs://job/frozen-periods/completion', { from: agentA });
     await time.increase(12);
 
+    await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
     await expectCustomError(manager.finalizeJob.call(jobId, { from: employer }), 'InvalidState');
     await manager.disputeJob(jobId, { from: employer });
     await expectCustomError(manager.resolveStaleDispute.call(jobId, true, { from: owner }), 'InvalidState');

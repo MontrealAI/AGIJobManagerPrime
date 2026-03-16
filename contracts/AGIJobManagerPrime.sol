@@ -1226,7 +1226,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         if (!job.completionRequested) revert InvalidState();
-        if (block.timestamp > uint256(job.completionRequestedAt) + completionReviewPeriod) revert InvalidState();
+        if (block.timestamp > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) revert InvalidState();
         if (job.approvals[msg.sender] || job.disapprovals[msg.sender]) revert InvalidState();
         if (job.validators.length >= MAX_VALIDATORS_PER_JOB) revert InvalidParameters();
 
