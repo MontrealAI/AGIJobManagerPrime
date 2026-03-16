@@ -144,6 +144,42 @@ contract('Prime discovery + settlement', (accounts) => {
     );
   });
 
+  it('blocks repeated dispute openings across actor permutations and releases dispute bonds on moderator resolution', async () => {
+    const payout = web3.utils.toWei('24');
+    const tx = await manager.createJob('ipfs://job/dispute/permutations', payout, 3600, 'dispute permutations', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId, 'ipfs://job/dispute/permutations/completion', { from: agentA });
+
+    await manager.disputeJob(jobId, { from: employer });
+    await expectCustomError(manager.disputeJob.call(jobId, { from: employer }), 'DisputeAlreadyOpen');
+    await expectCustomError(manager.disputeJob.call(jobId, { from: agentA }), 'DisputeAlreadyOpen');
+
+    await manager.resolveDisputeWithCode(jobId, 2, 'employer refund', { from: owner });
+    assert.equal((await manager.lockedDisputeBonds()).toString(), '0', 'moderator resolution should release dispute bond lock');
+  });
+
+  it('releases dispute bond lock on stale-dispute owner resolution', async () => {
+    await manager.setDisputeReviewPeriod(7 * 24 * 3600, { from: owner });
+
+    const payout = web3.utils.toWei('26');
+    const tx = await manager.createJob('ipfs://job/dispute/stale', payout, 3600, 'dispute stale resolution', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId, 'ipfs://job/dispute/stale/completion', { from: agentA });
+    await manager.disputeJob(jobId, { from: agentA });
+
+    const before = await manager.lockedDisputeBonds();
+    assert(before.gt(web3.utils.toBN(0)), 'dispute bond should be locked while dispute is open');
+
+    await time.increase(8 * 24 * 3600);
+    await manager.resolveStaleDispute(jobId, false, { from: owner });
+
+    assert.equal((await manager.lockedDisputeBonds()).toString(), '0', 'stale dispute resolution should release dispute bond lock');
+  });
+
   it('freezes completion/dispute/challenge periods at assignment for live-job rule stability', async () => {
     const payout = web3.utils.toWei('18');
     const tx = await manager.createJob('ipfs://job/frozen-periods', payout, 3600, 'frozen periods', { from: employer });
