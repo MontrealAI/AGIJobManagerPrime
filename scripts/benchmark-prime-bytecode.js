@@ -81,7 +81,13 @@ function main() {
     managerMarginToEIP170: r.ok ? 24576 - r.AGIJobManagerPrime : '-',
   })));
 
-  if (!successful.length) throw new Error('No benchmark profile compiled successfully.');
+  if (!successful.length) {
+    const failures = rows
+      .filter((r) => !r.ok)
+      .map((r) => `viaIR=${r.viaIR}, runs=${r.runs}: ${r.reason || 'unknown error'}`)
+      .join('\n');
+    throw new Error(`No benchmark profile compiled successfully. Failure reasons by profile:\n${failures}`);
+  }
   if (!eip170Safe.length) {
     throw new Error(
       `No compiled profile keeps both AGIJobManagerPrime and AGIJobDiscoveryPrime <= ${MAX_RUNTIME_BYTES} bytes (EIP-170).`
