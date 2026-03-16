@@ -51,6 +51,10 @@ Common deploy controls:
 - `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
 - Pass `--network <mainnet|sepolia>` directly to `npm run verify:prime`
 
+Profile override knobs (for reproducible bytecode benchmarking only):
+- `AGI_PRIME_OPTIMIZER_RUNS` (default `1`)
+- `AGI_PRIME_VIA_IR` (`1`/`0`, default `1`)
+
 ## Deploy config
 
 Default config file: `hardhat/deploy.config.example.js`
@@ -64,6 +68,16 @@ Per-network required fields:
 - `finalOwner`
 
 ## Commands
+
+
+Benchmark runtime bytecode profiles (compares viaIR/runs matrix and prints EIP-170 margin):
+
+```bash
+cd ..
+npm run test:size:benchmark
+```
+
+Canonical production profile remains `optimizer: enabled, runs=1, viaIR=true` unless benchmark evidence and passing tests justify a change.
 
 Compile:
 

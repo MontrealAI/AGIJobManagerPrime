@@ -13,7 +13,7 @@ function deployedSizeBytes(artifact) {
   return hex.length / 2;
 }
 
-function loadArtifact(name) {
+function loadLegacyArtifact(name) {
   const artifactPath = path.join(
     __dirname,
     "..",
@@ -27,13 +27,38 @@ function loadArtifact(name) {
   return require(artifactPath);
 }
 
+function loadHardhatPrimeArtifact(contractFile, contractName) {
+  const artifactPath = path.join(
+    __dirname,
+    "..",
+    "hardhat",
+    "artifacts",
+    "contracts",
+    contractFile,
+    `${contractName}.json`
+  );
+  if (!fs.existsSync(artifactPath)) {
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+}
+
 contract("Bytecode size guard", () => {
   it("keeps deployed bytecode within the EIP-170 runtime size limit", () => {
-    ["AGIJobManager"].forEach((name) => {
-      const artifact = loadArtifact(name);
-      if (!artifact) {
-        return;
-      }
+    const checks = [
+      ["AGIJobManager (legacy reference)", loadLegacyArtifact("AGIJobManager")],
+      [
+        "AGIJobManagerPrime",
+        loadHardhatPrimeArtifact("AGIJobManagerPrime.sol", "AGIJobManagerPrime"),
+      ],
+      [
+        "AGIJobDiscoveryPrime",
+        loadHardhatPrimeArtifact("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime"),
+      ],
+    ];
+
+    checks.forEach(([name, artifact]) => {
+      if (!artifact) return;
       const sizeBytes = deployedSizeBytes(artifact);
       assert(
         sizeBytes <= MAX_DEPLOYED_BYTES,
