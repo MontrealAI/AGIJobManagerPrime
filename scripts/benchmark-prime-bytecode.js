@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const MAX_RUNTIME_BYTES = 24576;
+
 const ROOT = path.resolve(__dirname, '..');
 const HARDHAT_DIR = path.join(ROOT, 'hardhat');
 const CONFIG_PATH = path.join(HARDHAT_DIR, 'hardhat.config.js');
@@ -63,7 +65,9 @@ function main() {
   }
 
   const successful = rows.filter((r) => r.ok);
+  const eip170Safe = successful.filter((r) => r.AGIJobManagerPrime <= MAX_RUNTIME_BYTES);
   successful.sort((a, b) => a.AGIJobManagerPrime - b.AGIJobManagerPrime);
+  eip170Safe.sort((a, b) => a.AGIJobManagerPrime - b.AGIJobManagerPrime);
 
   console.log('Prime bytecode benchmark (runtime bytes):');
   console.table(rows.map((r) => ({
@@ -76,8 +80,11 @@ function main() {
   })));
 
   if (!successful.length) throw new Error('No benchmark profile compiled successfully.');
-  const best = successful[0];
-  console.log(`Best AGIJobManagerPrime size profile: viaIR=${best.viaIR}, runs=${best.runs}, size=${best.AGIJobManagerPrime}`);
+  if (!eip170Safe.length) {
+    throw new Error(`No compiled profile keeps AGIJobManagerPrime <= ${MAX_RUNTIME_BYTES} bytes (EIP-170).`);
+  }
+  const best = eip170Safe[0];
+  console.log(`Best EIP-170-safe AGIJobManagerPrime profile: viaIR=${best.viaIR}, runs=${best.runs}, size=${best.AGIJobManagerPrime}`);
 }
 
 main();
