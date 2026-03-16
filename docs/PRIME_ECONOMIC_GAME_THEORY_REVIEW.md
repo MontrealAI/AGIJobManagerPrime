@@ -25,7 +25,8 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
    - `isFallbackPromotable(procurementId)`
    - `nextActionForProcurement(procurementId)`
    - `getAutonomyStatus(procurementId)`
-4. Added tests covering ENS best-effort semantics and fallback promotability status.
+4. Added a permissionless `advanceProcurement` entrypoint to reduce operator liveness risk by allowing any keeper to finalize shortlist/winner stages and promote fallback after timeout.
+5. Added tests covering ENS best-effort semantics, fallback promotability status, and staged keeper progression through `advanceProcurement`.
 
 ## Residual risks requiring human pre-mainnet review
 

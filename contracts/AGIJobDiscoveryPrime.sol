@@ -319,6 +319,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     error NotAuthorized();
     error TooManyApplicants();
     error NoWinner();
+    error NoAdvanceableAction();
 
     uint8 public constant MAX_APPLICANTS = 64;
     uint8 public constant MAX_FINALISTS = 8;
@@ -575,6 +576,10 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (p.employer == address(0) || p.cancelled || p.shortlistFinalized) revert InvalidState();
         if (block.timestamp <= p.revealDeadline) revert InvalidState();
 
+        _finalizeShortlist(procurementId, p);
+    }
+
+    function _finalizeShortlist(uint256 procurementId, Procurement storage p) internal {
         uint256 finalistsToTake = p.finalistCount;
         address[] memory topAgents = new address[](finalistsToTake);
         uint256[] memory topScores = new uint256[](finalistsToTake);
@@ -736,6 +741,10 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
         if (block.timestamp <= p.scoreRevealDeadline) revert InvalidState();
 
+        _finalizeWinner(procurementId, p);
+    }
+
+    function _finalizeWinner(uint256 procurementId, Procurement storage p) internal {
         address best;
         uint256 bestComposite;
         uint256 bestTrial;
@@ -848,34 +857,31 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (assignedAgent != address(0)) revert InvalidState();
         if (block.timestamp <= selectionExpiresAt) revert InvalidState();
 
-        address best;
-        uint256 bestComposite;
+        _promoteFallbackFinalist(procurementId, p);
+    }
 
-        for (uint256 i = 0; i < p.finalists.length; ++i) {
-            address finalist = p.finalists[i];
-            Application storage a = applications[procurementId][finalist];
+    function advanceProcurement(uint256 procurementId) external whenNotPaused nonReentrant {
+        Procurement storage p = procurements[procurementId];
+        if (p.employer == address(0)) revert InvalidState();
+        if (p.cancelled) revert InvalidState();
 
-            if (a.everPromoted) continue;
-            if (!a.trialSubmitted) continue;
-            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
-
-            if (a.compositeScoreBps > bestComposite) {
-                bestComposite = a.compositeScoreBps;
-                best = finalist;
-            }
+        if (!p.shortlistFinalized) {
+            if (block.timestamp <= p.revealDeadline) revert NoAdvanceableAction();
+            _finalizeShortlist(procurementId, p);
+            return;
         }
 
-        if (best == address(0)) revert NoWinner();
+        if (!p.winnerFinalized) {
+            if (block.timestamp <= p.scoreRevealDeadline) revert NoAdvanceableAction();
+            _finalizeWinner(procurementId, p);
+            return;
+        }
 
-        applications[procurementId][best].everPromoted = true;
-        settlement.designateSelectedAgent(
-            p.jobId,
-            best,
-            p.selectedAcceptanceWindow,
-            p.checkpointWindow
-        );
-
-        emit FallbackPromoted(procurementId, best, bestComposite);
+        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        if (!selectionInfoOk || assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) {
+            revert NoAdvanceableAction();
+        }
+        _promoteFallbackFinalist(procurementId, p);
     }
 
     function canClaim(address account) external view returns (uint256) {
@@ -920,9 +926,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
-            if (a.everPromoted || !a.trialSubmitted) continue;
-            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
-            if (a.compositeScoreBps == 0) continue;
+            if (!_isFallbackCandidate(procurementId, p, a, finalist)) continue;
             return true;
         }
         return false;
@@ -958,8 +962,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
-            if (a.everPromoted || !a.trialSubmitted || a.compositeScoreBps == 0) continue;
-            if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) continue;
+            if (!_isFallbackCandidate(procurementId, p, a, finalist)) continue;
             return "promote_fallback";
         }
 
@@ -1015,6 +1018,55 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         return false;
+    }
+
+    function _isFallbackCandidate(
+        uint256 procurementId,
+        Procurement storage p,
+        Application storage a,
+        address finalist
+    ) internal view returns (bool) {
+        if (a.everPromoted || !a.trialSubmitted || a.compositeScoreBps == 0) return false;
+        if (revealedScores[procurementId][finalist].length < p.minValidatorReveals) return false;
+        return true;
+    }
+
+
+    function _promoteFallbackFinalist(uint256 procurementId, Procurement storage p) internal {
+        address best;
+        uint256 bestComposite;
+        uint256 bestTrial;
+        uint256 bestHistorical;
+
+        for (uint256 i = 0; i < p.finalists.length; ++i) {
+            address finalist = p.finalists[i];
+            Application storage a = applications[procurementId][finalist];
+
+            if (!_isFallbackCandidate(procurementId, p, a, finalist)) continue;
+
+            if (
+                a.compositeScoreBps > bestComposite ||
+                (a.compositeScoreBps == bestComposite && a.trialScoreBps > bestTrial) ||
+                (a.compositeScoreBps == bestComposite && a.trialScoreBps == bestTrial && a.historicalScoreBps > bestHistorical)
+            ) {
+                bestComposite = a.compositeScoreBps;
+                bestTrial = a.trialScoreBps;
+                bestHistorical = a.historicalScoreBps;
+                best = finalist;
+            }
+        }
+
+        if (best == address(0)) revert NoWinner();
+
+        applications[procurementId][best].everPromoted = true;
+        settlement.designateSelectedAgent(
+            p.jobId,
+            best,
+            p.selectedAcceptanceWindow,
+            p.checkpointWindow
+        );
+
+        emit FallbackPromoted(procurementId, best, bestComposite);
     }
 
     function _isSelectionSlotOpen(uint256 jobId) internal view returns (bool) {

@@ -116,6 +116,10 @@ Discovery exposes three canonical premium helpers:
 
 `attachProcurementToExistingJob(...)` is only valid for employer-called upgrades on jobs that are still unassigned and configured for SelectedAgentOnly intake; OpenFirstCome jobs are not eligible and will revert.
 
+Discovery also exposes permissionless automation helpers after deployment:
+- `advanceProcurement(procurementId)` for staged timeout-driven progression (shortlist finalization -> winner finalization -> fallback promotion).
+- `getAutonomyStatus(procurementId)` / `nextActionForProcurement(procurementId)` for keeper/bot routing.
+
 Operational split:
 - Ordinary/open jobs can be created directly on `AGIJobManagerPrime`.
 - Premium jobs should be created through discovery so procurement completes before assignment.
