@@ -6,7 +6,7 @@
 [![Security Policy][security-badge]][security-url]
 [![License][license-badge]][license-url]
 
-AGIJobManager is an Ethereum smart-contract system for escrowed AGI work agreements, with optional ENS-backed job pages managed by `ENSJobPages`.
+AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work agreements, with optional ENS-backed public job pages.
 
 > **Operational policy:** intended for autonomous AI-agent execution with accountable human owner/operator oversight. This is policy intent and is not fully enforced on-chain.
 
@@ -37,29 +37,30 @@ Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.
 - **Canonical ENS replacement flow:** deploy new ENSJobPages -> NameWrapper approval -> `setEnsJobPages` -> legacy migration if needed -> lock only after validation.
 - **Canonical ENS naming format:** `<prefix><jobId>.<jobsRootName>` with default prefix `agijob`.
 - **Canonical ownership split:**
-  - `AGIJobManager owner` controls `setEnsJobPages(...)` and AGIJobManager governance.
+  - `AGIJobManagerPrime owner` controls `setEnsJobPages(...)` and Prime settlement/discovery governance knobs.
   - `wrapped-root owner` controls NameWrapper approval needed for wrapped-root ENS writes.
-- **Canonical safety rule:** ENS hooks are best-effort side effects; settlement/dispute outcomes remain authoritative on AGIJobManager.
+- **Canonical safety rule:** ENS hooks are best-effort side effects; settlement/dispute outcomes remain authoritative on `AGIJobManagerPrime`.
 
 ### Manual vs automated (do not assume)
 
 | Action | Automated by deploy scripts | Manual caller |
 | --- | --- | --- |
-| Deploy `AGIJobManager` / deploy new `ENSJobPages` | Yes | deployer key |
+| Deploy Prime (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) / deploy new `ENSJobPages` | Yes | deployer key |
 | NameWrapper approval `setApprovalForAll(newEnsJobPages, true)` | No | wrapped-root owner |
-| `AGIJobManager.setEnsJobPages(newEnsJobPages)` | No | AGIJobManager owner |
+| `AGIJobManagerPrime.setEnsJobPages(newEnsJobPages)` | No | AGIJobManagerPrime owner |
 | Legacy migration `migrateLegacyWrappedJobPage(jobId, exactLabel)` | No | ENSJobPages owner (if needed) |
 | `lockConfiguration()` / `lockIdentityConfiguration()` | No | owner(s), only after validation |
 
 ## Most common owner/operator safety checks
 
 Before any irreversible action:
-- Confirm which key is **AGIJobManager owner** vs **wrapped-root owner**.
+- Confirm which key is **AGIJobManagerPrime owner** vs **wrapped-root owner**.
 - Confirm manual steps are complete: `setApprovalForAll(newEnsJobPages, true)` then `setEnsJobPages(newEnsJobPages)`.
 - Confirm at least one future job hook succeeds and legacy migration status is known.
 
 Irreversible actions (delay until validated):
-- `AGIJobManager.lockIdentityConfiguration()`
+- Prime: no identity-lock one-way switch exists on `AGIJobManagerPrime`; defer to documented Prime owner controls only.
+- Legacy-only: `AGIJobManager.lockIdentityConfiguration()` (if you are operating legacy manager wiring).
 - `ENSJobPages.lockConfiguration()`
 
 ## What this repository contains
