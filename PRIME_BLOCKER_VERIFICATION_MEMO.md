@@ -19,7 +19,7 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 `npm run test:size` produced:
 
 - `AGIJobManagerPrime` runtime `24456` bytes (headroom `120`), initcode `29956` bytes (headroom `19196`)
-- `AGIJobDiscoveryPrime` runtime `20453` bytes (headroom `4123`), initcode `21011` bytes (headroom `28141`)
+- `AGIJobDiscoveryPrime` runtime `21563` bytes (headroom `3013`), initcode `22142` bytes (headroom `27010`)
 - `AGIJobCompletionNFT` runtime `3334` bytes (headroom `21242`), initcode `4177` bytes (headroom `44975`)
 
 ## Commands executed in this pass
