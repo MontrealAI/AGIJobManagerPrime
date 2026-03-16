@@ -445,6 +445,106 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
   });
 
+  it('blocks fallback promotion surfaces while settlement is paused', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-settlement-paused',
+      payout: web3.utils.toWei('10'),
+      duration: 3600,
+      details: 'pause gating',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 2,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 2,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
+
+    const saltA = web3.utils.soliditySha3('paused-A');
+    const saltB = web3.utils.soliditySha3('paused-B');
+    const uriA = 'ipfs://application/paused/A';
+    const uriB = 'ipfs://application/paused/B';
+    const commitA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uriA },
+      { type: 'bytes32', value: saltA }
+    );
+    const commitB = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'string', value: uriB },
+      { type: 'bytes32', value: saltB }
+    );
+
+    await discovery.commitApplication(procurementId, commitA, '', EMPTY, { from: agentA });
+    await discovery.commitApplication(procurementId, commitB, '', EMPTY, { from: agentB });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
+    await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.acceptFinalist(procurementId, { from: agentB });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/paused/A', { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/paused/B', { from: agentB });
+
+    const scoreSaltA = web3.utils.soliditySha3('paused-score-A');
+    const scoreSaltB = web3.utils.soliditySha3('paused-score-B');
+    const scoreCommitA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 90 },
+      { type: 'bytes32', value: scoreSaltA }
+    );
+    const scoreCommitB = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'address', value: validatorB },
+      { type: 'uint8', value: 80 },
+      { type: 'bytes32', value: scoreSaltB }
+    );
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    await discovery.commitFinalistScore(procurementId, agentA, scoreCommitA, '', EMPTY, { from: validatorA });
+    await discovery.commitFinalistScore(procurementId, agentB, scoreCommitB, '', EMPTY, { from: validatorB });
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 90, scoreSaltA, '', EMPTY, { from: validatorA });
+    await discovery.revealFinalistScore(procurementId, agentB, 80, scoreSaltB, '', EMPTY, { from: validatorB });
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+
+    await time.increase(6);
+    await manager.pause({ from: owner });
+
+    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback promotion should be blocked while settlement is paused');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_paused', 'autonomy string should surface settlement pause state');
+
+    await expectRevert.unspecified(discovery.promoteFallbackFinalist(procurementId, { from: employer }));
+    await expectRevert.unspecified(discovery.advanceProcurement(procurementId, { from: validatorA }));
+  });
+
   it('supports permissionless staged progression through advanceProcurement', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
