@@ -13,10 +13,10 @@ Legacy-only contract verification is out of scope for this report.
 ## Toolchain
 - Node.js `v20.19.6`
 - npm `11.4.2`
-- Hardhat `2.28.6` (from `hardhat/package-lock.json`, executed inside `hardhat/`)
+- Hardhat `2.28.6` (executed in `hardhat/`)
 - Truffle `5.11.5` / Ganache `7.9.1`
 - Hardhat config source of truth: `hardhat/hardhat.config.js`
-- Solidity compiler profile (Prime canonical): `0.8.23`, optimizer enabled (`runs=1` by default), `viaIR=true` by default, `evmVersion=shanghai`, `bytecodeHash=none`, revert strings stripped
+- Solidity compiler profile (Prime canonical): `0.8.23`, optimizer enabled (`runs=1` default), `viaIR=true` default, `evmVersion=shanghai`, `bytecodeHash=none`, revert strings stripped
 - Truffle test harness remains active for Prime regression tests in `test/`
 
 ## Reproduction Commands
@@ -40,12 +40,13 @@ npm run slither
 ## Baseline blocker verification
 A full blocker-by-blocker baseline verification is recorded in `PRIME_BLOCKER_VERIFICATION_MEMO.md`.
 
-Result: all contract/deploy-path blockers were already resolved on the current baseline, and no architectural redesign was required. The remaining action in this refresh was documentation hygiene (ensuring security artifacts describe current baseline status without stale “new fix” wording).
+Result: blocker items listed for pre-mainnet hardening were already resolved on the inspected current baseline. This update keeps security artifacts aligned with that verified baseline and current toolchain commands.
 
 ## Security/Operational Assertions
 - Settlement remains authoritative; ENS side effects are bounded best-effort low-level calls and remain non-fatal.
 - Completion NFT issuance remains manager-driven on successful completion paths.
 - Owner-operated model is preserved (no DAO/governor/proxy introduced).
+- Runtime and initcode size gates are enforced for Prime deploy-path contracts.
 
 ## Residual Risks / Human Review
 - Owner key/ops model remains central; production deployment should use hardened key custody and incident playbooks.
@@ -61,9 +62,13 @@ npx truffle version
 
 npm run test:size
 npm run test:prime:deploy-smoke
+npm run test:prime:unit
 ```
 
 Execution notes:
-- Prime size gate passed for runtime and initcode constraints.
+- Prime size gate passed for runtime and initcode constraints:
+  - `AGIJobManagerPrime`: runtime `24456` (headroom `120`), initcode `29956` (headroom `19196`)
+  - `AGIJobDiscoveryPrime`: runtime `20453` (headroom `4123`), initcode `21011` (headroom `28141`)
+  - `AGIJobCompletionNFT`: runtime `3334` (headroom `21242`), initcode `4177` (headroom `44975`)
 - Prime deploy smoke passed on local Hardhat network with expected wiring and deployment artifacts.
-- A direct `npm run test:prime:unit` attempt started compilation but did not complete within the session output window; this report therefore treats deploy/size checks as the authoritative reproduced checks for this pass.
+- `npm run test:prime:unit` stalled during repeated remote compiler-fetch attempts in this session window; treat deploy/size checks as the reproduced checks in this pass.
