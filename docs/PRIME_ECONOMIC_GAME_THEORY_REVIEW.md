@@ -20,18 +20,12 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 
 1. Reintroduced optional ENSJobPages wiring on Prime manager (`setEnsJobPages`) and bounded best-effort lifecycle hooks (create/assign/completion/revoke/lock).
 2. Ensured terminal settlement paths invoke revoke/lock hooks while keeping settlement authoritative and non-fatal.
-3. Added settlement autonomy/readability helpers for keeper/bot status routing:
-   - `isFinalizable(jobId)`
-   - `isExpirable(jobId)`
-   - `isCheckpointFailed(jobId)`
-   - `nextActionCodeForJob(jobId)`
-   - `canClaim(address)` (explicitly zero in settlement kernel; claims are discovery-side pull balances)
-4. Added discovery autonomy/readability helpers:
+3. Added discovery autonomy/readability helpers:
    - `canClaim(address)`
    - `isFallbackPromotable(procurementId)`
    - `nextActionForProcurement(procurementId)`
    - `getAutonomyStatus(procurementId)`
-5. Added tests covering ENS best-effort semantics, fallback promotability status, and deterministic settlement next-action helpers.
+4. Added tests covering ENS best-effort semantics and fallback promotability status.
 
 ## Residual risks requiring human pre-mainnet review
 
