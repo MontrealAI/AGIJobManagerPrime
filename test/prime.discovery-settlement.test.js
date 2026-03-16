@@ -685,13 +685,15 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
 
-  it('refunds only unspent validator reward budget on cancellation', async () => {
+
+
+  it('rejects cancellation after any finalist has submitted trial work', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
-      jobSpecURI: 'ipfs://job/premium-cancel-reward-budget',
-      payout: web3.utils.toWei('14'),
+      jobSpecURI: 'ipfs://job/premium-cancel-after-trial',
+      payout: web3.utils.toWei('15'),
       duration: 3600,
-      details: 'cancel reward budget accounting',
+      details: 'cancel exploit guard',
     };
     const proc = {
       commitDeadline: now + 10,
@@ -718,8 +720,8 @@ contract('Prime discovery + settlement', (accounts) => {
     const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
     const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
 
-    const salt = web3.utils.soliditySha3('cancel-budget');
-    const uri = 'ipfs://application/cancel-budget';
+    const salt = web3.utils.soliditySha3('cancel-after-trial');
+    const uri = 'ipfs://application/cancel-after-trial';
     const commitment = web3.utils.soliditySha3(
       { type: 'uint256', value: procurementId },
       { type: 'address', value: agentA },
@@ -733,40 +735,10 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increaseTo(proc.revealDeadline + 1);
     await discovery.finalizeShortlist(procurementId, { from: owner });
     await discovery.acceptFinalist(procurementId, { from: agentA });
-    await discovery.submitTrial(procurementId, 'ipfs://trial/cancel-budget', { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/cancel-after-trial', { from: agentA });
 
-    const scoreSalt = web3.utils.soliditySha3('cancel-budget-score');
-    const scoreCommitment = web3.utils.soliditySha3(
-      { type: 'uint256', value: procurementId },
-      { type: 'address', value: agentA },
-      { type: 'address', value: validatorA },
-      { type: 'uint8', value: 87 },
-      { type: 'bytes32', value: scoreSalt }
-    );
-
-    await time.increaseTo(proc.scoreCommitDeadline - 1);
-    await discovery.commitFinalistScore(procurementId, agentA, scoreCommitment, '', EMPTY, { from: validatorA });
-    await time.increaseTo(proc.scoreRevealDeadline - 1);
-
-    const validatorBefore = await discovery.canClaim(validatorA);
-    const employerBefore = await discovery.canClaim(employer);
-
-    await discovery.revealFinalistScore(procurementId, agentA, 87, scoreSalt, '', EMPTY, { from: validatorA });
-
-    const validatorAfterReveal = await discovery.canClaim(validatorA);
-    assert.equal(
-      validatorAfterReveal.sub(validatorBefore).toString(),
-      web3.utils.toWei('0.3'),
-      'validator should receive bond + reward on reveal'
-    );
-
-    await discovery.cancelProcurement(procurementId, { from: employer });
-
-    const employerAfter = await discovery.canClaim(employer);
-    assert.equal(
-      employerAfter.sub(employerBefore).toString(),
-      web3.utils.toWei('0.5'),
-      'employer should only recover remaining budget (stipend), not already paid validator reward'
+    await expectRevert.unspecified(
+      discovery.cancelProcurement(procurementId, { from: employer })
     );
   });
   it('keeps autonomy status readable after winner finalization when linked job is deleted', async () => {

@@ -646,6 +646,11 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (p.employer == address(0) || p.cancelled || p.winnerFinalized) revert InvalidState();
         if (msg.sender != p.employer && msg.sender != owner()) revert NotAuthorized();
 
+        uint256 lenFinalists = p.finalists.length;
+        for (uint256 i = 0; i < lenFinalists; ++i) {
+            if (applications[procurementId][p.finalists[i]].trialSubmitted) revert InvalidState();
+        }
+
         uint256 lenApplicants = p.applicants.length;
         for (uint256 i = 0; i < lenApplicants; ++i) {
             address applicant = p.applicants[i];
@@ -656,7 +661,6 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             }
         }
 
-        uint256 lenFinalists = p.finalists.length;
         for (uint256 i = 0; i < lenFinalists; ++i) {
             address finalist = p.finalists[i];
             address[] storage validators = scoreValidators[procurementId][finalist];
