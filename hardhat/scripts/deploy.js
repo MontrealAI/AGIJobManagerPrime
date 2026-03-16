@@ -8,6 +8,8 @@ const DEFAULT_VERIFY_DELAY_MS = 3500;
 const DEFAULT_VERIFY_RETRIES = 3;
 const DEFAULT_CONFIRMATIONS = 3;
 
+const MAX_MAINNET_RUNTIME_BYTES = 24_576;
+const MAX_MAINNET_INITCODE_BYTES = 49_152;
 
 const FQNS = {
   AGIJobManagerPrime: 'contracts/AGIJobManagerPrime.sol:AGIJobManagerPrime',
@@ -211,6 +213,34 @@ function getLatestBuildInfoPath() {
   return candidates[0].fullPath;
 }
 
+function bytecodeHexToBytes(bytecode) {
+  if (!bytecode || bytecode === '0x') return 0;
+  const normalized = bytecode.startsWith('0x') ? bytecode.slice(2) : bytecode;
+  return normalized.length / 2;
+}
+
+function readPrimeManagerBytecodeSizes() {
+  const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', 'AGIJobManagerPrime.sol', 'AGIJobManagerPrime.json');
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`Missing AGIJobManagerPrime artifact: ${artifactPath}. Run \`npm run compile\` first.`);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  const runtimeBytes = bytecodeHexToBytes(artifact.deployedBytecode);
+  const initcodeBytes = bytecodeHexToBytes(artifact.bytecode);
+
+  if (!runtimeBytes || !initcodeBytes) {
+    throw new Error('AGIJobManagerPrime artifact has empty bytecode; compile artifacts are invalid.');
+  }
+
+  return {
+    runtimeBytes,
+    initcodeBytes,
+    runtimeHeadroom: MAX_MAINNET_RUNTIME_BYTES - runtimeBytes,
+    initcodeHeadroom: MAX_MAINNET_INITCODE_BYTES - initcodeBytes,
+  };
+}
+
 function copySolcInput(outDir) {
   const latestBuildInfoPath = getLatestBuildInfoPath();
   const buildInfo = JSON.parse(fs.readFileSync(latestBuildInfoPath, 'utf8'));
@@ -249,6 +279,18 @@ async function main() {
     }
   }
 
+  const primeBytecode = readPrimeManagerBytecodeSizes();
+  if (primeBytecode.runtimeBytes >= MAX_MAINNET_RUNTIME_BYTES) {
+    throw new Error(
+      `AGIJobManagerPrime runtime bytecode ${primeBytecode.runtimeBytes} bytes is not mainnet deployable (< ${MAX_MAINNET_RUNTIME_BYTES}).`
+    );
+  }
+  if (primeBytecode.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
+    throw new Error(
+      `AGIJobManagerPrime initcode ${primeBytecode.initcodeBytes} bytes exceeds EIP-3860 limit (${MAX_MAINNET_INITCODE_BYTES}).`
+    );
+  }
+
   const plan = {
     network: network.name,
     chainId,
@@ -261,6 +303,7 @@ async function main() {
     constructorArgs,
     libraries: LIBRARIES,
     compiler: hardhatConfig.solidity,
+    primeBytecode,
     steps: [
       'Deploy linked libraries',
       'Deploy AGIJobManagerPrime',
@@ -441,6 +484,7 @@ async function main() {
     ownershipTransfer,
     verification: shouldVerify ? verificationResults : { skipped: true },
     configHash,
+    primeBytecode,
   };
 
   const receiptPath = path.join(outDir, `deployment.prime.${chainId}.${managerDeployment.blockNumber}.json`);
