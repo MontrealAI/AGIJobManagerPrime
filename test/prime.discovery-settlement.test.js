@@ -253,6 +253,106 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
   });
 
+  
+
+
+  it('returns global pause for unassigned jobs while preserving settlement routing for assigned jobs', async () => {
+    const payout = web3.utils.toWei('9');
+
+    const unassignedTx = await manager.createJob('ipfs://job/paused-unassigned', payout, 100, 'paused unassigned', { from: employer });
+    const unassignedJobId = unassignedTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    const assignedTx = await manager.createJob('ipfs://job/paused-settlement', payout, 100, 'paused settlement', { from: employer });
+    const assignedJobId = assignedTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.applyForJob(assignedJobId, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(assignedJobId, 'ipfs://job/paused-settlement/out', { from: agentA });
+    await time.increase(8 * 24 * 3600);
+
+    await manager.pause({ from: owner });
+    assert.equal((await manager.nextActionCodeForJob(unassignedJobId)).toString(), '15');
+    assert.equal((await manager.nextActionCodeForJob(assignedJobId)).toString(), '13');
+
+    await manager.finalizeJob(assignedJobId, { from: owner });
+    await manager.unpause({ from: owner });
+  });
+
+  it('returns per-job-root configuration action code when root is missing or expired', async () => {
+    const payout = web3.utils.toWei('9');
+    const tx = await manager.createConfiguredJob('ipfs://job/per-root', payout, 100, 'per root', 2, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '16');
+
+    const root = leafFor(agentA);
+    await manager.setPerJobAgentRoot(jobId, root, 30, { from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '8');
+
+    await time.increase(35);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '16');
+  });
+
+  it('returns designate action code for selected-agent-only jobs before designation', async () => {
+    const payout = web3.utils.toWei('9');
+    const tx = await manager.createConfiguredJob('ipfs://job/sel-undesignated', payout, 100, 'selected only', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '6');
+
+    await manager.designateSelectedAgent(jobId, agentA, 60, 0, { from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '7');
+  });
+
+  it('does not route to checkpoint action codes after completion request is active', async () => {
+    const payout = web3.utils.toWei('12');
+    const tx = await manager.createConfiguredJob('ipfs://job/checkpoint-completion', payout, 600, 'checkpoint completion', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.designateSelectedAgent(jobId, agentA, 120, 200, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '10');
+
+    await manager.requestJobCompletion(jobId, 'ipfs://job/checkpoint-completion/out', { from: agentA });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '14');
+  });
+
+  it('exposes deterministic job autonomy helpers for checkpoint, completion, and expiry', async () => {
+    const payout = web3.utils.toWei('10');
+    const tx = await manager.createConfiguredJob('ipfs://job/helpers', payout, 50, 'helpers', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.designateSelectedAgent(jobId, agentA, 100, 5, { from: owner });
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    assert.equal(await manager.isCheckpointFailed(jobId), false);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '10');
+
+    await time.increase(8);
+    assert.equal(await manager.isCheckpointFailed(jobId), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '9');
+
+    await manager.failCheckpoint(jobId, { from: owner });
+    assert.equal((await manager.nextActionCodeForJob(jobId)).toString(), '3');
+
+    const tx2 = await manager.createJob('ipfs://job/finalizable', payout, 80, 'final helper', { from: employer });
+    const jobId2 = tx2.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(jobId2, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId2, 'ipfs://job/finalizable/completion', { from: agentA });
+    assert.equal(await manager.isFinalizable(jobId2), false);
+    await time.increase(8 * 24 * 3600);
+    assert.equal(await manager.isFinalizable(jobId2), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId2)).toString(), '13');
+
+    const tx3 = await manager.createJob('ipfs://job/exp', payout, 20, 'exp helper', { from: employer });
+    const jobId3 = tx3.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(jobId3, '', EMPTY, EMPTY, { from: agentB });
+    await time.increase(25);
+    assert.equal(await manager.isExpirable(jobId3), true);
+    assert.equal((await manager.nextActionCodeForJob(jobId3)).toString(), '11');
+  });
+
+
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
