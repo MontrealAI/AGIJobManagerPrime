@@ -14,8 +14,9 @@ Prime architecture:
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
 5. Optionally transfer ownership of both contracts to `FINAL_OWNER`.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
-7. Read and persist the manager-created completion NFT address for operators and indexers.
-8. Write deployment artifacts and verify-target manifests.
+7. Preflight-check AGIJobManagerPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
+8. Read and persist the manager-created completion NFT address for operators and indexers.
+9. Write deployment artifacts and verify-target manifests.
 
 ## Mainnet safety posture
 
@@ -25,7 +26,7 @@ Prime architecture:
 - Dry-run mode:
   - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
-- Plan summary printed before execution.
+- Plan summary printed before execution, including Prime bytecode/runtime headroom.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
 
 ## Compiler source of truth
