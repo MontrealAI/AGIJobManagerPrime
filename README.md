@@ -59,7 +59,8 @@ Before any irreversible action:
 - Confirm at least one future job hook succeeds and legacy migration status is known.
 
 Irreversible actions (delay until validated):
-- `AGIJobManagerPrime.lockIdentityConfiguration()`
+- Prime: no identity-lock one-way switch exists on `AGIJobManagerPrime`; defer to documented Prime owner controls only.
+- Legacy-only: `AGIJobManager.lockIdentityConfiguration()` (if you are operating legacy manager wiring).
 - `ENSJobPages.lockConfiguration()`
 
 ## What this repository contains
