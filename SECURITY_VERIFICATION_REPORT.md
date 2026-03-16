@@ -34,19 +34,10 @@ npm run test:prime:unit
 npm run slither
 ```
 
-## Confirmed Blockers and Fixes
-1. **Canonical deploy script had a compiler source-of-truth split**
-   - Fixed by removing deploy-script hard-coded compiler block and reading canonical compiler profile from `hardhat/hardhat.config.js` for operator output.
-2. **Live-job-sensitive rule mutation risk**
-   - Prime already snapshotted review windows at assignment; now additionally snapshots quorum/approval/disapproval/slash parameters at assignment and uses these snapshots in settlement/dispute paths.
-3. **Discovery `renounceOwnership` was still available**
-   - Fixed by overriding `renounceOwnership()` in `AGIJobDiscoveryPrime` with custom-error revert.
+## Baseline blocker verification
+A full blocker-by-blocker baseline verification is recorded in `PRIME_BLOCKER_VERIFICATION_MEMO.md`.
 
-## Blockers Already Resolved on Current Main (Verified)
-- Repeated dispute opening guard existed (`DisputeAlreadyOpen`) and dispute bond lock accounting remained coherent.
-- Commit-time authorization/reputation checks already exist in `AGIJobDiscoveryPrime.commitApplication()`.
-- Manager `renounceOwnership()` already disabled.
-- Size gate already checked both runtime and initcode for Prime contracts; now expanded to include completion NFT in canonical size script output.
+Result: all contract/deploy-path blockers were already resolved on the current baseline, and no architectural redesign was required. The remaining action in this refresh was documentation hygiene (ensuring security artifacts describe current baseline status without stale “new fix” wording).
 
 ## Security/Operational Assertions
 - Settlement remains authoritative; ENS side effects are bounded best-effort low-level calls and remain non-fatal.
