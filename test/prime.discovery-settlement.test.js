@@ -161,6 +161,8 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
   it('releases dispute bond lock on stale-dispute owner resolution', async () => {
+    await manager.setDisputeReviewPeriod(7 * 24 * 3600, { from: owner });
+
     const payout = web3.utils.toWei('26');
     const tx = await manager.createJob('ipfs://job/dispute/stale', payout, 3600, 'dispute stale resolution', { from: employer });
     const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
