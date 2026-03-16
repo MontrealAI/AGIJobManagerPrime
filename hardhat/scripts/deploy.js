@@ -219,7 +219,22 @@ function bytecodeHexToBytes(bytecode) {
   return normalized.length / 2;
 }
 
-function readPrimeManagerBytecodeSizes() {
+function encodePrimeConstructorArgs(constructorArgs) {
+  const coder = ethers.AbiCoder.defaultAbiCoder();
+  return coder.encode(
+    ['address', 'string', 'address', 'address', 'bytes32[4]', 'bytes32[2]'],
+    [
+      constructorArgs.agiTokenAddress,
+      constructorArgs.baseIpfsUrl,
+      constructorArgs.ensConfig[0],
+      constructorArgs.ensConfig[1],
+      constructorArgs.rootNodes,
+      constructorArgs.merkleRoots,
+    ]
+  );
+}
+
+function readPrimeManagerBytecodeSizes(constructorArgs) {
   const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', 'AGIJobManagerPrime.sol', 'AGIJobManagerPrime.json');
   if (!fs.existsSync(artifactPath)) {
     throw new Error(`Missing AGIJobManagerPrime artifact: ${artifactPath}. Run \`npm run compile\` first.`);
@@ -227,15 +242,19 @@ function readPrimeManagerBytecodeSizes() {
 
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
   const runtimeBytes = bytecodeHexToBytes(artifact.deployedBytecode);
-  const initcodeBytes = bytecodeHexToBytes(artifact.bytecode);
+  const initcodeTemplateBytes = bytecodeHexToBytes(artifact.bytecode);
+  const constructorArgsBytes = bytecodeHexToBytes(encodePrimeConstructorArgs(constructorArgs));
+  const initcodeBytes = initcodeTemplateBytes + constructorArgsBytes;
 
-  if (!runtimeBytes || !initcodeBytes) {
+  if (!runtimeBytes || !initcodeTemplateBytes) {
     throw new Error('AGIJobManagerPrime artifact has empty bytecode; compile artifacts are invalid.');
   }
 
   return {
     runtimeBytes,
     initcodeBytes,
+    initcodeTemplateBytes,
+    constructorArgsBytes,
     runtimeHeadroom: MAX_MAINNET_RUNTIME_BYTES - runtimeBytes,
     initcodeHeadroom: MAX_MAINNET_INITCODE_BYTES - initcodeBytes,
   };
@@ -279,7 +298,7 @@ async function main() {
     }
   }
 
-  const primeBytecode = readPrimeManagerBytecodeSizes();
+  const primeBytecode = readPrimeManagerBytecodeSizes(constructorArgs);
   if (primeBytecode.runtimeBytes >= MAX_MAINNET_RUNTIME_BYTES) {
     throw new Error(
       `AGIJobManagerPrime runtime bytecode ${primeBytecode.runtimeBytes} bytes is not mainnet deployable (< ${MAX_MAINNET_RUNTIME_BYTES}).`
