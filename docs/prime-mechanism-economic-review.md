@@ -42,3 +42,9 @@ This memo reviews the current Prime architecture (`AGIJobManagerPrime` + `AGIJob
 2. Keep strict allowlist/identity controls to reduce authorized-Sybil slot pressure.
 3. Maintain moderator SLA + stale-dispute runbook with explicit response windows.
 4. Keep bytecode-size headroom tracked on every merge because manager runtime margin is tight.
+
+## Mechanism-design posture for this hardening pass
+- **Churn minimization:** because suspected blockers are already fixed on baseline, avoid kernel rewrites that burn bytecode headroom or alter settled economics without necessity.
+- **Owner-operated invariants preserved:** governance remains explicit owner control; no DAO/proxy/timelock expansion.
+- **Autonomy where safe:** keep permissionless liveness and deterministic next-action signaling in periphery/docs/events instead of adding social/gamified storage to settlement.
+- **Public prestige off-chain first:** ENS pages + completion artifacts + operator runbooks carry “premium” UX while contracts stay conservative and size-safe.

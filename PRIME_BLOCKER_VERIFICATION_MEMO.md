@@ -40,3 +40,16 @@ Observed outcomes:
 - `test:size` passed and reported runtime + initcode size/headroom for Prime manager, discovery, and completion NFT.
 - `test:prime:deploy-smoke` passed and validated canonical Prime deploy ordering, completion NFT capture, discovery-module wiring, optional ENS branch handling, and artifact emission.
 - `test:prime:unit` started but stalled during repeated compiler-fetch attempts in this non-interactive environment window; no contradictory evidence surfaced against the baseline blocker resolution status.
+
+## 2026-03-16 addendum (this pass)
+
+A fresh source audit was performed against the current checked-out baseline before proposing any additional patching.
+
+- Re-verified deploy-path canonicalization in `hardhat/scripts/deploy.js` + Hardhat docs/package scripts (Prime targets only).
+- Re-verified `DisputeAlreadyOpen` guard in `AGIJobManagerPrime.disputeJob()` and single-slot dispute accounting semantics.
+- Re-verified commit-time authorization + reputation gating in `AGIJobDiscoveryPrime.commitApplication()`.
+- Re-verified assignment-time snapshot fields and downstream consumption in completion/dispute/finalization paths.
+- Re-verified `renounceOwnership()` disablement in both Prime contracts.
+- Re-verified runtime+initcode gate logic in `scripts/check-bytecode-size.js`.
+
+No new blocker regressions were identified in the current baseline. This means the smallest safe action for this pass is a documentation/verification refresh rather than additional settlement/discovery logic churn.
