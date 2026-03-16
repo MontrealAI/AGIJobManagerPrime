@@ -24,6 +24,7 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
    - `canClaim(address)`
    - `isFallbackPromotable(procurementId)`
    - `nextActionForProcurement(procurementId)`
+   - `getAutonomyStatus(procurementId)`
 4. Added tests covering ENS best-effort semantics and fallback promotability status.
 
 ## Residual risks requiring human pre-mainnet review

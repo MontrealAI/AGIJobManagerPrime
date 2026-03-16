@@ -253,6 +253,10 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
   });
 
+  
+
+
+
   it('runs procurement commit/reveal, shortlist, finalist trials, validator score commit/reveal and winner handoff with fallback promotion', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {

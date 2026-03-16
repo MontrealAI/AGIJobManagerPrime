@@ -1047,6 +1047,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
 
 
+
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,
