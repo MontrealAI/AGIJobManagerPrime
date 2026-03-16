@@ -24,8 +24,14 @@ Prime architecture:
 - Config validation before any broadcast.
 - Dry-run mode:
   - `DRY_RUN=1`
+- `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
 - Plan summary printed before execution.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
+
+## Compiler source of truth
+
+- Canonical compiler settings are defined only in `hardhat/hardhat.config.js` and consumed by `scripts/deploy.js` for plan output.
+- Deploy scripts do not carry separate hard-coded compiler profiles.
 
 ## Environment setup
 
@@ -48,6 +54,7 @@ Common deploy controls:
 - `VERIFY_DELAY_MS` (default `3500`)
 - `VERIFY=1` (set `0` or unset to skip verification)
 - `DRY_RUN=1`
+- `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
 - `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
 - Pass `--network <mainnet|sepolia>` directly to `npm run verify:prime`
 

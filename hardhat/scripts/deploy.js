@@ -1,20 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const { ethers, network, run } = require('hardhat');
+const hardhatConfig = require('../hardhat.config');
 
 const MAINNET_CONFIRMATION_VALUE = 'I_UNDERSTAND_MAINNET_DEPLOYMENT';
 const DEFAULT_VERIFY_DELAY_MS = 3500;
 const DEFAULT_VERIFY_RETRIES = 3;
 const DEFAULT_CONFIRMATIONS = 3;
 
-const COMPILER_SETTINGS = {
-  version: '0.8.23',
-  optimizer: { enabled: true, runs: 1 },
-  evmVersion: 'shanghai',
-  viaIR: true,
-  metadata: { bytecodeHash: 'none' },
-  debug: { revertStrings: 'strip' },
-};
 
 const FQNS = {
   AGIJobManagerPrime: 'contracts/AGIJobManagerPrime.sol:AGIJobManagerPrime',
@@ -244,6 +237,9 @@ async function main() {
   const constructorArgs = resolvePrimeConstructor(network.name, profile);
   const resolvedFinalOwner = resolveFinalOwner(profile);
 
+  const resolvedEnsJobPages = process.env.ENS_JOB_PAGES || profile.ensJobPages || '';
+  if (resolvedEnsJobPages) validateAddress('ensJobPages', resolvedEnsJobPages);
+
   if (chainId === 1) {
     if (process.env.DEPLOY_CONFIRM_MAINNET !== MAINNET_CONFIRMATION_VALUE) {
       throw new Error(`Mainnet deployment blocked. Set DEPLOY_CONFIRM_MAINNET=${MAINNET_CONFIRMATION_VALUE}.`);
@@ -264,12 +260,13 @@ async function main() {
     verifyEnabled: shouldVerify,
     constructorArgs,
     libraries: LIBRARIES,
-    compiler: COMPILER_SETTINGS,
+    compiler: hardhatConfig.solidity,
     steps: [
       'Deploy linked libraries',
       'Deploy AGIJobManagerPrime',
       'Deploy AGIJobDiscoveryPrime',
       'Wire manager.setDiscoveryModule(discovery)',
+      'Optional setEnsJobPages(target)',
       'Optional transferOwnership(finalOwner)',
       'Optional etherscan verification',
       'Persist deployment receipts + verify targets',
@@ -333,6 +330,22 @@ async function main() {
     discoveryModule: discoveryDeployment.address,
   };
   console.log(`[wired] AGIJobManagerPrime.setDiscoveryModule(${discoveryDeployment.address}) tx=${setDiscoveryTx.hash}`);
+
+  let ensJobPagesWiring = { executed: false, txHash: null, blockNumber: null, target: null, reason: 'not_configured' };
+  if (resolvedEnsJobPages) {
+    const setEnsTx = await manager.setEnsJobPages(resolvedEnsJobPages);
+    const setEnsReceipt = await setEnsTx.wait(confirmations);
+    ensJobPagesWiring = {
+      executed: true,
+      txHash: setEnsTx.hash,
+      blockNumber: setEnsReceipt.blockNumber,
+      target: resolvedEnsJobPages,
+      reason: null,
+    };
+    console.log(`[wired] AGIJobManagerPrime.setEnsJobPages(${resolvedEnsJobPages}) tx=${setEnsTx.hash}`);
+  } else {
+    console.log('[wired] AGIJobManagerPrime.setEnsJobPages skipped (not configured).');
+  }
 
   const completionNFTAddress = await manager.completionNFT();
   validateAddress('completionNFT', completionNFTAddress);
@@ -423,6 +436,7 @@ async function main() {
     discoveryConstructorArgs: discoveryArgs,
     libraries: linkedLibraries,
     setDiscoveryModule: discoveryModuleWiring,
+    setEnsJobPages: ensJobPagesWiring,
     completionNFT: completionNFTAddress,
     ownershipTransfer,
     verification: shouldVerify ? verificationResults : { skipped: true },
@@ -453,6 +467,7 @@ async function main() {
   });
   console.log(`CompletionNFT: ${record.completionNFT}${explorerAddressBase ? ` ${explorerAddressBase}${record.completionNFT}` : ''}`);
   console.log(`setDiscoveryModule tx: ${discoveryModuleWiring.txHash}`);
+  console.log(`setEnsJobPages: ${ensJobPagesWiring.executed ? `${ensJobPagesWiring.target} tx=${ensJobPagesWiring.txHash}` : 'skipped'}`);
   console.log(`receipt: ${receiptPath}`);
   console.log(`solc-input: ${solcInputPath}`);
   console.log(`verify-targets: ${verifyTargetsPath}`);

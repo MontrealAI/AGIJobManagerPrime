@@ -114,6 +114,13 @@ contract('Prime discovery + settlement', (accounts) => {
     await expectCustomError(manager.renounceOwnership.call({ from: owner }), 'RenounceOwnershipDisabled');
   });
 
+
+  it('disables discovery renounceOwnership while preserving transferOwnership', async () => {
+    await expectCustomError(discovery.renounceOwnership.call({ from: owner }), 'RenounceOwnershipDisabled');
+    await discovery.transferOwnership(employer, { from: owner });
+    assert.equal(await discovery.owner(), employer, 'ownership transfer should remain functional');
+  });
+
   it('blocks repeated dispute opening and keeps dispute bond accounting stable', async () => {
     const payout = web3.utils.toWei('22');
     const tx = await manager.createJob('ipfs://job/dispute', payout, 3600, 'dispute flow', { from: employer });
@@ -159,6 +166,36 @@ contract('Prime discovery + settlement', (accounts) => {
     await expectCustomError(manager.finalizeJob.call(jobId, { from: employer }), 'InvalidState');
     await manager.disputeJob(jobId, { from: employer });
     await expectCustomError(manager.resolveStaleDispute.call(jobId, true, { from: owner }), 'InvalidState');
+  });
+
+
+  it('freezes validator quorum/threshold/slash rules for a live job while future jobs use new globals', async () => {
+    await manager.setVoteQuorum(2, { from: owner });
+    await manager.setRequiredValidatorApprovals(2, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(2, { from: owner });
+    await manager.setValidatorSlashBps(5000, { from: owner });
+
+    const payout = web3.utils.toWei('20');
+    const liveTx = await manager.createJob('ipfs://job/live-snapshot', payout, 3600, 'live snapshot', { from: employer });
+    const liveJobId = liveTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(liveJobId, '', EMPTY, EMPTY, { from: agentA });
+
+    await manager.setVoteQuorum(1, { from: owner });
+    await manager.setRequiredValidatorApprovals(1, { from: owner });
+    await manager.setRequiredValidatorDisapprovals(1, { from: owner });
+    await manager.setValidatorSlashBps(9000, { from: owner });
+
+    await manager.requestJobCompletion(liveJobId, 'ipfs://job/live-snapshot/completion', { from: agentA });
+    await manager.disapproveJob(liveJobId, '', EMPTY, { from: validatorA });
+    await manager.disputeJob(liveJobId, { from: employer });
+
+    const futureTx = await manager.createJob('ipfs://job/future-rules', payout, 3600, 'future rules', { from: employer });
+    const futureJobId = futureTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.applyForJob(futureJobId, '', EMPTY, EMPTY, { from: agentB });
+    await manager.requestJobCompletion(futureJobId, 'ipfs://job/future-rules/completion', { from: agentB });
+    await manager.disapproveJob(futureJobId, '', EMPTY, { from: validatorA });
+
+    await expectCustomError(manager.disputeJob.call(futureJobId, { from: employer }), 'DisputeAlreadyOpen');
   });
 
   it('supports per-job merkle intake and employer refund expiry path', async () => {
@@ -216,6 +253,74 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal((await ensJobPages.lockCalls()).toString(), '1', 'lock hook should run on terminal completion');
   });
 
+
+
+  it('enforces commit-time authorization and reputation checks before slot occupancy', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/commit-check',
+      payout: web3.utils.toWei('20'),
+      duration: 3600,
+      details: 'commit checks',
+    };
+    const proc = {
+      commitDeadline: now + 20,
+      revealDeadline: now + 40,
+      finalistAcceptDeadline: now + 60,
+      trialDeadline: now + 80,
+      scoreCommitDeadline: now + 100,
+      scoreRevealDeadline: now + 120,
+      selectedAcceptanceWindow: 5,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 1,
+      applicationStake: 0,
+      finalistStakeTotal: 0,
+      stipendPerFinalist: 0,
+      validatorRewardPerReveal: 0,
+      validatorScoreBond: 0,
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    const unauthorizedCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: accounts[9] },
+      { type: 'string', value: 'ipfs://application/unauthorized' },
+      { type: 'bytes32', value: web3.utils.soliditySha3('U') }
+    );
+    await expectRevert.unspecified(
+      discovery.commitApplication(procurementId, unauthorizedCommitment, '', EMPTY, { from: accounts[9] })
+    );
+
+    const underRepCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: 'ipfs://application/underrep' },
+      { type: 'bytes32', value: web3.utils.soliditySha3('R') }
+    );
+    await expectCustomError(
+      discovery.commitApplication.call(procurementId, underRepCommitment, '', EMPTY, { from: agentA }),
+      'NotAuthorized'
+    );
+
+    await manager.setPremiumReputationThreshold(0, { from: owner });
+    const validProc = { ...proc, minReputation: 0, commitDeadline: now + 140, revealDeadline: now + 160, finalistAcceptDeadline: now + 180, trialDeadline: now + 200, scoreCommitDeadline: now + 220, scoreRevealDeadline: now + 240 };
+    const create2 = await discovery.createPremiumJobWithDiscovery(premium, validProc, { from: employer });
+    const procurementId2 = create2.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+    const validCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId2 },
+      { type: 'address', value: agentA },
+      { type: 'string', value: 'ipfs://application/valid' },
+      { type: 'bytes32', value: web3.utils.soliditySha3('V') }
+    );
+    await discovery.commitApplication(procurementId2, validCommitment, '', EMPTY, { from: agentA });
+  });
 
   it('reports fallback not promotable when all remaining finalists have zero composite score', async () => {
     const now = (await time.latest()).toNumber();
