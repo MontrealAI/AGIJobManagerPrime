@@ -182,7 +182,7 @@ contract('Prime discovery + settlement', (accounts) => {
       scoreRevealDeadline: now + 60,
       selectedAcceptanceWindow: 5,
       checkpointWindow: 0,
-      finalistCount: 1,
+      finalistCount: 2,
       minValidatorReveals: 1,
       maxValidatorRevealsPerFinalist: 1,
       historicalWeightBps: 2000,
@@ -251,6 +251,112 @@ contract('Prime discovery + settlement', (accounts) => {
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalists should not appear promotable');
     assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
+  });
+
+  it('supports permissionless staged progression through advanceProcurement', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-advance',
+      payout: web3.utils.toWei('30'),
+      duration: 3600,
+      details: 'advance helper flow',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 3,
+      checkpointWindow: 0,
+      finalistCount: 2,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 2,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const premiumEvent = create.logs.find((l) => l.event === 'PremiumJobCreated');
+    const procurementId = premiumEvent.args.procurementId.toNumber();
+    const jobId = premiumEvent.args.jobId.toNumber();
+
+    const saltA = web3.utils.soliditySha3('advanceA');
+    const saltB = web3.utils.soliditySha3('advanceB');
+    const uriA = 'ipfs://application/advance/A';
+    const uriB = 'ipfs://application/advance/B';
+    const cA = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uriA },
+      { type: 'bytes32', value: saltA }
+    );
+    const cB = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'string', value: uriB },
+      { type: 'bytes32', value: saltB }
+    );
+
+    await discovery.commitApplication(procurementId, cA, { from: agentA });
+    await discovery.commitApplication(procurementId, cB, { from: agentB });
+
+    await expectRevert.unspecified(discovery.advanceProcurement(procurementId, { from: employer }));
+
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
+    await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
+    await time.increaseTo(proc.revealDeadline + 1);
+    const shortlistTx = await discovery.advanceProcurement(procurementId, { from: validatorA });
+    const shortlisted = shortlistTx.logs.find((l) => l.event === 'ShortlistFinalized').args.finalists;
+    const firstFinalist = shortlisted[0];
+    const fallbackAgent = firstFinalist.toLowerCase() === agentA.toLowerCase() ? agentB : agentA;
+
+    await discovery.acceptFinalist(procurementId, { from: firstFinalist });
+    await discovery.acceptFinalist(procurementId, { from: fallbackAgent });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/advance/first', { from: firstFinalist });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/advance/fallback', { from: fallbackAgent });
+
+    const scoreSalt = web3.utils.soliditySha3('advance-score-a');
+    const scoreCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: firstFinalist },
+      { type: 'address', value: validatorA },
+      { type: 'uint8', value: 88 },
+      { type: 'bytes32', value: scoreSalt }
+    );
+
+    const fallbackScoreSalt = web3.utils.soliditySha3('advance-score-b');
+    const fallbackScoreCommitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: fallbackAgent },
+      { type: 'address', value: validatorB },
+      { type: 'uint8', value: 77 },
+      { type: 'bytes32', value: fallbackScoreSalt }
+    );
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    await discovery.commitFinalistScore(procurementId, firstFinalist, scoreCommitment, '', EMPTY, { from: validatorA });
+    await discovery.commitFinalistScore(procurementId, fallbackAgent, fallbackScoreCommitment, '', EMPTY, { from: validatorB });
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, firstFinalist, 88, scoreSalt, '', EMPTY, { from: validatorA });
+    await discovery.revealFinalistScore(procurementId, fallbackAgent, 77, fallbackScoreSalt, '', EMPTY, { from: validatorB });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.advanceProcurement(procurementId, { from: employer });
+
+    await time.increase(4);
+    await discovery.advanceProcurement(procurementId, { from: validatorB });
+
+    const info = await manager.getJobSelectionInfo(jobId);
+    assert.equal(info[1], fallbackAgent, 'fallback finalist should be promoted after first winner times out');
   });
 
   
