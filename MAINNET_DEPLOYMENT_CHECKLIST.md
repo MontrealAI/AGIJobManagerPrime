@@ -6,9 +6,10 @@ Legacy Truffle deployment notes are retained in [`docs/Deployment.md`](docs/Depl
 ## Preflight
 
 - Confirm `hardhat/.env` has `MAINNET_RPC_URL`, `PRIVATE_KEY`, `FINAL_OWNER`, and `DEPLOY_CONFIRM_MAINNET`.
+- Optional ENS wiring: set `ENS_JOB_PAGES` only if you are intentionally wiring an ENSJobPages-compatible target at deploy-time.
 - Confirm deploy config values in `hardhat/deploy.config.example.js` are copied into your real deploy config and validated.
 - Run compile, size, and deploy-smoke checks before any broadcast:
-  - `npm run test:size`
+  - `npm run test:size` (enforces runtime + initcode limits for Prime deploy-path contracts)
   - `npm run test:prime:deploy-smoke`
 
 ## Dry-run then broadcast
@@ -25,6 +26,7 @@ Legacy Truffle deployment notes are retained in [`docs/Deployment.md`](docs/Depl
   - linked library addresses,
   - `AGIJobManagerPrime` and `AGIJobDiscoveryPrime` addresses,
   - `setDiscoveryModule` tx,
+  - optional `setEnsJobPages` tx/status,
   - `completionNFT` address,
   - ownership transfer status.
 - Re-run verification from artifact (includes completion NFT verification):

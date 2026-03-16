@@ -1,86 +1,59 @@
-# Security Verification Report
+# Security Verification Report (Prime Scope, Current Main)
 
 ## Scope
-- `contracts/AGIJobManager.sol`
-- Utility libraries used by AGIJobManager
-- ENS integration contracts and assembly call compatibility assumptions
+This verification report is scoped to the Prime production path:
+- `contracts/AGIJobManagerPrime.sol`
+- `contracts/AGIJobDiscoveryPrime.sol`
+- `contracts/interfaces/IAGIJobManagerPrime.sol`
+- `contracts/periphery/AGIJobCompletionNFT.sol`
+- Optional ENS integration path used by Prime settlement hooks (`setEnsJobPages` + `handleHook` best-effort calls)
 
-## Tooling Versions
-- Foundry: `forge 1.5.1-stable (b0a9dd9ced)`
-- Solidity compiler: `0.8.19` (from `foundry.toml`)
-- Slither: `0.10.4`
-- Echidna: not included (Foundry handler invariants already cover the multi-step state machine with deterministic CI runtime)
+Legacy-only contract verification is out of scope for this report.
+
+## Toolchain
+- Node.js + npm workspace tooling from repository lockfiles
+- Hardhat config: `hardhat/hardhat.config.js`
+- Solidity compiler profile (Prime canonical): `0.8.23`, optimizer enabled (`runs=1` by default), `viaIR=true` by default, `evmVersion=shanghai`, `bytecodeHash=none`, revert strings stripped
+- Truffle test harness remains active for Prime regression tests in `test/`
 
 ## Reproduction Commands
 ```bash
 npm ci
+cd hardhat && npm ci && cd ..
 
-# Foundry checks
-forge fmt --check
-FOUNDRY_PROFILE=ci forge build
-FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
-FOUNDRY_PROFILE=ci forge test --match-path "forge-test/invariant/*.t.sol"
+# Prime compile + bytecode gates (runtime + initcode)
+npm run test:size
 
-# Static analysis
-pip install slither-analyzer==0.10.4
+# Prime deploy wiring smoke
+npm run test:prime:deploy-smoke
+
+# Prime regression suite used for blocker verification/fixes
+npm run test:prime:unit
+
+# Static analysis (if local Python env is prepared)
 npm run slither
 ```
 
-## Added Verification Coverage
+## Confirmed Blockers and Fixes
+1. **Canonical deploy script had a compiler source-of-truth split**
+   - Fixed by removing deploy-script hard-coded compiler block and reading canonical compiler profile from `hardhat/hardhat.config.js` for operator output.
+2. **Live-job-sensitive rule mutation risk**
+   - Prime already snapshotted review windows at assignment; now additionally snapshots quorum/approval/disapproval/slash parameters at assignment and uses these snapshots in settlement/dispute paths.
+3. **Discovery `renounceOwnership` was still available**
+   - Fixed by overriding `renounceOwnership()` in `AGIJobDiscoveryPrime` with custom-error revert.
 
-### Unit / Regression (Foundry)
-- ENS authorization path regression:
-  - deterministic NameWrapper ownership path succeeds for valid labels
-  - invalid ENS label formatting is rejected deterministically.
-- ENS selector and calldata compatibility checks assert:
-  - `handleHook(uint8,uint256)` selector = `0x1f76f7a2`, calldata length `0x44`
-  - `jobEnsURI(uint256)` selector = `0x751809b4`, calldata length `0x24`
-  - low-level calls return ABI-valid string data.
-- Strict transfer semantics:
-  - Fee-on-transfer token is rejected in exact transfer flows.
-- Integration resilience:
-  - Reverting ENS hook target does not brick settlement.
-  - Malformed ENS URI ABI does not break finalization.
-- Reentrancy regression:
-  - ERC721 receiver callback reentry into `finalizeJob` cannot double-settle.
+## Blockers Already Resolved on Current Main (Verified)
+- Repeated dispute opening guard existed (`DisputeAlreadyOpen`) and dispute bond lock accounting remained coherent.
+- Commit-time authorization/reputation checks already exist in `AGIJobDiscoveryPrime.commitApplication()`.
+- Manager `renounceOwnership()` already disabled.
+- Size gate already checked both runtime and initcode for Prime contracts; now expanded to include completion NFT in canonical size script output.
 
-### Fuzzing (Foundry)
-- Boundary fuzz for:
-  - payout and duration validity envelope in `createJob`
-  - job spec/details/completion URI caps
-  - dispute-bond floor/ceiling behavior (`[1 AGI, 200 AGI]`)
-  - validator approvals/disapprovals accounting consistency at threshold/tie edges
-  - hard validator cap enforcement (`MAX_VALIDATORS_PER_JOB = 50`)
+## Security/Operational Assertions
+- Settlement remains authoritative; ENS side effects are bounded best-effort low-level calls and remain non-fatal.
+- Completion NFT issuance remains manager-driven on successful completion paths.
+- Owner-operated model is preserved (no DAO/governor/proxy introduced).
 
-### Invariants (Handler-based)
-Handler actions include:
-- create/apply/request completion/vote/finalize/dispute/resolve stale/expire/cancel/delist
-- owner pause toggles and settlement pause toggles
-- owner `withdrawAGI` and `rescueERC20` under guarded preconditions
-
-Invariants enforced:
-1. **Solvency:** contract AGI balance is always >= all locked totals.
-2. **Withdraw safety:** `withdrawableAGI()` remains callable without reverting during valid operation.
-3. **Locked accounting consistency:** aggregate locked totals exactly equal recomputed sums over live jobs.
-4. **Vote accounting sanity:** `validators.length == approvals + disapprovals` per job.
-5. **Terminal sanity:** mutually exclusive invalid flag combinations are disallowed.
-6. **Agent concurrency cap:** `activeJobsByAgent <= maxActiveJobsPerAgent` for tracked actors.
-7. **Deleted-job accounting sanity:** deleted jobs must carry zero residual bond/validator accounting fields.
-
-## CI Integration
-- Added `.github/workflows/security-verification.yml` for PR/push:
-  - `forge fmt --check`
-  - `forge build`
-  - forge unit/fuzz tests
-  - forge invariant suite
-  - Slither execution with fail-on medium/high
-
-## Slither Findings Triage
-- **Accepted by design:** privileged owner/admin control surfaces (`onlyOwner`) per business-operated trust model.
-- **False positives / low-noise filtered:** currently controlled via repository `slither.config.json` path filters and detector exclusions for non-actionable categories.
-- **Fixed issues:** no new production-contract patches were required by this pass; focus stayed on verification harnesses and regression coverage.
-
-## Residual Risks / Assumptions
-- Owner/operator privilege remains central by design.
-- Liveness and emergency controls (pause/settlement pause) are operational controls, not decentralized guarantees.
-- ENS integration remains optional/best-effort and intentionally non-blocking for escrow lifecycle safety.
+## Residual Risks / Human Review
+- Owner key/ops model remains central; production deployment should use hardened key custody and incident playbooks.
+- Discovery economic weights and fallback promotion outcomes still require independent human game-theory review before scaling funds.
+- ENS target contract behavior should be canary-tested post-deploy before enabling for production traffic.

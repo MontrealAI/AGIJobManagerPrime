@@ -446,6 +446,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint64 disputeReviewPeriodSnapshot;
         uint64 challengePeriodAfterApprovalSnapshot;
 
+        uint256 voteQuorumSnapshot;
+        uint256 requiredValidatorApprovalsSnapshot;
+        uint256 requiredValidatorDisapprovalsSnapshot;
+        uint256 validatorSlashBpsSnapshot;
+
         address disputeInitiator;
         uint256 disputeBondAmount;
         uint256 validatorBondAmount;
@@ -814,6 +819,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.completionReviewPeriodSnapshot = uint64(completionReviewPeriod);
         job.disputeReviewPeriodSnapshot = uint64(disputeReviewPeriod);
         job.challengePeriodAfterApprovalSnapshot = uint64(challengePeriodAfterApproval);
+        job.voteQuorumSnapshot = voteQuorum;
+        job.requiredValidatorApprovalsSnapshot = requiredValidatorApprovals;
+        job.requiredValidatorDisapprovalsSnapshot = requiredValidatorDisapprovals;
+        job.validatorSlashBpsSnapshot = validatorSlashBps;
 
         uint256 bond = BondMath.computeAgentBond(
             job.payout,
@@ -1006,7 +1015,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 totalVotes = approvals + disapprovals;
         if (totalVotes == 0) {
             _completeJob(jobId, false);
-        } else if (totalVotes < voteQuorum || approvals == disapprovals) {
+        } else if (totalVotes < job.voteQuorumSnapshot || approvals == disapprovals) {
             job.disputed = true;
             job.disputedAt = uint64(block.timestamp);
             emit JobDisputed(jobId, msg.sender);
@@ -1243,7 +1252,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             job.validatorApprovals += 1;
             emit JobValidated(jobId, msg.sender);
 
-            if (!job.validatorApproved && requiredValidatorApprovals > 0 && job.validatorApprovals >= requiredValidatorApprovals) {
+            if (
+                !job.validatorApproved &&
+                job.requiredValidatorApprovalsSnapshot > 0 &&
+                job.validatorApprovals >= job.requiredValidatorApprovalsSnapshot
+            ) {
                 job.validatorApproved = true;
                 job.validatorApprovedAt = uint64(block.timestamp);
             }
@@ -1252,7 +1265,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             job.validatorDisapprovals += 1;
             emit JobDisapproved(jobId, msg.sender);
 
-            if (requiredValidatorDisapprovals > 0 && job.validatorDisapprovals >= requiredValidatorDisapprovals) {
+            if (
+                job.requiredValidatorDisapprovalsSnapshot > 0 &&
+                job.validatorDisapprovals >= job.requiredValidatorDisapprovalsSnapshot
+            ) {
                 job.disputed = true;
                 job.disputedAt = uint64(block.timestamp);
                 emit JobDisputed(jobId, msg.sender);
@@ -1306,7 +1322,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _decrementActive(job.assignedAgent);
         _releaseEscrow(job);
 
-        bool poolToValidators = requiredValidatorDisapprovals != 0 && job.validatorDisapprovals >= requiredValidatorDisapprovals;
+        bool poolToValidators =
+            job.requiredValidatorDisapprovalsSnapshot != 0 &&
+            job.validatorDisapprovals >= job.requiredValidatorDisapprovalsSnapshot;
         uint256 agentBondPool = _slashOrRefundAgentBond(job, poolToValidators);
 
         uint256 escrowValidatorReward = job.validators.length > 0
@@ -1349,7 +1367,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.validatorBondAmount = 0;
 
         uint256 correctCount = agentWins ? job.validatorApprovals : job.validatorDisapprovals;
-        uint256 slashedPerIncorrect = (bond * validatorSlashBps) / 10_000;
+        uint256 slashedPerIncorrect = (bond * job.validatorSlashBpsSnapshot) / 10_000;
         uint256 poolForCorrect = escrowValidatorReward + extraPoolForCorrect + (slashedPerIncorrect * (count - correctCount));
         uint256 perCorrectReward = correctCount > 0 ? poolForCorrect / correctCount : 0;
         uint256 validatorRepGain = (reputationPoints * job.validatorRewardPctSnapshot) / 100;

@@ -320,6 +320,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     error TooManyApplicants();
     error NoWinner();
     error NoAdvanceableAction();
+    error RenounceOwnershipDisabled();
 
     uint8 public constant MAX_APPLICANTS = 64;
     uint8 public constant MAX_FINALISTS = 8;
@@ -467,6 +468,10 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert RenounceOwnershipDisabled();
+    }
 
     function quoteProcurementBudget(
         uint8 finalistCount,
