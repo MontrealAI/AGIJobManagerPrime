@@ -456,6 +456,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     event WinnerDesignated(uint256 indexed procurementId, address indexed finalist, uint256 compositeScoreBps);
     event FallbackPromoted(uint256 indexed procurementId, address indexed finalist, uint256 compositeScoreBps);
     event ProcurementClosedWithoutWinner(uint256 indexed procurementId);
+    event ProcurementCancelled(uint256 indexed procurementId, address indexed canceller);
     event Claimed(address indexed user, uint256 amount);
 
     constructor(address settlementAddress) {
@@ -520,12 +521,16 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
     function commitApplication(
         uint256 procurementId,
-        bytes32 commitment
+        bytes32 commitment,
+        string calldata subdomain,
+        bytes32[] calldata globalProof
     ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
         if (p.employer == address(0) || p.cancelled) revert InvalidState();
         if (block.timestamp > p.commitDeadline) revert InvalidState();
         if (commitment == bytes32(0)) revert InvalidParameters();
+        if (!settlement.isAuthorizedAgent(msg.sender, subdomain, globalProof)) revert NotAuthorized();
+        if (settlement.reputation(msg.sender) < p.minReputation) revert NotAuthorized();
         if (p.applicants.length >= MAX_APPLICANTS) revert TooManyApplicants();
 
         Application storage a = applications[procurementId][msg.sender];
@@ -601,7 +606,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             uint256 insertAt = finalistsToTake;
 
             for (uint256 j = 0; j < finalistsToTake; ++j) {
-                if (historical >= topScores[j]) {
+                if (_isBetterShortlistCandidate(agent, historical, topAgents[j], topScores[j])) {
                     insertAt = j;
                     break;
                 }
@@ -634,6 +639,43 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         p.shortlistFinalized = true;
         emit ShortlistFinalized(procurementId, p.finalists);
+    }
+
+    function cancelProcurement(uint256 procurementId) external whenNotPaused nonReentrant {
+        Procurement storage p = procurements[procurementId];
+        if (p.employer == address(0) || p.cancelled || p.winnerFinalized) revert InvalidState();
+        if (msg.sender != p.employer && msg.sender != owner()) revert NotAuthorized();
+
+        uint256 lenApplicants = p.applicants.length;
+        for (uint256 i = 0; i < lenApplicants; ++i) {
+            address applicant = p.applicants[i];
+            Application storage app = applications[procurementId][applicant];
+            if (app.lockedStake > 0) {
+                claimable[applicant] += app.lockedStake;
+                app.lockedStake = 0;
+            }
+        }
+
+        uint256 lenFinalists = p.finalists.length;
+        for (uint256 i = 0; i < lenFinalists; ++i) {
+            address finalist = p.finalists[i];
+            address[] storage validators = scoreValidators[procurementId][finalist];
+            for (uint256 j = 0; j < validators.length; ++j) {
+                address validator = validators[j];
+                ScoreCommit storage sc = scoreCommits[procurementId][finalist][validator];
+                if (sc.bond > 0) {
+                    claimable[validator] += sc.bond;
+                    sc.bond = 0;
+                }
+            }
+        }
+
+        uint256 totalBudget = uint256(p.stipendPerFinalist) * p.finalistCount
+            + uint256(p.validatorRewardPerReveal) * p.finalistCount * p.maxValidatorRevealsPerFinalist;
+        if (totalBudget > 0) claimable[p.employer] += totalBudget;
+
+        p.cancelled = true;
+        emit ProcurementCancelled(procurementId, msg.sender);
     }
 
     function acceptFinalist(uint256 procurementId) external whenNotPaused nonReentrant {
@@ -1018,6 +1060,18 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         return false;
+    }
+
+    function _isBetterShortlistCandidate(
+        address candidate,
+        uint256 candidateScore,
+        address incumbent,
+        uint256 incumbentScore
+    ) internal pure returns (bool) {
+        if (incumbent == address(0)) return true;
+        if (candidateScore > incumbentScore) return true;
+        if (candidateScore < incumbentScore) return false;
+        return uint160(candidate) < uint160(incumbent);
     }
 
     function _isFallbackCandidate(

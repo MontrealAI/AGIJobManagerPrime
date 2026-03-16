@@ -170,7 +170,7 @@ Expected result after legacy ENS cutover:
 - **Existing job upgrade (eligible jobs only):** use `AGIJobDiscoveryPrime.attachProcurementToExistingJob(...)` only when the caller is the employer and the target job is still unassigned in SelectedAgentOnly intake mode; ordinary OpenFirstCome jobs are not attach-compatible and will revert.
 - **Budget planning:** pre-quote procurement requirements via `AGIJobDiscoveryPrime.quoteProcurementBudget(...)`.
 
-Premium handoff sequence is: commit/reveal applications -> shortlist -> paid finalist trial -> validator commit/reveal scoring -> designated winner assignment into settlement -> fallback finalist promotion if the designated winner fails to take the job within the configured acceptance window.
+Premium handoff sequence is: authorized+qualified commit/reveal applications -> deterministic shortlist (score then address tie-break) -> paid finalist trial -> validator commit/reveal scoring -> designated winner assignment into settlement -> fallback finalist promotion if the designated winner fails to take the job within the configured acceptance window. If a procurement becomes orphaned before winner finalization, employer/owner can explicitly unwind via `cancelProcurement(...)` (stakes/bonds/budget returned to claimable balances).
 
 ### Never-do-this-by-accident checklist
 

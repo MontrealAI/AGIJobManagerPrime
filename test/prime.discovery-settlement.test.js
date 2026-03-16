@@ -208,7 +208,7 @@ contract('Prime discovery + settlement', (accounts) => {
       { type: 'bytes32', value: salt }
     );
 
-    await discovery.commitApplication(procurementId, commitment, { from: agentA });
+    await discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentA });
     await time.increaseTo(proc.revealDeadline - 2);
     await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
     await time.increaseTo(proc.revealDeadline + 1);
@@ -305,8 +305,8 @@ contract('Prime discovery + settlement', (accounts) => {
       { type: 'bytes32', value: saltB }
     );
 
-    await discovery.commitApplication(procurementId, cA, { from: agentA });
-    await discovery.commitApplication(procurementId, cB, { from: agentB });
+    await discovery.commitApplication(procurementId, cA, '', EMPTY, { from: agentA });
+    await discovery.commitApplication(procurementId, cB, '', EMPTY, { from: agentB });
 
     await expectRevert.unspecified(discovery.advanceProcurement(procurementId, { from: employer }));
 
@@ -419,8 +419,8 @@ contract('Prime discovery + settlement', (accounts) => {
       { type: 'bytes32', value: saltB }
     );
 
-    await discovery.commitApplication(procurementId, cA, { from: agentA });
-    await discovery.commitApplication(procurementId, cB, { from: agentB });
+    await discovery.commitApplication(procurementId, cA, '', EMPTY, { from: agentA });
+    await discovery.commitApplication(procurementId, cB, '', EMPTY, { from: agentB });
     await time.increaseTo(proc.revealDeadline - 5);
     await discovery.revealApplication(procurementId, '', EMPTY, saltA, uriA, { from: agentA });
     await discovery.revealApplication(procurementId, '', EMPTY, saltB, uriB, { from: agentB });
@@ -543,7 +543,7 @@ contract('Prime discovery + settlement', (accounts) => {
       { type: 'bytes32', value: salt }
     );
 
-    await discovery.commitApplication(procurementId, commitment, { from: agentA });
+    await discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentA });
     await time.increaseTo(proc.revealDeadline - 2);
     await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
     await time.increaseTo(proc.revealDeadline + 1);
@@ -574,6 +574,115 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(status.winnerFinalizable, false, 'autonomy status should remain readable and false after cancellation');
   });
 
+
+
+  it('rejects unauthorized commit-time application to prevent slot-griefing', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-auth-commit',
+      payout: web3.utils.toWei('10'),
+      duration: 3600,
+      details: 'auth at commit',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 10,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('1'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    await manager.removeAdditionalAgent(agentB, { from: owner });
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    const salt = web3.utils.soliditySha3('auth');
+    const uri = 'ipfs://application/auth';
+    const commitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentB },
+      { type: 'string', value: uri },
+      { type: 'bytes32', value: salt }
+    );
+
+    await expectRevert.unspecified(
+      discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentB })
+    );
+  });
+
+  it('allows employer to cancel orphan procurement and unwind locked funds', async () => {
+    const now = (await time.latest()).toNumber();
+    const premium = {
+      jobSpecURI: 'ipfs://job/premium-cancel',
+      payout: web3.utils.toWei('12'),
+      duration: 3600,
+      details: 'cancel path',
+    };
+    const proc = {
+      commitDeadline: now + 10,
+      revealDeadline: now + 20,
+      finalistAcceptDeadline: now + 30,
+      trialDeadline: now + 40,
+      scoreCommitDeadline: now + 50,
+      scoreRevealDeadline: now + 60,
+      selectedAcceptanceWindow: 10,
+      checkpointWindow: 0,
+      finalistCount: 1,
+      minValidatorReveals: 1,
+      maxValidatorRevealsPerFinalist: 1,
+      historicalWeightBps: 2000,
+      trialWeightBps: 8000,
+      minReputation: 0,
+      applicationStake: web3.utils.toWei('1'),
+      finalistStakeTotal: web3.utils.toWei('2'),
+      stipendPerFinalist: web3.utils.toWei('0.5'),
+      validatorRewardPerReveal: web3.utils.toWei('0.2'),
+      validatorScoreBond: web3.utils.toWei('0.1'),
+    };
+
+    const create = await discovery.createPremiumJobWithDiscovery(premium, proc, { from: employer });
+    const procurementId = create.logs.find((l) => l.event === 'PremiumJobCreated').args.procurementId.toNumber();
+
+    const salt = web3.utils.soliditySha3('cancel');
+    const uri = 'ipfs://application/cancel';
+    const commitment = web3.utils.soliditySha3(
+      { type: 'uint256', value: procurementId },
+      { type: 'address', value: agentA },
+      { type: 'string', value: uri },
+      { type: 'bytes32', value: salt }
+    );
+
+    await discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentA });
+    await time.increaseTo(proc.revealDeadline - 2);
+    await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
+    await time.increaseTo(proc.revealDeadline + 1);
+    await discovery.finalizeShortlist(procurementId, { from: owner });
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+
+    const balBefore = await discovery.canClaim(agentA);
+    assert.equal(balBefore.toString(), '0');
+
+    await discovery.cancelProcurement(procurementId, { from: employer });
+
+    const balAfter = await discovery.canClaim(agentA);
+    assert.equal(balAfter.toString(), web3.utils.toWei('2'), 'finalist stake should be reclaimable after cancellation');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'cancelled');
+  });
   it('keeps autonomy status readable after winner finalization when linked job is deleted', async () => {
     const now = (await time.latest()).toNumber();
     const premium = {
@@ -618,7 +727,7 @@ contract('Prime discovery + settlement', (accounts) => {
       { type: 'bytes32', value: salt }
     );
 
-    await discovery.commitApplication(procurementId, commitment, { from: agentA });
+    await discovery.commitApplication(procurementId, commitment, '', EMPTY, { from: agentA });
     await time.increaseTo(proc.revealDeadline - 2);
     await discovery.revealApplication(procurementId, '', EMPTY, salt, uri, { from: agentA });
     await time.increaseTo(proc.revealDeadline + 1);
