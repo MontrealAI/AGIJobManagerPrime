@@ -1,25 +1,28 @@
 # Test Status
 
-## Latest deterministic validation snapshot
+## Canonical Prime validation snapshot
 
-The repository's canonical local/CI-parity checks were executed from repo root and all completed successfully.
+This repository now treats Prime (`AGIJobManagerPrime` + `AGIJobDiscoveryPrime`) as the canonical production path.
 
 ### Commands and outcomes
 
-- `npm install` ✅
-- `npm run build` ✅
-- `npm test` ✅ (`260 passing`)
-- `npm run size` ✅
+- `npm ci` ✅
+- `cd hardhat && npm ci` ✅
+- `npm run test:prime:ci` ✅
+  - runs Prime unit/integration flow (`test/prime.discovery-settlement.test.js`)
+  - runs canonical Hardhat compile profile + Prime runtime size guard
+  - runs Hardhat Prime deploy smoke (`hardhat/scripts/prime-deploy-smoke.js`)
 
-### Environment notes
+### Prime size guard snapshot (canonical compiler profile)
 
-- `npm` reports deprecation and vulnerability warnings from transitive dependencies during install; these did not block build or test execution.
-- `npm test` is the canonical test command and already uses Truffle's in-process `test` network (`truffle test --network test`), so no external Ganache process is required.
+From `npm run test:prime:ci`:
 
-### Size guard snapshot
+- `AGIJobManagerPrime runtime bytecode size: 24378 bytes`
+- `AGIJobDiscoveryPrime runtime bytecode size: 18593 bytes`
 
-`npm test` runs `scripts/check-contract-sizes.js` and reports:
+Both are under the EIP-170 deployed runtime ceiling of 24,576 bytes.
 
-- `AGIJobManager deployedBytecode size: 24574 bytes`
+### Notes
 
-This remains under the EIP-170 limit of 24,576 bytes.
+- Prime mainnet readiness is gated on the Hardhat compiler profile in `hardhat/hardhat.config.js` (optimizer enabled, `runs: 1`, `viaIR: true`, `evmVersion: shanghai`, stripped revert strings).
+- Legacy Truffle-wide suites remain in-repo for compatibility/reference, but canonical release confidence comes from the Prime-first CI lane (`npm run test:prime:ci`).
