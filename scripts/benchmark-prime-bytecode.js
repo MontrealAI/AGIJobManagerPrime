@@ -65,7 +65,9 @@ function main() {
   }
 
   const successful = rows.filter((r) => r.ok);
-  const eip170Safe = successful.filter((r) => r.AGIJobManagerPrime <= MAX_RUNTIME_BYTES);
+  const eip170Safe = successful.filter((r) =>
+    r.AGIJobManagerPrime <= MAX_RUNTIME_BYTES && r.AGIJobDiscoveryPrime <= MAX_RUNTIME_BYTES
+  );
   successful.sort((a, b) => a.AGIJobManagerPrime - b.AGIJobManagerPrime);
   eip170Safe.sort((a, b) => a.AGIJobManagerPrime - b.AGIJobManagerPrime);
 
@@ -81,10 +83,15 @@ function main() {
 
   if (!successful.length) throw new Error('No benchmark profile compiled successfully.');
   if (!eip170Safe.length) {
-    throw new Error(`No compiled profile keeps AGIJobManagerPrime <= ${MAX_RUNTIME_BYTES} bytes (EIP-170).`);
+    throw new Error(
+      `No compiled profile keeps both AGIJobManagerPrime and AGIJobDiscoveryPrime <= ${MAX_RUNTIME_BYTES} bytes (EIP-170).`
+    );
   }
   const best = eip170Safe[0];
-  console.log(`Best EIP-170-safe AGIJobManagerPrime profile: viaIR=${best.viaIR}, runs=${best.runs}, size=${best.AGIJobManagerPrime}`);
+  console.log(
+    `Best EIP-170-safe Prime profile: viaIR=${best.viaIR}, runs=${best.runs}, ` +
+      `AGIJobManagerPrime=${best.AGIJobManagerPrime}, AGIJobDiscoveryPrime=${best.AGIJobDiscoveryPrime}`
+  );
 }
 
 main();
