@@ -156,6 +156,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await expectCustomError(manager.disputeJob.call(jobId, { from: employer }), 'DisputeAlreadyOpen');
     await expectCustomError(manager.disputeJob.call(jobId, { from: agentA }), 'DisputeAlreadyOpen');
 
+    await manager.addModerator(owner, { from: owner });
     await manager.resolveDisputeWithCode(jobId, 2, 'employer refund', { from: owner });
     assert.equal((await manager.lockedDisputeBonds()).toString(), '0', 'moderator resolution should release dispute bond lock');
   });
