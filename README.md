@@ -190,6 +190,7 @@ Detailed procedures and expected outputs:
 npm ci
 cd hardhat && npm ci && cd ..
 npm run test:prime:ci
+npm run test:size:benchmark
 ```
 
 Useful operator commands:
