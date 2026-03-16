@@ -4,7 +4,12 @@ require('@nomicfoundation/hardhat-verify');
 
 const path = require('path');
 
-const { MAINNET_RPC_URL, SEPOLIA_RPC_URL, PRIVATE_KEY, ETHERSCAN_API_KEY } = process.env;
+const { MAINNET_RPC_URL, SEPOLIA_RPC_URL, PRIVATE_KEY, ETHERSCAN_API_KEY, AGI_PRIME_OPTIMIZER_RUNS, AGI_PRIME_VIA_IR } = process.env;
+
+const optimizerRuns = Number.isFinite(Number(AGI_PRIME_OPTIMIZER_RUNS))
+  ? Number(AGI_PRIME_OPTIMIZER_RUNS)
+  : 1;
+const viaIR = AGI_PRIME_VIA_IR === undefined ? true : AGI_PRIME_VIA_IR === '1';
 
 function networkConfig(rpcUrl) {
   if (!rpcUrl || !PRIVATE_KEY) return undefined;
@@ -21,9 +26,9 @@ module.exports = {
   solidity: {
     version: '0.8.23',
     settings: {
-      optimizer: { enabled: true, runs: 1 },
+      optimizer: { enabled: true, runs: optimizerRuns },
       evmVersion: 'shanghai',
-      viaIR: true,
+      viaIR,
       metadata: { bytecodeHash: 'none' },
       debug: { revertStrings: 'strip' },
     },
