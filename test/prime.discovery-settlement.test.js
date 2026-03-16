@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { time, expectRevert } = require('@openzeppelin/test-helpers');
+const { expectCustomError } = require('./helpers/errors');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
 const AGIJobDiscoveryPrime = artifacts.require('AGIJobDiscoveryPrime');
@@ -107,6 +108,57 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(info[7], agentA, 'assigned agent should be retained after finalization');
     const rep = await manager.reputation(agentA);
     assert(rep.toNumber() > 0, 'reputation should increase after successful settlement');
+  });
+
+  it('disables renounceOwnership to preserve business operator control', async () => {
+    await expectCustomError(manager.renounceOwnership.call({ from: owner }), 'RenounceOwnershipDisabled');
+  });
+
+  it('blocks repeated dispute opening and keeps dispute bond accounting stable', async () => {
+    const payout = web3.utils.toWei('22');
+    const tx = await manager.createJob('ipfs://job/dispute', payout, 3600, 'dispute flow', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+    await manager.requestJobCompletion(jobId, 'ipfs://job/dispute/completion', { from: agentA });
+
+    const before = await manager.lockedDisputeBonds();
+    await manager.disputeJob(jobId, { from: employer });
+    const afterFirst = await manager.lockedDisputeBonds();
+
+    await expectCustomError(manager.disputeJob.call(jobId, { from: employer }), 'DisputeAlreadyOpen');
+    const afterSecondAttempt = await manager.lockedDisputeBonds();
+
+    assert(afterFirst.gt(before), 'initial dispute should lock a dispute bond');
+    assert.equal(
+      afterSecondAttempt.toString(),
+      afterFirst.toString(),
+      'second dispute attempt must not alter locked dispute bond accounting'
+    );
+  });
+
+  it('freezes completion/dispute/challenge periods at assignment for live-job rule stability', async () => {
+    const payout = web3.utils.toWei('18');
+    const tx = await manager.createJob('ipfs://job/frozen-periods', payout, 3600, 'frozen periods', { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.setCompletionReviewPeriod(7 * 24 * 3600, { from: owner });
+    await manager.setDisputeReviewPeriod(7 * 24 * 3600, { from: owner });
+    await manager.setChallengePeriodAfterApproval(1, { from: owner });
+
+    await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agentA });
+
+    await manager.setCompletionReviewPeriod(10, { from: owner });
+    await manager.setDisputeReviewPeriod(10, { from: owner });
+    await manager.setChallengePeriodAfterApproval(10, { from: owner });
+
+    await manager.requestJobCompletion(jobId, 'ipfs://job/frozen-periods/completion', { from: agentA });
+    await time.increase(12);
+
+    await manager.validateJob(jobId, '', EMPTY, { from: validatorA });
+    await expectCustomError(manager.finalizeJob.call(jobId, { from: employer }), 'InvalidState');
+    await manager.disputeJob(jobId, { from: employer });
+    await expectCustomError(manager.resolveStaleDispute.call(jobId, true, { from: owner }), 'InvalidState');
   });
 
   it('supports per-job merkle intake and employer refund expiry path', async () => {
