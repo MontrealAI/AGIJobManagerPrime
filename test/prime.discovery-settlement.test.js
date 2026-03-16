@@ -359,6 +359,10 @@ contract('Prime discovery + settlement', (accounts) => {
     assert.equal(info[1], fallbackAgent, 'fallback finalist should be promoted after first winner times out');
   });
 
+  it('rejects advanceProcurement for nonexistent procurement ids', async () => {
+    await expectRevert.unspecified(discovery.advanceProcurement(999999, { from: employer }));
+  });
+
   
 
 

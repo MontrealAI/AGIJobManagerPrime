@@ -862,6 +862,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
     function advanceProcurement(uint256 procurementId) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        if (p.employer == address(0)) revert InvalidState();
         if (p.cancelled) revert InvalidState();
 
         if (!p.shortlistFinalized) {
