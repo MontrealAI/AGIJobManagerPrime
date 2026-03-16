@@ -344,6 +344,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     error IneligibleAgentPayout();
     error InsufficientWithdrawableBalance();
     error InsolventEscrowBalance();
+    error RenounceOwnershipDisabled();
+    error DisputeAlreadyOpen();
 
     uint256 public constant MAX_VALIDATORS_PER_JOB = 50;
     uint256 public constant MAX_AGI_TYPES = 32;
@@ -440,6 +442,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint64 completionRequestedAt;
         uint64 disputedAt;
         uint64 validatorApprovedAt;
+        uint64 completionReviewPeriodSnapshot;
+        uint64 disputeReviewPeriodSnapshot;
+        uint64 challengePeriodAfterApprovalSnapshot;
 
         address disputeInitiator;
         uint256 disputeBondAmount;
@@ -596,6 +601,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function setEnsJobPages(address target) external onlyOwner {
         if (target != address(0) && target.code.length == 0) revert InvalidParameters();
         ensJobPages = target;
+    }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert RenounceOwnershipDisabled();
     }
 
 
@@ -807,6 +816,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.agentPayoutPct = uint8(snapshotPct);
         job.validatorRewardPctSnapshot = uint8(validationRewardPercentage);
         if (uint256(job.agentPayoutPct) + uint256(job.validatorRewardPctSnapshot) > 100) revert InvalidParameters();
+        job.completionReviewPeriodSnapshot = uint64(completionReviewPeriod);
+        job.disputeReviewPeriodSnapshot = uint64(disputeReviewPeriod);
+        job.challengePeriodAfterApprovalSnapshot = uint64(challengePeriodAfterApproval);
 
         uint256 bond = BondMath.computeAgentBond(
             job.payout,
@@ -907,7 +919,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.completed || job.expired) revert InvalidState();
         if (msg.sender != job.assignedAgent && msg.sender != job.employer) revert NotAuthorized();
         if (!job.completionRequested) revert InvalidState();
-        if (block.timestamp > uint256(job.completionRequestedAt) + completionReviewPeriod) revert InvalidState();
+        if (job.disputed) revert DisputeAlreadyOpen();
+        if (block.timestamp > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
+            revert InvalidState();
+        }
 
         uint256 bond = (job.payout * DISPUTE_BOND_BPS) / 10_000;
         if (bond < DISPUTE_BOND_MIN) bond = DISPUTE_BOND_MIN;
@@ -959,7 +974,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     ) external onlyOwner whenSettlementNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (!job.disputed || job.expired) revert InvalidState();
-        if (block.timestamp <= uint256(job.disputedAt) + disputeReviewPeriod) revert InvalidState();
+        if (block.timestamp <= uint256(job.disputedAt) + job.disputeReviewPeriodSnapshot) revert InvalidState();
 
         job.disputed = false;
         job.disputedAt = 0;
@@ -980,14 +995,18 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 disapprovals = job.validatorDisapprovals;
 
         if (job.validatorApproved) {
-            if (block.timestamp <= uint256(job.validatorApprovedAt) + challengePeriodAfterApproval) revert InvalidState();
+            if (block.timestamp <= uint256(job.validatorApprovedAt) + job.challengePeriodAfterApprovalSnapshot) {
+                revert InvalidState();
+            }
             if (approvals > disapprovals) {
                 _completeJob(jobId, true);
                 return;
             }
         }
 
-        if (block.timestamp <= uint256(job.completionRequestedAt) + completionReviewPeriod) revert InvalidState();
+        if (block.timestamp <= uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
+            revert InvalidState();
+        }
 
         uint256 totalVotes = approvals + disapprovals;
         if (totalVotes == 0) {

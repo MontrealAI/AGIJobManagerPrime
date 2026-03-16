@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const MAX_RUNTIME_BYTES = 24575;
+const MAX_RUNTIME_BYTES = 24576;
+const MAX_INITCODE_BYTES = 49152;
 
 function deployedSizeBytes(artifact) {
   const deployedBytecode =
@@ -19,6 +20,20 @@ function deployedSizeBytes(artifact) {
     throw new Error(
       `Empty deployedBytecode in artifact for ${artifact.contractName || "unknown"}`
     );
+  }
+  return hex.length / 2;
+}
+
+function initcodeSizeBytes(artifact) {
+  const bytecode = artifact.bytecode || artifact.evm?.bytecode?.object;
+  if (!bytecode) {
+    throw new Error(
+      `Missing bytecode in artifact for ${artifact.contractName || "unknown"}`
+    );
+  }
+  const hex = bytecode.startsWith("0x") ? bytecode.slice(2) : bytecode;
+  if (!hex) {
+    throw new Error(`Empty bytecode in artifact for ${artifact.contractName || "unknown"}`);
   }
   return hex.length / 2;
 }
@@ -68,20 +83,46 @@ const checks = [
 
 ensurePrimeArtifacts(checks);
 
-const oversized = [];
+const oversizedRuntime = [];
+const oversizedInitcode = [];
 for (const check of checks) {
   const artifact = loadJson(check.artifactPath);
-  const sizeBytes = deployedSizeBytes(artifact);
-  console.log(`${check.name} runtime bytecode size: ${sizeBytes} bytes`);
-  if (sizeBytes > MAX_RUNTIME_BYTES) {
-    oversized.push({ name: check.name, sizeBytes });
+  const runtimeSizeBytes = deployedSizeBytes(artifact);
+  const initcodeSizeBytesValue = initcodeSizeBytes(artifact);
+
+  console.log(`${check.name} runtime bytecode size: ${runtimeSizeBytes} bytes`);
+  console.log(`${check.name} initcode size: ${initcodeSizeBytesValue} bytes`);
+
+  if (runtimeSizeBytes > MAX_RUNTIME_BYTES) {
+    oversizedRuntime.push({ name: check.name, sizeBytes: runtimeSizeBytes });
+  }
+  if (initcodeSizeBytesValue > MAX_INITCODE_BYTES) {
+    oversizedInitcode.push({ name: check.name, sizeBytes: initcodeSizeBytesValue });
   }
 }
 
-if (oversized.length) {
-  console.error(`Runtime bytecode exceeds ${MAX_RUNTIME_BYTES} bytes:`);
-  for (const { name, sizeBytes } of oversized) {
-    console.error(`- ${name}: ${sizeBytes} bytes`);
+if (oversizedRuntime.length || oversizedInitcode.length) {
+  if (oversizedRuntime.length) {
+    console.error(`Runtime bytecode exceeds ${MAX_RUNTIME_BYTES} bytes:`);
+    for (const { name, sizeBytes } of oversizedRuntime) {
+      console.error(`- ${name}: ${sizeBytes} bytes`);
+    }
   }
+
+  if (oversizedInitcode.length) {
+    console.error(`Initcode exceeds ${MAX_INITCODE_BYTES} bytes:`);
+    for (const { name, sizeBytes } of oversizedInitcode) {
+      console.error(`- ${name}: ${sizeBytes} bytes`);
+    }
+  }
+
   process.exit(1);
+}
+
+for (const check of checks) {
+  const artifact = loadJson(check.artifactPath);
+  const runtimeSizeBytes = deployedSizeBytes(artifact);
+  const initcodeSizeBytesValue = initcodeSizeBytes(artifact);
+  console.log(`${check.name} runtime headroom: ${MAX_RUNTIME_BYTES - runtimeSizeBytes} bytes`);
+  console.log(`${check.name} initcode headroom: ${MAX_INITCODE_BYTES - initcodeSizeBytesValue} bytes`);
 }
