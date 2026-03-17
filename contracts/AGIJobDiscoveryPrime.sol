@@ -1464,14 +1464,18 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 bondRefund = sc.bond;
             } else {
                 uint256 weight;
-                (band, bondRefund, weight) = _bandSettlement(sc.bond, sc.revealedScore, medianScore);
+                uint256 livenessBps;
+                (band, bondRefund, weight, livenessBps) = _bandSettlement(sc.bond, sc.revealedScore, medianScore);
 
                 if (sc.bond > bondRefund) {
                     claimable[p.employer] += sc.bond - bondRefund;
                 }
 
-                reward = perRevealLiveness;
-                livenessDistributed += perRevealLiveness;
+                uint256 livenessReward = (perRevealLiveness * livenessBps) / BPS_DENOMINATOR;
+                if (livenessReward > 0) {
+                    reward = livenessReward;
+                    livenessDistributed += livenessReward;
+                }
 
                 if (totalWeight > 0 && weight > 0) {
                     uint256 qualityReward = (qualityPool * weight) / totalWeight;
@@ -1510,18 +1514,18 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 bond,
         uint8 score,
         uint8 medianScore
-    ) internal pure returns (uint8 band, uint256 bondRefund, uint256 weight) {
+    ) internal pure returns (uint8 band, uint256 bondRefund, uint256 weight, uint256 livenessBps) {
         uint8 deviation = score > medianScore ? score - medianScore : medianScore - score;
         if (deviation <= 5) {
-            return (0, bond, 100);
+            return (0, bond, 100, BPS_DENOMINATOR);
         }
         if (deviation <= 10) {
-            return (1, bond, 60);
+            return (1, bond, 60, BPS_DENOMINATOR);
         }
         if (deviation <= 20) {
-            return (2, (bond * 8_000) / BPS_DENOMINATOR, 20);
+            return (2, (bond * 8_000) / BPS_DENOMINATOR, 20, 5_000);
         }
-        return (3, (bond * 5_000) / BPS_DENOMINATOR, 0);
+        return (3, (bond * 5_000) / BPS_DENOMINATOR, 0, 0);
     }
 
     function _medianScoreBps(uint8[] storage scores) internal view returns (uint256) {

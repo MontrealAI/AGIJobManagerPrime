@@ -31,5 +31,5 @@
   - non-reveal validators are still slashed.
   - under quorum (`reveals < minValidatorReveals`): revealers recover bond only; no reward payout.
   - any slashed bond and unused validator reward budget is returned to employer.
-- **Why better**: reward is now predominantly quality-based and deferred to ex post settlement, with deterministic outlier penalties and conservative budget accounting.
+- **Why better**: reward is now predominantly quality-based and deferred to ex post settlement, with deterministic outlier penalties (including banded liveness reduction to zero for extreme outliers) and conservative budget accounting.
 - **Residual risk**: median-based mechanisms are still vulnerable to coordinated majority manipulation/collusion among revealers. This hardening materially improves incentives but does not eliminate cartel risk under adversarial-majority participation.

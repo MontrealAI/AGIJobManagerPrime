@@ -228,6 +228,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     assert.equal(byValidator.get(validatorA.toLowerCase()).band.toString(), '0', 'close score should map to band 0');
     assert.equal(byValidator.get(validatorB.toLowerCase()).band.toString(), '2', '15-point deviation should map to band 2');
     assert.equal(byValidator.get(validatorC.toLowerCase()).band.toString(), '3', 'extreme outlier should map to band 3');
+    assert.equal(byValidator.get(validatorC.toLowerCase()).reward.toString(), '0', 'band-3 outlier should not receive liveness or quality reward');
   });
 
   it('slashes non-reveal validator bonds to employer', async () => {
