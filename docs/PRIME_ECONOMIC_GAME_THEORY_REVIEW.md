@@ -9,7 +9,7 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 |---|---|---|---|
 | Application-slot griefing / reveal withholding | Spam commits from unauthorized or underqualified identities, then do not reveal | Commit-time authorization + reputation checks now gate admission (`commitApplication`), and unrevealed commits are penalized in `discoveryStats`. | Sybil identities that can pass auth still require governance/identity controls off-chain. |
 | Finalist stall/no-show | Finalist accepts shortlist but does not submit trial | Stake forfeiture to employer and default counters in `finalizeWinner`. | Requires adequate finalist stake configuration. |
-| Validator non-reveal | Commit score then withhold reveal to sabotage median | Unrevealed validator score bonds are slashed to employer in `_slashNonRevealValidatorBonds`. | Small bond settings weaken deterrence. |
+| Validator non-reveal / low-effort reveal | Commit score then withhold reveal, or reveal arbitrary values for guaranteed payout | Unrevealed bonds are slashed, and revealed payout is deferred to finalization with liveness+quality split and deviation-band bond penalties (`_settleFinalistValidatorScores`). | Median-majority capture remains possible if validator cartel controls reveals. |
 | Cartelized validator outlier scoring | Extreme score manipulation | Median scoring reduces outlier influence; minimum reveal threshold required. | If cartel controls majority of reveals, median still captured. |
 | Stale winner option abuse | Designated winner waits indefinitely | `selectionExpiresAt` plus permissionless `promoteFallbackFinalist`. | If no fallback satisfies min reveals, procurement closes without winner. |
 | Orphaned procurement capital | Proc is abandoned before winner finalization and funds remain parked in discovery | New explicit `cancelProcurement` unwind path (employer/owner only pre-winner-finalization) returns application/finalist stakes, validator score bonds, and stipend/reward budget to claimable balances. | Governance/operator misuse of early cancellation remains a policy risk and should be monitored. |
@@ -42,3 +42,11 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 2. Validator identity quality: anti-sybil identity and validator independence remain partially social/off-chain.
 3. Employer strategy attacks: employers can still set low budgets/thresholds that reduce procurement quality without violating contract rules.
 4. Off-chain evidence quality: trial URI and deliverable quality cannot be fully verified on-chain.
+
+
+## Discovery validator incentive hardening (latest)
+
+- Validator payout is no longer fully credited at `revealFinalistScore`; settlement occurs in winner finalization.
+- Reward shape is now: small liveness share + majority quality share (median-deviation weighted).
+- Extreme outliers now lose bond value ex post instead of always receiving full bond refund.
+- Under-quorum finalists do not pay quality rewards; unused budget is refunded in existing conservative employer refund logic.

@@ -416,6 +416,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     struct ScoreCommit {
         bytes32 commitment;
         bool revealed;
+        uint8 revealedScore;
         uint256 bond;
     }
 
@@ -453,6 +454,16 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
     event ScoreCommitted(uint256 indexed procurementId, address indexed finalist, address indexed validator);
     event ScoreRevealed(uint256 indexed procurementId, address indexed finalist, address indexed validator, uint8 score);
+    event ScoreSettled(
+        uint256 indexed procurementId,
+        address indexed finalist,
+        address indexed validator,
+        uint8 medianScore,
+        uint8 revealedScore,
+        uint8 band,
+        uint256 bondRefund,
+        uint256 reward
+    );
 
     event WinnerDesignated(uint256 indexed procurementId, address indexed finalist, uint256 compositeScoreBps);
     event FallbackPromoted(uint256 indexed procurementId, address indexed finalist, uint256 compositeScoreBps);
@@ -790,10 +801,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (expected != sc.commitment) revert NotAuthorized();
 
         sc.revealed = true;
+        sc.revealedScore = score;
         revealedScores[procurementId][finalist].push(score);
-
-        claimable[msg.sender] += sc.bond + p.validatorRewardPerReveal;
-        sc.bond = 0;
 
         emit ScoreRevealed(procurementId, finalist, msg.sender, score);
     }
@@ -851,10 +860,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 a.settled = true;
             }
 
-            spentRewards += uint256(revealedScores[procurementId][finalist].length) * p.validatorRewardPerReveal;
-            _slashNonRevealValidatorBonds(procurementId, p, finalist);
-
             uint8[] storage scores = revealedScores[procurementId][finalist];
+            spentRewards += _settleFinalistValidatorScores(procurementId, p, finalist, scores);
             if (scores.length < p.minValidatorReveals) continue;
 
             uint256 trialScoreBps = _medianScoreBps(scores);
@@ -1399,6 +1406,116 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
                 sc.bond = 0;
             }
         }
+    }
+
+    function _settleFinalistValidatorScores(
+        uint256 procurementId,
+        Procurement storage p,
+        address finalist,
+        uint8[] storage scores
+    ) internal returns (uint256 spentRewards) {
+        uint256 reveals = scores.length;
+        if (reveals == 0) {
+            _slashNonRevealValidatorBonds(procurementId, p, finalist);
+            return 0;
+        }
+
+        address[] storage validators = scoreValidators[procurementId][finalist];
+
+        uint256 baseRewardPool = reveals * p.validatorRewardPerReveal;
+        uint256 livenessPool = baseRewardPool / 5; // 20%
+        uint256 qualityPool = baseRewardPool - livenessPool; // 80%
+        uint256 perRevealLiveness = reveals > 0 ? livenessPool / reveals : 0;
+        uint256 livenessDistributed;
+
+        uint256 totalWeight;
+        uint8 medianScore;
+        bool robustConsensus = reveals >= p.minValidatorReveals;
+        if (robustConsensus) {
+            medianScore = uint8(_medianScoreBps(scores) / 100);
+            for (uint256 i = 0; i < validators.length; ++i) {
+                ScoreCommit storage scWeight = scoreCommits[procurementId][finalist][validators[i]];
+                if (!scWeight.revealed) continue;
+                totalWeight += _rewardWeightForDeviation(scWeight.revealedScore, medianScore);
+            }
+        }
+
+        uint256 qualityDistributed;
+        for (uint256 i = 0; i < validators.length; ++i) {
+            address validator = validators[i];
+            ScoreCommit storage sc = scoreCommits[procurementId][finalist][validator];
+            if (!sc.revealed) {
+                if (sc.bond > 0) {
+                    claimable[p.employer] += sc.bond;
+                    sc.bond = 0;
+                }
+                continue;
+            }
+
+            uint256 bondRefund;
+            uint8 band;
+            uint256 reward = perRevealLiveness;
+            livenessDistributed += perRevealLiveness;
+
+            if (!robustConsensus) {
+                band = 255;
+                bondRefund = sc.bond;
+            } else {
+                uint8 deviation = sc.revealedScore > medianScore
+                    ? sc.revealedScore - medianScore
+                    : medianScore - sc.revealedScore;
+
+                uint256 weight;
+                if (deviation <= 5) {
+                    band = 0;
+                    bondRefund = sc.bond;
+                    weight = 100;
+                } else if (deviation <= 15) {
+                    band = 1;
+                    bondRefund = sc.bond;
+                    weight = 40;
+                } else if (deviation <= 30) {
+                    band = 2;
+                    bondRefund = sc.bond / 2;
+                } else {
+                    band = 3;
+                    bondRefund = 0;
+                }
+
+                if (sc.bond > bondRefund) {
+                    claimable[p.employer] += sc.bond - bondRefund;
+                }
+
+                if (totalWeight > 0 && weight > 0) {
+                    uint256 qualityReward = (qualityPool * weight) / totalWeight;
+                    reward += qualityReward;
+                    qualityDistributed += qualityReward;
+                }
+            }
+
+            claimable[validator] += bondRefund + reward;
+            sc.bond = 0;
+
+            emit ScoreSettled(
+                procurementId,
+                finalist,
+                validator,
+                medianScore,
+                sc.revealedScore,
+                band,
+                bondRefund,
+                reward
+            );
+        }
+
+        spentRewards = livenessDistributed + qualityDistributed;
+    }
+
+    function _rewardWeightForDeviation(uint8 score, uint8 medianScore) internal pure returns (uint256) {
+        uint8 deviation = score > medianScore ? score - medianScore : medianScore - score;
+        if (deviation <= 5) return 100;
+        if (deviation <= 15) return 40;
+        return 0;
     }
 
     function _medianScoreBps(uint8[] storage scores) internal view returns (uint256) {
