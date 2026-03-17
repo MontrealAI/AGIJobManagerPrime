@@ -314,6 +314,9 @@ import "./utils/UriUtils.sol";
 contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
+    uint256 private constant BPS_DENOMINATOR = 10_000;
+    uint256 private constant LIVENESS_REWARD_BPS = 1_000; // 10% of revealed reward budget
+
     error InvalidParameters();
     error InvalidState();
     error NotAuthorized();
@@ -1423,9 +1426,9 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         address[] storage validators = scoreValidators[procurementId][finalist];
 
         uint256 baseRewardPool = reveals * p.validatorRewardPerReveal;
-        uint256 livenessPool = baseRewardPool / 5; // 20%
-        uint256 qualityPool = baseRewardPool - livenessPool; // 80%
-        uint256 perRevealLiveness = reveals > 0 ? livenessPool / reveals : 0;
+        uint256 livenessPool = (baseRewardPool * LIVENESS_REWARD_BPS) / BPS_DENOMINATOR; // 10%
+        uint256 qualityPool = baseRewardPool - livenessPool; // 90%
+        uint256 perRevealLiveness = livenessPool / reveals;
         uint256 livenessDistributed;
 
         uint256 totalWeight;
@@ -1454,36 +1457,26 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
             uint256 bondRefund;
             uint8 band;
-            uint256 reward = perRevealLiveness;
-            livenessDistributed += perRevealLiveness;
+            uint256 reward;
 
             if (!robustConsensus) {
                 band = 255;
                 bondRefund = sc.bond;
+                reward = perRevealLiveness;
+                livenessDistributed += perRevealLiveness;
             } else {
-                uint8 deviation = sc.revealedScore > medianScore
-                    ? sc.revealedScore - medianScore
-                    : medianScore - sc.revealedScore;
-
                 uint256 weight;
-                if (deviation <= 5) {
-                    band = 0;
-                    bondRefund = sc.bond;
-                    weight = 100;
-                } else if (deviation <= 15) {
-                    band = 1;
-                    bondRefund = sc.bond;
-                    weight = 40;
-                } else if (deviation <= 30) {
-                    band = 2;
-                    bondRefund = sc.bond / 2;
-                } else {
-                    band = 3;
-                    bondRefund = 0;
-                }
+                uint256 livenessBps;
+                (band, bondRefund, weight, livenessBps) = _bandSettlement(sc.bond, sc.revealedScore, medianScore);
 
                 if (sc.bond > bondRefund) {
                     claimable[p.employer] += sc.bond - bondRefund;
+                }
+
+                uint256 livenessReward = (perRevealLiveness * livenessBps) / BPS_DENOMINATOR;
+                if (livenessReward > 0) {
+                    reward += livenessReward;
+                    livenessDistributed += livenessReward;
                 }
 
                 if (totalWeight > 0 && weight > 0) {
@@ -1514,8 +1507,27 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     function _rewardWeightForDeviation(uint8 score, uint8 medianScore) internal pure returns (uint256) {
         uint8 deviation = score > medianScore ? score - medianScore : medianScore - score;
         if (deviation <= 5) return 100;
-        if (deviation <= 15) return 40;
+        if (deviation <= 15) return 35;
+        if (deviation <= 30) return 10;
         return 0;
+    }
+
+    function _bandSettlement(
+        uint256 bond,
+        uint8 score,
+        uint8 medianScore
+    ) internal pure returns (uint8 band, uint256 bondRefund, uint256 weight, uint256 livenessBps) {
+        uint8 deviation = score > medianScore ? score - medianScore : medianScore - score;
+        if (deviation <= 5) {
+            return (0, bond, 100, BPS_DENOMINATOR);
+        }
+        if (deviation <= 15) {
+            return (1, bond, 35, BPS_DENOMINATOR);
+        }
+        if (deviation <= 30) {
+            return (2, bond / 4, 10, 5_000);
+        }
+        return (3, 0, 0, 0);
     }
 
     function _medianScoreBps(uint8[] storage scores) internal view returns (uint256) {

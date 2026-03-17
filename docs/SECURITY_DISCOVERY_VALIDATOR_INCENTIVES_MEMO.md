@@ -6,11 +6,11 @@ The prior discovery-stage validator flow paid validators immediately on `revealF
 ## Chosen redesign (practical + auditable)
 Prime now uses a two-part validator payout settled during finalist/winner finalization:
 
-1. **Reveal liveness component (minority, 20%)**
+1. **Reveal liveness component (minority, 10%)**
    - Revealed validators receive a small fixed liveness share from each revealed reward unit.
    - This keeps reveal incentives intact.
 
-2. **Deferred quality component (majority, 80%)**
+2. **Deferred quality component (majority, 90%)**
    - For finalists meeting `minValidatorReveals`, quality rewards are distributed by deviation band from finalist median score.
    - Closer-to-median scores receive higher weight and more reward share.
 
@@ -18,8 +18,8 @@ Prime now uses a two-part validator payout settled during finalist/winner finali
    - Far/outlier revealed scores lose bond value ex post:
      - close (<=5): full bond refund
      - medium (<=15): full bond refund, lower quality weight
-     - far (<=30): 50% bond refund
-     - extreme (>30): bond fully slashed
+     - far (<=30): 25% bond refund and only partial liveness share
+     - extreme (>30): bond fully slashed and no liveness payout
 
 4. **Under-quorum rule**
    - If a finalist has fewer than `minValidatorReveals`, revealed validators receive bond refund + liveness component only.
