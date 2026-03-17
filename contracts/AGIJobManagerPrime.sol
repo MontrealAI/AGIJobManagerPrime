@@ -303,7 +303,6 @@ OVERRIDING AUTHORITY: AGI.ETH
 pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -324,7 +323,6 @@ interface NameWrapperPrime {
 }
 
 contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
-    using SafeERC20 for IERC20;
 
     enum IntakeMode {
         OpenFirstCome,
@@ -346,6 +344,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     error InsolventEscrowBalance();
     error RenounceOwnershipDisabled();
     error DisputeAlreadyOpen();
+    error TokenTransferFailed();
 
     uint256 public constant MAX_VALIDATORS_PER_JOB = 50;
     uint256 public constant MAX_AGI_TYPES = 32;
@@ -851,7 +850,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         );
 
         if (bond > 0) {
-            agiToken.safeTransferFrom(msg.sender, address(this), bond);
+            _safeTransferFrom(msg.sender, address(this), bond);
             lockedAgentBonds += bond;
         }
 
@@ -954,7 +953,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (bond > job.payout) bond = job.payout;
 
         if (bond > 0) {
-            agiToken.safeTransferFrom(msg.sender, address(this), bond);
+            _safeTransferFrom(msg.sender, address(this), bond);
             lockedDisputeBonds += bond;
             job.disputeInitiator = msg.sender;
             job.disputeBondAmount = bond;
@@ -1062,10 +1061,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.agentBondAmount = 0;
         if (bond > 0) {
             lockedAgentBonds -= bond;
-            agiToken.safeTransfer(job.employer, bond);
+            _safeTransfer(job.employer, bond);
         }
 
-        agiToken.safeTransfer(job.employer, job.payout);
+        _safeTransfer(job.employer, job.payout);
         _recordFailure(job.assignedAgent, job.payout, false, true);
 
         emit JobExpired(jobId, job.employer, job.assignedAgent, job.payout);
@@ -1079,7 +1078,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.completed || job.expired || job.assignedAgent != address(0)) revert InvalidState();
 
         _releaseEscrow(job);
-        agiToken.safeTransfer(job.employer, job.payout);
+        _safeTransfer(job.employer, job.payout);
 
         emit JobCancelled(jobId);
         _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
@@ -1190,14 +1189,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function previewHistoricalScore(address agent) public view returns (uint256) {
         AgentStats memory s = agentStats[agent];
-
-        uint256 score = reputation[agent] * 5;
-        if (score > 10_000) score = 10_000;
-
-        uint256 penalty = (uint256(s.disputeLosses) * 600) + (uint256(s.expiredJobs) * 400) + (uint256(s.failedJobs) * 100);
-        if (penalty > 5_000) penalty = 5_000;
-
-        return score > penalty ? score - penalty : 0;
+        return ReputationMath.computeHistoricalScore(reputation[agent], s.disputeLosses, s.expiredJobs, s.failedJobs);
     }
 
     function withdrawableAGI() public view returns (uint256) {
@@ -1211,7 +1203,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (amount == 0) revert InvalidParameters();
         uint256 available = withdrawableAGI();
         if (amount > available) revert InsufficientWithdrawableBalance();
-        agiToken.safeTransfer(msg.sender, amount);
+        _safeTransfer(msg.sender, amount);
         emit AGIWithdrawn(msg.sender, amount, available - amount);
     }
 
@@ -1240,7 +1232,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.intakeMode = intakeMode;
         job.perJobAgentRoot = perJobAgentRoot;
 
-        agiToken.safeTransferFrom(employer, address(this), payout);
+        _safeTransferFrom(employer, address(this), payout);
         lockedEscrow += payout;
 
         emit JobCreated(jobId, employer, payout, duration, jobSpecURI, intakeMode, perJobAgentRoot, details);
@@ -1276,7 +1268,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         if (bond > 0) {
-            agiToken.safeTransferFrom(msg.sender, address(this), bond);
+            _safeTransferFrom(msg.sender, address(this), bond);
             lockedValidatorBonds += bond;
         }
 
@@ -1334,10 +1326,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _growReputation(job.assignedAgent, reputationPoints);
         _recordSuccess(job.assignedAgent, job.payout);
 
-        agiToken.safeTransfer(job.assignedAgent, agentPayout);
+        _safeTransfer(job.assignedAgent, agentPayout);
 
         if (job.validators.length == 0) {
-            agiToken.safeTransfer(job.employer, validatorBudget);
+            _safeTransfer(job.employer, validatorBudget);
         } else {
             _settleValidators(job, true, reputationPoints, validatorBudget, 0);
         }
@@ -1375,7 +1367,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         );
 
         _settleValidators(job, false, reputationPoints, escrowValidatorReward, agentBondPool);
-        agiToken.safeTransfer(job.employer, employerRefund);
+        _safeTransfer(job.employer, employerRefund);
         _returnDisputeBond(job, job.employer);
 
         _recordFailure(job.assignedAgent, job.payout, disputeLoss, false);
@@ -1409,7 +1401,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             address v = job.validators[i];
             bool correct = agentWins ? job.approvals[v] : job.disapprovals[v];
             uint256 payout = correct ? bond + perCorrectReward : bond - slashedPerIncorrect;
-            agiToken.safeTransfer(v, payout);
+            _safeTransfer(v, payout);
 
             if (correct && validatorRepGain > 0) {
                 _growReputation(v, validatorRepGain);
@@ -1418,7 +1410,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         uint256 consumed = perCorrectReward * correctCount;
         if (poolForCorrect > consumed) {
-            agiToken.safeTransfer(agentWins ? job.assignedAgent : job.employer, poolForCorrect - consumed);
+            _safeTransfer(agentWins ? job.assignedAgent : job.employer, poolForCorrect - consumed);
         }
     }
 
@@ -1444,7 +1436,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (bond == 0) return;
         job.agentBondAmount = 0;
         lockedAgentBonds -= bond;
-        agiToken.safeTransfer(to, bond);
+        _safeTransfer(to, bond);
     }
 
     function _slashOrRefundAgentBond(Job storage job, bool toPool) internal returns (uint256) {
@@ -1453,7 +1445,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.agentBondAmount = 0;
         lockedAgentBonds -= bond;
         if (toPool) return bond;
-        agiToken.safeTransfer(job.employer, bond);
+        _safeTransfer(job.employer, bond);
         return 0;
     }
 
@@ -1463,7 +1455,30 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.disputeBondAmount = 0;
         job.disputeInitiator = address(0);
         lockedDisputeBonds -= bond;
-        agiToken.safeTransfer(to, bond);
+        _safeTransfer(to, bond);
+    }
+
+
+    function _safeTransfer(address to, uint256 amount) internal {
+        if (amount == 0) return;
+        (bool ok, bytes memory ret) = address(agiToken).call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        );
+        if (!ok) revert TokenTransferFailed();
+        if (ret.length == 0) return;
+        if (ret.length == 32 && abi.decode(ret, (bool))) return;
+        revert TokenTransferFailed();
+    }
+
+    function _safeTransferFrom(address from, address to, uint256 amount) internal {
+        if (amount == 0) return;
+        (bool ok, bytes memory ret) = address(agiToken).call(
+            abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, amount)
+        );
+        if (!ok) revert TokenTransferFailed();
+        if (ret.length == 0) return;
+        if (ret.length == 32 && abi.decode(ret, (bool))) return;
+        revert TokenTransferFailed();
     }
 
     function _growReputation(address user, uint256 points) internal {
