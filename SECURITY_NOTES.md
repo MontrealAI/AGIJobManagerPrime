@@ -16,3 +16,20 @@
 
 - Run static analysis (Slither) in CI/ops environment where `slither-analyzer` is installed.
 - Run independent human review of procurement economics, dispute assumptions, and operational runbooks before high-value mainnet usage.
+
+## Discovery Validator Incentives Note (Prime)
+
+- **Old issue**: discovery-stage validator economics were too reveal/liveness-heavy. Validators could often do reasonably well by revealing any score, with weak ex post differentiation between honest/close scores and noisy/outlier scores.
+- **New mechanism**:
+  - `revealFinalistScore` records score only (no immediate reward/bond payout).
+  - settlement occurs in `_finalizeWinner` via `_settleFinalistValidatorScores`.
+  - for finalists meeting `minValidatorReveals`, payout uses median-reference deviation bands:
+    - `d <= 5`: 100% bond refund, full quality weight.
+    - `5 < d <= 10`: 100% bond refund, reduced quality weight.
+    - `10 < d <= 20`: 80% bond refund, low quality weight.
+    - `d > 20`: 50% bond refund, zero quality weight.
+  - non-reveal validators are still slashed.
+  - under quorum (`reveals < minValidatorReveals`): revealers recover bond only; no reward payout.
+  - any slashed bond and unused validator reward budget is returned to employer.
+- **Why better**: reward is now predominantly quality-based and deferred to ex post settlement, with deterministic outlier penalties (including banded liveness reduction to zero for extreme outliers) and conservative budget accounting.
+- **Residual risk**: median-based mechanisms are still vulnerable to coordinated majority manipulation/collusion among revealers. This hardening materially improves incentives but does not eliminate cartel risk under adversarial-majority participation.

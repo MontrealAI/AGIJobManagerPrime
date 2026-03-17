@@ -20,8 +20,11 @@ This memo reviews the current Prime architecture (`AGIJobManagerPrime` + `AGIJob
 - Residual risk remains if multiple finalists coordinate to stall near windows; operators should monitor and actively promote fallback candidates quickly at deadline boundaries.
 
 ### Validator behavior, low participation, ties
-- Validator non-reveal/abstention risk is mitigated by review windows and dispute paths, but cannot be eliminated in a permissioned set.
-- Tie behavior and low-vote outcomes remain explicit protocol states (including dispute escalation), which is safer than silent auto-resolution under thin participation.
+- Discovery validator rewards are now **deferred to finalist settlement**, not paid on reveal.
+- Ex post settlement uses median-reference deviation bands: close scores earn higher quality rewards; moderate/far scores earn less; extreme outliers lose meaningful bond and earn zero quality reward.
+- Under quorum (`reveals < minValidatorReveals`) revealers recover bond only and no validator reward budget is paid out; unused budget is refunded to employer.
+- Validator non-reveal/abstention risk is mitigated by explicit non-reveal bond slashing and deterministic settlement paths, but cannot be eliminated in a permissioned set.
+- Tie behavior remains deterministic (address-order tiebreaking for winner candidate selection and equal-weight reward splitting for equal closeness).
 
 ### Dispute/solvency assumptions
 - Repeated dispute reopening is blocked while a dispute is open, preventing duplicate bond locking against a single dispute slot.
