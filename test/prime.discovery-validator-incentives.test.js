@@ -189,7 +189,7 @@ contract('Prime discovery validator incentives', (accounts) => {
 
     assert(claimClose.gt(claimMid), 'close scorer should earn more than medium scorer');
     assert(claimMid.gt(claimOutlier), 'medium scorer should earn more than outlier scorer');
-    assert(claimOutlier.lt(web3.utils.toBN(web3.utils.toWei('0.3'))), 'extreme outlier should lose bond and most rewards');
+    assert(claimOutlier.lt(web3.utils.toBN(web3.utils.toWei('0.5'))), 'extreme outlier should lose meaningful bond value and earn no quality reward');
   });
 
 
@@ -226,7 +226,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     const byValidator = new Map(settled.map((log) => [log.args.validator.toLowerCase(), log.args]));
 
     assert.equal(byValidator.get(validatorA.toLowerCase()).band.toString(), '0', 'close score should map to band 0');
-    assert.equal(byValidator.get(validatorB.toLowerCase()).band.toString(), '1', 'moderate deviation should map to band 1');
+    assert.equal(byValidator.get(validatorB.toLowerCase()).band.toString(), '2', '15-point deviation should map to band 2');
     assert.equal(byValidator.get(validatorC.toLowerCase()).band.toString(), '3', 'extreme outlier should map to band 3');
   });
 
@@ -331,7 +331,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     assert(emp.gt(web3.utils.toBN('0')), 'employer should receive slashes and unused reward budget');
   });
 
-  it('under quorum only pays liveness component and refunds quality budget', async () => {
+  it('under quorum returns revealed bond only and refunds reward budget', async () => {
     const { procurementId, proc } = await createSingleFinalistProcurement({ minValidatorReveals: 3 });
 
     const salt = web3.utils.soliditySha3('score-underquorum');
@@ -345,7 +345,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     const validatorClaim = await discovery.canClaim(validatorA);
-    const expected = web3.utils.toBN(web3.utils.toWei('0.6')); // 0.5 bond + 10% of 1.0 reward unit
-    assert.equal(validatorClaim.toString(), expected.toString(), 'under-quorum reveal should only receive bond + liveness share');
+    const expected = web3.utils.toBN(web3.utils.toWei('0.5')); // bond only when reveal quorum is not met
+    assert.equal(validatorClaim.toString(), expected.toString(), 'under-quorum reveal should only recover bond');
   });
 });
