@@ -234,20 +234,19 @@ function encodePrimeConstructorArgs(constructorArgs) {
   );
 }
 
-function readPrimeManagerBytecodeSizes(constructorArgs) {
-  const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', 'AGIJobManagerPrime.sol', 'AGIJobManagerPrime.json');
+function readPrimeBytecodeSizes(contractFile, contractName, constructorArgsBytes = 0) {
+  const artifactPath = path.resolve(__dirname, "..", "artifacts", "contracts", contractFile, `${contractName}.json`);
   if (!fs.existsSync(artifactPath)) {
-    throw new Error(`Missing AGIJobManagerPrime artifact: ${artifactPath}. Run \`npm run compile\` first.`);
+    throw new Error(`Missing ${contractName} artifact: ${artifactPath}. Run \`npm run compile\` first.`);
   }
 
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
   const runtimeBytes = bytecodeHexToBytes(artifact.deployedBytecode);
   const initcodeTemplateBytes = bytecodeHexToBytes(artifact.bytecode);
-  const constructorArgsBytes = bytecodeHexToBytes(encodePrimeConstructorArgs(constructorArgs));
   const initcodeBytes = initcodeTemplateBytes + constructorArgsBytes;
 
   if (!runtimeBytes || !initcodeTemplateBytes) {
-    throw new Error('AGIJobManagerPrime artifact has empty bytecode; compile artifacts are invalid.');
+    throw new Error(`${contractName} artifact has empty bytecode; compile artifacts are invalid.`);
   }
 
   return {
@@ -298,16 +297,22 @@ async function main() {
     }
   }
 
-  const primeBytecode = readPrimeManagerBytecodeSizes(constructorArgs);
-  if (primeBytecode.runtimeBytes >= MAX_MAINNET_RUNTIME_BYTES) {
-    throw new Error(
-      `AGIJobManagerPrime runtime bytecode ${primeBytecode.runtimeBytes} bytes is not mainnet deployable (< ${MAX_MAINNET_RUNTIME_BYTES}).`
-    );
-  }
-  if (primeBytecode.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
-    throw new Error(
-      `AGIJobManagerPrime initcode ${primeBytecode.initcodeBytes} bytes exceeds EIP-3860 limit (${MAX_MAINNET_INITCODE_BYTES}).`
-    );
+  const managerConstructorArgsBytes = bytecodeHexToBytes(encodePrimeConstructorArgs(constructorArgs));
+  const discoveryConstructorArgsBytes = bytecodeHexToBytes(
+    ethers.AbiCoder.defaultAbiCoder().encode(["address"], [ethers.ZeroAddress])
+  );
+  const primeBytecode = {
+    AGIJobManagerPrime: readPrimeBytecodeSizes("AGIJobManagerPrime.sol", "AGIJobManagerPrime", managerConstructorArgsBytes),
+    AGIJobDiscoveryPrime: readPrimeBytecodeSizes("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime", discoveryConstructorArgsBytes),
+  };
+
+  for (const [name, sizes] of Object.entries(primeBytecode)) {
+    if (sizes.runtimeBytes > MAX_MAINNET_RUNTIME_BYTES) {
+      throw new Error(`${name} runtime bytecode ${sizes.runtimeBytes} bytes exceeds ${MAX_MAINNET_RUNTIME_BYTES}.`);
+    }
+    if (sizes.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
+      throw new Error(`${name} initcode ${sizes.initcodeBytes} bytes exceeds ${MAX_MAINNET_INITCODE_BYTES}.`);
+    }
   }
 
   const plan = {
@@ -329,7 +334,7 @@ async function main() {
       'Deploy AGIJobDiscoveryPrime',
       'Wire manager.setDiscoveryModule(discovery)',
       'Optional setEnsJobPages(target)',
-      'Transfer manager ownership (one-step) + initiate discovery two-step transfer',
+      'Initiate ownership transfer for manager + discovery (two-step)',
       'Optional etherscan verification',
       'Persist deployment receipts + verify targets',
     ],
@@ -430,15 +435,15 @@ async function main() {
 
     ownershipTransfer = {
       executed: true,
-      mode: 'mixed_manager_one_step_discovery_two_step',
+      mode: 'two_step_both_contracts',
       reason: null,
       contracts: [
-        { contract: 'AGIJobManagerPrime', txHash: managerOwnerTx.hash, blockNumber: managerOwnerRcpt.blockNumber, ownerAfterTx: resolvedFinalOwner },
+        { contract: 'AGIJobManagerPrime', txHash: managerOwnerTx.hash, blockNumber: managerOwnerRcpt.blockNumber, pendingOwner: resolvedFinalOwner },
         { contract: 'AGIJobDiscoveryPrime', txHash: discoveryOwnerTx.hash, blockNumber: discoveryOwnerRcpt.blockNumber, pendingOwner: resolvedFinalOwner },
       ],
-      nextAction: `${resolvedFinalOwner} must call acceptOwnership() on AGIJobDiscoveryPrime`,
+      nextAction: `${resolvedFinalOwner} must call acceptOwnership() on AGIJobManagerPrime and AGIJobDiscoveryPrime`,
     };
-    console.log(`[owner] AGIJobManagerPrime.transferOwnership(${resolvedFinalOwner}) tx=${managerOwnerTx.hash} (completed)`);
+    console.log(`[owner] AGIJobManagerPrime.transferOwnership(${resolvedFinalOwner}) tx=${managerOwnerTx.hash} (pending acceptance)`);
     console.log(`[owner] AGIJobDiscoveryPrime.transferOwnership(${resolvedFinalOwner}) tx=${discoveryOwnerTx.hash} (pending acceptance)`);
   } else {
     console.log('[owner] transferOwnership skipped (deployer is final owner).');

@@ -321,6 +321,8 @@ interface IAGIJobManagerPrime {
     function jobEmployerOf(uint256 jobId) external view returns (address);
     function jobAssignedAgentOf(uint256 jobId) external view returns (address);
 
+    function isSelectionWindowExpired(uint256 jobId) external view returns (bool);
+
     function getJobSelectionInfo(uint256 jobId)
         external
         view

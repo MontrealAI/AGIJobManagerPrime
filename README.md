@@ -40,7 +40,7 @@ Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.
   - `AGIJobManagerPrime owner` controls `setEnsJobPages(...)` and Prime settlement/discovery governance knobs.
   - `wrapped-root owner` controls NameWrapper approval needed for wrapped-root ENS writes.
 - **Canonical safety rule:** ENS hooks are best-effort side effects; settlement/dispute outcomes remain authoritative on `AGIJobManagerPrime`.
-- **Canonical ownership model:** manager uses one-step transfer (for strict bytecode headroom), discovery uses two-step handoff (`transferOwnership` -> `acceptOwnership`) with `pendingOwner` / `cancelOwnershipTransfer`; `renounceOwnership` is disabled on Prime contracts.
+- **Canonical ownership model:** manager and discovery both use two-step business handoff (`transferOwnership` -> `acceptOwnership`) with `pendingOwner` / `cancelOwnershipTransfer`; `renounceOwnership` is disabled on both Prime contracts.
 - **Canonical pause model:** intake pause (new risk), settlement freeze (value-moving settlement), and full emergency pause (break-glass). Discovery emergency pause is pause-safe: in-flight procurement windows freeze and resume fairly on unpause.
 - **Prime runbook:** [`docs/PRIME_OWNERSHIP_AND_PAUSE_RUNBOOK.md`](docs/PRIME_OWNERSHIP_AND_PAUSE_RUNBOOK.md).
 

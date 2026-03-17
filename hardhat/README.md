@@ -12,9 +12,9 @@ Prime architecture:
 2. Deploy `AGIJobManagerPrime`.
 3. Deploy `AGIJobDiscoveryPrime(settlementAddress)`.
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
-5. If deployer != final owner, transfer manager ownership immediately and initiate discovery two-step ownership (`transferOwnership`) requiring later `acceptOwnership()`.
+5. If deployer != final owner, initiate two-step ownership transfer on both manager and discovery (`transferOwnership`) requiring later `acceptOwnership()`.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
-7. Preflight-check AGIJobManagerPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
+7. Preflight-check AGIJobManagerPrime and AGIJobDiscoveryPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
 8. Read and persist the manager-created completion NFT address for operators and indexers.
 9. Write deployment artifacts and verify-target manifests.
 
@@ -65,8 +65,8 @@ Profile override knobs (for reproducible bytecode benchmarking only):
 
 
 Post-deploy ownership handoff:
-- Deployer transfers `AGIJobManagerPrime` ownership immediately to `FINAL_OWNER`.
-- Deployer initiates `AGIJobDiscoveryPrime` transfer; `FINAL_OWNER` must call `acceptOwnership()`.
+- Deployer initiates `transferOwnership(FINAL_OWNER)` on `AGIJobManagerPrime` and `AGIJobDiscoveryPrime`.
+- `FINAL_OWNER` must call `acceptOwnership()` on both contracts.
 - If discovery pending owner was wrong, current owner can call `cancelOwnershipTransfer()`.
 
 Pause controls:

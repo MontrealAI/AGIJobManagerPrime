@@ -963,7 +963,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         ) = settlement.getJobSelectionInfo(p.jobId);
 
         if (assignedAgent != address(0)) revert InvalidState();
-        if (block.timestamp <= selectionExpiresAt) revert InvalidState();
+        if (!_isSelectionWindowExpired(p.jobId, true, selectionExpiresAt)) revert InvalidState();
 
         _promoteFallbackFinalist(procurementId, p);
     }
@@ -992,7 +992,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (settlement.paused() || settlement.settlementPaused()) revert NoAdvanceableAction();
 
         (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
-        if (!selectionInfoOk || assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) {
+        if (!selectionInfoOk || assignedAgent != address(0) || !_isSelectionWindowExpired(p.jobId, selectionInfoOk, selectionExpiresAt)) {
             revert NoAdvanceableAction();
         }
         _promoteFallbackFinalist(procurementId, p);
@@ -1031,7 +1031,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
         if (!selectionInfoOk) return false;
 
-        if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
+        if (assignedAgent != address(0) || !_isSelectionWindowExpired(p.jobId, selectionInfoOk, selectionExpiresAt)) return false;
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
@@ -1075,7 +1075,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (settlement.settlementPaused()) return "SSF";
 
         if (assignedAgent != address(0)) return "WA";
-        if (block.timestamp <= selectionExpiresAt) return "WSA";
+        if (!_isSelectionWindowExpired(p.jobId, selectionInfoOk, selectionExpiresAt)) return "WSA";
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
@@ -1217,7 +1217,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (intakeMode != 1) return false;
         if (assignedAgent != address(0)) return false;
-        return selectionExpiresAt == 0 || block.timestamp > selectionExpiresAt;
+        return selectionExpiresAt == 0 || _isSelectionWindowExpired(jobId, true, selectionExpiresAt);
     }
 
     function _tryGetSelectionState(uint256 jobId) internal view returns (bool ok, uint64 selectionExpiresAt, address assignedAgent) {
@@ -1238,6 +1238,19 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         ) = abi.decode(data, (uint8, address, bytes32, uint64, uint64, uint64, bool, address));
 
         return (true, parsedSelectionExpiresAt, parsedAssignedAgent);
+    }
+
+    function _isSelectionWindowExpired(uint256 jobId, bool selectionInfoOk, uint64 rawSelectionExpiresAt) internal view returns (bool) {
+        if (!selectionInfoOk) return false;
+
+        (bool ok, bytes memory data) = address(settlement).staticcall(
+            abi.encodeWithSelector(IAGIJobManagerPrime.isSelectionWindowExpired.selector, jobId)
+        );
+        if (ok && data.length == 32) {
+            return abi.decode(data, (bool));
+        }
+
+        return rawSelectionExpiresAt != 0 && block.timestamp > rawSelectionExpiresAt;
     }
 
     function claim() external nonReentrant {
