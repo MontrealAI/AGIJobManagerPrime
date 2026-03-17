@@ -556,6 +556,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
+
     constructor(
         address agiTokenAddress,
         string memory baseIpfs,
@@ -741,7 +742,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         string calldata details,
         uint8 intakeMode,
         bytes32 perJobAgentRoot
-    ) external onlyDiscoveryOrOwner returns (uint256) {
+    ) external onlyDiscoveryOrOwner whenNotPaused whenSettlementNotPaused returns (uint256) {
         if (intakeMode > uint8(IntakeMode.PerJobMerkleRoot)) revert InvalidParameters();
         return _createJob(employer, jobSpecURI, payout, duration, details, IntakeMode(intakeMode), perJobAgentRoot);
     }
@@ -918,7 +919,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _recordValidatorVote(jobId, subdomain, proof, false);
     }
 
-    function disputeJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
+    function disputeJob(uint256 jobId) external nonReentrant {
         Job storage job = _job(jobId);
         if (job.completed || job.expired) revert InvalidState();
         if (msg.sender != job.assignedAgent && msg.sender != job.employer) revert NotAuthorized();

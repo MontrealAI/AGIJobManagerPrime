@@ -12,7 +12,7 @@ Prime architecture:
 2. Deploy `AGIJobManagerPrime`.
 3. Deploy `AGIJobDiscoveryPrime(settlementAddress)`.
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
-5. Optionally transfer ownership of both contracts to `FINAL_OWNER`.
+5. If deployer != final owner, transfer manager ownership immediately and initiate discovery two-step ownership (`transferOwnership`) requiring later `acceptOwnership()`.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
 7. Preflight-check AGIJobManagerPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
 8. Read and persist the manager-created completion NFT address for operators and indexers.
@@ -49,7 +49,7 @@ Required environment variables:
 - `ETHERSCAN_API_KEY` (needed for `VERIFY=1`)
 
 Common deploy controls:
-- `FINAL_OWNER`
+- `FINAL_OWNER` (EOA or multisig)
 - `DEPLOY_CONFIG` (path override)
 - `CONFIRMATIONS` (default `3`)
 - `VERIFY_DELAY_MS` (default `3500`)
@@ -62,6 +62,16 @@ Common deploy controls:
 Profile override knobs (for reproducible bytecode benchmarking only):
 - `AGI_PRIME_OPTIMIZER_RUNS` (default `1`)
 - `AGI_PRIME_VIA_IR` (`1`/`0`, default `1`)
+
+
+Post-deploy ownership handoff:
+- Deployer transfers `AGIJobManagerPrime` ownership immediately to `FINAL_OWNER`.
+- Deployer initiates `AGIJobDiscoveryPrime` transfer; `FINAL_OWNER` must call `acceptOwnership()`.
+- If discovery pending owner was wrong, current owner can call `cancelOwnershipTransfer()`.
+
+Pause controls:
+- Manager: `pause()/unpause()` for intake stop, plus `setSettlementPaused(bool)` for settlement freeze.
+- Discovery: `setIntakePaused(bool)` and `pause()/unpause()`; settlement freeze follows manager `setSettlementPaused(bool)`.
 
 ## Deploy config
 
