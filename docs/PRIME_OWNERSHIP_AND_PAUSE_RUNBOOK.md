@@ -47,7 +47,7 @@ Manager exposes `settlementPaused` and `paused` (paused doubles as intake stop f
 |---|---:|---:|---:|
 | create premium procurement / attach procurement | blocked | allowed | blocked |
 | commit/reveal applications, finalist acceptance, trial submit, score commit/reveal | allowed (for existing procurements) | allowed | blocked |
-| winner finalization / fallback promotion / procurement cancel-unwind | allowed | blocked | blocked |
+| winner finalization / fallback promotion / procurement cancel-unwind | allowed | conditional: neutral closeout allowed, manager-linked winner assignment blocked | blocked |
 | claims (`claim`) | allowed | allowed | allowed |
 | autonomous advancement (`advanceProcurement`) | stage-dependent; respects both local + settlement pause states |
 
@@ -92,6 +92,8 @@ User-facing policy decisions:
 - Full discovery pause blocks writes, but affected procurement windows are frozen and resume fairly on unpause.
 - `claim()` stays live during intake pause and settlement freeze.
 - If manager settlement is frozen, discovery helpers return settlement-blocked status (for winner/fallback operations) while still exposing claimability and safe waiting states.
+- `finalizeWinner` remains available under manager settlement freeze only when no designatable winner exists (neutral closeout path). If a winner can be assigned into manager, finalization waits safely for manager pause/freeze to clear.
+- `nextActionForProcurement` surfaces linked-manager blockers with explicit strings: `linked_manager_paused` and `linked_settlement_frozen`.
 
 ### Front-end UX spec (calm/respectful wording)
 - Banner when discovery is fully paused: **"Discovery is temporarily paused. Your deadline is safely frozen and will resume after unpause."**

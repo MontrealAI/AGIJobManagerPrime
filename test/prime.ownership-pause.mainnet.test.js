@@ -109,7 +109,8 @@ contract('Prime ownership + graceful pause model', (accounts) => {
   });
 
   it('discovery intake pause blocks new procurement entry while claim path stays live', async () => {
-    await discovery.setIntakePaused(true, { from: owner });
+    const intakeTx = await discovery.setIntakePaused(true, { from: owner });
+    assert(intakeTx.logs.find((l) => l.event === 'IntakePauseSet'));
     await expectCustomError(
       discovery.commitApplication.call(0, web3.utils.soliditySha3('x'), '', [], { from: agent }),
       'InvalidState'
