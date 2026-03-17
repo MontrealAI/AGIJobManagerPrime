@@ -315,7 +315,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     uint256 private constant BPS_DENOMINATOR = 10_000;
-    uint256 private constant LIVENESS_REWARD_BPS = 1_000; // 10% of revealed reward budget
+    uint256 private constant LIVENESS_REWARD_BPS = 2_000; // 20% of revealed reward budget
 
     error InvalidParameters();
     error InvalidState();
@@ -1426,8 +1426,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         address[] storage validators = scoreValidators[procurementId][finalist];
 
         uint256 baseRewardPool = reveals * p.validatorRewardPerReveal;
-        uint256 livenessPool = (baseRewardPool * LIVENESS_REWARD_BPS) / BPS_DENOMINATOR; // 10%
-        uint256 qualityPool = baseRewardPool - livenessPool; // 90%
+        uint256 livenessPool = (baseRewardPool * LIVENESS_REWARD_BPS) / BPS_DENOMINATOR;
+        uint256 qualityPool = baseRewardPool - livenessPool;
         uint256 perRevealLiveness = livenessPool / reveals;
         uint256 livenessDistributed;
 
@@ -1439,7 +1439,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             for (uint256 i = 0; i < validators.length; ++i) {
                 ScoreCommit storage scWeight = scoreCommits[procurementId][finalist][validators[i]];
                 if (!scWeight.revealed) continue;
-                totalWeight += _rewardWeightForDeviation(scWeight.revealedScore, medianScore);
+                totalWeight += _qualityWeightForDeviation(scWeight.revealedScore, medianScore);
             }
         }
 
@@ -1462,8 +1462,6 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             if (!robustConsensus) {
                 band = 255;
                 bondRefund = sc.bond;
-                reward = perRevealLiveness;
-                livenessDistributed += perRevealLiveness;
             } else {
                 uint256 weight;
                 uint256 livenessBps;
@@ -1475,7 +1473,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
                 uint256 livenessReward = (perRevealLiveness * livenessBps) / BPS_DENOMINATOR;
                 if (livenessReward > 0) {
-                    reward += livenessReward;
+                    reward = livenessReward;
                     livenessDistributed += livenessReward;
                 }
 
@@ -1504,11 +1502,11 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         spentRewards = livenessDistributed + qualityDistributed;
     }
 
-    function _rewardWeightForDeviation(uint8 score, uint8 medianScore) internal pure returns (uint256) {
+    function _qualityWeightForDeviation(uint8 score, uint8 medianScore) internal pure returns (uint256) {
         uint8 deviation = score > medianScore ? score - medianScore : medianScore - score;
         if (deviation <= 5) return 100;
-        if (deviation <= 15) return 35;
-        if (deviation <= 30) return 10;
+        if (deviation <= 10) return 60;
+        if (deviation <= 20) return 20;
         return 0;
     }
 
@@ -1521,13 +1519,13 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         if (deviation <= 5) {
             return (0, bond, 100, BPS_DENOMINATOR);
         }
-        if (deviation <= 15) {
-            return (1, bond, 35, BPS_DENOMINATOR);
+        if (deviation <= 10) {
+            return (1, bond, 60, BPS_DENOMINATOR);
         }
-        if (deviation <= 30) {
-            return (2, bond / 4, 10, 5_000);
+        if (deviation <= 20) {
+            return (2, (bond * 8_000) / BPS_DENOMINATOR, 20, 5_000);
         }
-        return (3, 0, 0, 0);
+        return (3, (bond * 5_000) / BPS_DENOMINATOR, 0, 0);
     }
 
     function _medianScoreBps(uint8[] storage scores) internal view returns (uint256) {
