@@ -951,19 +951,10 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (!p.winnerFinalized || p.cancelled) revert InvalidState();
         if (settlement.paused() || settlement.settlementPaused()) revert InvalidState();
 
-        (
-            ,
-            ,
-            ,
-            uint64 selectionExpiresAt,
-            ,
-            ,
-            ,
-            address assignedAgent
-        ) = settlement.getJobSelectionInfo(p.jobId);
+        (, , bool selectionExpired, address assignedAgent) = settlement.getJobSelectionRuntimeState(p.jobId);
 
         if (assignedAgent != address(0)) revert InvalidState();
-        if (block.timestamp <= selectionExpiresAt) revert InvalidState();
+        if (!selectionExpired) revert InvalidState();
 
         _promoteFallbackFinalist(procurementId, p);
     }
@@ -991,8 +982,8 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (settlement.paused() || settlement.settlementPaused()) revert NoAdvanceableAction();
 
-        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
-        if (!selectionInfoOk || assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) {
+        (bool selectionInfoOk, bool selectionExpired, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        if (!selectionInfoOk || assignedAgent != address(0) || !selectionExpired) {
             revert NoAdvanceableAction();
         }
         _promoteFallbackFinalist(procurementId, p);
@@ -1028,10 +1019,10 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
 
-        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        (bool selectionInfoOk, bool selectionExpired, address assignedAgent) = _tryGetSelectionState(p.jobId);
         if (!selectionInfoOk) return false;
 
-        if (assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) return false;
+        if (assignedAgent != address(0) || !selectionExpired) return false;
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
@@ -1069,13 +1060,13 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
             return "FW";
         }
 
-        (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
+        (bool selectionInfoOk, bool selectionExpired, address assignedAgent) = _tryGetSelectionState(p.jobId);
         if (!selectionInfoOk) return "LJM";
         if (settlement.paused()) return "SP";
         if (settlement.settlementPaused()) return "SSF";
 
         if (assignedAgent != address(0)) return "WA";
-        if (block.timestamp <= selectionExpiresAt) return "WSA";
+        if (!selectionExpired) return "WSA";
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
@@ -1217,27 +1208,19 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (intakeMode != 1) return false;
         if (assignedAgent != address(0)) return false;
-        return selectionExpiresAt == 0 || block.timestamp > selectionExpiresAt;
+        (, , bool selectionExpired, ) = settlement.getJobSelectionRuntimeState(jobId);
+        return selectionExpiresAt == 0 || selectionExpired;
     }
 
-    function _tryGetSelectionState(uint256 jobId) internal view returns (bool ok, uint64 selectionExpiresAt, address assignedAgent) {
+    function _tryGetSelectionState(uint256 jobId) internal view returns (bool ok, bool selectionExpired, address assignedAgent) {
         (bool success, bytes memory data) = address(settlement).staticcall(
-            abi.encodeWithSelector(IAGIJobManagerPrime.getJobSelectionInfo.selector, jobId)
+            abi.encodeWithSelector(IAGIJobManagerPrime.getJobSelectionRuntimeState.selector, jobId)
         );
-        if (!success || data.length == 0) return (false, 0, address(0));
+        if (!success || data.length == 0) return (false, false, address(0));
 
-        (
-            ,
-            ,
-            ,
-            uint64 parsedSelectionExpiresAt,
-            ,
-            ,
-            ,
-            address parsedAssignedAgent
-        ) = abi.decode(data, (uint8, address, bytes32, uint64, uint64, uint64, bool, address));
+        (, , bool parsedSelectionExpired, address parsedAssignedAgent) = abi.decode(data, (uint64, uint256, bool, address));
 
-        return (true, parsedSelectionExpiresAt, parsedAssignedAgent);
+        return (true, parsedSelectionExpired, parsedAssignedAgent);
     }
 
     function claim() external nonReentrant {
