@@ -93,7 +93,7 @@ User-facing policy decisions:
 - `claim()` stays live during intake pause and settlement freeze.
 - If manager settlement is frozen, discovery helpers return settlement-blocked status (for winner/fallback operations) while still exposing claimability and safe waiting states.
 - `finalizeWinner` remains available under manager settlement freeze only when no designatable winner exists (neutral closeout path). If a winner can be assigned into manager, finalization waits safely for manager pause/freeze to clear.
-- `nextActionForProcurement` surfaces linked-manager blockers with explicit strings: `linked_manager_paused` and `linked_settlement_frozen`.
+- `nextActionForProcurement` surfaces linked-manager blockers with explicit strings: `settlement_paused` (manager broad pause) and `linked_settlement_frozen` (manager settlement freeze when winner designation would be required).
 
 ### Front-end UX spec (calm/respectful wording)
 - Banner when discovery is fully paused: **"Discovery is temporarily paused. Your deadline is safely frozen and will resume after unpause."**

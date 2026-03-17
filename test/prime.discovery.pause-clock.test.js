@@ -203,7 +203,7 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
     await time.increase(21);
 
     await manager.pause({ from: owner });
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'linked_manager_paused');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_paused');
     assert.equal(await discovery.isWinnerFinalizable(procurementId), false);
 
     await manager.unpause({ from: owner });
