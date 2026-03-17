@@ -71,7 +71,7 @@ Post-deploy ownership handoff:
 
 Pause controls:
 - Manager: `pause()/unpause()` for intake stop, plus `setSettlementPaused(bool)` for settlement freeze.
-- Discovery: `setIntakePaused(bool)` and `pause()/unpause()`; settlement freeze follows manager `setSettlementPaused(bool)`.
+- Discovery: `setIntakePaused(bool)` blocks only new procurement attachment/creation, while in-flight procurements continue. `pause()/unpause()` is break-glass and now freezes procurement phase clocks (commit/reveal/accept/trial/score windows) until unpause. Settlement freeze follows manager `setSettlementPaused(bool)` for winner/fallback settlement-coupled actions.
 
 ## Deploy config
 

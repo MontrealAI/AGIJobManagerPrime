@@ -22,7 +22,7 @@ EOA vs multisig:
 
 Prime now uses a pause architecture:
 - **Manager intake pause** (`pause()` / `unpause()`): blocks new manager exposure entrypoints while leaving already-live manager progression paths open (because progression paths are not gated by `whenNotPaused`).
-- **Discovery intake pause** (`setIntakePaused(bool)`): blocks new discovery market entry while keeping ongoing workflows open where safe.
+- **Discovery intake pause** (`setIntakePaused(bool)`): blocks only new procurement/job attachment exposure; in-flight procurements keep progressing.
 - **Settlement freeze** (manager `setSettlementPaused(bool)`): blocks adjudication/finalization/value-moving settlement paths in manager and downstream discovery winner/cancel/fallback operations.
 - **Full emergency pause** (`pause()` / `unpause()` on discovery, and manager `pause()` + `setSettlementPaused(true)` together when broad freeze is required).
 
@@ -45,8 +45,8 @@ Manager exposes `settlementPaused` and `paused` (paused doubles as intake stop f
 
 | Function group | Intake pause | Settlement freeze (manager) | Full emergency |
 |---|---:|---:|---:|
-| create premium procurement / attach procurement / commit application | blocked | allowed | blocked |
-| reveal application / shortlist finalization / finalist accept / trial / score commit+reveal | allowed | allowed | blocked |
+| create premium procurement / attach procurement | blocked | allowed | blocked |
+| commit/reveal applications, finalist acceptance, trial submit, score commit/reveal | allowed (for existing procurements) | allowed | blocked |
 | winner finalization / fallback promotion / procurement cancel-unwind | allowed | blocked | blocked |
 | claims (`claim`) | allowed | allowed | allowed |
 | autonomous advancement (`advanceProcurement`) | stage-dependent; respects both local + settlement pause states |
@@ -75,3 +75,27 @@ Recommended order:
 3. re-open settlement
 4. re-open intake
 
+
+
+## Discovery pause-safe timing policy
+
+Principle: **pause means everyone waits safely**.
+
+Implementation details:
+- Discovery keeps global paused-time accounting (`pauseStartedAt`, `pausedSecondsAccumulated`).
+- Each procurement snapshots a `pauseSecondsBaseline` at creation.
+- Time-gated phases evaluate an **effective procurement clock**: `block.timestamp - (globalPausedSecondsNow - pauseSecondsBaseline)`.
+- Result: commit/reveal/accept/trial/score windows do not burn while discovery is paused, including repeated pause/unpause cycles.
+
+User-facing policy decisions:
+- Intake pause does **not** block in-flight procurement actions; it only blocks new exposure (`createPremiumJobWithDiscovery`, `attachProcurementToExistingJob`).
+- Full discovery pause blocks writes, but affected procurement windows are frozen and resume fairly on unpause.
+- `claim()` stays live during intake pause and settlement freeze.
+- If manager settlement is frozen, discovery helpers return settlement-blocked status (for winner/fallback operations) while still exposing claimability and safe waiting states.
+
+### Front-end UX spec (calm/respectful wording)
+- Banner when discovery is fully paused: **"Discovery is temporarily paused. Your deadline is safely frozen and will resume after unpause."**
+- Banner when intake paused only: **"New procurements are temporarily paused. Existing procurements continue normally."**
+- Banner when settlement freeze active: **"Settlement is temporarily frozen. Existing claim balances remain withdrawable; winner assignment actions wait safely."**
+- Countdown rule: display effective-time countdown (exclude paused duration), and show `Paused` badge while full pause is active.
+- Claim state language: **"Claim available now"** whenever `canClaim(account) > 0` regardless of intake pause.
