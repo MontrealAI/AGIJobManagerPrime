@@ -940,11 +940,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function disputeJob(uint256 jobId) external nonReentrant {
         Job storage job = _job(jobId);
+        uint256 effectiveNow = _effectiveTimestamp(job);
         if (job.completed || job.expired) revert InvalidState();
         if (msg.sender != job.assignedAgent && msg.sender != job.employer) revert NotAuthorized();
         if (!job.completionRequested) revert InvalidState();
         if (job.disputed) revert DisputeAlreadyOpen();
-        if (_effectiveTimestamp(job) > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
+        if (effectiveNow > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
             revert InvalidState();
         }
 
@@ -961,8 +962,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         job.disputed = true;
-        _resetPauseBaseline(job);
-        job.disputedAt = uint64(block.timestamp);
+        job.disputedAt = uint64(effectiveNow);
         emit JobDisputed(jobId, msg.sender);
     }
 
@@ -1039,8 +1039,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             _completeJob(jobId, false);
         } else if (totalVotes < job.voteQuorumSnapshot || approvals == disapprovals) {
             job.disputed = true;
-            _resetPauseBaseline(job);
-            job.disputedAt = uint64(block.timestamp);
+            job.disputedAt = uint64(effectiveNow);
             emit JobDisputed(jobId, msg.sender);
         } else if (approvals > disapprovals) {
             _completeJob(jobId, true);
@@ -1293,8 +1292,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorApprovals >= job.requiredValidatorApprovalsSnapshot
             ) {
                 job.validatorApproved = true;
-                _resetPauseBaseline(job);
-                job.validatorApprovedAt = uint64(block.timestamp);
+                job.validatorApprovedAt = uint64(_effectiveTimestamp(job));
             }
         } else {
             job.disapprovals[msg.sender] = true;
@@ -1306,8 +1304,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorDisapprovals >= job.requiredValidatorDisapprovalsSnapshot
             ) {
                 job.disputed = true;
-                _resetPauseBaseline(job);
-                job.disputedAt = uint64(block.timestamp);
+                job.disputedAt = uint64(_effectiveTimestamp(job));
                 emit JobDisputed(jobId, msg.sender);
             }
         }
