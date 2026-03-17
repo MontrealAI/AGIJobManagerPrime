@@ -146,12 +146,12 @@ contract('Prime discovery validator incentives', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline - 1);
     await discovery.revealFinalistScore(procurementId, agentA, 80, salt, '', EMPTY, { from: validatorA });
 
-    assert.equal((await discovery.canClaim(validatorA)).toString(), '0', 'reveal should not immediately credit reward');
+    assert.equal((await discovery.claimable(validatorA)).toString(), '0', 'reveal should not immediately credit reward');
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    assert((await discovery.canClaim(validatorA)).gt(web3.utils.toBN(0)), 'validator claim should be credited at settlement');
+    assert((await discovery.claimable(validatorA)).gt(web3.utils.toBN(0)), 'validator claim should be credited at settlement');
   });
 
   it('rewards close scores more and slashes extreme outliers', async () => {
@@ -183,9 +183,9 @@ contract('Prime discovery validator incentives', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    const claimClose = await discovery.canClaim(validatorA);
-    const claimMid = await discovery.canClaim(validatorB);
-    const claimOutlier = await discovery.canClaim(validatorC);
+    const claimClose = await discovery.claimable(validatorA);
+    const claimMid = await discovery.claimable(validatorB);
+    const claimOutlier = await discovery.claimable(validatorC);
 
     assert(claimClose.gt(claimMid), 'close scorer should earn more than medium scorer');
     assert(claimMid.gt(claimOutlier), 'medium scorer should earn more than outlier scorer');
@@ -248,7 +248,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    const employerClaim = await discovery.canClaim(employer);
+    const employerClaim = await discovery.claimable(employer);
     assert(employerClaim.gte(web3.utils.toBN(web3.utils.toWei('0.5'))), 'employer should receive non-reveal bond slash');
   });
 
@@ -281,8 +281,8 @@ contract('Prime discovery validator incentives', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    const claimA = await discovery.canClaim(validatorA);
-    const claimB = await discovery.canClaim(validatorB);
+    const claimA = await discovery.claimable(validatorA);
+    const claimB = await discovery.claimable(validatorB);
 
     assert.equal(claimA.toString(), claimB.toString(), 'equal deviations should settle equally');
   });
@@ -320,10 +320,10 @@ contract('Prime discovery validator incentives', (accounts) => {
     const finalB = await discovery.scoreCommits(procurementId, agentA, validatorB);
     const finalC = await discovery.scoreCommits(procurementId, agentA, validatorC);
 
-    const vA = await discovery.canClaim(validatorA);
-    const vB = await discovery.canClaim(validatorB);
-    const vC = await discovery.canClaim(validatorC);
-    const emp = await discovery.canClaim(employer);
+    const vA = await discovery.claimable(validatorA);
+    const vB = await discovery.claimable(validatorB);
+    const vC = await discovery.claimable(validatorC);
+    const emp = await discovery.claimable(employer);
 
     const totalValidatorRewards = vA.add(vB).add(vC).sub(web3.utils.toBN(proc.validatorScoreBond).mul(web3.utils.toBN('2')));
     assert(totalValidatorRewards.lte(rewardCap), 'total validator rewards must stay under prefunded cap');
@@ -346,7 +346,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     await discovery.finalizeWinner(procurementId, { from: owner });
 
-    const validatorClaim = await discovery.canClaim(validatorA);
+    const validatorClaim = await discovery.claimable(validatorA);
     const expected = web3.utils.toBN(web3.utils.toWei('0.5')); // bond only when reveal quorum is not met
     assert.equal(validatorClaim.toString(), expected.toString(), 'under-quorum reveal should only recover bond');
   });

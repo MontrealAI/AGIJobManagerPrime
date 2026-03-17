@@ -47,7 +47,7 @@ Manager exposes `settlementPaused` and `paused` (paused doubles as intake stop f
 |---|---:|---:|---:|
 | create premium procurement / attach procurement | blocked | allowed | blocked |
 | commit/reveal applications, finalist acceptance, trial submit, score commit/reveal | allowed (for existing procurements) | allowed | blocked |
-| winner finalization / fallback promotion / procurement cancel-unwind | allowed | blocked | blocked |
+| winner finalization / fallback promotion / procurement cancel-unwind | allowed | conditional: neutral closeout allowed, manager-linked winner assignment blocked | blocked |
 | claims (`claim`) | allowed | allowed | allowed |
 | autonomous advancement (`advanceProcurement`) | stage-dependent; respects both local + settlement pause states |
 
@@ -92,10 +92,27 @@ User-facing policy decisions:
 - Full discovery pause blocks writes, but affected procurement windows are frozen and resume fairly on unpause.
 - `claim()` stays live during intake pause and settlement freeze.
 - If manager settlement is frozen, discovery helpers return settlement-blocked status (for winner/fallback operations) while still exposing claimability and safe waiting states.
+- `finalizeWinner` remains available under manager settlement freeze only when no designatable winner exists (neutral closeout path). If a winner can be assigned into manager, finalization waits safely for manager pause/freeze to clear.
+- `nextActionForProcurement` surfaces linked-manager blockers with explicit strings: `LMP` and `LSF`.
 
 ### Front-end UX spec (calm/respectful wording)
 - Banner when discovery is fully paused: **"Discovery is temporarily paused. Your deadline is safely frozen and will resume after unpause."**
 - Banner when intake paused only: **"New procurements are temporarily paused. Existing procurements continue normally."**
 - Banner when settlement freeze active: **"Settlement is temporarily frozen. Existing claim balances remain withdrawable; winner assignment actions wait safely."**
 - Countdown rule: display effective-time countdown (exclude paused duration), and show `Paused` badge while full pause is active.
-- Claim state language: **"Claim available now"** whenever `canClaim(account) > 0` regardless of intake pause.
+- Claim state language: **"Claim available now"** whenever `claimable(account) > 0` regardless of intake pause.
+
+
+### `nextActionForProcurement` action codes (size-conscious)
+
+To preserve mainnet deployability, discovery now returns compact action codes:
+- `P`: discovery paused
+- `WC` / `RA` / `FS`: wait commit / reveal applications / finalize shortlist
+- `FA` / `ST` / `CS` / `RS` / `FW`: finalists accept / submit trial / commit scores / reveal scores / finalize winner
+- `LMP` / `LSF`: linked manager paused / linked settlement frozen
+- `WA` / `WSA` / `PF` / `NPF`: winner assigned / wait selected acceptance / promote fallback / no promotable fallback
+- `SP` / `SSF`: settlement paused / settlement settlement-paused
+- `LJM`: linked job missing
+- `X`: procurement cancelled
+
+Front-end and automation should map these codes to calm human text.
