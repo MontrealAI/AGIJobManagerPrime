@@ -858,7 +858,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.agentBondAmount = bond;
         _resetPauseBaseline(job);
         job.assignedAgent = msg.sender;
-        job.assignedAt = uint64(block.timestamp);
+        job.assignedAt = uint64(_effectiveTimestamp(job));
 
         if (job.checkpointWindow > 0) {
             job.checkpointDeadline = uint64(block.timestamp + job.checkpointWindow);
@@ -915,8 +915,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         UriUtils.requireValidUri(jobCompletionURI);
         job.jobCompletionURI = jobCompletionURI;
         job.completionRequested = true;
-        _resetPauseBaseline(job);
-        job.completionRequestedAt = uint64(block.timestamp);
+        job.completionRequestedAt = uint64(effectiveNow);
 
         emit JobCompletionRequested(jobId, msg.sender, jobCompletionURI);
         _callEnsJobPagesHook(ENS_HOOK_COMPLETION, jobId);
