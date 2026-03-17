@@ -841,11 +841,15 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     }
 
     function finalizeWinner(uint256 procurementId) external whenNotPaused nonReentrant {
-        if (settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
         if (effectiveNow <= p.scoreRevealDeadline) revert InvalidState();
+
+        if (settlement.paused()) revert InvalidState();
+
+        bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+        if (hasDesignatableWinner && settlement.settlementPaused()) revert InvalidState();
 
         _finalizeWinner(procurementId, p);
     }
@@ -977,7 +981,10 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (!p.winnerFinalized) {
             if (_effectiveTimestamp(p) <= p.scoreRevealDeadline) revert NoAdvanceableAction();
-            if (settlement.settlementPaused()) revert NoAdvanceableAction();
+            if (settlement.paused()) revert NoAdvanceableAction();
+
+            bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+            if (hasDesignatableWinner && settlement.settlementPaused()) revert NoAdvanceableAction();
             _finalizeWinner(procurementId, p);
             return;
         }
@@ -991,10 +998,6 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         _promoteFallbackFinalist(procurementId, p);
     }
 
-    function canClaim(address account) external view returns (uint256) {
-        return claimable[account];
-    }
-
     function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
         if (paused()) return false;
         Procurement storage p = procurements[procurementId];
@@ -1005,7 +1008,6 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || _effectiveTimestamp(p) <= p.scoreRevealDeadline) return false;
-
         if (settlement.paused()) return false;
 
         bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
@@ -1045,56 +1047,44 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     }
 
     function _nextActionForProcurement(uint256 procurementId) internal view returns (string memory) {
-        if (paused()) return "paused";
+        if (paused()) return "P";
         Procurement storage p = procurements[procurementId];
-        if (p.cancelled) return "cancelled";
+        if (p.cancelled) return "X";
         if (!p.shortlistFinalized) {
             uint256 effectiveNow = _effectiveTimestamp(p);
-            if (effectiveNow <= p.commitDeadline) return "wait_commit";
-            if (effectiveNow <= p.revealDeadline) return "reveal_applications";
-            return "finalize_shortlist";
+            if (effectiveNow <= p.commitDeadline) return "WC";
+            if (effectiveNow <= p.revealDeadline) return "RA";
+            return "FS";
         }
         if (!p.winnerFinalized) {
             uint256 effectiveNow = _effectiveTimestamp(p);
-            if (effectiveNow <= p.finalistAcceptDeadline) return "finalists_accept";
-            if (effectiveNow <= p.trialDeadline) return "submit_trials";
-            if (effectiveNow <= p.scoreCommitDeadline) return "commit_scores";
-            if (effectiveNow <= p.scoreRevealDeadline) return "reveal_scores";
-            return "finalize_winner";
+            if (effectiveNow <= p.finalistAcceptDeadline) return "FA";
+            if (effectiveNow <= p.trialDeadline) return "ST";
+            if (effectiveNow <= p.scoreCommitDeadline) return "CS";
+            if (effectiveNow <= p.scoreRevealDeadline) return "RS";
+            if (settlement.paused()) return "LMP";
+
+            bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+            if (hasDesignatableWinner && settlement.settlementPaused()) return "LSF";
+            return "FW";
         }
 
         (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
-        if (!selectionInfoOk) return "linked_job_missing";
-        if (settlement.paused()) return "settlement_paused";
-        if (settlement.settlementPaused()) return "settlement_settlement_paused";
+        if (!selectionInfoOk) return "LJM";
+        if (settlement.paused()) return "SP";
+        if (settlement.settlementPaused()) return "SSF";
 
-        if (assignedAgent != address(0)) return "winner_assigned";
-        if (block.timestamp <= selectionExpiresAt) return "wait_selected_acceptance";
+        if (assignedAgent != address(0)) return "WA";
+        if (block.timestamp <= selectionExpiresAt) return "WSA";
 
         for (uint256 i = 0; i < p.finalists.length; ++i) {
             address finalist = p.finalists[i];
             Application storage a = applications[procurementId][finalist];
             if (!_isFallbackCandidate(procurementId, p, a, finalist)) continue;
-            return "promote_fallback";
+            return "PF";
         }
 
-        return "no_promotable_fallback";
-    }
-
-    function getAutonomyStatus(uint256 procurementId)
-        external
-        view
-        returns (
-            bool shortlistFinalizable,
-            bool winnerFinalizable,
-            bool fallbackPromotable,
-            string memory nextAction
-        )
-    {
-        shortlistFinalizable = isShortlistFinalizable(procurementId);
-        winnerFinalizable = isWinnerFinalizable(procurementId);
-        fallbackPromotable = _isFallbackPromotable(procurementId);
-        nextAction = _nextActionForProcurement(procurementId);
+        return "NPF";
     }
 
     function _hasDesignatableWinner(uint256 procurementId, Procurement storage p) internal view returns (bool) {

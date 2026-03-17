@@ -22,10 +22,9 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 1. Reintroduced optional ENSJobPages wiring on Prime manager (`setEnsJobPages`) and bounded best-effort lifecycle hooks (create/assign/completion/revoke/lock).
 2. Ensured terminal settlement paths invoke revoke/lock hooks while keeping settlement authoritative and non-fatal.
 3. Added discovery autonomy/readability helpers:
-   - `canClaim(address)`
+   - `claimable(address)`
    - `isFallbackPromotable(procurementId)`
-   - `nextActionForProcurement(procurementId)`
-   - `getAutonomyStatus(procurementId)`
+   - `nextActionForProcurement(procurementId)` + phase helpers
 4. Added a permissionless `advanceProcurement` entrypoint to reduce operator liveness risk by allowing any keeper to finalize shortlist/winner stages and promote fallback after timeout.
 5. Added tests covering ENS best-effort semantics, fallback promotability status, and staged keeper progression through `advanceProcurement`.
 

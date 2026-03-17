@@ -116,7 +116,7 @@ contract('Prime ownership + graceful pause model', (accounts) => {
     );
 
     const before = await token.balanceOf(employer);
-    const claimable = await discovery.canClaim(employer);
+    const claimable = await discovery.claimable(employer);
     const after = await token.balanceOf(employer);
     assert.equal(claimable.toString(), '0', 'claim view stays available during intake pause');
     assert.equal(after.toString(), before.toString(), 'intake pause does not mutate balances');

@@ -439,12 +439,12 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.setSettlementPaused(false, { from: owner });
     await discovery.pause({ from: owner });
     assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'paused discovery should suppress winner finalizable helper');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'paused');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'P');
     await discovery.unpause({ from: owner });
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'zero-score finalists should not appear promotable');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'no_promotable_fallback');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'NPF');
   });
 
   it('blocks fallback promotion surfaces while settlement is paused', async () => {
@@ -541,7 +541,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.pause({ from: owner });
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback promotion should be blocked while settlement is paused');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_paused', 'autonomy string should surface settlement pause state');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'SP', 'autonomy string should surface settlement pause state');
 
     await expectRevert.unspecified(discovery.promoteFallbackFinalist(procurementId, { from: employer }));
     await expectRevert.unspecified(discovery.advanceProcurement(procurementId, { from: validatorA }));
@@ -754,8 +754,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.revealFinalistScore(procurementId, agentB, 80, scoreSaltB, '', EMPTY, { from: validatorB });
 
     await time.increaseTo(proc.scoreRevealDeadline + 1);
-    const autonomy = await discovery.getAutonomyStatus(procurementId);
-    assert.equal(autonomy.winnerFinalizable, true, 'autonomy status should expose winner finalization readiness');
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'autonomy status should expose winner finalization readiness');
     await manager.designateSelectedAgent(jobId, agentA, 100, 0, { from: owner });
     assert.equal(
       await discovery.isWinnerFinalizable(procurementId),
@@ -789,7 +788,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increase(2);
     await manager.finalizeJob(jobId, { from: employer });
 
-    const claimableValidator = await discovery.canClaim(validatorA);
+    const claimableValidator = await discovery.claimable(validatorA);
     assert(claimableValidator.gt(web3.utils.toBN(0)), 'validator reveal reward should be claimable');
   });
 
@@ -968,8 +967,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.cancelJob(jobId, { from: employer });
 
     assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'cancelled linked job should not be finalizable');
-    const status = await discovery.getAutonomyStatus(procurementId);
-    assert.equal(status.winnerFinalizable, false, 'autonomy status should remain readable and false after cancellation');
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'autonomy status should remain readable and false after cancellation');
   });
 
 
@@ -1072,14 +1070,14 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.finalizeShortlist(procurementId, { from: owner });
     await discovery.acceptFinalist(procurementId, { from: agentA });
 
-    const balBefore = await discovery.canClaim(agentA);
+    const balBefore = await discovery.claimable(agentA);
     assert.equal(balBefore.toString(), '0');
 
     await discovery.cancelProcurement(procurementId, { from: employer });
 
-    const balAfter = await discovery.canClaim(agentA);
+    const balAfter = await discovery.claimable(agentA);
     assert.equal(balAfter.toString(), web3.utils.toWei('2'), 'finalist stake should be reclaimable after cancellation');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'cancelled');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'X');
   });
 
 
@@ -1210,8 +1208,8 @@ contract('Prime discovery + settlement', (accounts) => {
     await manager.cancelJob(jobId, { from: employer });
 
     assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback check should not revert for deleted linked job');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'linked_job_missing');
-    const status = await discovery.getAutonomyStatus(procurementId);
-    assert.equal(status.nextAction, 'linked_job_missing', 'autonomy status should remain readable with deleted linked job');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'LJM');
+    const nextAction = await discovery.nextActionForProcurement(procurementId);
+    assert.equal(nextAction, 'LJM', 'autonomy status should remain readable with deleted linked job');
   });
 });
