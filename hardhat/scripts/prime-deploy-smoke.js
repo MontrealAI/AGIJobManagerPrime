@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const hre = require('hardhat');
 
-function latestPrimeArtifact(networkName) {
+function listPrimeArtifacts(networkName) {
   const dir = path.join(__dirname, '..', 'deployments', networkName);
   const entries = fs.existsSync(dir)
     ? fs
@@ -13,11 +13,29 @@ function latestPrimeArtifact(networkName) {
         .sort((a, b) => b.mtimeMs - a.mtimeMs)
     : [];
 
+  return { dir, entries };
+}
+
+function artifactFromCurrentRun(networkName, beforeEntries) {
+  const { dir, entries } = listPrimeArtifacts(networkName);
+
   if (!entries.length) {
     throw new Error(`No prime deployment artifact found in ${dir}`);
   }
 
-  return path.join(dir, entries[0].name);
+  const beforeByName = new Map(beforeEntries.map((entry) => [entry.name, entry.mtimeMs]));
+  const changedOrCreated = entries.filter((entry) => {
+    const beforeMtime = beforeByName.get(entry.name);
+    return beforeMtime === undefined || entry.mtimeMs > beforeMtime;
+  });
+
+  if (!changedOrCreated.length) {
+    throw new Error(
+      `No new Prime deployment artifact detected for this run in ${dir}; deploy may have skipped receipt output.`
+    );
+  }
+
+  return path.join(dir, changedOrCreated[0].name);
 }
 
 function requireAddress(label, value) {
@@ -55,11 +73,13 @@ async function main() {
   process.env.CONFIRMATIONS = '1';
 
   try {
+    const { entries: beforeEntries } = listPrimeArtifacts('hardhat');
+
     // Reuse the current in-memory hardhat chain so the mock token address has deployed code.
     const { main: deployMain } = require('./deploy');
     await deployMain();
 
-    const artifactPath = latestPrimeArtifact('hardhat');
+    const artifactPath = artifactFromCurrentRun('hardhat', beforeEntries);
     const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 
     requireAddress('AGIJobManagerPrime', artifact.contracts?.AGIJobManagerPrime?.address);
