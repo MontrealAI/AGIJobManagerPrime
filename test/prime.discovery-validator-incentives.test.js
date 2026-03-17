@@ -192,6 +192,44 @@ contract('Prime discovery validator incentives', (accounts) => {
     assert(claimOutlier.lt(web3.utils.toBN(web3.utils.toWei('0.3'))), 'extreme outlier should lose bond and most rewards');
   });
 
+
+  it('emits deterministic settlement bands for close/medium/extreme scores', async () => {
+    const { procurementId, proc } = await createSingleFinalistProcurement();
+
+    const entries = [
+      [validatorA, 80, web3.utils.soliditySha3('band-close')],
+      [validatorB, 95, web3.utils.soliditySha3('band-medium')],
+      [validatorC, 10, web3.utils.soliditySha3('band-extreme')],
+    ];
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    for (const [validator, score, salt] of entries) {
+      await discovery.commitFinalistScore(
+        procurementId,
+        agentA,
+        scoreCommitment(procurementId, agentA, validator, score, salt),
+        '',
+        EMPTY,
+        { from: validator }
+      );
+    }
+
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    for (const [validator, score, salt] of entries) {
+      await discovery.revealFinalistScore(procurementId, agentA, score, salt, '', EMPTY, { from: validator });
+    }
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    const tx = await discovery.finalizeWinner(procurementId, { from: owner });
+
+    const settled = tx.logs.filter((log) => log.event === 'ScoreSettled');
+    const byValidator = new Map(settled.map((log) => [log.args.validator.toLowerCase(), log.args]));
+
+    assert.equal(byValidator.get(validatorA.toLowerCase()).band.toString(), '0', 'close score should map to band 0');
+    assert.equal(byValidator.get(validatorB.toLowerCase()).band.toString(), '1', 'moderate deviation should map to band 1');
+    assert.equal(byValidator.get(validatorC.toLowerCase()).band.toString(), '3', 'extreme outlier should map to band 3');
+  });
+
   it('slashes non-reveal validator bonds to employer', async () => {
     const { procurementId, proc } = await createSingleFinalistProcurement({ minValidatorReveals: 1 });
 

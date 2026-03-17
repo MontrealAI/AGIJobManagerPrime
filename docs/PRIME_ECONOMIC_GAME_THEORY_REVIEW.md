@@ -46,6 +46,8 @@ Review covers Prime procurement (`AGIJobDiscoveryPrime`) and settlement (`AGIJob
 
 ## Discovery validator incentive hardening (latest)
 
+Detailed discovery-validator incentive rationale and option comparison are documented in `docs/DISCOVERY_VALIDATOR_INCENTIVES_MEMO.md`.
+
 - Validator payout is no longer fully credited at `revealFinalistScore`; settlement occurs in winner finalization.
 - Reward shape is now: small liveness share (10%) + majority quality share (90%, median-deviation weighted), with stronger far-outlier bond/liveness penalties.
 - Extreme outliers now lose bond value ex post instead of always receiving full bond refund.
