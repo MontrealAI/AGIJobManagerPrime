@@ -329,7 +329,7 @@ async function main() {
       'Deploy AGIJobDiscoveryPrime',
       'Wire manager.setDiscoveryModule(discovery)',
       'Optional setEnsJobPages(target)',
-      'Transfer manager ownership (one-step) + initiate discovery two-step transfer',
+      'Transfer manager/discovery ownership (one-step)',
       'Optional etherscan verification',
       'Persist deployment receipts + verify targets',
     ],
@@ -430,16 +430,15 @@ async function main() {
 
     ownershipTransfer = {
       executed: true,
-      mode: 'mixed_manager_one_step_discovery_two_step',
+      mode: 'one_step_both',
       reason: null,
       contracts: [
         { contract: 'AGIJobManagerPrime', txHash: managerOwnerTx.hash, blockNumber: managerOwnerRcpt.blockNumber, ownerAfterTx: resolvedFinalOwner },
-        { contract: 'AGIJobDiscoveryPrime', txHash: discoveryOwnerTx.hash, blockNumber: discoveryOwnerRcpt.blockNumber, pendingOwner: resolvedFinalOwner },
+        { contract: 'AGIJobDiscoveryPrime', txHash: discoveryOwnerTx.hash, blockNumber: discoveryOwnerRcpt.blockNumber, ownerAfterTx: resolvedFinalOwner },
       ],
-      nextAction: `${resolvedFinalOwner} must call acceptOwnership() on AGIJobDiscoveryPrime`,
     };
     console.log(`[owner] AGIJobManagerPrime.transferOwnership(${resolvedFinalOwner}) tx=${managerOwnerTx.hash} (completed)`);
-    console.log(`[owner] AGIJobDiscoveryPrime.transferOwnership(${resolvedFinalOwner}) tx=${discoveryOwnerTx.hash} (pending acceptance)`);
+    console.log(`[owner] AGIJobDiscoveryPrime.transferOwnership(${resolvedFinalOwner}) tx=${discoveryOwnerTx.hash} (completed)`);
   } else {
     console.log('[owner] transferOwnership skipped (deployer is final owner).');
   }
@@ -544,9 +543,6 @@ async function main() {
   console.log(`setDiscoveryModule tx: ${discoveryModuleWiring.txHash}`);
   console.log(`setEnsJobPages: ${ensJobPagesWiring.executed ? `${ensJobPagesWiring.target} tx=${ensJobPagesWiring.txHash}` : 'skipped'}`);
   console.log(`pause defaults: manager[intake=${record.pauseDefaults.manager.intakePaused}, settlement=${record.pauseDefaults.manager.settlementPaused}, emergency=${record.pauseDefaults.manager.emergencyPaused}] discovery[intake=${record.pauseDefaults.discovery.intakePaused}, settlement=${record.pauseDefaults.discovery.settlementPaused}, emergency=${record.pauseDefaults.discovery.emergencyPaused}]`);
-  if (ownershipTransfer.executed) {
-    console.log(`pending ownership acceptance required: ${ownershipTransfer.nextAction}`);
-  }
   console.log(`receipt: ${receiptPath}`);
   console.log(`solc-input: ${solcInputPath}`);
   console.log(`verify-targets: ${verifyTargetsPath}`);

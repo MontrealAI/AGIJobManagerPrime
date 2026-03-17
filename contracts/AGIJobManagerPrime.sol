@@ -379,6 +379,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     uint256 public challengePeriodAfterApproval = 1 days;
 
     bool public settlementPaused;
+    uint64 public pauseStartedAt;
+    uint64 public settlementPauseStartedAt;
+    uint64 public pausedSecondsAccumulated;
+    uint64 public settlementPausedSecondsAccumulated;
 
     uint256 public validatorBondBps = 1500;
     uint256 public validatorBondMin = 10e18;
@@ -421,6 +425,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         address selectedAgent;
         uint64 selectionExpiresAt;
+        uint64 pauseSecondsBaseline;
 
         uint64 checkpointWindow;
         uint64 checkpointDeadline;
@@ -584,10 +589,23 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _validateValidatorThresholds(requiredValidatorApprovals, requiredValidatorDisapprovals);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        pauseStartedAt = uint64(block.timestamp);
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        pausedSecondsAccumulated += uint64(block.timestamp) - pauseStartedAt;
+        _unpause();
+    }
 
     function setSettlementPaused(bool paused_) external onlyOwner {
+        if (settlementPaused == paused_) return;
+        if (paused_) {
+            settlementPauseStartedAt = uint64(block.timestamp);
+        } else {
+            settlementPausedSecondsAccumulated += uint64(block.timestamp) - settlementPauseStartedAt;
+        }
         settlementPaused = paused_;
         emit SettlementPauseSet(msg.sender, paused_);
     }
@@ -758,10 +776,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         Job storage job = _job(jobId);
         if (job.intakeMode != IntakeMode.SelectedAgentOnly) revert InvalidState();
         if (job.assignedAgent != address(0) || job.completed || job.expired) revert InvalidState();
-        if (job.selectionExpiresAt != 0 && block.timestamp <= job.selectionExpiresAt) revert InvalidState();
+        uint256 effectiveNow = _effectiveTimestamp(job);
+        if (job.selectionExpiresAt != 0 && effectiveNow <= job.selectionExpiresAt) revert InvalidState();
 
         job.selectedAgent = selectedAgent;
-        job.selectionExpiresAt = uint64(block.timestamp + acceptanceWindow);
+        job.selectionExpiresAt = uint64(effectiveNow + acceptanceWindow);
         job.checkpointWindow = checkpointWindow;
 
         emit SelectedAgentDesignated(jobId, selectedAgent, job.selectionExpiresAt, checkpointWindow);
@@ -779,7 +798,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.assignedAgent != address(0) || job.completed || job.expired) revert InvalidState();
 
         job.perJobAgentRoot = root;
-        job.selectionExpiresAt = uint64(block.timestamp + applicationWindow);
+        job.selectionExpiresAt = uint64(_effectiveTimestamp(job) + applicationWindow);
 
         emit JobAgentRootUpdated(jobId, root, job.selectionExpiresAt);
     }
@@ -802,10 +821,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.intakeMode == IntakeMode.OpenFirstCome) {
         } else if (job.intakeMode == IntakeMode.SelectedAgentOnly) {
             if (msg.sender != job.selectedAgent) revert NotAuthorized();
-            if (block.timestamp > job.selectionExpiresAt) revert InvalidState();
+            if (_effectiveTimestamp(job) > job.selectionExpiresAt) revert InvalidState();
         } else {
             if (job.perJobAgentRoot == bytes32(0)) revert InvalidState();
-            if (block.timestamp > job.selectionExpiresAt) revert InvalidState();
+            if (_effectiveTimestamp(job) > job.selectionExpiresAt) revert InvalidState();
             if (!MerkleProof.verify(perJobProof, job.perJobAgentRoot, keccak256(abi.encodePacked(msg.sender)))) {
                 revert NotAuthorized();
             }
@@ -841,10 +860,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         job.agentBondAmount = bond;
         job.assignedAgent = msg.sender;
-        job.assignedAt = uint64(block.timestamp);
+        uint256 effectiveNow = _effectiveTimestamp(job);
+        job.assignedAt = uint64(effectiveNow);
 
         if (job.checkpointWindow > 0) {
-            job.checkpointDeadline = uint64(block.timestamp + job.checkpointWindow);
+            job.checkpointDeadline = uint64(effectiveNow + job.checkpointWindow);
         }
 
         activeJobsByAgent[msg.sender] += 1;
@@ -860,7 +880,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (msg.sender != job.assignedAgent) revert NotAuthorized();
         if (job.completed || job.expired || job.completionRequested) revert InvalidState();
         if (job.checkpointWindow == 0 || job.checkpointDeadline == 0) revert InvalidState();
-        if (block.timestamp > job.checkpointDeadline) revert InvalidState();
+        if (_effectiveTimestamp(job) > job.checkpointDeadline) revert InvalidState();
         if (job.checkpointSubmitted) revert InvalidState();
         if (bytes(checkpointURI).length == 0 || bytes(checkpointURI).length > MAX_URI_BYTES) revert InvalidParameters();
 
@@ -875,7 +895,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         Job storage job = _job(jobId);
         if (job.assignedAgent == address(0) || job.completed || job.expired || job.completionRequested) revert InvalidState();
         if (job.checkpointDeadline == 0 || job.checkpointSubmitted) revert InvalidState();
-        if (block.timestamp <= job.checkpointDeadline) revert InvalidState();
+        if (_effectiveTimestamp(job) <= job.checkpointDeadline) revert InvalidState();
 
         _employerWin(jobId, job, true);
         emit CheckpointFailed(jobId, job.employer, job.assignedAgent);
@@ -888,8 +908,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         Job storage job = _job(jobId);
         if (msg.sender != job.assignedAgent) revert NotAuthorized();
         if (job.completed || job.expired || job.completionRequested) revert InvalidState();
-        if (!job.disputed && block.timestamp > uint256(job.assignedAt) + job.duration) revert InvalidState();
-        if (job.checkpointDeadline != 0 && !job.checkpointSubmitted && block.timestamp > job.checkpointDeadline) {
+        uint256 effectiveNow = _effectiveTimestamp(job);
+        if (!job.disputed && effectiveNow > uint256(job.assignedAt) + job.duration) revert InvalidState();
+        if (job.checkpointDeadline != 0 && !job.checkpointSubmitted && effectiveNow > job.checkpointDeadline) {
             revert InvalidState();
         }
         if (bytes(jobCompletionURI).length == 0 || bytes(jobCompletionURI).length > MAX_URI_BYTES) revert InvalidParameters();
@@ -897,7 +918,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         UriUtils.requireValidUri(jobCompletionURI);
         job.jobCompletionURI = jobCompletionURI;
         job.completionRequested = true;
-        job.completionRequestedAt = uint64(block.timestamp);
+        job.completionRequestedAt = uint64(effectiveNow);
 
         emit JobCompletionRequested(jobId, msg.sender, jobCompletionURI);
         _callEnsJobPagesHook(ENS_HOOK_COMPLETION, jobId);
@@ -925,7 +946,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (msg.sender != job.assignedAgent && msg.sender != job.employer) revert NotAuthorized();
         if (!job.completionRequested) revert InvalidState();
         if (job.disputed) revert DisputeAlreadyOpen();
-        if (block.timestamp > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
+        if (_effectiveTimestamp(job) > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
             revert InvalidState();
         }
 
@@ -942,7 +963,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         job.disputed = true;
-        job.disputedAt = uint64(block.timestamp);
+        job.disputedAt = uint64(_effectiveTimestamp(job));
         emit JobDisputed(jobId, msg.sender);
     }
 
@@ -979,7 +1000,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     ) external onlyOwner whenSettlementNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (!job.disputed || job.expired) revert InvalidState();
-        if (block.timestamp <= uint256(job.disputedAt) + job.disputeReviewPeriodSnapshot) revert InvalidState();
+        if (_effectiveTimestamp(job) <= uint256(job.disputedAt) + job.disputeReviewPeriodSnapshot) revert InvalidState();
 
         job.disputed = false;
         job.disputedAt = 0;
@@ -1000,7 +1021,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 disapprovals = job.validatorDisapprovals;
 
         if (job.validatorApproved) {
-            if (block.timestamp <= uint256(job.validatorApprovedAt) + job.challengePeriodAfterApprovalSnapshot) {
+            if (_effectiveTimestamp(job) <= uint256(job.validatorApprovedAt) + job.challengePeriodAfterApprovalSnapshot) {
                 revert InvalidState();
             }
             if (approvals > disapprovals) {
@@ -1009,7 +1030,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             }
         }
 
-        if (block.timestamp <= uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
+        if (_effectiveTimestamp(job) <= uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) {
             revert InvalidState();
         }
 
@@ -1018,7 +1039,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             _completeJob(jobId, false);
         } else if (totalVotes < job.voteQuorumSnapshot || approvals == disapprovals) {
             job.disputed = true;
-            job.disputedAt = uint64(block.timestamp);
+            job.disputedAt = uint64(_effectiveTimestamp(job));
             emit JobDisputed(jobId, msg.sender);
         } else if (approvals > disapprovals) {
             _completeJob(jobId, true);
@@ -1032,7 +1053,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (job.completed || job.expired || job.disputed) revert InvalidState();
         if (job.completionRequested) revert InvalidState();
         if (job.assignedAgent == address(0)) revert InvalidState();
-        if (block.timestamp <= uint256(job.assignedAt) + job.duration) revert InvalidState();
+        if (_effectiveTimestamp(job) <= uint256(job.assignedAt) + job.duration) revert InvalidState();
 
         job.expired = true;
         _decrementActive(job.assignedAgent);
@@ -1119,9 +1140,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
             uint8(job.intakeMode),
             job.selectedAgent,
             job.perJobAgentRoot,
-            job.selectionExpiresAt,
+            uint64(_effectiveSelectionExpiresAt(job)),
             job.checkpointWindow,
-            job.checkpointDeadline,
+            uint64(_effectiveCheckpointDeadline(job)),
             job.checkpointSubmitted,
             job.assignedAgent
         );
@@ -1207,6 +1228,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.duration = duration;
         job.intakeMode = intakeMode;
         job.perJobAgentRoot = perJobAgentRoot;
+        job.pauseSecondsBaseline = uint64(_totalPausedSecondsNow());
 
         agiToken.safeTransferFrom(employer, address(this), payout);
         lockedEscrow += payout;
@@ -1231,7 +1253,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         if (!job.completionRequested) revert InvalidState();
-        if (block.timestamp > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) revert InvalidState();
+        if (_effectiveTimestamp(job) > uint256(job.completionRequestedAt) + job.completionReviewPeriodSnapshot) revert InvalidState();
         if (job.approvals[msg.sender] || job.disapprovals[msg.sender]) revert InvalidState();
         if (job.validators.length >= MAX_VALIDATORS_PER_JOB) revert InvalidParameters();
 
@@ -1259,7 +1281,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorApprovals >= job.requiredValidatorApprovalsSnapshot
             ) {
                 job.validatorApproved = true;
-                job.validatorApprovedAt = uint64(block.timestamp);
+                job.validatorApprovedAt = uint64(_effectiveTimestamp(job));
             }
         } else {
             job.disapprovals[msg.sender] = true;
@@ -1271,7 +1293,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorDisapprovals >= job.requiredValidatorDisapprovalsSnapshot
             ) {
                 job.disputed = true;
-                job.disputedAt = uint64(block.timestamp);
+                job.disputedAt = uint64(_effectiveTimestamp(job));
                 emit JobDisputed(jobId, msg.sender);
             }
         }
@@ -1475,6 +1497,34 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function _job(uint256 jobId) internal view returns (Job storage job) {
         job = jobs[jobId];
         if (job.employer == address(0)) revert JobNotFound();
+    }
+
+    function _pausedSecondsNow() internal view returns (uint256) {
+        if (!paused()) return pausedSecondsAccumulated;
+        return uint256(pausedSecondsAccumulated) + (block.timestamp - pauseStartedAt);
+    }
+
+    function _settlementPausedSecondsNow() internal view returns (uint256) {
+        if (!settlementPaused) return settlementPausedSecondsAccumulated;
+        return uint256(settlementPausedSecondsAccumulated) + (block.timestamp - settlementPauseStartedAt);
+    }
+
+    function _totalPausedSecondsNow() internal view returns (uint256) {
+        return _pausedSecondsNow() + _settlementPausedSecondsNow();
+    }
+
+    function _effectiveTimestamp(Job storage job) internal view returns (uint256) {
+        return block.timestamp - (_totalPausedSecondsNow() - uint256(job.pauseSecondsBaseline));
+    }
+
+    function _effectiveSelectionExpiresAt(Job storage job) internal view returns (uint256) {
+        if (job.selectionExpiresAt == 0) return 0;
+        return uint256(job.selectionExpiresAt) + (_totalPausedSecondsNow() - uint256(job.pauseSecondsBaseline));
+    }
+
+    function _effectiveCheckpointDeadline(Job storage job) internal view returns (uint256) {
+        if (job.checkpointDeadline == 0) return 0;
+        return uint256(job.checkpointDeadline) + (_totalPausedSecondsNow() - uint256(job.pauseSecondsBaseline));
     }
 
     function _validateValidatorThresholds(uint256 approvals, uint256 disapprovals) internal pure {

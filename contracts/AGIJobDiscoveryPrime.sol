@@ -306,12 +306,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./utils/BusinessOwnable2Step.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IAGIJobManagerPrime.sol";
 import "./utils/UriUtils.sol";
 
-contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable {
+contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     uint256 private constant BPS_DENOMINATOR = 10_000;
