@@ -234,27 +234,26 @@ function encodePrimeConstructorArgs(constructorArgs) {
   );
 }
 
-function readPrimeManagerBytecodeSizes(constructorArgs) {
-  const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', 'AGIJobManagerPrime.sol', 'AGIJobManagerPrime.json');
+function readPrimeBytecodeSizes(contractName, constructorEncodedBytes = 0) {
+  const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', `${contractName}.sol`, `${contractName}.json`);
   if (!fs.existsSync(artifactPath)) {
-    throw new Error(`Missing AGIJobManagerPrime artifact: ${artifactPath}. Run \`npm run compile\` first.`);
+    throw new Error(`Missing ${contractName} artifact: ${artifactPath}. Run \`npm run compile\` first.`);
   }
 
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
   const runtimeBytes = bytecodeHexToBytes(artifact.deployedBytecode);
   const initcodeTemplateBytes = bytecodeHexToBytes(artifact.bytecode);
-  const constructorArgsBytes = bytecodeHexToBytes(encodePrimeConstructorArgs(constructorArgs));
-  const initcodeBytes = initcodeTemplateBytes + constructorArgsBytes;
+  const initcodeBytes = initcodeTemplateBytes + constructorEncodedBytes;
 
   if (!runtimeBytes || !initcodeTemplateBytes) {
-    throw new Error('AGIJobManagerPrime artifact has empty bytecode; compile artifacts are invalid.');
+    throw new Error(`${contractName} artifact has empty bytecode; compile artifacts are invalid.`);
   }
 
   return {
     runtimeBytes,
     initcodeBytes,
     initcodeTemplateBytes,
-    constructorArgsBytes,
+    constructorArgsBytes: constructorEncodedBytes,
     runtimeHeadroom: MAX_MAINNET_RUNTIME_BYTES - runtimeBytes,
     initcodeHeadroom: MAX_MAINNET_INITCODE_BYTES - initcodeBytes,
   };
@@ -298,16 +297,16 @@ async function main() {
     }
   }
 
-  const primeBytecode = readPrimeManagerBytecodeSizes(constructorArgs);
-  if (primeBytecode.runtimeBytes >= MAX_MAINNET_RUNTIME_BYTES) {
-    throw new Error(
-      `AGIJobManagerPrime runtime bytecode ${primeBytecode.runtimeBytes} bytes is not mainnet deployable (< ${MAX_MAINNET_RUNTIME_BYTES}).`
-    );
-  }
-  if (primeBytecode.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
-    throw new Error(
-      `AGIJobManagerPrime initcode ${primeBytecode.initcodeBytes} bytes exceeds EIP-3860 limit (${MAX_MAINNET_INITCODE_BYTES}).`
-    );
+  const managerBytecode = readPrimeBytecodeSizes('AGIJobManagerPrime', bytecodeHexToBytes(encodePrimeConstructorArgs(constructorArgs)));
+  const discoveryBytecode = readPrimeBytecodeSizes('AGIJobDiscoveryPrime', bytecodeHexToBytes(ethers.AbiCoder.defaultAbiCoder().encode(['address'], [ethers.ZeroAddress])));
+
+  for (const [name, result] of Object.entries({ AGIJobManagerPrime: managerBytecode, AGIJobDiscoveryPrime: discoveryBytecode })) {
+    if (result.runtimeBytes > MAX_MAINNET_RUNTIME_BYTES) {
+      throw new Error(`${name} runtime bytecode ${result.runtimeBytes} bytes exceeds mainnet limit (${MAX_MAINNET_RUNTIME_BYTES}).`);
+    }
+    if (result.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
+      throw new Error(`${name} initcode ${result.initcodeBytes} bytes exceeds EIP-3860 limit (${MAX_MAINNET_INITCODE_BYTES}).`);
+    }
   }
 
   const plan = {
@@ -322,7 +321,7 @@ async function main() {
     constructorArgs,
     libraries: LIBRARIES,
     compiler: hardhatConfig.solidity,
-    primeBytecode,
+    bytecode: { manager: managerBytecode, discovery: discoveryBytecode },
     steps: [
       'Deploy linked libraries',
       'Deploy AGIJobManagerPrime',
@@ -515,7 +514,7 @@ async function main() {
     ownershipTransfer,
     verification: shouldVerify ? verificationResults : { skipped: true },
     configHash,
-    primeBytecode,
+    bytecode: { manager: managerBytecode, discovery: discoveryBytecode },
   };
 
   const receiptPath = path.join(outDir, `deployment.prime.${chainId}.${managerDeployment.blockNumber}.json`);
