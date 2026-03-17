@@ -115,6 +115,16 @@ contract('Prime discovery + settlement', (accounts) => {
   });
 
 
+  it('uses two-step manager ownership transfer with pending-owner acceptance', async () => {
+    await manager.transferOwnership(employer, { from: owner });
+    assert.equal(await manager.owner(), owner, 'owner should remain unchanged until acceptance');
+    assert.equal(await manager.pendingOwner(), employer, 'pending owner should be set');
+    await expectRevert.unspecified(manager.acceptOwnership({ from: agentA }));
+    await manager.acceptOwnership({ from: employer });
+    assert.equal(await manager.owner(), employer, 'ownership transfer should complete on acceptance');
+  });
+
+
   it('disables discovery renounceOwnership while preserving transferOwnership', async () => {
     await expectCustomError(discovery.renounceOwnership.call({ from: owner }), 'RenounceOwnershipDisabled');
     await discovery.transferOwnership(employer, { from: owner });
@@ -426,7 +436,7 @@ contract('Prime discovery + settlement', (accounts) => {
     await time.increaseTo(proc.scoreRevealDeadline + 1);
     assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'winner should be finalizable after reveal window');
     await manager.pause({ from: owner });
-    assert.equal(await discovery.isWinnerFinalizable(procurementId), false, 'manager pause should suppress winner finalizable helper');
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'manager intake pause should not suppress winner finalizable helper for live procurements');
     await manager.unpause({ from: owner });
     await manager.setSettlementPaused(true, { from: owner });
     assert.equal(
@@ -536,10 +546,10 @@ contract('Prime discovery + settlement', (accounts) => {
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     await time.increase(6);
-    await manager.pause({ from: owner });
+    await manager.setEmergencyPaused(true, { from: owner });
 
-    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback promotion should be blocked while settlement is paused');
-    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_paused', 'autonomy string should surface settlement pause state');
+    assert.equal(await discovery.isFallbackPromotable(procurementId), false, 'fallback promotion should be blocked while manager emergency pause is active');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_emergency_paused', 'autonomy string should surface manager emergency pause state');
 
     await expectRevert.unspecified(discovery.promoteFallbackFinalist(procurementId, { from: employer }));
     await expectRevert.unspecified(discovery.advanceProcurement(procurementId, { from: validatorA }));

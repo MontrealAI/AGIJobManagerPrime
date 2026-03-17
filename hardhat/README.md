@@ -12,7 +12,7 @@ Prime architecture:
 2. Deploy `AGIJobManagerPrime`.
 3. Deploy `AGIJobDiscoveryPrime(settlementAddress)`.
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
-5. Optionally transfer ownership of both contracts to `FINAL_OWNER`.
+5. If `FINAL_OWNER` differs from deployer, initiate manager two-step ownership handoff and transfer discovery ownership in the same deploy run.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
 7. Preflight-check AGIJobManagerPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
 8. Read and persist the manager-created completion NFT address for operators and indexers.
@@ -49,7 +49,7 @@ Required environment variables:
 - `ETHERSCAN_API_KEY` (needed for `VERIFY=1`)
 
 Common deploy controls:
-- `FINAL_OWNER`
+- `FINAL_OWNER` (EOA or multisig)
 - `DEPLOY_CONFIG` (path override)
 - `CONFIRMATIONS` (default `3`)
 - `VERIFY_DELAY_MS` (default `3500`)
@@ -179,3 +179,19 @@ Prime settlement works without ENS wiring. If operators want ENS-backed public j
 3. Validate hooks by creating/applying/completing a small canary job.
 
 Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail.
+
+
+## Ownership + pause operations (Prime mainnet)
+
+- Ownership uses `Ownable2Step` on `AGIJobManagerPrime` and direct Ownable transfer on `AGIJobDiscoveryPrime`.
+  - Manager: `transferOwnership(newOwner)` sets `pendingOwner`; `acceptOwnership()` finalizes.
+  - Discovery: owner transfer remains immediate (`transferOwnership`).
+  - `renounceOwnership()` is disabled by custom error on both contracts.
+- Deploy script summary now prints `owner` and `pendingOwner` for both contracts and an explicit next-step reminder when acceptance is required.
+- Pause controls on manager:
+  - `pause()/unpause()` = **intake pause** (blocks new jobs/applications/intake setup).
+  - `setSettlementPaused(bool)` = **settlement freeze** (blocks value-moving settlement/adjudication).
+  - `setEmergencyPaused(bool)` = **full emergency break-glass**.
+- Discovery intake controls:
+  - Discovery `pause()/unpause()` blocks new premium procurement creation/attach/application commit.
+  - Already-started progression (reveals, shortlist, trials, scoring, claims) is governed by discovery pause; winner/fallback assignment stages additionally respect manager settlement freeze/emergency flags.

@@ -306,7 +306,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./utils/UriUtils.sol";
@@ -323,7 +323,7 @@ interface NameWrapperPrime {
     function ownerOf(uint256 id) external view returns (address);
 }
 
-contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
+contract AGIJobManagerPrime is Ownable2Step, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     enum IntakeMode {
@@ -346,6 +346,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     error InsolventEscrowBalance();
     error RenounceOwnershipDisabled();
     error DisputeAlreadyOpen();
+    error IntakePaused();
+    error EmergencyPaused();
 
     uint256 public constant MAX_VALIDATORS_PER_JOB = 50;
     uint256 public constant MAX_AGI_TYPES = 32;
@@ -379,6 +381,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     uint256 public challengePeriodAfterApproval = 1 days;
 
     bool public settlementPaused;
+    bool public emergencyPaused;
 
     uint256 public validatorBondBps = 1500;
     uint256 public validatorBondMin = 10e18;
@@ -538,6 +541,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     event AgentBondParamsUpdated(uint256 bps, uint256 min, uint256 max);
     event ValidatorSlashBpsUpdated(uint256 oldValue, uint256 newValue);
     event SettlementPauseSet(address indexed setter, bool paused);
+    event EmergencyPauseSet(address indexed setter, bool paused);
     event AGITypeUpdated(address indexed nftAddress, uint256 indexed payoutPercentage);
     event AGIWithdrawn(address indexed to, uint256 amount, uint256 remainingWithdrawable);
 
@@ -553,6 +557,16 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     modifier whenSettlementNotPaused() {
         if (settlementPaused) revert SettlementPaused();
+        _;
+    }
+
+    modifier whenIntakeNotPaused() {
+        if (paused()) revert IntakePaused();
+        _;
+    }
+
+    modifier whenEmergencyNotPaused() {
+        if (emergencyPaused) revert EmergencyPaused();
         _;
     }
 
@@ -586,6 +600,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
 
+    function setEmergencyPaused(bool paused_) external onlyOwner {
+        emergencyPaused = paused_;
+        emit EmergencyPauseSet(msg.sender, paused_);
+    }
+
     function setSettlementPaused(bool paused_) external onlyOwner {
         settlementPaused = paused_;
         emit SettlementPauseSet(msg.sender, paused_);
@@ -605,6 +624,10 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function renounceOwnership() public view override onlyOwner {
         revert RenounceOwnershipDisabled();
+    }
+
+    function intakePaused() external view returns (bool) {
+        return paused();
     }
 
 
@@ -718,7 +741,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 payout,
         uint256 duration,
         string calldata details
-    ) external returns (uint256) {
+    ) external whenIntakeNotPaused whenEmergencyNotPaused returns (uint256) {
         return _createJob(msg.sender, jobSpecURI, payout, duration, details, IntakeMode.OpenFirstCome, bytes32(0));
     }
 
@@ -729,7 +752,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         string calldata details,
         IntakeMode intakeMode,
         bytes32 perJobAgentRoot
-    ) external returns (uint256) {
+    ) external whenIntakeNotPaused whenEmergencyNotPaused returns (uint256) {
         return _createJob(msg.sender, jobSpecURI, payout, duration, details, intakeMode, perJobAgentRoot);
     }
 
@@ -741,7 +764,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         string calldata details,
         uint8 intakeMode,
         bytes32 perJobAgentRoot
-    ) external onlyDiscoveryOrOwner returns (uint256) {
+    ) external onlyDiscoveryOrOwner whenIntakeNotPaused whenEmergencyNotPaused returns (uint256) {
         if (intakeMode > uint8(IntakeMode.PerJobMerkleRoot)) revert InvalidParameters();
         return _createJob(employer, jobSpecURI, payout, duration, details, IntakeMode(intakeMode), perJobAgentRoot);
     }
@@ -751,7 +774,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         address selectedAgent,
         uint64 acceptanceWindow,
         uint64 checkpointWindow
-    ) external onlyDiscoveryOrOwner whenNotPaused whenSettlementNotPaused {
+    ) external onlyDiscoveryOrOwner whenEmergencyNotPaused {
         if (selectedAgent == address(0) || acceptanceWindow == 0) revert InvalidParameters();
 
         Job storage job = _job(jobId);
@@ -770,7 +793,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 jobId,
         bytes32 root,
         uint64 applicationWindow
-    ) external onlyDiscoveryOrOwner whenNotPaused whenSettlementNotPaused {
+    ) external onlyDiscoveryOrOwner whenIntakeNotPaused whenEmergencyNotPaused {
         if (root == bytes32(0) || applicationWindow == 0) revert InvalidParameters();
 
         Job storage job = _job(jobId);
@@ -788,7 +811,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         string calldata subdomain,
         bytes32[] calldata globalProof,
         bytes32[] calldata perJobProof
-    ) external whenNotPaused whenSettlementNotPaused nonReentrant {
+    ) external whenIntakeNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (job.assignedAgent != address(0) || job.completed || job.expired) revert InvalidState();
         if (blacklistedAgents[msg.sender]) revert Blacklisted();
@@ -854,7 +877,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function submitCheckpoint(
         uint256 jobId,
         string calldata checkpointURI
-    ) external whenSettlementNotPaused {
+    ) external whenEmergencyNotPaused {
         Job storage job = _job(jobId);
         if (msg.sender != job.assignedAgent) revert NotAuthorized();
         if (job.completed || job.expired || job.completionRequested) revert InvalidState();
@@ -870,7 +893,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         emit CheckpointSubmitted(jobId, msg.sender, checkpointURI);
     }
 
-    function failCheckpoint(uint256 jobId) external whenSettlementNotPaused {
+    function failCheckpoint(uint256 jobId) external whenSettlementNotPaused whenEmergencyNotPaused {
         Job storage job = _job(jobId);
         if (job.assignedAgent == address(0) || job.completed || job.expired || job.completionRequested) revert InvalidState();
         if (job.checkpointDeadline == 0 || job.checkpointSubmitted) revert InvalidState();
@@ -883,7 +906,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function requestJobCompletion(
         uint256 jobId,
         string calldata jobCompletionURI
-    ) external whenSettlementNotPaused nonReentrant {
+    ) external whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (msg.sender != job.assignedAgent) revert NotAuthorized();
         if (job.completed || job.expired || job.completionRequested) revert InvalidState();
@@ -906,7 +929,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 jobId,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external whenSettlementNotPaused {
+    ) external whenSettlementNotPaused whenEmergencyNotPaused {
         _recordValidatorVote(jobId, subdomain, proof, true);
     }
 
@@ -914,11 +937,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 jobId,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external whenSettlementNotPaused {
+    ) external whenSettlementNotPaused whenEmergencyNotPaused {
         _recordValidatorVote(jobId, subdomain, proof, false);
     }
 
-    function disputeJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
+    function disputeJob(uint256 jobId) external whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (job.completed || job.expired) revert InvalidState();
         if (msg.sender != job.assignedAgent && msg.sender != job.employer) revert NotAuthorized();
@@ -949,7 +972,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint256 jobId,
         uint8 resolutionCode,
         string calldata reason
-    ) external onlyModerator whenSettlementNotPaused nonReentrant {
+    ) external onlyModerator whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (!job.disputed || job.expired) revert InvalidState();
 
@@ -975,7 +998,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function resolveStaleDispute(
         uint256 jobId,
         bool employerWins
-    ) external onlyOwner whenSettlementNotPaused nonReentrant {
+    ) external onlyOwner whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (!job.disputed || job.expired) revert InvalidState();
         if (block.timestamp <= uint256(job.disputedAt) + job.disputeReviewPeriodSnapshot) revert InvalidState();
@@ -990,7 +1013,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function finalizeJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
+    function finalizeJob(uint256 jobId) external whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (job.completed || job.expired || job.disputed) revert InvalidState();
         if (!job.completionRequested) revert InvalidState();
@@ -1026,7 +1049,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function expireJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
+    function expireJob(uint256 jobId) external whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (job.completed || job.expired || job.disputed) revert InvalidState();
         if (job.completionRequested) revert InvalidState();
@@ -1052,7 +1075,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
     }
 
-    function cancelJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
+    function cancelJob(uint256 jobId) external whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         Job storage job = _job(jobId);
         if (msg.sender != job.employer) revert NotAuthorized();
         if (job.completed || job.expired || job.assignedAgent != address(0)) revert InvalidState();
@@ -1175,7 +1198,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         return bal - locked;
     }
 
-    function withdrawAGI(uint256 amount) external onlyOwner whenPaused whenSettlementNotPaused nonReentrant {
+    function withdrawAGI(uint256 amount) external onlyOwner whenPaused whenSettlementNotPaused whenEmergencyNotPaused nonReentrant {
         if (amount == 0) revert InvalidParameters();
         uint256 available = withdrawableAGI();
         if (amount > available) revert InsufficientWithdrawableBalance();
@@ -1191,7 +1214,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         string calldata details,
         IntakeMode intakeMode,
         bytes32 perJobAgentRoot
-    ) internal whenNotPaused whenSettlementNotPaused nonReentrant returns (uint256 jobId) {
+    ) internal nonReentrant returns (uint256 jobId) {
         if (employer == address(0)) revert InvalidParameters();
         if (payout == 0 || duration == 0 || payout > maxJobPayout || duration > jobDurationLimit) revert InvalidParameters();
         if (bytes(jobSpecURI).length == 0 || bytes(jobSpecURI).length > MAX_URI_BYTES) revert InvalidParameters();

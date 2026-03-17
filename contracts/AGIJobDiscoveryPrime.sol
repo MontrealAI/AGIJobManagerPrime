@@ -811,6 +811,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function finalizeWinner(uint256 procurementId) external whenNotPaused nonReentrant {
+        if (settlement.emergencyPaused() || settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
         if (block.timestamp <= p.scoreRevealDeadline) revert InvalidState();
@@ -912,7 +913,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     function promoteFallbackFinalist(uint256 procurementId) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) revert InvalidState();
-        if (settlement.paused() || settlement.settlementPaused()) revert InvalidState();
+        if (settlement.emergencyPaused() || settlement.settlementPaused()) revert InvalidState();
 
         (
             ,
@@ -948,7 +949,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             return;
         }
 
-        if (settlement.paused() || settlement.settlementPaused()) revert NoAdvanceableAction();
+        if (settlement.emergencyPaused() || settlement.settlementPaused()) revert NoAdvanceableAction();
 
         (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
         if (!selectionInfoOk || assignedAgent != address(0) || block.timestamp <= selectionExpiresAt) {
@@ -972,7 +973,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || block.timestamp <= p.scoreRevealDeadline) return false;
 
-        if (settlement.paused()) return false;
+        if (settlement.emergencyPaused()) return false;
 
         bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
         if (!hasDesignatableWinner) return true;
@@ -988,7 +989,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
     function _isFallbackPromotable(uint256 procurementId) internal view returns (bool) {
         if (paused()) return false;
-        if (settlement.paused() || settlement.settlementPaused()) return false;
+        if (settlement.emergencyPaused() || settlement.settlementPaused()) return false;
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) return false;
 
@@ -1029,7 +1030,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         (bool selectionInfoOk, uint64 selectionExpiresAt, address assignedAgent) = _tryGetSelectionState(p.jobId);
         if (!selectionInfoOk) return "linked_job_missing";
-        if (settlement.paused()) return "settlement_paused";
+        if (settlement.emergencyPaused()) return "settlement_emergency_paused";
         if (settlement.settlementPaused()) return "settlement_settlement_paused";
 
         if (assignedAgent != address(0)) return "winner_assigned";
