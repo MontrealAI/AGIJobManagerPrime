@@ -306,12 +306,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./utils/BusinessOwnable2Step.sol";
 
 import "./interfaces/IAGIJobManagerPrime.sol";
 import "./utils/UriUtils.sol";
 
-contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
+contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     uint256 private constant BPS_DENOMINATOR = 10_000;
@@ -433,6 +433,8 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     IAGIJobManagerPrime public immutable settlement;
     IERC20 public immutable agiToken;
 
+    bool public intakePaused;
+
     uint256 public nextProcurementId;
 
     mapping(uint256 => Procurement) public procurements;
@@ -480,8 +482,18 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         agiToken = IERC20(settlement.agiToken());
     }
 
+    modifier whenIntakeNotPaused() {
+        if (intakePaused) revert InvalidState();
+        _;
+    }
+
+
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    function setIntakePaused(bool paused_) external onlyOwner {
+        intakePaused = paused_;
+    }
 
     function renounceOwnership() public view override onlyOwner {
         revert RenounceOwnershipDisabled();
@@ -500,7 +512,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     function createPremiumJobWithDiscovery(
         PremiumJobParams calldata job,
         ProcurementParams calldata proc
-    ) external whenNotPaused nonReentrant returns (uint256 jobId, uint256 procurementId) {
+    ) external whenIntakeNotPaused whenNotPaused nonReentrant returns (uint256 jobId, uint256 procurementId) {
         jobId = settlement.createConfiguredJobFor(
             msg.sender,
             job.jobSpecURI,
@@ -517,7 +529,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     function attachProcurementToExistingJob(
         uint256 jobId,
         ProcurementParams calldata proc
-    ) external whenNotPaused nonReentrant returns (uint256 procurementId) {
+    ) external whenIntakeNotPaused whenNotPaused nonReentrant returns (uint256 procurementId) {
         if (msg.sender != settlement.jobEmployerOf(jobId)) revert NotAuthorized();
         if (hasProcurementByJobId[jobId]) revert InvalidState();
 
@@ -543,7 +555,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         bytes32 commitment,
         string calldata subdomain,
         bytes32[] calldata globalProof
-    ) external whenNotPaused nonReentrant {
+    ) external whenIntakeNotPaused whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
         if (p.employer == address(0) || p.cancelled) revert InvalidState();
         if (block.timestamp > p.commitDeadline) revert InvalidState();
@@ -661,6 +673,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function cancelProcurement(uint256 procurementId) external whenNotPaused nonReentrant {
+        if (settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         if (p.employer == address(0) || p.cancelled || p.winnerFinalized) revert InvalidState();
         if (msg.sender != p.employer && msg.sender != owner()) revert NotAuthorized();
@@ -811,6 +824,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function finalizeWinner(uint256 procurementId) external whenNotPaused nonReentrant {
+        if (settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
         if (block.timestamp <= p.scoreRevealDeadline) revert InvalidState();
@@ -910,6 +924,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function promoteFallbackFinalist(uint256 procurementId) external whenNotPaused nonReentrant {
+        if (settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         if (!p.winnerFinalized || p.cancelled) revert InvalidState();
         if (settlement.paused() || settlement.settlementPaused()) revert InvalidState();
@@ -944,6 +959,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
 
         if (!p.winnerFinalized) {
             if (block.timestamp <= p.scoreRevealDeadline) revert NoAdvanceableAction();
+            if (settlement.settlementPaused()) revert NoAdvanceableAction();
             _finalizeWinner(procurementId, p);
             return;
         }
@@ -962,7 +978,7 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
     }
 
     function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
-        if (paused()) return false;
+        if (paused() || intakePaused) return false;
         Procurement storage p = procurements[procurementId];
         return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && block.timestamp > p.revealDeadline;
     }
@@ -1458,30 +1474,27 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
             uint256 bondRefund;
             uint8 band;
             uint256 reward;
+            uint256 qualityReward;
 
-            if (!robustConsensus) {
-                band = 255;
-                bondRefund = sc.bond;
-            } else {
-                uint256 weight;
-                uint256 livenessBps;
-                (band, bondRefund, weight, livenessBps) = _bandSettlement(sc.bond, sc.revealedScore, medianScore);
+            (band, bondRefund, reward, qualityReward) = _computeScoreSettlement(
+                robustConsensus,
+                sc.bond,
+                sc.revealedScore,
+                medianScore,
+                perRevealLiveness,
+                qualityPool,
+                totalWeight
+            );
 
-                if (sc.bond > bondRefund) {
-                    claimable[p.employer] += sc.bond - bondRefund;
-                }
+            if (sc.bond > bondRefund) {
+                claimable[p.employer] += sc.bond - bondRefund;
+            }
 
-                uint256 livenessReward = (perRevealLiveness * livenessBps) / BPS_DENOMINATOR;
-                if (livenessReward > 0) {
-                    reward = livenessReward;
-                    livenessDistributed += livenessReward;
-                }
-
-                if (totalWeight > 0 && weight > 0) {
-                    uint256 qualityReward = (qualityPool * weight) / totalWeight;
-                    reward += qualityReward;
-                    qualityDistributed += qualityReward;
-                }
+            if (reward > qualityReward) {
+                livenessDistributed += reward - qualityReward;
+            }
+            if (qualityReward > 0) {
+                qualityDistributed += qualityReward;
             }
 
             claimable[validator] += bondRefund + reward;
@@ -1500,6 +1513,32 @@ contract AGIJobDiscoveryPrime is Ownable, ReentrancyGuard, Pausable {
         }
 
         spentRewards = livenessDistributed + qualityDistributed;
+    }
+
+    function _computeScoreSettlement(
+        bool robustConsensus,
+        uint256 bond,
+        uint8 revealedScore,
+        uint8 medianScore,
+        uint256 perRevealLiveness,
+        uint256 qualityPool,
+        uint256 totalWeight
+    ) internal pure returns (uint8 band, uint256 bondRefund, uint256 reward, uint256 qualityReward) {
+        if (!robustConsensus) {
+            return (255, bond, 0, 0);
+        }
+
+        uint256 weight;
+        uint256 livenessBps;
+        (band, bondRefund, weight, livenessBps) = _bandSettlement(bond, revealedScore, medianScore);
+
+        uint256 livenessReward = (perRevealLiveness * livenessBps) / BPS_DENOMINATOR;
+        reward = livenessReward;
+
+        if (totalWeight > 0 && weight > 0) {
+            qualityReward = (qualityPool * weight) / totalWeight;
+            reward += qualityReward;
+        }
     }
 
     function _qualityWeightForDeviation(uint8 score, uint8 medianScore) internal pure returns (uint256) {

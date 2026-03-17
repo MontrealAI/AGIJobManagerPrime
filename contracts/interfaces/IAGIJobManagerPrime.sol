@@ -367,4 +367,5 @@ interface IAGIJobManagerPrime {
 
     function setEnsJobPages(address target) external;
     function ensJobPages() external view returns (address);
+
 }
