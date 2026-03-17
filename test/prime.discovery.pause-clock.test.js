@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { time } = require('@openzeppelin/test-helpers');
+const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { expectCustomError } = require('./helpers/errors');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
@@ -34,7 +34,7 @@ function scoreCommitment(procurementId, finalist, validator, score, salt) {
 }
 
 contract('Prime discovery pause-safe clocks', (accounts) => {
-  const [owner, employer, agentA, validatorA] = accounts;
+  const [owner, employer, agentA, validatorA, outsider] = accounts;
   let token;
   let manager;
   let discovery;
@@ -132,6 +132,12 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
     await discovery.finalizeShortlist(procurementId, { from: owner });
   }
 
+  async function progressToAcceptedTrial(procurementId) {
+    await progressToShortlisted(procurementId);
+    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await discovery.submitTrial(procurementId, 'ipfs://trial/A', { from: agentA });
+  }
+
   it('freezes finalist acceptance window while discovery is paused', async () => {
     const procurementId = await createProcurement();
     await progressToShortlisted(procurementId);
@@ -139,7 +145,7 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
     await time.increase(15);
     await discovery.pause({ from: owner });
     await time.increase(40);
-    await expectCustomError(discovery.acceptFinalist.call(procurementId, { from: agentA }), 'EnforcedPause');
+    await expectRevert.unspecified(discovery.acceptFinalist(procurementId, { from: agentA }));
     await discovery.unpause({ from: owner });
 
     await discovery.acceptFinalist(procurementId, { from: agentA });
@@ -147,8 +153,7 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
 
   it('freezes trial and validator reveal windows across repeated pause cycles', async () => {
     const procurementId = await createProcurement();
-    await progressToShortlisted(procurementId);
-    await discovery.acceptFinalist(procurementId, { from: agentA });
+    await progressToAcceptedTrial(procurementId);
 
     await time.increase(10);
     await discovery.pause({ from: owner });
@@ -158,9 +163,7 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
     await time.increase(15);
     await discovery.unpause({ from: owner });
 
-    await discovery.submitTrial(procurementId, 'ipfs://trial/A', { from: agentA });
-
-    await time.increase(21);
+    await time.increase(45);
     const scoreSalt = web3.utils.randomHex(32);
     const commit = scoreCommitment(procurementId, agentA, validatorA, 91, scoreSalt);
     await discovery.commitFinalistScore(procurementId, agentA, commit, '', EMPTY, { from: validatorA });
@@ -168,8 +171,45 @@ contract('Prime discovery pause-safe clocks', (accounts) => {
     await discovery.pause({ from: owner });
     await time.increase(30);
     await discovery.unpause({ from: owner });
+    await time.increase(20);
 
     await discovery.revealFinalistScore(procurementId, agentA, 91, scoreSalt, '', EMPTY, { from: validatorA });
+  });
+
+  it('keeps winner finalization available for neutral closeout under settlement freeze when no winner is designatable', async () => {
+    const procurementId = await createProcurement();
+    await progressToShortlisted(procurementId);
+
+    await time.increase(95);
+    await manager.setSettlementPaused(true, { from: owner });
+
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), true, 'neutral closeout should stay finalizable');
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'finalize_winner');
+
+    const tx = await discovery.finalizeWinner(procurementId, { from: outsider });
+    assert(tx.logs.find((l) => l.event === 'ProcurementClosedWithoutWinner'));
+  });
+
+  it('surfaces linked manager pause states only when winner assignment would be required', async () => {
+    const procurementId = await createProcurement();
+    await progressToAcceptedTrial(procurementId);
+
+    await time.increase(45);
+    const scoreSalt = web3.utils.randomHex(32);
+    const commit = scoreCommitment(procurementId, agentA, validatorA, 90, scoreSalt);
+    await discovery.commitFinalistScore(procurementId, agentA, commit, '', EMPTY, { from: validatorA });
+    await time.increase(20);
+    await discovery.revealFinalistScore(procurementId, agentA, 90, scoreSalt, '', EMPTY, { from: validatorA });
+    await time.increase(21);
+
+    await manager.pause({ from: owner });
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'settlement_paused');
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false);
+
+    await manager.unpause({ from: owner });
+    await manager.setSettlementPaused(true, { from: owner });
+    assert.equal(await discovery.nextActionForProcurement(procurementId), 'linked_settlement_frozen');
+    assert.equal(await discovery.isWinnerFinalizable(procurementId), false);
   });
 
   it('allows in-flight procurements to continue during intake pause while preserving helper truthfulness', async () => {

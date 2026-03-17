@@ -841,11 +841,14 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     }
 
     function finalizeWinner(uint256 procurementId) external whenNotPaused nonReentrant {
-        if (settlement.settlementPaused()) revert InvalidState();
+        if (settlement.paused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
         uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
         if (effectiveNow <= p.scoreRevealDeadline) revert InvalidState();
+
+        bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+        if (hasDesignatableWinner && settlement.settlementPaused()) revert InvalidState();
 
         _finalizeWinner(procurementId, p);
     }
@@ -977,7 +980,11 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (!p.winnerFinalized) {
             if (_effectiveTimestamp(p) <= p.scoreRevealDeadline) revert NoAdvanceableAction();
-            if (settlement.settlementPaused()) revert NoAdvanceableAction();
+            if (settlement.paused()) revert NoAdvanceableAction();
+            bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+            if (hasDesignatableWinner && settlement.settlementPaused()) {
+                revert NoAdvanceableAction();
+            }
             _finalizeWinner(procurementId, p);
             return;
         }
@@ -1005,9 +1012,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (paused()) return false;
         Procurement storage p = procurements[procurementId];
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || _effectiveTimestamp(p) <= p.scoreRevealDeadline) return false;
-
         if (settlement.paused()) return false;
-
         bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
         if (!hasDesignatableWinner) return true;
 
@@ -1060,6 +1065,11 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
             if (effectiveNow <= p.trialDeadline) return "submit_trials";
             if (effectiveNow <= p.scoreCommitDeadline) return "commit_scores";
             if (effectiveNow <= p.scoreRevealDeadline) return "reveal_scores";
+            if (settlement.paused()) return "settlement_paused";
+            bool hasDesignatableWinner = _hasDesignatableWinner(procurementId, p);
+            if (hasDesignatableWinner) {
+                if (settlement.settlementPaused()) return "linked_settlement_frozen";
+            }
             return "finalize_winner";
         }
 
