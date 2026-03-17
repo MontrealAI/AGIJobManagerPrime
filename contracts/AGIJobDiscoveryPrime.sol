@@ -365,6 +365,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     struct Procurement {
         address employer;
         uint256 jobId;
+        uint64 pauseSecondsBaseline;
 
         uint64 commitDeadline;
         uint64 revealDeadline;
@@ -434,6 +435,8 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     IERC20 public immutable agiToken;
 
     bool public intakePaused;
+    uint64 public pauseStartedAt;
+    uint64 public pausedSecondsAccumulated;
 
     uint256 public nextProcurementId;
 
@@ -488,8 +491,15 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     }
 
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        pauseStartedAt = uint64(block.timestamp);
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        pausedSecondsAccumulated += uint64(block.timestamp) - pauseStartedAt;
+        _unpause();
+    }
 
     function setIntakePaused(bool paused_) external onlyOwner {
         intakePaused = paused_;
@@ -555,10 +565,11 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         bytes32 commitment,
         string calldata subdomain,
         bytes32[] calldata globalProof
-    ) external whenIntakeNotPaused whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.employer == address(0) || p.cancelled) revert InvalidState();
-        if (block.timestamp > p.commitDeadline) revert InvalidState();
+        if (effectiveNow > p.commitDeadline) revert InvalidState();
         if (commitment == bytes32(0)) revert InvalidParameters();
         if (!settlement.isAuthorizedAgent(msg.sender, subdomain, globalProof)) revert NotAuthorized();
         if (settlement.reputation(msg.sender) < p.minReputation) revert NotAuthorized();
@@ -586,8 +597,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         string calldata applicationURI
     ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.employer == address(0) || p.cancelled) revert InvalidState();
-        if (block.timestamp <= p.commitDeadline || block.timestamp > p.revealDeadline) revert InvalidState();
+        if (effectiveNow <= p.commitDeadline || effectiveNow > p.revealDeadline) revert InvalidState();
 
         Application storage a = applications[procurementId][msg.sender];
         if (a.commitment == bytes32(0) || a.revealed) revert InvalidState();
@@ -609,8 +621,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
     function finalizeShortlist(uint256 procurementId) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.employer == address(0) || p.cancelled || p.shortlistFinalized) revert InvalidState();
-        if (block.timestamp <= p.revealDeadline) revert InvalidState();
+        if (effectiveNow <= p.revealDeadline) revert InvalidState();
 
         _finalizeShortlist(procurementId, p);
     }
@@ -727,8 +740,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
     function acceptFinalist(uint256 procurementId) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (!p.shortlistFinalized || p.cancelled) revert InvalidState();
-        if (block.timestamp > p.finalistAcceptDeadline) revert InvalidState();
+        if (effectiveNow > p.finalistAcceptDeadline) revert InvalidState();
 
         Application storage a = applications[procurementId][msg.sender];
         if (!a.shortlisted || a.finalistAccepted) revert InvalidState();
@@ -748,8 +762,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         string calldata trialURI
     ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (!p.shortlistFinalized || p.cancelled) revert InvalidState();
-        if (block.timestamp > p.trialDeadline) revert InvalidState();
+        if (effectiveNow > p.trialDeadline) revert InvalidState();
 
         Application storage a = applications[procurementId][msg.sender];
         if (!a.shortlisted || !a.finalistAccepted || a.trialSubmitted) revert InvalidState();
@@ -770,8 +785,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         bytes32[] calldata validatorProof
     ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.cancelled || !p.shortlistFinalized) revert InvalidState();
-        if (block.timestamp <= p.trialDeadline || block.timestamp > p.scoreCommitDeadline) revert InvalidState();
+        if (effectiveNow <= p.trialDeadline || effectiveNow > p.scoreCommitDeadline) revert InvalidState();
         if (commitment == bytes32(0)) revert InvalidParameters();
         if (!settlement.isAuthorizedValidator(msg.sender, subdomain, validatorProof)) revert NotAuthorized();
         if (msg.sender == p.employer) revert NotAuthorized();
@@ -804,8 +820,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         bytes32[] calldata validatorProof
     ) external whenNotPaused nonReentrant {
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.cancelled || !p.shortlistFinalized) revert InvalidState();
-        if (block.timestamp <= p.scoreCommitDeadline || block.timestamp > p.scoreRevealDeadline) revert InvalidState();
+        if (effectiveNow <= p.scoreCommitDeadline || effectiveNow > p.scoreRevealDeadline) revert InvalidState();
         if (score > 100) revert InvalidParameters();
         if (!settlement.isAuthorizedValidator(msg.sender, subdomain, validatorProof)) revert NotAuthorized();
         if (applications[procurementId][msg.sender].commitment != bytes32(0)) revert NotAuthorized();
@@ -826,8 +843,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     function finalizeWinner(uint256 procurementId) external whenNotPaused nonReentrant {
         if (settlement.settlementPaused()) revert InvalidState();
         Procurement storage p = procurements[procurementId];
+        uint256 effectiveNow = _effectiveTimestamp(p);
         if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized) revert InvalidState();
-        if (block.timestamp <= p.scoreRevealDeadline) revert InvalidState();
+        if (effectiveNow <= p.scoreRevealDeadline) revert InvalidState();
 
         _finalizeWinner(procurementId, p);
     }
@@ -952,13 +970,13 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (p.cancelled) revert InvalidState();
 
         if (!p.shortlistFinalized) {
-            if (block.timestamp <= p.revealDeadline) revert NoAdvanceableAction();
+            if (_effectiveTimestamp(p) <= p.revealDeadline) revert NoAdvanceableAction();
             _finalizeShortlist(procurementId, p);
             return;
         }
 
         if (!p.winnerFinalized) {
-            if (block.timestamp <= p.scoreRevealDeadline) revert NoAdvanceableAction();
+            if (_effectiveTimestamp(p) <= p.scoreRevealDeadline) revert NoAdvanceableAction();
             if (settlement.settlementPaused()) revert NoAdvanceableAction();
             _finalizeWinner(procurementId, p);
             return;
@@ -978,15 +996,15 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
     }
 
     function isShortlistFinalizable(uint256 procurementId) public view returns (bool) {
-        if (paused() || intakePaused) return false;
+        if (paused()) return false;
         Procurement storage p = procurements[procurementId];
-        return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && block.timestamp > p.revealDeadline;
+        return p.employer != address(0) && !p.cancelled && !p.shortlistFinalized && _effectiveTimestamp(p) > p.revealDeadline;
     }
 
     function isWinnerFinalizable(uint256 procurementId) public view returns (bool) {
         if (paused()) return false;
         Procurement storage p = procurements[procurementId];
-        if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || block.timestamp <= p.scoreRevealDeadline) return false;
+        if (p.cancelled || !p.shortlistFinalized || p.winnerFinalized || _effectiveTimestamp(p) <= p.scoreRevealDeadline) return false;
 
         if (settlement.paused()) return false;
 
@@ -1031,15 +1049,17 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         Procurement storage p = procurements[procurementId];
         if (p.cancelled) return "cancelled";
         if (!p.shortlistFinalized) {
-            if (block.timestamp <= p.commitDeadline) return "wait_commit";
-            if (block.timestamp <= p.revealDeadline) return "reveal_applications";
+            uint256 effectiveNow = _effectiveTimestamp(p);
+            if (effectiveNow <= p.commitDeadline) return "wait_commit";
+            if (effectiveNow <= p.revealDeadline) return "reveal_applications";
             return "finalize_shortlist";
         }
         if (!p.winnerFinalized) {
-            if (block.timestamp <= p.finalistAcceptDeadline) return "finalists_accept";
-            if (block.timestamp <= p.trialDeadline) return "submit_trials";
-            if (block.timestamp <= p.scoreCommitDeadline) return "commit_scores";
-            if (block.timestamp <= p.scoreRevealDeadline) return "reveal_scores";
+            uint256 effectiveNow = _effectiveTimestamp(p);
+            if (effectiveNow <= p.finalistAcceptDeadline) return "finalists_accept";
+            if (effectiveNow <= p.trialDeadline) return "submit_trials";
+            if (effectiveNow <= p.scoreCommitDeadline) return "commit_scores";
+            if (effectiveNow <= p.scoreRevealDeadline) return "reveal_scores";
             return "finalize_winner";
         }
 
@@ -1361,9 +1381,11 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         procurementByJobId[jobId] = procurementId;
         hasProcurementByJobId[jobId] = true;
         Procurement storage p = procurements[procurementId];
+        uint64 pausedAtCreation = _pausedSecondsNow();
 
         p.employer = employer;
         p.jobId = jobId;
+        p.pauseSecondsBaseline = pausedAtCreation;
 
         p.commitDeadline = proc.commitDeadline;
         p.revealDeadline = proc.revealDeadline;
@@ -1390,6 +1412,15 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         p.validatorScoreBond = proc.validatorScoreBond;
 
         emit ProcurementCreated(procurementId, jobId, employer);
+    }
+
+    function _pausedSecondsNow() internal view returns (uint64) {
+        if (!paused()) return pausedSecondsAccumulated;
+        return pausedSecondsAccumulated + uint64(block.timestamp) - pauseStartedAt;
+    }
+
+    function _effectiveTimestamp(Procurement storage p) internal view returns (uint256) {
+        return block.timestamp - (_pausedSecondsNow() - uint256(p.pauseSecondsBaseline));
     }
 
     function _snapshotHistoricalScore(address agent) internal view returns (uint256) {
