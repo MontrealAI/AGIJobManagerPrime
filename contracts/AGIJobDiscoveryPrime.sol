@@ -951,7 +951,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         if (!p.winnerFinalized || p.cancelled) revert InvalidState();
         if (settlement.paused() || settlement.settlementPaused()) revert InvalidState();
 
-        (, , bool selectionExpired, address assignedAgent) = settlement.getJobSelectionRuntimeState(p.jobId);
+        (bool selectionExpired, address assignedAgent) = settlement.getJobSelectionRuntimeState(p.jobId);
 
         if (assignedAgent != address(0)) revert InvalidState();
         if (!selectionExpired) revert InvalidState();
@@ -1199,7 +1199,7 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
             uint8 intakeMode,
             ,
             ,
-            uint64 selectionExpiresAt,
+            ,
             ,
             ,
             ,
@@ -1208,8 +1208,8 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
 
         if (intakeMode != 1) return false;
         if (assignedAgent != address(0)) return false;
-        (, , bool selectionExpired, ) = settlement.getJobSelectionRuntimeState(jobId);
-        return selectionExpiresAt == 0 || selectionExpired;
+        (bool selectionExpired, ) = settlement.getJobSelectionRuntimeState(jobId);
+        return selectionExpired;
     }
 
     function _tryGetSelectionState(uint256 jobId) internal view returns (bool ok, bool selectionExpired, address assignedAgent) {
@@ -1218,12 +1218,9 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         );
         if (!success || data.length == 0) return (false, false, address(0));
 
-        (uint64 selectionExpiresAt, , bool parsedSelectionExpired, address parsedAssignedAgent) = abi.decode(
-            data,
-            (uint64, uint256, bool, address)
-        );
+        (bool parsedSelectionExpired, address parsedAssignedAgent) = abi.decode(data, (bool, address));
 
-        return (true, selectionExpiresAt == 0 || parsedSelectionExpired, parsedAssignedAgent);
+        return (true, parsedSelectionExpired, parsedAssignedAgent);
     }
 
     function claim() external nonReentrant {

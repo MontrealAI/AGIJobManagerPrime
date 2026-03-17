@@ -340,7 +340,7 @@ interface IAGIJobManagerPrime {
     function getJobSelectionRuntimeState(uint256 jobId)
         external
         view
-        returns (uint64 selectionExpiresAt, uint256 effectiveNow, bool selectionExpired, address assignedAgent);
+        returns (bool selectionExpired, address assignedAgent);
 
     function reputation(address agent) external view returns (uint256);
     function previewHistoricalScore(address agent) external view returns (uint256);

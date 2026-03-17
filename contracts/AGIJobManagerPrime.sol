@@ -1152,12 +1152,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     function getJobSelectionRuntimeState(uint256 jobId)
         external
         view
-        returns (uint64 selectionExpiresAt, uint256 effectiveNow, bool selectionExpired, address assignedAgent)
+        returns (bool selectionExpired, address assignedAgent)
     {
         Job storage job = _job(jobId);
-        selectionExpiresAt = job.selectionExpiresAt;
-        effectiveNow = _effectiveTimestamp(job);
-        selectionExpired = selectionExpiresAt != 0 && effectiveNow > selectionExpiresAt;
+        uint64 selectionExpiresAt = job.selectionExpiresAt;
+        selectionExpired = selectionExpiresAt == 0 || _effectiveTimestamp(job) > selectionExpiresAt;
         assignedAgent = job.assignedAgent;
     }
 
