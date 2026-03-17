@@ -212,6 +212,87 @@ contract('Prime discovery validator incentives', (accounts) => {
     assert(employerClaim.gte(web3.utils.toBN(web3.utils.toWei('0.5'))), 'employer should receive non-reveal bond slash');
   });
 
+
+
+  it('deterministically splits equal-closeness rewards without order dependence', async () => {
+    const { procurementId, proc } = await createSingleFinalistProcurement({ minValidatorReveals: 2 });
+
+    const entries = [
+      [validatorA, 78, web3.utils.soliditySha3('tie-a')],
+      [validatorB, 82, web3.utils.soliditySha3('tie-b')],
+    ];
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    for (const [validator, score, salt] of entries) {
+      await discovery.commitFinalistScore(
+        procurementId,
+        agentA,
+        scoreCommitment(procurementId, agentA, validator, score, salt),
+        '',
+        EMPTY,
+        { from: validator }
+      );
+    }
+
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 82, entries[1][2], '', EMPTY, { from: validatorB });
+    await discovery.revealFinalistScore(procurementId, agentA, 78, entries[0][2], '', EMPTY, { from: validatorA });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+
+    const claimA = await discovery.canClaim(validatorA);
+    const claimB = await discovery.canClaim(validatorB);
+
+    assert.equal(claimA.toString(), claimB.toString(), 'equal deviations should settle equally');
+  });
+
+  it('conserves validator reward budget and leaves no validator bond stranded after finalization', async () => {
+    const { procurementId, proc } = await createSingleFinalistProcurement({ minValidatorReveals: 2 });
+
+    const entries = [
+      [validatorA, 81, web3.utils.soliditySha3('budget-a')],
+      [validatorB, 78, web3.utils.soliditySha3('budget-b')],
+      [validatorC, 10, web3.utils.soliditySha3('budget-c')],
+    ];
+
+    await time.increaseTo(proc.scoreCommitDeadline - 1);
+    for (const [validator, score, salt] of entries) {
+      await discovery.commitFinalistScore(
+        procurementId,
+        agentA,
+        scoreCommitment(procurementId, agentA, validator, score, salt),
+        '',
+        EMPTY,
+        { from: validator }
+      );
+    }
+
+    await time.increaseTo(proc.scoreRevealDeadline - 1);
+    await discovery.revealFinalistScore(procurementId, agentA, 81, entries[0][2], '', EMPTY, { from: validatorA });
+    await discovery.revealFinalistScore(procurementId, agentA, 78, entries[1][2], '', EMPTY, { from: validatorB });
+
+    await time.increaseTo(proc.scoreRevealDeadline + 1);
+    await discovery.finalizeWinner(procurementId, { from: owner });
+
+    const rewardCap = web3.utils.toBN(proc.validatorRewardPerReveal).mul(web3.utils.toBN('3'));
+    const finalA = await discovery.scoreCommits(procurementId, agentA, validatorA);
+    const finalB = await discovery.scoreCommits(procurementId, agentA, validatorB);
+    const finalC = await discovery.scoreCommits(procurementId, agentA, validatorC);
+
+    const vA = await discovery.canClaim(validatorA);
+    const vB = await discovery.canClaim(validatorB);
+    const vC = await discovery.canClaim(validatorC);
+    const emp = await discovery.canClaim(employer);
+
+    const totalValidatorRewards = vA.add(vB).add(vC).sub(web3.utils.toBN(proc.validatorScoreBond).mul(web3.utils.toBN('2')));
+    assert(totalValidatorRewards.lte(rewardCap), 'total validator rewards must stay under prefunded cap');
+    assert.equal(finalA.bond.toString(), '0', 'revealed validator A bond should be settled');
+    assert.equal(finalB.bond.toString(), '0', 'revealed validator B bond should be settled');
+    assert.equal(finalC.bond.toString(), '0', 'non-revealed validator C bond should be slashed/settled');
+    assert(emp.gt(web3.utils.toBN('0')), 'employer should receive slashes and unused reward budget');
+  });
+
   it('under quorum only pays liveness component and refunds quality budget', async () => {
     const { procurementId, proc } = await createSingleFinalistProcurement({ minValidatorReveals: 3 });
 
@@ -226,7 +307,7 @@ contract('Prime discovery validator incentives', (accounts) => {
     await discovery.finalizeWinner(procurementId, { from: owner });
 
     const validatorClaim = await discovery.canClaim(validatorA);
-    const expected = web3.utils.toBN(web3.utils.toWei('0.7')); // 0.5 bond + 20% of 1.0 reward unit
+    const expected = web3.utils.toBN(web3.utils.toWei('0.6')); // 0.5 bond + 10% of 1.0 reward unit
     assert.equal(validatorClaim.toString(), expected.toString(), 'under-quorum reveal should only receive bond + liveness share');
   });
 });
