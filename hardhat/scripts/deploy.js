@@ -43,6 +43,14 @@ function stableObject(value) {
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
+async function safePendingOwner(contract) {
+  try {
+    return await contract.pendingOwner();
+  } catch (_) {
+    return ethers.ZeroAddress;
+  }
+}
+
 function getExplorerAddressBase(chainId) {
   if (chainId === 1) return 'https://etherscan.io/address/';
   if (chainId === 11155111) return 'https://sepolia.etherscan.io/address/';
@@ -260,6 +268,33 @@ function readPrimeManagerBytecodeSizes(constructorArgs) {
   };
 }
 
+
+function readPrimeDiscoveryBytecodeSizes(settlementAddress) {
+  const artifactPath = path.resolve(__dirname, '..', 'artifacts', 'contracts', 'AGIJobDiscoveryPrime.sol', 'AGIJobDiscoveryPrime.json');
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`Missing AGIJobDiscoveryPrime artifact: ${artifactPath}. Run \`npm run compile\` first.`);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  const runtimeBytes = bytecodeHexToBytes(artifact.deployedBytecode);
+  const initcodeTemplateBytes = bytecodeHexToBytes(artifact.bytecode);
+  const constructorArgsBytes = bytecodeHexToBytes(ethers.AbiCoder.defaultAbiCoder().encode(['address'], [settlementAddress]));
+  const initcodeBytes = initcodeTemplateBytes + constructorArgsBytes;
+
+  if (!runtimeBytes || !initcodeTemplateBytes) {
+    throw new Error('AGIJobDiscoveryPrime artifact has empty bytecode; compile artifacts are invalid.');
+  }
+
+  return {
+    runtimeBytes,
+    initcodeBytes,
+    initcodeTemplateBytes,
+    constructorArgsBytes,
+    runtimeHeadroom: MAX_MAINNET_RUNTIME_BYTES - runtimeBytes,
+    initcodeHeadroom: MAX_MAINNET_INITCODE_BYTES - initcodeBytes,
+  };
+}
+
 function copySolcInput(outDir) {
   const latestBuildInfoPath = getLatestBuildInfoPath();
   const buildInfo = JSON.parse(fs.readFileSync(latestBuildInfoPath, 'utf8'));
@@ -323,6 +358,7 @@ async function main() {
     libraries: LIBRARIES,
     compiler: hardhatConfig.solidity,
     primeBytecode,
+    discoveryBytecodePrecheck: "computed after manager deployment",
     steps: [
       'Deploy linked libraries',
       'Deploy AGIJobManagerPrime',
@@ -372,6 +408,14 @@ async function main() {
   const managerDeployment = await deployContract('AGIJobManagerPrime', managerArgs, { libraries: linkedLibraries }, confirmations);
   deployments.AGIJobManagerPrime = managerDeployment;
   console.log(`[deployed] AGIJobManagerPrime ${managerDeployment.address} tx=${managerDeployment.txHash}`);
+
+  const discoveryBytecode = readPrimeDiscoveryBytecodeSizes(managerDeployment.address);
+  if (discoveryBytecode.runtimeBytes >= MAX_MAINNET_RUNTIME_BYTES) {
+    throw new Error(`AGIJobDiscoveryPrime runtime bytecode ${discoveryBytecode.runtimeBytes} bytes is not mainnet deployable (< ${MAX_MAINNET_RUNTIME_BYTES}).`);
+  }
+  if (discoveryBytecode.initcodeBytes > MAX_MAINNET_INITCODE_BYTES) {
+    throw new Error(`AGIJobDiscoveryPrime initcode ${discoveryBytecode.initcodeBytes} bytes exceeds EIP-3860 limit (${MAX_MAINNET_INITCODE_BYTES}).`);
+  }
 
   const discoveryArgs = [managerDeployment.address];
   const discoveryDeployment = await deployContract(
@@ -444,6 +488,14 @@ async function main() {
     console.log('[owner] transferOwnership skipped (deployer is final owner).');
   }
 
+  const discovery = await ethers.getContractAt('AGIJobDiscoveryPrime', discoveryDeployment.address, deployer);
+  const ownerStatus = {
+    managerOwner: await manager.owner(),
+    managerPendingOwner: await safePendingOwner(manager),
+    discoveryOwner: await discovery.owner(),
+    discoveryPendingOwner: await safePendingOwner(discovery),
+  };
+
   if (shouldVerify) {
     for (const libName of LIBRARIES) {
       await sleep(verifyDelayMs);
@@ -501,9 +553,11 @@ async function main() {
     setEnsJobPages: ensJobPagesWiring,
     completionNFT: completionNFTAddress,
     ownershipTransfer,
+    ownerStatus,
     verification: shouldVerify ? verificationResults : { skipped: true },
     configHash,
     primeBytecode,
+    discoveryBytecode: readPrimeDiscoveryBytecodeSizes(managerDeployment.address),
   };
 
   const receiptPath = path.join(outDir, `deployment.prime.${chainId}.${managerDeployment.blockNumber}.json`);
@@ -531,6 +585,11 @@ async function main() {
   console.log(`CompletionNFT: ${record.completionNFT}${explorerAddressBase ? ` ${explorerAddressBase}${record.completionNFT}` : ''}`);
   console.log(`setDiscoveryModule tx: ${discoveryModuleWiring.txHash}`);
   console.log(`setEnsJobPages: ${ensJobPagesWiring.executed ? `${ensJobPagesWiring.target} tx=${ensJobPagesWiring.txHash}` : 'skipped'}`);
+  console.log(`manager owner=${ownerStatus.managerOwner} pendingOwner=${ownerStatus.managerPendingOwner}`);
+  console.log(`discovery owner=${ownerStatus.discoveryOwner} pendingOwner=${ownerStatus.discoveryPendingOwner}`);
+  if (ownerStatus.managerPendingOwner !== ethers.ZeroAddress || ownerStatus.discoveryPendingOwner !== ethers.ZeroAddress) {
+    console.log(`NEXT STEP: pending owner ${resolvedFinalOwner} must call acceptOwnership() on contracts showing a non-zero pendingOwner.`);
+  }
   console.log(`receipt: ${receiptPath}`);
   console.log(`solc-input: ${solcInputPath}`);
   console.log(`verify-targets: ${verifyTargetsPath}`);

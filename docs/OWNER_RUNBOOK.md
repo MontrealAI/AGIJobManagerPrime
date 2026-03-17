@@ -137,3 +137,60 @@ Before `lockIdentityConfiguration()` or `lockConfiguration()`:
 - `updateAGITokenAddress`: identity-critical; only before lock.
 - `updateEnsRegistry`/`updateNameWrapper`/`updateRootNodes`/`setEnsJobPages`: identity-critical; only before lock.
 - Parameter setters affecting incentives (`setValidatorBondParams`, `setAgentBondParams`, `setValidatorSlashBps`, `setVoteQuorum`, etc.) should use change tickets and announced effective times.
+
+
+## 8) Ownership transfer (production-safe, two-step)
+
+Prime uses mixed ownership handoff:
+1. `AGIJobManagerPrime` uses `Ownable2Step`: owner calls `transferOwnership(newOwner)`, then pending owner calls `acceptOwnership()`.
+2. `AGIJobDiscoveryPrime` uses immediate owner transfer (`transferOwnership(newOwner)`).
+
+Safety notes:
+- `renounceOwnership()` is disabled on both contracts to prevent accidental owner loss.
+- If an incorrect pending owner was set, current owner can safely call `transferOwnership(correctAddress)` again before acceptance.
+
+## 9) Pause architecture and matrix (Prime)
+
+Three independent controls on manager:
+- **Intake pause**: `pause()/unpause()`
+- **Settlement freeze**: `setSettlementPaused(bool)`
+- **Full emergency**: `setEmergencyPaused(bool)`
+
+Discovery has its own intake pause (`pause()/unpause()`) and also respects manager emergency/freeze where relevant.
+
+### AGIJobManagerPrime matrix
+- **Create/configure/apply/new assignment-intake**: blocked by intake pause and emergency.
+- **Checkpoint submit + completion request**: allowed during intake pause; blocked by emergency.
+- **Validator vote/dispute open/fail-checkpoint/finalize/expire/cancel/dispute resolution/withdraw**: blocked by settlement freeze and emergency.
+- **Owner admin controls**: owner-only; emergency toggle always available.
+
+### AGIJobDiscoveryPrime matrix
+- **Create premium procurement / attach procurement / commit application**: blocked by discovery intake pause.
+- **Reveal application / shortlist / finalist acceptance / trial / score commit+reveal**: blocked only by discovery pause (so live procurements can proceed when manager intake is paused).
+- **Winner finalization + fallback promotion**: blocked by manager settlement freeze and manager emergency.
+- **Claims**: remain available (not tied to manager pause lanes).
+- **Autonomy helpers** (`isWinnerFinalizable`, `isFallbackPromotable`, `nextActionForProcurement`) distinguish settlement freeze vs manager emergency for assignment/fallback stages.
+
+## 10) Incident runbooks
+
+### A) Intake incident (stop new risk, keep honest progression)
+1. `AGIJobManagerPrime.pause()`
+2. Optionally `AGIJobDiscoveryPrime.pause()`
+3. Keep `setSettlementPaused(false)` and `setEmergencyPaused(false)`
+
+### B) Payout/accounting incident (freeze settlement lane)
+1. `AGIJobManagerPrime.setSettlementPaused(true)`
+2. Keep intake choice explicit (`pause` optional)
+3. Communicate: value-moving settlement actions are temporarily frozen; non-value progression remains available where safe.
+
+### C) Catastrophic emergency
+1. `AGIJobManagerPrime.setEmergencyPaused(true)`
+2. Optionally also intake-pause discovery/manager for operator clarity
+3. Publish emergency notice and recovery checkpoint
+
+### Recovery / unpause order
+1. Resolve root cause
+2. `setEmergencyPaused(false)`
+3. If used, `setSettlementPaused(false)`
+4. Re-open intake (`unpause` on manager/discovery)
+5. Run canary job/procurement before full traffic
