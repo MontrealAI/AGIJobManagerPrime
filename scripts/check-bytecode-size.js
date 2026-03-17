@@ -79,10 +79,6 @@ const checks = [
     name: "AGIJobDiscoveryPrime",
     artifactPath: artifactPathFor("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime"),
   },
-  {
-    name: "AGIJobCompletionNFT",
-    artifactPath: artifactPathFor("periphery/AGIJobCompletionNFT.sol", "AGIJobCompletionNFT"),
-  },
 ];
 
 ensurePrimeArtifacts(checks);
