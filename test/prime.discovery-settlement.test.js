@@ -118,9 +118,7 @@ contract('Prime discovery + settlement', (accounts) => {
   it('disables discovery renounceOwnership while preserving transferOwnership', async () => {
     await expectCustomError(discovery.renounceOwnership.call({ from: owner }), 'RenounceOwnershipDisabled');
     await discovery.transferOwnership(employer, { from: owner });
-    assert.equal(await discovery.pendingOwner(), employer, 'pending owner should be set');
-    await discovery.acceptOwnership({ from: employer });
-    assert.equal(await discovery.owner(), employer, 'ownership transfer should remain functional after acceptance');
+    assert.equal(await discovery.owner(), employer, 'ownership transfer should remain functional');
   });
 
   it('blocks repeated dispute opening and keeps dispute bond accounting stable', async () => {

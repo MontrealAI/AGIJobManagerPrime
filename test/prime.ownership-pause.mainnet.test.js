@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { expectRevert } = require('@openzeppelin/test-helpers');
+const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { expectCustomError } = require('./helpers/errors');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
@@ -64,15 +64,11 @@ contract('Prime ownership + graceful pause model', (accounts) => {
     }
   });
 
-  it('uses one-step manager transfer and two-step discovery transfer', async () => {
+  it('uses one-step ownership transfer for both prime contracts', async () => {
     await manager.transferOwnership(multisigLike, { from: owner });
     assert.equal(await manager.owner(), multisigLike);
 
     await discovery.transferOwnership(finalOwner, { from: owner });
-    await expectCustomError(discovery.acceptOwnership.call({ from: outsider }), 'NotPendingOwner');
-    await discovery.cancelOwnershipTransfer({ from: owner });
-    await discovery.transferOwnership(finalOwner, { from: owner });
-    await discovery.acceptOwnership({ from: finalOwner });
     assert.equal(await discovery.owner(), finalOwner);
   });
 
@@ -120,5 +116,51 @@ contract('Prime ownership + graceful pause model', (accounts) => {
     const after = await token.balanceOf(employer);
     assert.equal(claimable.toString(), '0', 'claim view stays available during intake pause');
     assert.equal(after.toString(), before.toString(), 'intake pause does not mutate balances');
+  });
+
+  it('freezes selected-agent acceptance while manager is paused', async () => {
+    const payout = web3.utils.toWei('10');
+    const createTx = await manager.createConfiguredJob('ipfs://sel/spec', payout, 3600, 'd', 1, ZERO32, { from: employer });
+    const jobId = createTx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+
+    await manager.designateSelectedAgent(jobId, agent, 30, 60, { from: owner });
+    await time.increase(10);
+    await manager.pause({ from: owner });
+    await time.increase(40);
+    await manager.unpause({ from: owner });
+
+    await manager.applyForJob(jobId, '', [], [], { from: agent });
+    const selection = await manager.getJobSelectionInfo(jobId);
+    assert.equal(selection.assignedAgent, agent, 'selected agent can still accept after pause clock freeze');
+  });
+
+  it('freezes checkpoint, review, challenge, and stale-dispute windows during manager/settlement pauses', async () => {
+    const payout = web3.utils.toWei('14');
+    await manager.setCompletionReviewPeriod(40, { from: owner });
+    await manager.setDisputeReviewPeriod(40, { from: owner });
+    await manager.setChallengePeriodAfterApproval(20, { from: owner });
+
+    const tx = await manager.createConfiguredJob('ipfs://pause/windows', payout, 120, 'd', 1, ZERO32, { from: employer });
+    const jobId = tx.logs.find((l) => l.event === 'JobCreated').args.jobId.toNumber();
+    await manager.designateSelectedAgent(jobId, agent, 50, 30, { from: owner });
+    await manager.applyForJob(jobId, '', [], [], { from: agent });
+
+    await time.increase(10);
+    await manager.pause({ from: owner });
+    await time.increase(60);
+    await manager.unpause({ from: owner });
+    await manager.submitCheckpoint(jobId, 'ipfs://checkpoint', { from: agent });
+
+    await manager.requestJobCompletion(jobId, 'ipfs://completion', { from: agent });
+    await time.increase(10);
+    await manager.setSettlementPaused(true, { from: owner });
+    await time.increase(50);
+    await manager.setSettlementPaused(false, { from: owner });
+
+    await manager.disputeJob(jobId, { from: employer });
+    await expectCustomError(manager.resolveStaleDispute.call(jobId, true, { from: owner }), 'InvalidState');
+
+    await time.increase(30);
+    await manager.resolveStaleDispute(jobId, true, { from: owner });
   });
 });
