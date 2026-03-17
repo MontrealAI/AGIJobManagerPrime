@@ -1,4 +1,3 @@
-const assert = require('assert');
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
 const AGIJobManagerPrime = artifacts.require('AGIJobManagerPrime');
@@ -95,27 +94,49 @@ contract('Prime manager pause-safe clocks', (accounts) => {
     await manager.submitCheckpoint(jobId, 'ipfs://cp', { from: agent });
   });
 
-  it('freezes completion review/challenge/dispute stale windows while paused', async () => {
+  it('preserves challenge window fairness when approval happens after a prior pause epoch', async () => {
     const jobId = await createSelectedJob(60, 0);
+    await manager.setChallengePeriodAfterApproval(100, { from: owner });
+
     await manager.applyForJob(jobId, '', [], [], { from: agent });
     await manager.requestJobCompletion(jobId, 'ipfs://done', { from: agent });
 
-    await time.increase(60 * 60 * 24 * 2);
     await manager.setSettlementPaused(true, { from: owner });
-    await time.increase(60 * 60 * 24 * 8);
-    await expectRevert.unspecified(manager.disputeJob(jobId, { from: employer }));
-
+    await time.increase(500);
     await manager.setSettlementPaused(false, { from: owner });
-    await manager.disputeJob(jobId, { from: employer });
+
+    await manager.validateJob(jobId, '', [], { from: validator });
+
+    await time.increase(80);
+    await expectRevert.unspecified(manager.finalizeJob(jobId, { from: employer }));
+
+    await time.increase(30);
+    await manager.finalizeJob(jobId, { from: employer });
+
+    await expectRevert.unspecified(manager.finalizeJob(jobId, { from: employer }));
+  });
+
+  it('preserves stale-dispute timeout fairness for auto-open disputes after prior pause epochs', async () => {
+    const jobId = await createSelectedJob(60, 0);
+    await manager.setRequiredValidatorDisapprovals(1, { from: owner });
+    await manager.setDisputeReviewPeriod(100, { from: owner });
+
+    await manager.applyForJob(jobId, '', [], [], { from: agent });
+    await manager.requestJobCompletion(jobId, 'ipfs://done', { from: agent });
 
     await manager.setSettlementPaused(true, { from: owner });
-    await time.increase(60 * 60 * 24 * 20);
+    await time.increase(400);
+    await manager.setSettlementPaused(false, { from: owner });
+
+    await manager.disapproveJob(jobId, '', [], { from: validator });
+
+    await time.increase(90);
     await expectRevert.unspecified(manager.resolveStaleDispute(jobId, true, { from: owner }));
 
-    await manager.setSettlementPaused(false, { from: owner });
+    await time.increase(20);
     await manager.resolveStaleDispute(jobId, true, { from: owner });
 
-    const jobCore = await manager.getJobCore(jobId);
-    assert.equal(jobCore.completed, true);
+    await expectRevert.unspecified(manager.finalizeJob(jobId, { from: employer }));
   });
+
 });

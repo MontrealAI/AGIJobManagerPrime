@@ -1218,9 +1218,12 @@ contract AGIJobDiscoveryPrime is BusinessOwnable2Step, ReentrancyGuard, Pausable
         );
         if (!success || data.length == 0) return (false, false, address(0));
 
-        (, , bool parsedSelectionExpired, address parsedAssignedAgent) = abi.decode(data, (uint64, uint256, bool, address));
+        (uint64 selectionExpiresAt, , bool parsedSelectionExpired, address parsedAssignedAgent) = abi.decode(
+            data,
+            (uint64, uint256, bool, address)
+        );
 
-        return (true, parsedSelectionExpired, parsedAssignedAgent);
+        return (true, selectionExpiresAt == 0 || parsedSelectionExpired, parsedAssignedAgent);
     }
 
     function claim() external nonReentrant {

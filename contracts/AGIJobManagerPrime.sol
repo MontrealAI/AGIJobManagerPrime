@@ -1294,6 +1294,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorApprovals >= job.requiredValidatorApprovalsSnapshot
             ) {
                 job.validatorApproved = true;
+                _resetPauseBaseline(job);
                 job.validatorApprovedAt = uint64(block.timestamp);
             }
         } else {
@@ -1306,6 +1307,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
                 job.validatorDisapprovals >= job.requiredValidatorDisapprovalsSnapshot
             ) {
                 job.disputed = true;
+                _resetPauseBaseline(job);
                 job.disputedAt = uint64(block.timestamp);
                 emit JobDisputed(jobId, msg.sender);
             }
