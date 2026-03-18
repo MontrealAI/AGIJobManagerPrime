@@ -12,15 +12,13 @@ remappings = [
   "forge-std/=lib/forge-std/src/"
 ]
 fs_permissions = [{ access = "read", path = "./" }]
-
-[fuzz]
-runs = 512
-
-[invariant]
-runs = 64
-depth = 40
-
+fuzz = { runs = 256, max_test_rejects = 65536, seed = "0x5052494d45" }
+invariant = { runs = 48, depth = 32, fail_on_revert = false, call_override = false, seed = "0x5052494d45" }
 
 [profile.ci]
-fuzz = { runs = 256 }
-invariant = { runs = 48, depth = 35 }
+fuzz = { runs = 512, max_test_rejects = 65536, seed = "0xC1C1C1" }
+invariant = { runs = 96, depth = 48, fail_on_revert = false, call_override = false, seed = "0xC1C1C1" }
+
+[profile.soak]
+fuzz = { runs = 2048, max_test_rejects = 131072, seed = "0x50A6" }
+invariant = { runs = 256, depth = 96, fail_on_revert = false, call_override = false, seed = "0x50A6" }
