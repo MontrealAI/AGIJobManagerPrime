@@ -23,10 +23,10 @@
     "advisor:job": "node scripts/advisor/state_advisor.js",
     "forge:build": "forge build",
     "forge:test": "forge test",
-    "forge:invariant": "FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol",
+    "forge:invariant": "FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/.*\\.t\\.sol",
     "slither": "./scripts/security/run-slither.sh",
     "deploy:agijobmanager:prod": "AGIJOBMANAGER_DEPLOY=1 npx truffle migrate --f 6 --to 6",
-    "test:prime": "npm run test:prime:unit",
+    "test:prime": "npm run test:prime:unit && npm run forge:fuzz && npm run forge:invariant",
     "test:prime:ci": "npm run test:prime && npm run test:size && npm run test:prime:deploy-smoke",
     "test:size": "cd hardhat && npm run compile && cd .. && node scripts/check-bytecode-size.js",
     "test:prime:deploy-smoke": "cd hardhat && npm run compile && npm run deploy:prime:smoke",
@@ -34,7 +34,10 @@
     "deploy:prime:mainnet": "cd hardhat && npm run deploy:prime:mainnet",
     "deploy:prime:sepolia": "cd hardhat && npm run deploy:prime:sepolia",
     "test:prime:unit": "npx truffle test --network test test/prime.discovery-settlement.test.js test/prime.discovery.pause-clock.test.js test/prime.ownership-pause.mainnet.test.js test/prime.manager.pause-clock.test.js",
-    "test:size:benchmark": "node scripts/benchmark-prime-bytecode.js"
+    "test:size:benchmark": "node scripts/benchmark-prime-bytecode.js",
+    "forge:fuzz": "FOUNDRY_PROFILE=default forge test --match-path forge-test/fuzz/.*\\.t\\.sol",
+    "forge:soak": "FOUNDRY_PROFILE=soak forge test --match-path forge-test/invariant/.*\\.t\\.sol",
+    "test:prime:security": "npm run forge:fuzz && npm run forge:invariant && npm run forge:soak"
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.9.6"
