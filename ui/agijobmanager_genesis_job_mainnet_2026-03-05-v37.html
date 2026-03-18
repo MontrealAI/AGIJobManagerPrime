@@ -1121,9 +1121,16 @@
 
     <section class="v35-heroShell premiumFlagshipHero">
       <div class="v35-heroCopy">
-        <div class="eyebrow">AGIJobDiscoveryPrime · Flagship procurement console</div>
-        <h1>Fund premium discovery, select finalists with confidence, and hand the winner directly into settlement.</h1>
-        <div class="subtitle">AGIJobDiscoveryPrime is the upstream procurement operating system for high-conviction hiring: employer-funded discovery budget, participant-funded commitment discipline, validator-scored finalist trials, and a clean handoff into <code>AGIJobManagerPrime</code> for selected-agent execution.</div>
+        <div class="eyebrow">AGIJobDiscoveryPrime · premium procurement</div>
+        <h1>Select the strongest agent before settlement begins.</h1>
+        <div class="subtitle">Create a premium procurement that collects committed applications, reveals serious candidates, shortlists finalists, funds trial work, gathers validator scoring, and hands the winner into AGIJobManagerPrime automatically.</div>
+        <p class="v35-context">Use this when a simple first-come or open posting is not enough and you want a clearer, more reviewable agent-selection process on Ethereum mainnet.</p>
+        <div class="premiumSignalList" style="margin:0 0 14px">
+          <span class="pill">Payout escrow funded up front</span>
+          <span class="pill">Procurement budget funded up front</span>
+          <span class="pill">Winner handed into SelectedAgentOnly settlement</span>
+          <span class="pill">Review-first transaction flow</span>
+        </div></div>
         <div class="premiumHeroLeadGrid">
           <div class="premiumLeadCard">
             <span class="pill ok">What it is</span>
@@ -1143,8 +1150,8 @@
         </div>
         <div class="v35-actionChips premiumHeroActions">
           <a class="v35-actionChip primary" href="#premiumDiscoverySection">Start Premium Discovery</a>
-          <a class="v35-actionChip" href="#premiumAttachPanel">Attach Procurement</a>
-          <a class="v35-actionChip" href="#premiumInspectorPanel">Open Procurement Inspector</a>
+          <a class="v35-actionChip" href="#premiumAttachSection">Attach Procurement</a>
+          <a class="v35-actionChip" href="#premiumInspectorSection">Open Procurement Inspector</a>
           <a class="v35-actionChip" href="#jobsSection">Browse Jobs</a>
           <a class="v35-actionChip" href="#verifyEnsSection">Verify ENS</a>
           <a class="v35-actionChip" href="#termsSection">Review Terms</a>
@@ -1155,28 +1162,26 @@
       <aside class="v35-heroAside premiumHeroAsideShell">
         <div class="premiumHeroSignalGrid">
           <div class="premiumSignalCard">
-            <div class="v35-panelLabel">Recommended preset</div>
+            <div class="v35-panelLabel">Recommended default</div>
             <h3>Balanced Prime</h3>
-            <p>72h commit · 24h reveal · 3 finalists · 40 / 60 historical-to-trial weighting · best default for most serious searches.</p>
+            <p>3 finalists · 3 minimum validator reveals · 40 / 60 historical-trial weights · <span id="premiumHeroExposureHint">enter payout to preview</span></p>
           </div>
           <div class="premiumSignalCard">
-            <div class="v35-panelLabel">Lifecycle at a glance</div>
-            <ol>
-              <li>Create or attach procurement.</li>
-              <li>Commit + reveal applications.</li>
-              <li>Finalize shortlist, finalists accept, submit trials.</li>
-              <li>Validators commit and reveal scores.</li>
-              <li>Finalize winner, then hand off into settlement.</li>
-            </ol>
+            <div class="v35-panelLabel">When to use this</div>
+            <p>Use Premium Discovery when you want candidate comparison, a shortlist, finalist trials, and validator-scored selection.</p>
           </div>
           <div class="premiumSignalCard">
-            <div class="v35-panelLabel">Use this page for</div>
-            <div class="premiumSignalList">
-              <span class="pill">Premium create</span>
-              <span class="pill">Attach to selected-agent jobs</span>
-              <span class="pill">Live procurement inspection</span>
-              <span class="pill">Advance / finalize / claim</span>
-              <span class="pill">Applicant / validator actions</span>
+            <div class="v35-panelLabel">Use standard createJob instead when</div>
+            <div class="premiumNextStepsList">
+              <div>• You already know the agent.</div>
+              <div>• You want open posting with no contest overhead.</div>
+              <div>• You do not need finalist trial work or score reveals.</div>
+            </div>
+          </div>
+          <div class="premiumSignalCard">
+            <div class="v35-panelLabel">What happens next</div>
+            <div class="premiumNextStepsList">
+              <div>Commit applications</div><div>Reveal applications</div><div>Finalize shortlist</div><div>Finalists accept</div><div>Finalists submit trials</div><div>Validators score</div><div>Winner is designated</div><div>Winner accepts selected-agent slot</div><div>Settlement continues in AGIJobManagerPrime</div>
             </div>
           </div>
         </div>
@@ -1234,7 +1239,7 @@
         <div class="premiumRailItem"><span>9</span><b>Winner accepts slot</b><small>Selected-agent handoff begins.</small></div>
         <div class="premiumRailItem"><span>10</span><b>Optional checkpoint</b><small>Then settlement continues below.</small></div>
       </div>
-      <div class="premiumExplainGrid" id="premiumDiscoveryPrimer">
+      <section class="premiumSurfacePanel" data-premium-panel="overview"><div class="premiumExplainGrid" id="premiumDiscoveryPrimer">
         <div class="premiumExplainCard">
           <strong>Why use Premium Discovery?</strong>
           <ul class="premiumHintList">
@@ -1260,13 +1265,13 @@
             <li>Historical weight rewards prior reputation; trial weight rewards job-specific proof.</li>
           </ul>
         </div>
-      </div>
+      </div></section>
       <div class="premiumSurfaceNav" id="premiumDiscoverySurfaceTabs">
+        <button type="button" class="premiumSurfaceTab" data-premium-surface="overview">Overview</button>
         <button type="button" class="premiumSurfaceTab active" data-premium-surface="create">Create premium job</button>
         <button type="button" class="premiumSurfaceTab" data-premium-surface="attach">Attach procurement</button>
         <button type="button" class="premiumSurfaceTab" data-premium-surface="inspect">Procurement inspector</button>
-        <button type="button" class="premiumSurfaceTab" data-premium-surface="claims">Claims & analytics</button>
-        <button type="button" class="premiumSurfaceTab" data-premium-surface="actions">Participant actions</button>
+        <button type="button" class="premiumSurfaceTab" data-premium-surface="claims">Claims & participant actions</button>
       </div>
       <div class="premiumSurfacePanels">
         <section class="premiumSurfacePanel active" data-premium-panel="create">
@@ -1506,6 +1511,16 @@
             </div>
           </div>
 
+          <div class="premiumAsideCard" id="premiumDiscoveryCoach">
+            <div class="subtleTitle">Parameter coach</div>
+            <div class="premiumNextStepsList">
+              <div id="premiumDiscoveryCoachSummary">This setup advances 3 finalists.</div>
+              <div id="premiumDiscoveryCoachFunding">Employer upfront exposure = payout escrow + procurement budget.</div>
+              <div id="premiumDiscoveryCoachSelection">Trial work currently has 60% of the final winner score.</div>
+              <div id="premiumDiscoveryCoachRisk">At least 3 revealed validator scores per finalist are required for robust winner selection.</div>
+            </div>
+          </div>
+
           <div class="premiumAsideCard">
             <div class="subtleTitle">Struct preview</div>
             <div class="helper" style="margin-bottom:10px">Human-readable, then ABI-ready. Review this before wallet confirmation.</div>
@@ -1529,7 +1544,7 @@
         </div>
       
         </section>
-        <section class="premiumSurfacePanel" data-premium-panel="attach" id="premiumAttachPanel">
+        <section class="premiumSurfacePanel" data-premium-panel="attach" id="premiumAttachSection">
           <div class="premiumOpsGrid">
             <div class="premiumStepCard">
               <div class="premiumStepHeader">
@@ -1542,7 +1557,7 @@
               </div>
               <div class="premiumInputGrid two">
                 <div class="premiumField"><label for="premiumAttachJobId">Existing job id</label><input id="premiumAttachJobId" type="number" min="0" placeholder="e.g. 12"><small>Must already exist in AGIJobManagerPrime.</small></div>
-                <div class="premiumField"><label for="premiumAttachSelectionCheck">Selection posture</label><div class="statusline" id="premiumAttachSelectionCheck">Load a job id to inspect attach eligibility.</div></div>
+                <div class="premiumField"><label for="premiumAttachEligibility">Selection posture</label><div class="statusline" id="premiumAttachEligibility">Load a job id to inspect attach eligibility.</div></div>
               </div>
               <div class="builderActions" style="margin-top:12px">
                 <button class="btn" type="button" id="premiumAttachInspectJobBtn">Inspect attach eligibility</button>
@@ -1573,14 +1588,14 @@
             </div>
             <div class="premiumAsideCard">
               <div class="subtleTitle">Attach budget + review posture</div>
-              <div class="premiumMetricGrid">
+              <div class="premiumMetricGrid" id="premiumAttachPresetMirror">
                 <div class="premiumMetric"><span class="k">Discovery budget</span><span class="v" id="premiumAttachBudgetValue">—</span></div>
                 <div class="premiumMetric"><span class="k">Discovery allowance</span><span class="v" id="premiumAttachAllowanceValue">—</span></div>
                 <div class="premiumMetric"><span class="k">Attach validity</span><span class="v" id="premiumAttachValidity">Load job</span></div>
                 <div class="premiumMetric"><span class="k">Next inspector route</span><span class="v" id="premiumAttachRouteHint">Procurement inspector opens on success</span></div>
               </div>
               <div class="premiumCode" id="premiumAttachStructPreview" style="margin-top:12px">Waiting for attach inputs…</div>
-              <div class="premiumValidationList" id="premiumAttachValidationList" style="margin-top:12px"></div>
+              <div class="premiumValidationList" id="premiumAttachValidation" style="margin-top:12px"></div>
               <div class="builderActions" style="margin-top:12px">
                 <button class="btn" type="button" id="premiumAttachApproveBtn">Approve procurement budget</button>
                 <button class="btn btn-primary" type="button" id="premiumAttachSubmitBtn">Review attach procurement</button>
@@ -1589,7 +1604,7 @@
             </div>
           </div>
         </section>
-        <section class="premiumSurfacePanel" data-premium-panel="inspect" id="premiumInspectorPanel">
+        <section class="premiumSurfacePanel" data-premium-panel="inspect" id="premiumInspectorSection">
           <div class="premiumOpsGrid inspector">
             <div class="premiumStepCard">
               <div class="premiumStepHeader">
@@ -1604,8 +1619,8 @@
                 <div class="premiumField"><label for="premiumInspectorJobId">Or resolve from job id</label><input id="premiumInspectorJobId" type="number" min="0" placeholder="e.g. 12"></div>
                 <div class="premiumField"><label>&nbsp;</label><div class="builderActions"><button class="btn" type="button" id="premiumInspectorLoadBtn">Load procurement</button><button class="btn" type="button" id="premiumInspectorResolveBtn">Resolve job → procurement</button></div></div>
               </div>
-              <div class="premiumInspectorStatusGrid">
-                <div class="premiumInspectorCard"><span class="k">Next action</span><span class="v" id="premiumInspectorNextAction">—</span><small id="premiumInspectorNextActionMeta">Load a procurement to translate live state.</small></div>
+              <div class="premiumInspectorStatusGrid" id="premiumInspectorStateGrid">
+                <div class="premiumInspectorCard"><span class="k">Next action</span><span class="v" id="premiumInspectorNextActionReadable">—</span><small id="premiumInspectorNextActionMeta">Load a procurement to translate live state.</small></div>
                 <div class="premiumInspectorCard"><span class="k">Who should act</span><span class="v" id="premiumInspectorActor">—</span><small id="premiumInspectorActionClass">—</small></div>
                 <div class="premiumInspectorCard"><span class="k">Finalizable / fallback</span><span class="v" id="premiumInspectorFinalizable">—</span><small id="premiumInspectorAdvanceHint">—</small></div>
                 <div class="premiumInspectorCard"><span class="k">Current user posture</span><span class="v" id="premiumInspectorWalletPosture">Connect wallet</span><small id="premiumInspectorWalletClaimable">Claimable discovery balance pending read.</small></div>
@@ -1616,7 +1631,7 @@
                 <div class="premiumDataCard"><b>Applicants</b><div id="premiumInspectorApplicants">—</div></div>
                 <div class="premiumDataCard"><b>Finalists</b><div id="premiumInspectorFinalists">—</div></div>
                 <div class="premiumDataCard"><b>Application view</b><div id="premiumInspectorApplicationView">Optional agent inspection available below.</div></div>
-                <div class="premiumDataCard"><b>Inspector raw payload</b><pre class="premiumCode" id="premiumInspectorRaw">—</pre></div>
+                <div class="premiumDataCard"><b>Inspector raw payload</b><pre class="premiumCode" id="premiumInspectorProcurementStruct">—</pre></div>
               </div>
             </div>
             <div class="premiumAsideCard">
@@ -1629,7 +1644,7 @@
                 <button class="btn" type="button" id="premiumInspectorFallbackBtn">Review promoteFallbackFinalist</button>
                 <button class="btn btn-danger" type="button" id="premiumInspectorCancelBtn">Review cancelProcurement</button>
               </div>
-              <div class="premiumField" style="margin-top:14px"><label for="premiumInspectorAgentAddress">Optional agent address</label><input id="premiumInspectorAgentAddress" type="text" placeholder="0x…"></div>
+              <div class="premiumField" style="margin-top:14px"><label for="premiumInspectorApplicationAgent">Optional agent address</label><input id="premiumInspectorApplicationAgent" type="text" placeholder="0x…"></div>
               <div class="builderActions" style="margin-top:10px"><button class="btn" type="button" id="premiumInspectorLoadApplicationBtn">Load applicationView</button></div>
               <div class="statusline" style="margin-top:12px"><b>Inspector result</b>: <span id="premiumInspectorResult">No inspector action submitted yet.</span></div>
             </div>
@@ -1639,24 +1654,24 @@
           <div class="premiumOpsGrid claims">
             <div class="premiumStepCard">
               <div class="premiumStepHeader"><div><div class="premiumTag">Claims + analytics</div><h3>Discovery balances, penalties, and operator stats</h3><div class="helper">Useful for employers, applicants, finalists, and validators. Claim available balances, preview discovery penalties, and inspect optional application posture for any procurement / agent pair.</div></div></div>
-              <div class="premiumInspectorStatusGrid">
-                <div class="premiumInspectorCard"><span class="k">Wallet claimable</span><span class="v" id="premiumClaimableValue">—</span><small id="premiumClaimableHint">Connect wallet to load.</small></div>
-                <div class="premiumInspectorCard"><span class="k">Penalty preview</span><span class="v" id="premiumPenaltyPreviewValue">—</span><small id="premiumPenaltyPreviewHint">Discovery default risk on current wallet.</small></div>
+              <div class="premiumInspectorStatusGrid" id="premiumDiscoveryStats">
+                <div class="premiumInspectorCard"><span class="k">Wallet claimable</span><span class="v" id="premiumDiscoveryClaimable">—</span><small id="premiumClaimableHint">Connect wallet to load.</small></div>
+                <div class="premiumInspectorCard"><span class="k">Penalty preview</span><span class="v" id="premiumDiscoveryPenalty">—</span><small id="premiumPenaltyPreviewHint">Discovery default risk on current wallet.</small></div>
                 <div class="premiumInspectorCard"><span class="k">Unrevealed apps</span><span class="v" id="premiumStatsUnrevealed">—</span><small>Discovery defaults</small></div>
                 <div class="premiumInspectorCard"><span class="k">Finalist defaults</span><span class="v" id="premiumStatsFinalistDefaults">—</span><small id="premiumStatsLastDefault">—</small></div>
               </div>
-              <div class="builderActions" style="margin-top:12px"><button class="btn" type="button" id="premiumClaimsRefreshBtn">Refresh claims + stats</button><button class="btn btn-primary" type="button" id="premiumClaimBtn">Review claim()</button></div>
+              <div class="builderActions" style="margin-top:12px"><button class="btn" type="button" id="premiumClaimsRefreshBtn">Refresh claims + stats</button><button class="btn btn-primary" type="button" id="premiumDiscoveryClaimBtn">Review claim()</button></div>
             </div>
             <div class="premiumAsideCard">
               <div class="subtleTitle">Optional application inspection</div>
-              <div class="premiumField"><label for="premiumClaimsProcurementId">Procurement id</label><input id="premiumClaimsProcurementId" type="number" min="0" placeholder="e.g. 7"></div>
-              <div class="premiumField" style="margin-top:12px"><label for="premiumClaimsAgent">Agent address</label><input id="premiumClaimsAgent" type="text" placeholder="0x…"></div>
-              <div class="builderActions" style="margin-top:12px"><button class="btn" type="button" id="premiumClaimsLoadApplicationBtn">Load applicationView</button></div>
-              <pre class="premiumCode" id="premiumClaimsApplicationView" style="margin-top:12px">No applicationView loaded.</pre>
+              <div class="premiumField"><label for="premiumDiscoveryApplicationInspectProcurementId">Procurement id</label><input id="premiumDiscoveryApplicationInspectProcurementId" type="number" min="0" placeholder="e.g. 7"></div>
+              <div class="premiumField" style="margin-top:12px"><label for="premiumDiscoveryApplicationInspectAgent">Agent address</label><input id="premiumDiscoveryApplicationInspectAgent" type="text" placeholder="0x…"></div>
+              <div class="builderActions" style="margin-top:12px"><button class="btn" type="button" id="premiumDiscoveryApplicationInspectBtn">Load applicationView</button></div>
+              <pre class="premiumCode" id="premiumDiscoveryApplicationInspectResult" style="margin-top:12px">No applicationView loaded.</pre>
             </div>
           </div>
         </section>
-        <section class="premiumSurfacePanel" data-premium-panel="actions">
+        <section class="premiumSurfacePanel" data-premium-panel="claims">
           <div class="premiumOpsGrid actions-grid">
             <div class="premiumStepCard">
               <div class="premiumStepHeader"><div><div class="premiumTag">Participant action tools</div><h3>Applicants, finalists, and validators</h3><div class="helper">These tools are intentionally compact. Use the lower advanced local notebook for local salts and commitment formula help. These writes still require exact review before wallet confirmation.</div></div></div>
@@ -2671,8 +2686,9 @@ Evaluation methodology"></textarea>
 
 
     <div class="card primePanel">
-      <div class="primeSectionTitle"><h2>Prime procurement operations</h2><span class="pill">Post-creation console</span></div>
-      <div class="helper" style="margin-bottom:12px">Use the premium composer above to create procurements, then use this post-creation console to operate them locally after creation. Use commit/reveal helpers locally, store salts safely until reveal, and treat countdowns as approximate unless live pause-adjusted reconstruction is available.</div>
+      <div class="primeSectionTitle"><h2>Advanced local notebook</h2><span class="pill">Prime procurement operations</span></div>
+      <div class="banner" style="margin-bottom:12px">Use the flagship discovery workbench above for the main workflow. Use this notebook only for local commit/reveal preparation and salt storage.</div>
+      <div class="helper" style="margin-bottom:12px">Local salts and commitments here are helper artifacts, not on-chain state. Use the premium composer above to create or attach procurements, then use this notebook for local commit/reveal preparation, salt storage, and post-creation operations.</div>
       <div class="primeOpsGrid">
         <div class="primeStat"><span class="label">Application flow</span><div class="value">Commit application → reveal application URI → shortlist → finalist acceptance → trial submission.</div></div>
         <div class="primeStat"><span class="label">Validator scoring</span><div class="value">Commit score → reveal score → finalize winner → fallback promote if needed → claim balances.</div></div>
@@ -8262,6 +8278,12 @@ function normalizeIpfsToHttp(uri){
         if(pel('premiumDiscoveryParticipationSlots')) pel('premiumDiscoveryParticipationSlots').textContent = String(Number(struct.proc.finalistCount||0) * Number(struct.proc.maxValidatorRevealsPerFinalist||0));
         if(pel('premiumDiscoveryParticipationMinimum')) pel('premiumDiscoveryParticipationMinimum').textContent = `${struct.proc.minValidatorReveals||0} per finalist target`;
         if(pel('premiumDiscoveryParticipationPosture')) pel('premiumDiscoveryParticipationPosture').textContent = (PREMIUM_PRESETS[premiumState.preset]?.posture || 'custom').replace('-', ' ');
+        if(pel('premiumHeroExposureHint')) pel('premiumHeroExposureHint').textContent = payout > 0n ? `${premiumFormat(exposure)} upfront exposure` : 'enter payout to preview';
+        if(pel('premiumDiscoveryCoachSummary')) pel('premiumDiscoveryCoachSummary').textContent = `This setup advances ${struct.proc.finalistCount||0} finalists.`;
+        if(pel('premiumDiscoveryCoachFunding')) pel('premiumDiscoveryCoachFunding').textContent = `You are budgeting for up to ${Number(struct.proc.finalistCount||0) * Number(struct.proc.maxValidatorRevealsPerFinalist||0)} paid reveal slots. Employer upfront exposure = payout escrow + procurement budget.`;
+        if(pel('premiumDiscoveryCoachSelection')) pel('premiumDiscoveryCoachSelection').textContent = `Trial work currently has ${(Number(struct.proc.trialWeightBps||0)/100).toFixed(0)}% of the final winner score.`;
+        const friction = payout <= 0n ? 'preview' : (premiumReadAmount('premiumDiscoveryApplicationStake') * 10000n < payout * 25n ? 'low-friction' : (premiumReadAmount('premiumDiscoveryApplicationStake') * 10000n < payout * 100n ? 'medium-friction' : 'high-friction'));
+        if(pel('premiumDiscoveryCoachRisk')) pel('premiumDiscoveryCoachRisk').textContent = `At least ${struct.proc.minValidatorReveals||0} revealed validator scores per finalist are required for robust winner selection. Application stake is ${friction}. Checkpoint window is ${Number(struct.proc.checkpointWindow||0) > 0 ? 'active' : 'disabled'}.`;
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure)}, job:struct.job, proc:struct.proc}, null, 2);
         const validation = premiumValidation(struct);
         if(pel('premiumDiscoveryValidationList')) pel('premiumDiscoveryValidationList').innerHTML = [
@@ -8408,7 +8430,7 @@ function normalizeIpfsToHttp(uri){
         if($('premiumAttachBudgetValue')) $('premiumAttachBudgetValue').textContent = fmtUnits(budget);
         if($('premiumAttachStructPreview')) $('premiumAttachStructPreview').textContent = JSON.stringify({jobId:$('premiumAttachJobId')?.value||'', proc, discoveryBudget:fmtUnits(budget)}, null, 2);
         const valid = Number(proc.finalistCount)>0 && Number(proc.minValidatorReveals)>0 && Number(proc.maxValidatorRevealsPerFinalist)>=Number(proc.minValidatorReveals) && Number(proc.historicalWeightBps)+Number(proc.trialWeightBps)===10000 && Number(proc.selectedAcceptanceWindow)>0;
-        if($('premiumAttachValidationList')) $('premiumAttachValidationList').innerHTML = `<div class="premiumValidationItem ${valid?'good':'bad'}">${valid?'Attach procurement inputs look internally consistent.':'Adjust finalists, reveal counts, weights, and acceptance window before attaching.'}</div>`;
+        if($('premiumAttachValidation')) $('premiumAttachValidation').innerHTML = `<div class="premiumValidationItem ${valid?'good':'bad'}">${valid?'Attach procurement inputs look internally consistent.':'Adjust finalists, reveal counts, weights, and acceptance window before attaching.'}</div>`;
         try{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent = `${fmtUnits(allowance)} approved`; }catch(e){ if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent='Allowance unavailable'; }
       }
       async function inspectAttachJob(){
@@ -8419,15 +8441,15 @@ function normalizeIpfsToHttp(uri){
           const intakeMode = Number(info.intakeMode ?? info[0] ?? 0);
           const assignedAgent = info.assignedAgent ?? info[7] ?? '0x0000000000000000000000000000000000000000';
           const likely = intakeMode===1 && /^0x0{40}$/i.test(String(assignedAgent)) && !hasProc;
-          if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = `intakeMode ${intakeMode===1?'SelectedAgentOnly':'not SelectedAgentOnly'} · assignedAgent ${assignedAgent} · existing procurement ${hasProc?'present':'none'} · ${likely?'attach likely valid':'attach likely to revert'}`;
+          if($('premiumAttachEligibility')) $('premiumAttachEligibility').textContent = `intakeMode ${intakeMode===1?'SelectedAgentOnly':'not SelectedAgentOnly'} · assignedAgent ${assignedAgent} · existing procurement ${hasProc?'present':'none'} · ${likely?'attach likely valid':'attach likely to revert'}`;
           if($('premiumAttachValidity')) $('premiumAttachValidity').textContent = likely ? 'Likely valid' : 'Likely revert';
-        }catch(err){ if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = `Attach inspection failed: ${err.message||err}`; }
+        }catch(err){ if($('premiumAttachEligibility')) $('premiumAttachEligibility').textContent = `Attach inspection failed: ${err.message||err}`; }
       }
       async function reviewAttach(){
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId) return setToast('Enter a job id before attaching procurement.','warn');
         const proc=attachStruct();
         const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call();
-        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
+        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
       }
       async function loadProcurement(id){
         const pid=String(id||$('premiumInspectorProcurementId')?.value||'').trim(); if(!pid||!agiJobDiscovery?.methods) return;
@@ -8444,7 +8466,7 @@ function normalizeIpfsToHttp(uri){
             userAccount ? agiJobDiscovery.methods.claimable(userAccount).call().catch(()=>'0') : Promise.resolve('0')
           ]);
           const decoded=actionMap[nextCode] || {label:`${nextCode||'—'} · Unmapped`, actor:'Operator review', mode:'Read state', note:'Inspect raw state and contract responses.'};
-          if($('premiumInspectorNextAction')) $('premiumInspectorNextAction').textContent=decoded.label;
+          if($('premiumInspectorNextActionReadable')) $('premiumInspectorNextActionReadable').textContent=decoded.label;
           if($('premiumInspectorNextActionMeta')) $('premiumInspectorNextActionMeta').textContent=decoded.note;
           if($('premiumInspectorActor')) $('premiumInspectorActor').textContent=decoded.actor;
           if($('premiumInspectorActionClass')) $('premiumInspectorActionClass').textContent=decoded.mode;
@@ -8456,17 +8478,17 @@ function normalizeIpfsToHttp(uri){
           if($('premiumInspectorDeadlines')) $('premiumInspectorDeadlines').innerHTML = `Commit ${humanTs(proc.commitDeadline)}<br>Reveal ${humanTs(proc.revealDeadline)}<br>Finalist accept ${humanTs(proc.finalistAcceptDeadline)}<br>Trial ${humanTs(proc.trialDeadline)}<br>Score commit ${humanTs(proc.scoreCommitDeadline)}<br>Score reveal ${humanTs(proc.scoreRevealDeadline)}<br>Selected acceptance window ${secondsToHuman(proc.selectedAcceptanceWindow)} · Checkpoint ${secondsToHuman(proc.checkpointWindow)}`;
           if($('premiumInspectorApplicants')) $('premiumInspectorApplicants').innerHTML = applicants.length ? applicants.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No applicants loaded.';
           if($('premiumInspectorFinalists')) $('premiumInspectorFinalists').innerHTML = finalists.length ? finalists.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No finalists yet.';
-          if($('premiumInspectorRaw')) $('premiumInspectorRaw').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2);
+          if($('premiumInspectorProcurementStruct')) $('premiumInspectorProcurementStruct').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2);
           if($('procurementCommitId')) $('procurementCommitId').value = pid;
           if($('scoreCommitProcurementId')) $('scoreCommitProcurementId').value = pid;
-          if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value = pid;
+          if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value = pid;
           if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
         }catch(err){ if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `Inspector load failed: ${err.message||err}`; }
       }
       async function loadInspectorByJob(){ const jobId=String($('premiumInspectorJobId')?.value||'').trim(); if(!jobId) return; const has=await agiJobDiscovery.methods.hasProcurementByJobId(jobId).call().catch(()=>false); const pid=has ? await agiJobDiscovery.methods.procurementByJobId(jobId).call().catch(()=> '') : ''; if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(pid||''); if(pid) await loadProcurement(pid); else if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `No procurement found for job ${jobId}.`; }
-      async function loadClaims(){ if(!agiJobDiscovery?.methods || !userAccount) return; try{ const [claimable, penalty, stats] = await Promise.all([agiJobDiscovery.methods.claimable(userAccount).call(), agiJobDiscovery.methods.previewDiscoveryPenaltyBps(userAccount).call(), agiJobDiscovery.methods.getDiscoveryStats(userAccount).call()]); if($('premiumClaimableValue')) $('premiumClaimableValue').textContent=fmtUnits(claimable); if($('premiumPenaltyPreviewValue')) $('premiumPenaltyPreviewValue').textContent=`${penalty} bps`; if($('premiumStatsUnrevealed')) $('premiumStatsUnrevealed').textContent=String(stats.unrevealedApplications ?? stats[0] ?? '0'); const finals = Number(stats.unacceptedFinals ?? stats[1] ?? 0) + Number(stats.noTrialFinals ?? stats[2] ?? 0); if($('premiumStatsFinalistDefaults')) $('premiumStatsFinalistDefaults').textContent=String(finals); if($('premiumStatsLastDefault')) $('premiumStatsLastDefault').textContent = `Last default ${humanTs(stats.lastDefaultAt ?? stats[3] ?? 0)}`; }catch(err){ if($('premiumClaimableHint')) $('premiumClaimableHint').textContent = `Claims read failed: ${err.message||err}`; } }
+      async function loadClaims(){ if(!agiJobDiscovery?.methods || !userAccount) return; try{ const [claimable, penalty, stats] = await Promise.all([agiJobDiscovery.methods.claimable(userAccount).call(), agiJobDiscovery.methods.previewDiscoveryPenaltyBps(userAccount).call(), agiJobDiscovery.methods.getDiscoveryStats(userAccount).call()]); if($('premiumDiscoveryClaimable')) $('premiumDiscoveryClaimable').textContent=fmtUnits(claimable); if($('premiumDiscoveryPenalty')) $('premiumDiscoveryPenalty').textContent=`${penalty} bps`; if($('premiumStatsUnrevealed')) $('premiumStatsUnrevealed').textContent=String(stats.unrevealedApplications ?? stats[0] ?? '0'); const finals = Number(stats.unacceptedFinals ?? stats[1] ?? 0) + Number(stats.noTrialFinals ?? stats[2] ?? 0); if($('premiumStatsFinalistDefaults')) $('premiumStatsFinalistDefaults').textContent=String(finals); if($('premiumStatsLastDefault')) $('premiumStatsLastDefault').textContent = `Last default ${humanTs(stats.lastDefaultAt ?? stats[3] ?? 0)}`; }catch(err){ if($('premiumClaimableHint')) $('premiumClaimableHint').textContent = `Claims read failed: ${err.message||err}`; } }
       async function reviewClaim(){ openActionReview({title:'Claim discovery balance',body:'You are about to call AGIJobDiscoveryPrime.claim() for the connected wallet.',facts:[{label:'Function',value:'claim()'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Wallet',value:userAccount||'Not connected'}],checks:[{state:'Balance',badge:'warn',text:'If claimable balance is zero this call will revert.'}],confirmLabel:'Claim discovery balance',method:'claim()',run:async()=>{ await runTrackedTx('Claim discovery balance', ()=>agiJobDiscovery.methods.claim().send({from:userAccount}), {pendingDetail:'Claiming discovery balance.', successDetail:'Discovery balance claimed.'}); await loadClaims(); }}); }
-      async function loadApplicationView(pid, agent, targetId){ if(!pid || !agent) return; try{ const view=await agiJobDiscovery.methods.applicationView(String(pid), agent).call(); const payload={revealed:view.revealed??view[0], shortlisted:view.shortlisted??view[1], finalistAccepted:view.finalistAccepted??view[2], trialSubmitted:view.trialSubmitted??view[3], lockedStake:view.lockedStake??view[4], applicationURI:view.applicationURI??view[5], trialURI:view.trialURI??view[6], historicalScoreBps:view.historicalScoreBps??view[7], trialScoreBps:view.trialScoreBps??view[8], compositeScoreBps:view.compositeScoreBps??view[9], everPromoted:view.everPromoted??view[10]}; if($(targetId)) $(targetId).textContent=JSON.stringify(payload,null,2); if(targetId==='premiumInspectorApplicationView' && $('premiumClaimsAgent')) $('premiumClaimsAgent').value=agent; }catch(err){ if($(targetId)) $(targetId).textContent=`Application view failed: ${err.message||err}`; } }
+      async function loadApplicationView(pid, agent, targetId){ if(!pid || !agent) return; try{ const view=await agiJobDiscovery.methods.applicationView(String(pid), agent).call(); const payload={revealed:view.revealed??view[0], shortlisted:view.shortlisted??view[1], finalistAccepted:view.finalistAccepted??view[2], trialSubmitted:view.trialSubmitted??view[3], lockedStake:view.lockedStake??view[4], applicationURI:view.applicationURI??view[5], trialURI:view.trialURI??view[6], historicalScoreBps:view.historicalScoreBps??view[7], trialScoreBps:view.trialScoreBps??view[8], compositeScoreBps:view.compositeScoreBps??view[9], everPromoted:view.everPromoted??view[10]}; if($(targetId)) $(targetId).textContent=JSON.stringify(payload,null,2); if(targetId==='premiumInspectorApplicationView' && $('premiumDiscoveryApplicationInspectAgent')) $('premiumDiscoveryApplicationInspectAgent').value=agent; }catch(err){ if($(targetId)) $(targetId).textContent=`Application view failed: ${err.message||err}`; } }
       function reviewDiscoveryWrite({title, method, facts=[], checks=[], run, confirmLabel}){ openActionReview({title, body:`You are about to call AGIJobDiscoveryPrime.${method}.`, facts:[{label:'Function', value:method}, ...facts], checks:[...checks, {state:'Safety', badge:'warn', text:'This action stays review-first and does not bypass wallet confirmation.'}], confirmLabel:confirmLabel||title, method, run}); }
       function actionInputs(){ return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:String($('premiumActionSubdomain')?.value||'').trim(), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:String($('premiumActionFinalist')?.value||'').trim(), score:String($('premiumActionScore')?.value||'').trim()}; }
       function bind(){
@@ -8480,9 +8502,9 @@ function normalizeIpfsToHttp(uri){
         $('premiumInspectorLoadBtn')?.addEventListener('click', ()=>loadProcurement().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorResolveBtn')?.addEventListener('click', ()=>loadInspectorByJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumClaimsRefreshBtn')?.addEventListener('click', ()=>loadClaims().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumClaimsLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumClaimsProcurementId')?.value, $('premiumClaimsAgent')?.value, 'premiumClaimsApplicationView'));
-        $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, $('premiumInspectorAgentAddress')?.value, 'premiumInspectorApplicationView'));
+        $('premiumDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
+        $('premiumDiscoveryApplicationInspectBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumDiscoveryApplicationInspectProcurementId')?.value, $('premiumDiscoveryApplicationInspectAgent')?.value, 'premiumDiscoveryApplicationInspectResult'));
+        $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, $('premiumInspectorApplicationAgent')?.value, 'premiumInspectorApplicationView'));
         const inspectorButtons=[['premiumInspectorAdvanceBtn','advanceProcurement(procurementId)','Review advanceProcurement',pid=>agiJobDiscovery.methods.advanceProcurement(pid).send({from:userAccount})],['premiumInspectorFinalizeShortlistBtn','finalizeShortlist(procurementId)','Review finalizeShortlist',pid=>agiJobDiscovery.methods.finalizeShortlist(pid).send({from:userAccount})],['premiumInspectorFinalizeWinnerBtn','finalizeWinner(procurementId)','Review finalizeWinner',pid=>agiJobDiscovery.methods.finalizeWinner(pid).send({from:userAccount})],['premiumInspectorFallbackBtn','promoteFallbackFinalist(procurementId)','Review promoteFallbackFinalist',pid=>agiJobDiscovery.methods.promoteFallbackFinalist(pid).send({from:userAccount})],['premiumInspectorCancelBtn','cancelProcurement(procurementId)','Review cancelProcurement',pid=>agiJobDiscovery.methods.cancelProcurement(pid).send({from:userAccount})]];
         inspectorButtons.forEach(([id,method,title,send])=>$(id)?.addEventListener('click', ()=>{ const pid=String($('premiumInspectorProcurementId')?.value||'').trim(); if(!pid) return setToast('Enter a procurement id first.','warn'); reviewDiscoveryWrite({title, method, facts:[{label:'Procurement id', value:pid}], run:async()=>{ await runTrackedTx(title, ()=>send(pid), {pendingDetail:`Submitting ${method}.`, successDetail:`${method} confirmed.`}); if($('premiumInspectorResult')) $('premiumInspectorResult').textContent=`${method} confirmed for procurement ${pid}.`; await loadProcurement(pid); await loadClaims(); }}); }));
         $('premiumActionCommitApplicationBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.commitment) return setToast('Enter procurement id and commitment.','warn'); reviewDiscoveryWrite({title:'Review commitApplication', method:'commitApplication(procurementId,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Commitment',value:x.commitment}], run:async()=>{ await runTrackedTx('commitApplication', ()=>agiJobDiscovery.methods.commitApplication(x.pid, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting application commitment.', successDetail:'Application commitment confirmed.'}); $('premiumActionResult').textContent=`commitApplication confirmed for procurement ${x.pid}.`; }}); });
@@ -8499,6 +8521,10 @@ function normalizeIpfsToHttp(uri){
               {title:'Open Discovery Create', subtitle:'Jump to the create-premium panel.', tags:'premium discovery create', action:'premium-open-create'},
               {title:'Open Attach Procurement', subtitle:'Jump to the attach-procurement panel.', tags:'premium attach procurement', action:'premium-open-attach'},
               {title:'Open Procurement Inspector', subtitle:'Jump to the inspector panel.', tags:'premium inspector procurement', action:'premium-open-inspector'},
+              {title:'Apply Balanced Prime preset', subtitle:'Load the recommended premium preset.', tags:'premium balanced preset', action:'premium-preset-balanced'},
+              {title:'Apply Fast / Lean preset', subtitle:'Load the leaner premium preset.', tags:'premium fast lean preset', action:'premium-preset-fast'},
+              {title:'Apply High Assurance preset', subtitle:'Load the highest-assurance premium preset.', tags:'premium high assurance preset', action:'premium-preset-assurance'},
+              {title:'Refresh discovery allowances', subtitle:'Refresh manager and discovery allowance posture.', tags:'premium discovery allowances refresh', action:'premium-refresh-allowance'},
               {title:'Load procurement by id', subtitle:'Load the procurement currently entered in the inspector.', tags:'premium load procurement id', action:'premium-load-procurement'},
               {title:'Claim discovery balances', subtitle:'Open reviewed discovery claim flow.', tags:'premium claim discovery balances', action:'premium-claim-discovery'}
             ];
@@ -8508,8 +8534,12 @@ function normalizeIpfsToHttp(uri){
         const originalMissionAction = window.missionAction;
         window.missionAction = function(action){
           if(action === 'premium-open-create'){ setPanel('create'); return scrollToId('premiumDiscoverySection'); }
-          if(action === 'premium-open-attach'){ setPanel('attach'); return scrollToId('premiumAttachPanel'); }
-          if(action === 'premium-open-inspector'){ setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
+          if(action === 'premium-open-attach'){ setPanel('attach'); return scrollToId('premiumAttachSection'); }
+          if(action === 'premium-open-inspector'){ setPanel('inspect'); return scrollToId('premiumInspectorSection'); }
+          if(action === 'premium-preset-balanced'){ setPanel('create'); return premiumUsePreset('balanced', true); }
+          if(action === 'premium-preset-fast'){ setPanel('create'); return premiumUsePreset('fast', true); }
+          if(action === 'premium-preset-assurance'){ setPanel('create'); return premiumUsePreset('assurance', true); }
+          if(action === 'premium-refresh-allowance'){ setPanel('create'); return premiumRefreshAllowances(); }
           if(action === 'premium-load-procurement'){ setPanel('inspect'); return loadProcurement(); }
           if(action === 'premium-claim-discovery'){ setPanel('claims'); return reviewClaim(); }
           return typeof originalMissionAction === 'function' ? originalMissionAction(action) : undefined;
