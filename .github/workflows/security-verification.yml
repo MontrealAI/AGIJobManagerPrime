@@ -36,14 +36,16 @@ jobs:
       - name: Forge security unit + fuzz suite
         run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
 
-      - name: Prime focused fuzz campaigns
-        run: npm run forge:fuzz
+      - name: Prime focused fuzz campaigns (CI profile)
+        run: npm run forge:fuzz:ci
 
-      - name: Prime stateful invariants (all handlers)
-        run: npm run forge:invariant
+      - name: Prime stateful invariants (all handlers, CI profile)
+        run: npm run forge:invariant:all
 
-      - name: Prime ghost-accounting invariant replay
-        run: npm run forge:invariant:ghost
+      - name: Prime replayable invariant commands
+        run: |
+          npm run forge:replay:prime
+          npm run forge:replay:ghost
 
       - name: Prime soak profile
         run: npm run forge:soak
