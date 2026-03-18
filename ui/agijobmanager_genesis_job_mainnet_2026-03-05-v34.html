@@ -2395,18 +2395,18 @@ Evaluation methodology"></textarea>
       const procurementId = String(el('procurementCommitId')?.value || '').trim();
       const applicationURI = String(el('procurementApplicationUri')?.value || '').trim();
       const salt = String(el('procurementCommitSalt')?.value || '').trim();
-      const agent = userAccount || '0x0000000000000000000000000000000000000000';
-      if(!procurementId || !applicationURI || !salt) return '';
+      const agent = String(userAccount || '').trim();
+      if(!agent || !procurementId || !applicationURI || !salt) return '';
       return web3.utils.soliditySha3({type:'uint256',value:procurementId},{type:'address',value:agent},{type:'string',value:applicationURI},{type:'bytes32',value:salt}) || '';
     }
     function primeComputeScoreCommitment(){
       if(!web3?.utils?.soliditySha3) return '';
       const procurementId = String(el('scoreCommitProcurementId')?.value || '').trim();
-      const finalist = String(el('scoreCommitFinalist')?.value || '').trim() || '0x0000000000000000000000000000000000000000';
+      const finalist = String(el('scoreCommitFinalist')?.value || '').trim();
       const score = String(el('scoreCommitValue')?.value || '').trim();
       const salt = String(el('scoreCommitSalt')?.value || '').trim();
-      const validator = userAccount || '0x0000000000000000000000000000000000000000';
-      if(!procurementId || !score || !salt) return '';
+      const validator = String(userAccount || '').trim();
+      if(!validator || !finalist || !procurementId || !score || !salt) return '';
       const scoreNum = Number(score);
       if(!Number.isFinite(scoreNum) || scoreNum < 0 || scoreNum > 100) return '';
       return web3.utils.soliditySha3({type:'uint256',value:procurementId},{type:'address',value:finalist},{type:'address',value:validator},{type:'uint8',value:scoreNum},{type:'bytes32',value:salt}) || '';
@@ -2429,10 +2429,10 @@ Evaluation methodology"></textarea>
       primeVaultRender();
       if(el('generateApplicationSaltBtn')) el('generateApplicationSaltBtn').onclick = ()=>{ el('procurementCommitSalt').value = randomSaltHex(); };
       if(el('generateScoreSaltBtn')) el('generateScoreSaltBtn').onclick = ()=>{ el('scoreCommitSalt').value = randomSaltHex(); };
-      if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Enter procurement id, application URI, and salt.'; };
-      if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
-      if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
-      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${String(el('scoreCommitFinalist')?.value||'0x0000000000000000000000000000000000000000').toLowerCase()}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist:String(el('scoreCommitFinalist')?.value||''), score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
+      if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(!userAccount){ setToast('Connect the wallet that will later reveal this application before computing the commitment.', 'warn'); } if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Connect wallet, then enter procurement id, application URI, and salt.'; };
+      if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(!userAccount || !(el('scoreCommitFinalist')?.value || '').trim()){ setToast('Connect wallet and enter the finalist address before computing a score commitment.', 'warn'); } if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
+      if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Connect wallet before saving an application commitment notebook entry.', 'warn'); return; } const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
+      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Connect wallet before saving a validator score commitment notebook entry.', 'warn'); return; } const finalist = String(el('scoreCommitFinalist')?.value || '').trim(); if(!finalist){ setToast('Enter the finalist address before saving a validator score commitment.', 'warn'); return; } const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${finalist.toLowerCase()}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist, score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
       if(el('clearApplicationCommitBtn')) el('clearApplicationCommitBtn').onclick = ()=>{ ['procurementCommitId','procurementApplicationUri','procurementCommitSalt'].forEach(id=>{ if(el(id)) el(id).value=''; }); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = '—'; };
       if(el('clearScoreCommitBtn')) el('clearScoreCommitBtn').onclick = ()=>{ ['scoreCommitProcurementId','scoreCommitFinalist','scoreCommitValue','scoreCommitSalt','scoreCommitOutputField'].forEach(id=>{ if(el(id)) el(id).value=''; }); };
       setTimeout(primeRefreshRegistryBindings, 1200);
@@ -5333,7 +5333,8 @@ async function updateSummary(){
       const runtime = runtimeState?.__safeReadError ? null : runtimeState;
       const assignedAgent = selection?.assignedAgent || runtime?.assignedAgent || latestApplied?.returnValues?.agent || '0x0000000000000000000000000000000000000000';
       const cancelled = Array.isArray(cancelledEvents) && cancelledEvents.length > 0;
-      const completed = Array.isArray(completedEvents) && completedEvents.length > 0;
+      const employerRefunded = Array.isArray(refundedEvents) && refundedEvents.length > 0;
+      const completed = (Array.isArray(completedEvents) && completedEvents.length > 0) || employerRefunded;
       const expired = Array.isArray(expiredEvents) && expiredEvents.length > 0;
       const disputed = Array.isArray(disputes) && disputes.length > 0 && !completed && !expired;
       const completionRequested = completionEvents.length > 0;
@@ -5366,7 +5367,7 @@ async function updateSummary(){
         checkpointSubmitted: !!selection?.checkpointSubmitted,
         selectionExpiredOrOpen: runtime ? !!runtime.selectionExpiredOrOpen : null,
         eventDerived: true,
-        settlementStatus: refundedEvents?.length ? 'refunded' : (completed ? 'completed' : expired ? 'expired' : disputed ? 'disputed' : completionRequested ? 'completion' : assignedAgent !== '0x0000000000000000000000000000000000000000' ? 'assigned' : cancelled ? 'cancelled' : 'open')
+        settlementStatus: employerRefunded ? 'refunded' : (completed ? 'completed' : expired ? 'expired' : disputed ? 'disputed' : completionRequested ? 'completion' : assignedAgent !== '0x0000000000000000000000000000000000000000' ? 'assigned' : cancelled ? 'cancelled' : 'open')
       };
     }
 
