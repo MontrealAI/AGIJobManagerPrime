@@ -39,8 +39,11 @@ jobs:
       - name: Prime focused fuzz campaigns
         run: npm run forge:fuzz
 
-      - name: Prime stateful invariants
+      - name: Prime stateful invariants (all handlers)
         run: npm run forge:invariant
+
+      - name: Prime ghost-accounting invariant replay
+        run: npm run forge:invariant:ghost
 
       - name: Prime soak profile
         run: npm run forge:soak
