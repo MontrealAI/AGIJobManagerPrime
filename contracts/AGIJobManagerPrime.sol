@@ -960,6 +960,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (!job.disputed || job.expired) revert InvalidState();
 
         if (resolutionCode == 0) {
+            emit DisputeResolvedWithCode(jobId, msg.sender, resolutionCode, reason);
             return;
         }
 
