@@ -30,6 +30,9 @@ contract PrimeGhostHandler is Test {
     mapping(address => uint256) public lastClaimable;
     mapping(address => uint256) public totalClaimedByActor;
 
+    uint256 internal constant MAX_MANAGER_JOBS = 24;
+    uint256 internal constant MAX_DISCOVERY_PROCUREMENTS = 24;
+
     constructor(AGIJobManagerPrimeHarness _manager, AGIJobDiscoveryPrimeHarness _discovery, MockERC20 _token) {
         manager = _manager;
         discovery = _discovery;
@@ -137,6 +140,7 @@ contract PrimeGhostHandler is Test {
     function createManagerJob(uint256 employerSeed, uint256 payoutSeed, uint256 durationSeed, bool selectedOnly)
         external
     {
+        if (manager.nextJobId() >= MAX_MANAGER_JOBS) return;
         address employer = actors[bound(employerSeed, 0, 3) * 3];
         vm.prank(employer);
         try manager.createConfiguredJob(
@@ -163,7 +167,7 @@ contract PrimeGhostHandler is Test {
     function managerAction(uint256 jobSeed, uint256 actorSeed, uint8 mode) external {
         if (manager.nextJobId() == 0) return;
         uint256 jobId = bound(jobSeed, 0, manager.nextJobId() - 1);
-        (, , , , , address employer, address assignedAgent, ) = manager.jobAccounting(jobId);
+        (,,,,, address employer, address assignedAgent,) = manager.jobAccounting(jobId);
         address actor;
 
         if (mode % 7 == 0) {
@@ -214,6 +218,9 @@ contract PrimeGhostHandler is Test {
     }
 
     function createDiscoveryJob(uint256 employerSeed) external {
+        if (discovery.nextProcurementId() >= MAX_DISCOVERY_PROCUREMENTS || manager.nextJobId() >= MAX_MANAGER_JOBS) {
+            return;
+        }
         uint64 start = uint64(block.timestamp + 10);
         address employer = actors[bound(employerSeed, 0, 3) * 3];
         AGIJobDiscoveryPrime.PremiumJobParams memory premium = AGIJobDiscoveryPrime.PremiumJobParams({
