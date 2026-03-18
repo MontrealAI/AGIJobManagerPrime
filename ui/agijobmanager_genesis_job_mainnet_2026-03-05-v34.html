@@ -2438,7 +2438,7 @@ Evaluation methodology"></textarea>
 
 </script>
   <script>
-    let web3, userAccount, agiJobManager, agiToken, ensJobPages, freeTrialRegistrar, freeTrialRegistrarIdentity, registrarWrapperContract, tokenDecimals = 18;
+    let web3, userAccount, agiJobManager, agiToken, ensJobPages, completionNft, freeTrialRegistrar, freeTrialRegistrarIdentity, registrarWrapperContract, tokenDecimals = 18;
     let bridgedAgiToken, officialAgiToken, agiAlphaEqualMinterVault, bridgedTokenDecimals = 18, officialTokenDecimals = 18;
     let lastGeneratedMetadata = null;
     let lastUploadedMetadataURI = "";
@@ -2475,6 +2475,8 @@ Evaluation methodology"></textarea>
     const jobCache = new Map();
     const activeJobIndexCache = { ids:null, ts:0 };
     const nftRenderCache = { total:null, myHtml:'', allHtml:'', ts:0, myAccount:'' };
+    const jobTimelineCache = new Map();
+    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     const AGI_JOB_MANAGER = "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e";
     const AGI_JOB_DISCOVERY = "0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29";
     const AGI_JOB_COMPLETION_NFT = "0xFfCC54dA2Caf1158e57611005965BB648E950737";
@@ -2600,7 +2602,8 @@ Evaluation methodology"></textarea>
 const AGIJobManagerABI = [
       {"inputs":[],"name":"agiToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"nextJobId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"nextTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"discoveryModule","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"completionNFT","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"requiredValidatorApprovals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"requiredValidatorDisapprovals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"voteQuorum","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -2608,11 +2611,11 @@ const AGIJobManagerABI = [
       {"inputs":[],"name":"challengePeriodAfterApproval","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"reputation","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"string","name":"_jobSpecURI","type":"string"},{"internalType":"uint256","name":"_payout","type":"uint256"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"string","name":"_details","type":"string"}],"name":"createJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobCore","outputs":[{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"assignedAgent","type":"address"},{"internalType":"uint256","name":"payout","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"uint256","name":"assignedAt","type":"uint256"},{"internalType":"bool","name":"completed","type":"bool"},{"internalType":"bool","name":"disputed","type":"bool"},{"internalType":"bool","name":"expired","type":"bool"},{"internalType":"uint8","name":"agentPayoutPct","type":"uint8"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobValidation","outputs":[{"internalType":"bool","name":"completionRequested","type":"bool"},{"internalType":"uint256","name":"validatorApprovals","type":"uint256"},{"internalType":"uint256","name":"validatorDisapprovals","type":"uint256"},{"internalType":"uint256","name":"completionRequestedAt","type":"uint256"},{"internalType":"uint256","name":"disputedAt","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobSpecURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobCompletionURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"string","name":"subdomain","type":"string"},{"internalType":"bytes32[]","name":"proof","type":"bytes32[]"}],"name":"applyForJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEmployerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobAssignedAgentOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobSelectionInfo","outputs":[{"internalType":"uint8","name":"intakeMode","type":"uint8"},{"internalType":"address","name":"selectedAgent","type":"address"},{"internalType":"bytes32","name":"perJobAgentRoot","type":"bytes32"},{"internalType":"uint64","name":"selectionExpiresAt","type":"uint64"},{"internalType":"uint64","name":"checkpointWindow","type":"uint64"},{"internalType":"uint64","name":"checkpointDeadline","type":"uint64"},{"internalType":"bool","name":"checkpointSubmitted","type":"bool"},{"internalType":"address","name":"assignedAgent","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobSelectionRuntimeState","outputs":[{"internalType":"bool","name":"selectionExpiredOrOpen","type":"bool"},{"internalType":"address","name":"assignedAgent","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"string","name":"subdomain","type":"string"},{"internalType":"bytes32[]","name":"globalProof","type":"bytes32[]"},{"internalType":"bytes32[]","name":"perJobProof","type":"bytes32[]"}],"name":"applyForJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"string","name":"_jobCompletionURI","type":"string"}],"name":"requestJobCompletion","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"string","name":"subdomain","type":"string"},{"internalType":"bytes32[]","name":"proof","type":"bytes32[]"}],"name":"validateJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"string","name":"subdomain","type":"string"},{"internalType":"bytes32[]","name":"proof","type":"bytes32[]"}],"name":"disapproveJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -2649,7 +2652,20 @@ const AGIJobManagerABI = [
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"agent","type":"address"},{"indexed":true,"internalType":"uint256","name":"reputationPoints","type":"uint256"}],"name":"JobCompleted","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"employer","type":"address"},{"indexed":false,"internalType":"address","name":"agent","type":"address"},{"indexed":true,"internalType":"uint256","name":"payout","type":"uint256"}],"name":"JobExpired","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"employer","type":"address"},{"indexed":false,"internalType":"string","name":"tokenURI","type":"string"}],"name":"NFTIssued","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"hook","type":"uint8"},{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"target","type":"address"},{"indexed":false,"internalType":"bool","name":"success","type":"bool"}],"name":"EnsHookAttempted","type":"event"}
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"hook","type":"uint8"},{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"target","type":"address"},{"indexed":false,"internalType":"bool","name":"success","type":"bool"}],"name":"EnsHookAttempted","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"agent","type":"address"},{"indexed":false,"internalType":"string","name":"checkpointURI","type":"string"}],"name":"CheckpointSubmitted","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"employer","type":"address"},{"indexed":true,"internalType":"address","name":"agent","type":"address"}],"name":"CheckpointFailed","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"resolver","type":"address"},{"indexed":true,"internalType":"uint8","name":"code","type":"uint8"},{"indexed":false,"internalType":"string","name":"reason","type":"string"}],"name":"DisputeResolvedWithCode","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"employer","type":"address"},{"indexed":true,"internalType":"address","name":"agent","type":"address"},{"indexed":false,"internalType":"uint256","name":"refund","type":"uint256"}],"name":"JobEmployerRefunded","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"selectedAgent","type":"address"},{"indexed":false,"internalType":"uint64","name":"selectionExpiresAt","type":"uint64"},{"indexed":false,"internalType":"uint64","name":"checkpointWindow","type":"uint64"}],"name":"SelectedAgentDesignated","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"perJobAgentRoot","type":"bytes32"},{"indexed":false,"internalType":"uint64","name":"selectionExpiresAt","type":"uint64"}],"name":"JobAgentRootUpdated","type":"event"}
+    ];
+
+    const AGIJobCompletionNFTABI = [
+      {"inputs":[],"name":"nextTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
     ];
 
     
@@ -2906,6 +2922,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('managerTokenUriMode')) el('managerTokenUriMode').textContent = 'owner-configurable, getter unavailable';
       resolvedEnsJobPagesAddress = '';
       resolvedEnsJobPagesSource = 'unavailable';
+      completionNft = null;
+      jobTimelineCache.clear();
       ensJobPages = null;
       if(reason) console.info('[clearEnsPreview]', reason);
     }
@@ -4927,6 +4945,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         if(!isMainnet){ setToast("Connected on the wrong network. Switch to Ethereum Mainnet to transact.", "warn"); }
 
         agiJobManager = new web3.eth.Contract(AGIJobManagerABI, AGI_JOB_MANAGER);
+        completionNft = new web3.eth.Contract(AGIJobCompletionNFTABI, AGI_JOB_COMPLETION_NFT);
         ensJobPages = null; clearEnsPreview("wallet connected; resolving ENSJobPages");
         bridgedAgiToken = new web3.eth.Contract(ERC20ABI, BRIDGED_AGIALPHA_ETH);
         officialAgiToken = new web3.eth.Contract(ERC20ABI, OFFICIAL_AGIALPHA_ETH);
@@ -5279,6 +5298,100 @@ async function updateSummary(){
     }
 
 
+    async function getJobEvents(jobId, options={}){
+      const cacheKey = String(jobId);
+      const cached = jobTimelineCache.get(cacheKey);
+      if(!options.force && cached && (Date.now() - cached.ts) < 30_000) return cached.events.slice();
+      const names = ["JobCreated","SelectedAgentDesignated","JobAgentRootUpdated","JobApplied","CheckpointSubmitted","CheckpointFailed","JobCompletionRequested","JobValidated","JobDisapproved","JobDisputed","DisputeResolvedWithCode","JobCompleted","JobEmployerRefunded","JobExpired","JobCancelled","NFTIssued","EnsHookAttempted"];
+      const out = [];
+      for(const name of names){
+        try{
+          const events = await agiJobManager.getPastEvents(name, {filter:{jobId:String(jobId)}, fromBlock:0, toBlock:"latest"});
+          for(const ev of events || []){
+            const bn = Number(ev.blockNumber || 0);
+            let timestamp = 0;
+            try{ const block = await web3.eth.getBlock(bn); timestamp = Number(block?.timestamp || 0); }catch{}
+            out.push({name, bn, timestamp, values:ev.returnValues || {}});
+          }
+        }catch(err){
+          if(!isExpectedRpcRevert(err)) console.error(`[getJobEvents:${name}]`, err);
+        }
+      }
+      out.sort((a,b)=> (a.bn-b.bn) || (a.timestamp-b.timestamp));
+      jobTimelineCache.set(cacheKey, {ts:Date.now(), events:out});
+      return out.slice();
+    }
+    function getLatestEvent(events, name){
+      for(let i=events.length-1;i>=0;i--){ if(events[i].name === name) return events[i]; }
+      return null;
+    }
+    async function buildPrimeJobSnapshot(jobId, options={}){
+      const id = Number(jobId);
+      const events = options.events || await getJobEvents(id, options);
+      const created = events.find(ev=>ev.name === 'JobCreated');
+      if(!created) return null;
+      const [employerRead, selectionInfoRead, runtimeRead] = await Promise.all([
+        runSafeReadStep(`jobEmployerOf(${id})`, ()=>agiJobManager.methods.jobEmployerOf(id).call(), {silent:true}),
+        runSafeReadStep(`getJobSelectionInfo(${id})`, ()=>agiJobManager.methods.getJobSelectionInfo(id).call(), {silent:true}),
+        runSafeReadStep(`getJobSelectionRuntimeState(${id})`, ()=>agiJobManager.methods.getJobSelectionRuntimeState(id).call(), {silent:true})
+      ]);
+      if(employerRead?.__safeReadError || selectionInfoRead?.__safeReadError || runtimeRead?.__safeReadError) return null;
+      const applied = getLatestEvent(events, 'JobApplied');
+      const completionEvent = getLatestEvent(events, 'JobCompletionRequested');
+      const approvals = events.filter(ev=>ev.name === 'JobValidated').length;
+      const disapprovals = events.filter(ev=>ev.name === 'JobDisapproved').length;
+      const disputed = !!getLatestEvent(events, 'JobDisputed');
+      const completed = !!getLatestEvent(events, 'JobCompleted');
+      const expired = !!getLatestEvent(events, 'JobExpired');
+      const cancelled = !!getLatestEvent(events, 'JobCancelled');
+      const refunded = !!getLatestEvent(events, 'JobEmployerRefunded');
+      const checkpointSubmittedEvent = getLatestEvent(events, 'CheckpointSubmitted');
+      const checkpointFailedEvent = getLatestEvent(events, 'CheckpointFailed');
+      const nftEvent = getLatestEvent(events, 'NFTIssued');
+      const selection = selectionInfoRead;
+      const runtime = runtimeRead;
+      const assignedAgent = selection.assignedAgent || runtime.assignedAgent || ZERO_ADDRESS;
+      const assignedAt = Number(applied?.timestamp || 0);
+      const completionRequestedAt = Number(completionEvent?.timestamp || 0);
+      const disputedAt = Number(getLatestEvent(events, 'JobDisputed')?.timestamp || 0);
+      return {
+        id,
+        employer: employerRead,
+        assignedAgent,
+        payout: created.values?.payout || '0',
+        duration: created.values?.duration || '0',
+        assignedAt,
+        completed,
+        disputed,
+        expired,
+        cancelled,
+        employerRefunded: refunded,
+        completionRequested: !!completionEvent,
+        approvals,
+        disapprovals,
+        completionRequestedAt,
+        disputedAt,
+        agentPayoutPct: '',
+        completionURI: completionEvent?.values?.jobCompletionURI || '',
+        specURI: created.values?.jobSpecURI || '',
+        details: created.values?.details || '',
+        intakeMode: Number(selection.intakeMode || 0),
+        selectedAgent: selection.selectedAgent || ZERO_ADDRESS,
+        perJobAgentRoot: selection.perJobAgentRoot || '0x' + '0'.repeat(64),
+        selectionExpiresAt: Number(selection.selectionExpiresAt || 0),
+        checkpointWindow: Number(selection.checkpointWindow || 0),
+        checkpointDeadline: Number(selection.checkpointDeadline || 0),
+        checkpointSubmitted: !!selection.checkpointSubmitted,
+        selectionExpiredOrOpen: !!runtime.selectionExpiredOrOpen,
+        checkpointURI: checkpointSubmittedEvent?.values?.checkpointURI || '',
+        checkpointFailed: !!checkpointFailedEvent,
+        nftIssued: !!nftEvent,
+        nftTokenId: nftEvent?.values?.tokenId ?? '',
+        eventDerived: true,
+        timeline: events
+      };
+    }
+
     async function loadJobs(){
       const total = Number(await agiJobManager.methods.nextJobId().call());
       const jobIds = await getActiveJobIdsFromEvents(total);
@@ -5288,37 +5401,9 @@ async function updateSummary(){
       const jobs = [];
       const liveIds = new Set();
       for(const i of jobIds){
-        const core = await runSafeReadStep(`getJobCore(${i})`, ()=>agiJobManager.methods.getJobCore(i).call(), {silent:true});
-        if(core?.__safeReadError) continue;
-        const spec = await runSafeReadStep(`getJobSpecURI(${i})`, ()=>agiJobManager.methods.getJobSpecURI(i).call(), {silent:true});
-        if(spec?.__safeReadError) continue;
-        const val = await runSafeReadStep(`getJobValidation(${i})`, ()=>agiJobManager.methods.getJobValidation(i).call(), {silent:true});
-        if(val?.__safeReadError) continue;
-        let completionURI = "";
-        if(val.completionRequested){
-          const completionRead = await runSafeReadStep(`getJobCompletionURI(${i})`, ()=>agiJobManager.methods.getJobCompletionURI(i).call(), {silent:true});
-          completionURI = completionRead?.__safeReadError ? '' : completionRead;
-        }
-        const job = {
-          id:i,
-          employer:core.employer,
-          assignedAgent:core.assignedAgent,
-          payout:core.payout,
-          duration:core.duration,
-          assignedAt:core.assignedAt,
-          completed:core.completed,
-          disputed:core.disputed,
-          expired:core.expired,
-          completionRequested:val.completionRequested,
-          approvals:val.validatorApprovals,
-          disapprovals:val.validatorDisapprovals,
-          completionRequestedAt:val.completionRequestedAt,
-          disputedAt:val.disputedAt,
-          agentPayoutPct:core.agentPayoutPct,
-          completionURI,
-          specURI:spec
-        };
-        if(String(core.employer).toLowerCase()===String(userAccount||'').toLowerCase()) myJobsCount++;
+        const job = await buildPrimeJobSnapshot(i);
+        if(!job) continue;
+        if(String(job.employer).toLowerCase()===String(userAccount||'').toLowerCase()) myJobsCount++;
         jobCache.set(String(i), job);
         liveIds.add(String(i));
         jobs.push(job);
@@ -5337,7 +5422,7 @@ async function updateSummary(){
         for(const rowData of rows){
           const job = rowData.job;
           const actions = rowData.actions;
-          const isOpen = job.assignedAgent === "0x0000000000000000000000000000000000000000";
+          const isOpen = !job.assignedAgent || job.assignedAgent === ZERO_ADDRESS;
           const statusHtml = `${statusPillFrom(job)}${renderValidationStatus(job)}` +
             (job.completionURI ? `<div class="muted" style="margin-top:8px;font-size:.85rem">Completion: ${safeLink(job.completionURI)}</div>` : "");
           const isFav = jobFavorites.has(String(job.id));
@@ -5522,7 +5607,7 @@ async function updateSummary(){
             {state:'Bond', badge:'warn', text:'The exact bond is computed on-chain in BondMath and is not exposed as a direct public quote.'},
             {state:'Allowance', badge:'warn', text:'A token approval may be requested before applyForJob is sent.'}
           ],
-          method:`applyForJob(jobId=${jobId}, subdomain=${JSON.stringify(verified.agent)}, proof=[])`,
+          method:`applyForJob(jobId=${jobId}, subdomain=${JSON.stringify(verified.agent)}, globalProof=[], perJobProof=[])`,
           confirmLabel:'Apply for job',
           footer:'This transaction only succeeds if the job is still open and your wallet satisfies the protocol authorization path at execution time.',
           run: async ()=>{
@@ -5533,7 +5618,7 @@ async function updateSummary(){
             });
             if(!approved) return;
             setToast("Submitting applyForJob transaction…", "warn");
-            await runTrackedTx(`Apply for job #${jobId}`, ()=>agiJobManager.methods.applyForJob(String(jobId), verified.agent, []).send({from:userAccount}), { pendingDetail:`Submitting applyForJob for job #${jobId}.`, successDetail:`Application for job #${jobId} confirmed.` });
+            await runTrackedTx(`Apply for job #${jobId}`, ()=>agiJobManager.methods.applyForJob(String(jobId), verified.agent, [], []).send({from:userAccount}), { pendingDetail:`Submitting applyForJob for job #${jobId}.`, successDetail:`Application for job #${jobId} confirmed.` });
             await refreshAll();
           }
         });
@@ -6059,17 +6144,8 @@ function normalizeIpfsToHttp(uri){
     async function fetchJobSnapshot(jobId){
       let job = jobCache.get(String(jobId));
       if(job) return job;
-      const core = await agiJobManager.methods.getJobCore(jobId).call();
-      const spec = await agiJobManager.methods.getJobSpecURI(jobId).call();
-      const val = await agiJobManager.methods.getJobValidation(jobId).call();
-      let completionURI = '';
-      if(val.completionRequested){ try{ completionURI = await agiJobManager.methods.getJobCompletionURI(jobId).call(); }catch{} }
-      job = {
-        id:Number(jobId), employer:core.employer, assignedAgent:core.assignedAgent, payout:core.payout, duration:core.duration, assignedAt:core.assignedAt,
-        completed:core.completed, disputed:core.disputed, expired:core.expired, completionRequested:val.completionRequested,
-        approvals:val.validatorApprovals, disapprovals:val.validatorDisapprovals, completionRequestedAt:val.completionRequestedAt, disputedAt:val.disputedAt,
-        agentPayoutPct:core.agentPayoutPct, completionURI, specURI:spec
-      };
+      job = await buildPrimeJobSnapshot(jobId);
+      if(!job) throw new Error(`Job #${jobId} is not publicly reconstructable from current Prime reads.`);
       jobCache.set(String(jobId), job);
       return job;
     }
@@ -6085,7 +6161,7 @@ function normalizeIpfsToHttp(uri){
         ['Job ID', String(job.id)],
         ['Spec URI', safeLink(job.specURI)],
         ['Current status', classifyJobStatus(job)],
-        ['Assigned agent', job.assignedAgent === '0x0000000000000000000000000000000000000000' ? '—' : shortAddr(job.assignedAgent)],
+        ['Assigned agent', (!job.assignedAgent || job.assignedAgent === ZERO_ADDRESS) ? '—' : shortAddr(job.assignedAgent)],
         ['Payout', formatUnitsToAmount(job.payout) + ' $AGIALPHA'],
         ['Duration', secondsToHuman(job.duration)]
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${escapeHtml(k)}</div><div class="v">${v}</div></div>`).join('');
@@ -6136,10 +6212,26 @@ function normalizeIpfsToHttp(uri){
       const all = el("allNfts");
       my.innerHTML = "<li>Loading…</li>";
       all.innerHTML = "<li>Loading…</li>";
-      const totalRead = await runSafeReadStep('nextTokenId', ()=>agiJobManager.methods.nextTokenId().call(), {silent:true});
+      if(!completionNft && web3) completionNft = new web3.eth.Contract(AGIJobCompletionNFTABI, AGI_JOB_COMPLETION_NFT);
+      const totalRead = completionNft
+        ? await runSafeReadStep('completionNFT.nextTokenId', ()=>completionNft.methods.nextTokenId().call(), {silent:true})
+        : {__safeReadError:true};
       if(totalRead?.__safeReadError){
-        my.innerHTML = '<li>Unable to load NFT index right now.</li>';
-        all.innerHTML = '<li>Unable to load NFT index right now.</li>';
+        const issuedEvents = await runSafeReadStep('NFTIssued', ()=>agiJobManager.getPastEvents('NFTIssued', {fromBlock:0, toBlock:'latest'}), {silent:true});
+        if(issuedEvents?.__safeReadError){
+          my.innerHTML = '<li>Unable to load completion receipt index right now.</li>';
+          all.innerHTML = '<li>Unable to load completion receipt index right now.</li>';
+          return;
+        }
+        const allItems = (issuedEvents || []).slice(-25).reverse().map(ev=>`#${ev.returnValues?.tokenId ?? '—'} · ${safeLink(ev.returnValues?.tokenURI || '')}`);
+        const myItems = (issuedEvents || []).filter(ev=>String(ev.returnValues?.employer || '').toLowerCase() === String(userAccount || '').toLowerCase()).slice(-25).reverse().map(ev=>`#${ev.returnValues?.tokenId ?? '—'} · ${safeLink(ev.returnValues?.tokenURI || '')}`);
+        my.innerHTML = myItems.length ? myItems.map(x=>`<li style="margin:6px 0">${x}</li>`).join('') : '<li>—</li>';
+        all.innerHTML = allItems.length ? allItems.map(x=>`<li style="margin:6px 0">${x}</li>`).join('') : '<li>—</li>';
+        nftRenderCache.total = Number((issuedEvents || []).length);
+        nftRenderCache.myAccount = String(userAccount || '').toLowerCase();
+        nftRenderCache.myHtml = my.innerHTML;
+        nftRenderCache.allHtml = all.innerHTML;
+        nftRenderCache.ts = Date.now();
         return;
       }
       const total = Number(totalRead);
@@ -6157,28 +6249,20 @@ function normalizeIpfsToHttp(uri){
       const allItems = [];
       my.innerHTML = "";
       all.innerHTML = "";
-
       for(let i=myStart;i<total;i++){
         const [ownerRead, uriRead] = await Promise.all([
-          runSafeReadStep(`ownerOf(${i})`, ()=>agiJobManager.methods.ownerOf(i).call(), {silent:true}),
-          runSafeReadStep(`tokenURI(${i})`, ()=>agiJobManager.methods.tokenURI(i).call(), {silent:true})
+          runSafeReadStep(`completionNFT.ownerOf(${i})`, ()=>completionNft.methods.ownerOf(i).call(), {silent:true}),
+          runSafeReadStep(`completionNFT.tokenURI(${i})`, ()=>completionNft.methods.tokenURI(i).call(), {silent:true})
         ]);
         if(ownerRead?.__safeReadError || uriRead?.__safeReadError) continue;
-        const owner = ownerRead;
-        const uri = uriRead;
-        if(owner.toLowerCase() === userAccount.toLowerCase()){
-          myItems.push(`#${i} · ${safeLink(uri)}`);
-        }
+        if(String(ownerRead).toLowerCase() === String(userAccount || '').toLowerCase()) myItems.push(`#${i} · ${safeLink(uriRead)}`);
         if(i % 20 === 0) await new Promise(r=>setTimeout(r, 0));
       }
-
       for(let i=start;i<total;i++){
-        const uriRead = await runSafeReadStep(`tokenURI(${i})`, ()=>agiJobManager.methods.tokenURI(i).call(), {silent:true});
+        const uriRead = await runSafeReadStep(`completionNFT.tokenURI(${i})`, ()=>completionNft.methods.tokenURI(i).call(), {silent:true});
         if(uriRead?.__safeReadError) continue;
-        const uri = uriRead;
-        allItems.push(`#${i} · ${safeLink(uri)}`);
+        allItems.push(`#${i} · ${safeLink(uriRead)}`);
       }
-
       my.innerHTML = myItems.length ? myItems.map(x=>`<li style="margin:6px 0">${x}</li>`).join('') : '<li>—</li>';
       all.innerHTML = allItems.length ? allItems.map(x=>`<li style="margin:6px 0">${x}</li>`).join('') : '<li>—</li>';
       nftRenderCache.total = total;
@@ -6257,21 +6341,7 @@ function normalizeIpfsToHttp(uri){
       return { payout, rewardPool, agentPayout, retained, validatorBond, slashedPerIncorrect, approvals, disapprovals, totalVotes, headline, rationale, quorum, reqA, reqD, reviewEnded };
     }
     async function fetchJobTimeline(jobId){
-      const names = ["JobCreated","JobApplied","JobCompletionRequested","JobValidated","JobDisapproved","JobDisputed","JobCompleted","JobExpired","NFTIssued","EnsHookAttempted"];
-      const out = [];
-      for(const name of names){
-        try{
-          const events = await agiJobManager.getPastEvents(name, {filter:{jobId:String(jobId)}, fromBlock:0, toBlock:"latest"});
-          for(const ev of events){
-            const bn = ev.blockNumber;
-            let block = null;
-            try{ block = await web3.eth.getBlock(bn); }catch{}
-            out.push({name, bn, timestamp:block?.timestamp || 0, values:ev.returnValues || {}});
-          }
-        }catch{}
-      }
-      out.sort((a,b)=> (a.bn-b.bn) || (a.timestamp-b.timestamp));
-      return out;
+      return getJobEvents(jobId, {force:true});
     }
     async function fetchEnsVisibility(jobId){
       try{
@@ -6301,7 +6371,7 @@ function normalizeIpfsToHttp(uri){
       const i = job.id;
       const actions = [];
       const txAttr = (isMainnet && hasAcceptedTerms) ? 'data-tx="1"' : 'data-tx="1" disabled';
-      const isOpen = job.assignedAgent === "0x0000000000000000000000000000000000000000";
+      const isOpen = !job.assignedAgent || job.assignedAgent === ZERO_ADDRESS;
       if(isOpen && verified.agent) actions.push(`<button class="btn" ${txAttr} onclick="applyForJob(${i})">Apply</button>`);
       if(!isOpen && job.assignedAgent.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired && !job.completionRequested){ actions.push(`<button class="btn" ${txAttr} onclick="requestCompletion(${i})">Request completion</button>`); }
       if(verified.club && job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn" ${txAttr} onclick="validateJob(${i})">Approve</button>`); actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disapproveJob(${i})">Disapprove</button>`); }
@@ -6379,30 +6449,12 @@ function normalizeIpfsToHttp(uri){
       const id = Number(jobId);
       let job = jobCache.get(String(id));
       if(!job){
-        const core = await runSafeReadStep(`getJobCore(${id})`, ()=>agiJobManager.methods.getJobCore(id).call(), {silent:true});
-        if(core?.__safeReadError){
+        job = await buildPrimeJobSnapshot(id, {force:true});
+        if(!job){
           currentJobDetailId = null;
-          setToast(`Job #${id} is not available (it may be cancelled/delisted or the RPC node is stale).`, 'warn');
+          setToast(`Job #${id} is not publicly reconstructable from current Prime reads.`, 'warn');
           return;
         }
-        const spec = await runSafeReadStep(`getJobSpecURI(${id})`, ()=>agiJobManager.methods.getJobSpecURI(id).call(), {silent:true});
-        const val = await runSafeReadStep(`getJobValidation(${id})`, ()=>agiJobManager.methods.getJobValidation(id).call(), {silent:true});
-        if(spec?.__safeReadError || val?.__safeReadError){
-          currentJobDetailId = null;
-          setToast(`Unable to fully load job #${id} right now. Please refresh and try again.`, 'warn');
-          return;
-        }
-        let completionURI = "";
-        if(val.completionRequested){
-          const completionRead = await runSafeReadStep(`getJobCompletionURI(${id})`, ()=>agiJobManager.methods.getJobCompletionURI(id).call(), {silent:true});
-          completionURI = completionRead?.__safeReadError ? '' : completionRead;
-        }
-        job = {
-          id, employer:core.employer, assignedAgent:core.assignedAgent, payout:core.payout, duration:core.duration, assignedAt:core.assignedAt,
-          completed:core.completed, disputed:core.disputed, expired:core.expired, completionRequested:val.completionRequested,
-          approvals:val.validatorApprovals, disapprovals:val.validatorDisapprovals, completionRequestedAt:val.completionRequestedAt, disputedAt:val.disputedAt,
-          agentPayoutPct:core.agentPayoutPct, completionURI, specURI:spec
-        };
         jobCache.set(String(id), job);
       }
       const sim = simulateJobSettlement(job);
@@ -6412,7 +6464,7 @@ function normalizeIpfsToHttp(uri){
       el('jobDetailTitle').textContent = `Job #${id} · ${title}`;
       el('jobDetailSubtitle').innerHTML = `${statusPillFrom(job)} <span class="smallNote" style="margin-left:8px">${sim.headline}</span>`;
       el('jobOverview').innerHTML = [
-        ['Employer', shortAddr(job.employer)], ['Assigned agent', job.assignedAgent==='0x0000000000000000000000000000000000000000' ? '—' : shortAddr(job.assignedAgent)],
+        ['Employer', shortAddr(job.employer)], ['Assigned agent', (!job.assignedAgent || job.assignedAgent===ZERO_ADDRESS) ? '—' : shortAddr(job.assignedAgent)],
         ['Payout', formatUnitsToAmount(job.payout)+' $AGIALPHA'], ['Duration', secondsToHuman(job.duration)],
         ['Agent payout %', String(job.agentPayoutPct)+'%'], ['Validator reward pool', formatUnitsToAmount(sim.rewardPool)+' $AGIALPHA'],
         ['Validator bond', formatUnitsToAmount(sim.validatorBond)+' $AGIALPHA'], ['Dispute bond', formatUnitsToAmount(computeDisputeBondFromPayout(BigInt(job.payout)))+' $AGIALPHA'],
@@ -6525,7 +6577,7 @@ function normalizeIpfsToHttp(uri){
           },
           agent: {
             objective: 'Evaluate fit, bond exposure, and completion deliverables before applying.',
-            nextAction: 'applyForJob(jobId, subdomain, proof[])',
+            nextAction: 'applyForJob(jobId, subdomain, globalProof[], perJobProof[])',
             checklist: ['Verify agent ENS.', 'Check bond estimate.', 'Read deliverables and acceptance criteria.']
           },
           validator: {
@@ -6982,6 +7034,7 @@ function normalizeIpfsToHttp(uri){
             el("chainStatus").textContent = `chainId ${cid}` + (isMainnet ? " (Mainnet)" : " (Not Mainnet)");
 
             if(!agiJobManager) agiJobManager = new web3.eth.Contract(AGIJobManagerABI, AGI_JOB_MANAGER);
+            if(!completionNft) completionNft = new web3.eth.Contract(AGIJobCompletionNFTABI, AGI_JOB_COMPLETION_NFT);
             ensJobPages = null; clearEnsPreview("wallet connected; resolving ENSJobPages");
 
             if(isMainnet){
