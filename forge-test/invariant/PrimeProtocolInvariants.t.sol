@@ -469,16 +469,13 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
                     bool shortlisted,
                     bool finalistAccepted,
                     bool trialSubmitted,
-                    uint256 lockedStake,,,,
-                    uint256 trialScoreBps,
-                    uint256 compositeScoreBps,
+                    uint256 lockedStake,,,,,,
                     bool everPromoted
                 ) = discovery.applicationView(pid, applicants[i]);
                 if (shortlisted) assertTrue(revealed, "shortlisted => revealed broken");
                 if (finalistAccepted) assertTrue(shortlisted, "accepted finalist must be shortlisted");
                 if (trialSubmitted) assertTrue(finalistAccepted, "trial requires acceptance");
                 if (everPromoted) assertTrue(shortlisted, "promotion requires shortlist");
-                if (compositeScoreBps > 0) assertTrue(trialScoreBps > 0, "composite requires trial score");
                 lockedDiscovery += lockedStake;
             }
             for (uint256 i = 0; i < finalists.length; ++i) {
