@@ -28,16 +28,19 @@ jobs:
           version: stable
 
       - name: Forge format check
-        run: forge fmt --check forge-test/**/*.sol contracts/test/MaliciousCompletionReceiver.sol
+        run: forge fmt --check forge-test/**/*.sol contracts/test/**/*.sol
 
       - name: Forge build
         run: FOUNDRY_PROFILE=ci forge build
 
-      - name: Forge unit + fuzz tests
-        run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
+      - name: Prime fuzz campaigns
+        run: npm run forge:fuzz
 
-      - name: Forge invariants
-        run: FOUNDRY_PROFILE=ci forge test --match-path "forge-test/invariant/*.t.sol"
+      - name: Prime invariants
+        run: npm run forge:invariant
+
+      - name: Prime soak smoke
+        run: FOUNDRY_PROFILE=soak forge test --match-path "forge-test/invariant/prime/*.t.sol" --invariant-runs 32 --invariant-depth 24
 
       - name: Setup Python
         uses: actions/setup-python@v5

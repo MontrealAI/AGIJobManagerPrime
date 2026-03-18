@@ -28,8 +28,11 @@ jobs:
           cd hardhat
           npm ci
 
-      - name: Prime canonical compile/test/size/smoke
+      - name: Prime canonical compile/property-test/size/smoke
         run: npm run test:prime:ci
+
+      - name: Prime security tier
+        run: npm run test:prime:security
 
       - name: UI smoke test
         run: npm run test:ui
