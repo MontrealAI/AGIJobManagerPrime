@@ -608,9 +608,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function setDiscoveryModule(address module) external onlyOwner {
         if (module == address(0) || module.code.length == 0) revert InvalidParameters();
-        address old = discoveryModule;
         discoveryModule = module;
-        emit DiscoveryModuleUpdated(old, module);
     }
 
     function setEnsJobPages(address target) external onlyOwner {
@@ -767,7 +765,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.selectionExpiresAt = uint64(block.timestamp + acceptanceWindow);
         job.checkpointWindow = checkpointWindow;
 
-        emit SelectedAgentDesignated(jobId, selectedAgent, job.selectionExpiresAt, checkpointWindow);
     }
 
     function setPerJobAgentRoot(
@@ -785,7 +782,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.perJobAgentRoot = root;
         job.selectionExpiresAt = uint64(block.timestamp + applicationWindow);
 
-        emit JobAgentRootUpdated(jobId, root, job.selectionExpiresAt);
     }
 
     function applyForJob(
@@ -1268,6 +1264,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         if (approve) {
             job.approvals[msg.sender] = true;
             job.validatorApprovals += 1;
+            emit JobValidated(jobId, msg.sender);
 
             if (
                 !job.validatorApproved &&
@@ -1280,6 +1277,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         } else {
             job.disapprovals[msg.sender] = true;
             job.validatorDisapprovals += 1;
+            emit JobDisapproved(jobId, msg.sender);
 
             if (
                 job.requiredValidatorDisapprovalsSnapshot > 0 &&
@@ -1407,7 +1405,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function _mintCompletionNFT(uint256, Job storage job) internal {
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
-        completionNFT.mintCompletion(job.employer, uri);
+        uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
+        emit NFTIssued(tokenId, job.employer, uri);
     }
 
     function _callEnsJobPagesHook(uint8 hook, uint256 jobId) internal {
