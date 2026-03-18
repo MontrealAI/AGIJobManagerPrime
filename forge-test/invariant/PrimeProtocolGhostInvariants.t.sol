@@ -25,6 +25,7 @@ contract PrimeGhostHandler is Test {
     address public moderator;
     address[] public actors;
     address[] public agents;
+    address[] public validators;
     mapping(uint256 => JobGhost) public jobs;
     mapping(address => uint256) public lastClaimable;
     mapping(address => uint256) public totalClaimedByActor;
@@ -58,6 +59,7 @@ contract PrimeGhostHandler is Test {
             actors.push(agent);
             actors.push(validator);
             agents.push(agent);
+            validators.push(validator);
             token.mint(employer, 1_000_000 ether);
             token.mint(agent, 1_000_000 ether);
             token.mint(validator, 1_000_000 ether);
@@ -163,14 +165,21 @@ contract PrimeGhostHandler is Test {
         uint256 jobId = bound(jobSeed, 0, manager.nextJobId() - 1);
         address actor = actors[bound(actorSeed, 0, actors.length - 1)];
         vm.prank(actor);
-        if (mode % 7 == 0) try manager.applyForJob(jobId, "", new bytes32[](0), new bytes32[](0)) {}
-            catch {} else if (mode % 7 == 1) try manager.requestJobCompletion(jobId, "ipfs://done") {}
-            catch {} else if (mode % 7 == 2) try manager.validateJob(jobId, "", new bytes32[](0)) {}
-            catch {} else if (mode % 7 == 3) try manager.disapproveJob(jobId, "", new bytes32[](0)) {}
-            catch {} else if (mode % 7 == 4) try manager.disputeJob(jobId) {} catch {} else if (mode % 7 == 5) try manager.finalizeJob(
-            jobId
-        ) {}
-            catch {} else try manager.expireJob(jobId) {} catch {}
+        if (mode % 7 == 0) {
+            try manager.applyForJob(jobId, "", new bytes32[](0), new bytes32[](0)) {} catch {}
+        } else if (mode % 7 == 1) {
+            try manager.requestJobCompletion(jobId, "ipfs://done") {} catch {}
+        } else if (mode % 7 == 2) {
+            try manager.validateJob(jobId, "", new bytes32[](0)) {} catch {}
+        } else if (mode % 7 == 3) {
+            try manager.disapproveJob(jobId, "", new bytes32[](0)) {} catch {}
+        } else if (mode % 7 == 4) {
+            try manager.disputeJob(jobId) {} catch {}
+        } else if (mode % 7 == 5) {
+            try manager.finalizeJob(jobId) {} catch {}
+        } else {
+            try manager.expireJob(jobId) {} catch {}
+        }
         _captureJob(jobId);
         _refreshClaims();
     }
@@ -224,8 +233,25 @@ contract PrimeGhostHandler is Test {
     function discoveryAction(uint256 procurementSeed, uint256 actorSeed, uint8 score, uint8 mode) external {
         if (discovery.nextProcurementId() == 0) return;
         uint256 pid = bound(procurementSeed, 0, discovery.nextProcurementId() - 1);
-        address actor = actors[bound(actorSeed, 0, actors.length - 1)];
-        bytes32 salt = keccak256(abi.encodePacked(pid, actor));
+        address actor;
+        address finalist;
+
+        address[] memory finalists = discovery.procurementFinalists(pid);
+        if (finalists.length > 0) {
+            finalist = finalists[bound(actorSeed, 0, finalists.length - 1)];
+        } else {
+            finalist = agents[bound(actorSeed, 0, agents.length - 1)];
+        }
+
+        if (mode % 8 <= 1 || mode % 8 == 3 || mode % 8 == 4) {
+            actor = agents[bound(actorSeed, 0, agents.length - 1)];
+        } else if (mode % 8 == 5 || mode % 8 == 6) {
+            actor = validators[bound(actorSeed, 0, validators.length - 1)];
+        } else {
+            actor = actors[bound(actorSeed, 0, actors.length - 1)];
+        }
+
+        bytes32 salt = keccak256(abi.encodePacked(pid, actor, finalist));
         if (mode % 8 == 0) {
             vm.prank(actor);
             try discovery.commitApplication(
@@ -248,17 +274,15 @@ contract PrimeGhostHandler is Test {
             vm.prank(actor);
             try discovery.commitFinalistScore(
                 pid,
-                agents[0],
-                keccak256(abi.encodePacked(pid, agents[0], actor, uint8(bound(score, 0, 100)), salt)),
+                finalist,
+                keccak256(abi.encodePacked(pid, finalist, actor, uint8(bound(score, 0, 100)), salt)),
                 "",
                 new bytes32[](0)
             ) {}
                 catch {}
         } else if (mode % 8 == 6) {
             vm.prank(actor);
-            try discovery.revealFinalistScore(
-                pid, agents[0], uint8(bound(score, 0, 100)), salt, "", new bytes32[](0)
-            ) {}
+            try discovery.revealFinalistScore(pid, finalist, uint8(bound(score, 0, 100)), salt, "", new bytes32[](0)) {}
                 catch {}
         } else {
             vm.prank(actor);
