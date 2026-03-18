@@ -101,6 +101,35 @@ contract AGIJobManagerPrimeHarness is AGIJobManagerPrime {
         );
     }
 
+    function jobCore(uint256 jobId)
+        external
+        view
+        returns (
+            address employer,
+            string memory jobSpecURI,
+            uint256 payout,
+            uint256 duration,
+            address assignedAgent,
+            bool completed,
+            bool expired,
+            bool completionRequested,
+            bool disputed
+        )
+    {
+        Job storage job = jobs[jobId];
+        return (
+            job.employer,
+            job.jobSpecURI,
+            job.payout,
+            job.duration,
+            job.assignedAgent,
+            job.completed,
+            job.expired,
+            job.completionRequested,
+            job.disputed
+        );
+    }
+
     function jobTiming(uint256 jobId)
         external
         view

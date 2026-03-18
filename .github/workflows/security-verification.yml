@@ -39,10 +39,10 @@ jobs:
       - name: Prime focused fuzz campaigns
         run: npm run forge:fuzz
 
-      - name: Prime stateful invariants
+      - name: Prime stateful invariants (CI profile)
         run: npm run forge:invariant
 
-      - name: Prime soak profile
+      - name: Prime soak profile (audit/nightly depth)
         run: npm run forge:soak
 
       - name: Setup Python

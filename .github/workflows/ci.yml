@@ -36,5 +36,8 @@ jobs:
       - name: Prime canonical compile/test/size/smoke
         run: npm run test:prime:ci
 
+      - name: Prime security layer quick replay command
+        run: echo "Replay invariants with: FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol --match-test invariant_ -vvvv"
+
       - name: UI smoke test
         run: npm run test:ui

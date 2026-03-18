@@ -31,9 +31,20 @@ The Foundry layer is the canonical property-testing layer for Prime. It is inten
 
 ## Property-testing architecture
 
-- `forge-test/harness/` contains Prime-only harnesses that expose read-only observability for jobs, procurements, applications, and score commits.
-- `forge-test/fuzz/` contains focused campaigns for deadline boundaries, pause-safe clocks, and discovery incentive accounting.
-- `forge-test/invariant/` contains handler-based stateful fuzzing over `AGIJobManagerPrime` + `AGIJobDiscoveryPrime` with owner actions, pause toggles, realistic actor roles, and cross-contract flows.
+- `forge-test/harness/` contains Prime-only harnesses that expose read-only observability for jobs, procurements, applications, score commits, pause clocks, and completion-NFT state.
+- `forge-test/fuzz/` contains focused campaigns for deadline boundaries, pause-safe clocks, validator incentive accounting, and utility/math edge conditions.
+- `forge-test/invariant/` contains the canonical handler-based stateful fuzzing layer over real `AGIJobManagerPrime` + real `AGIJobDiscoveryPrime`, with randomized owner actions, pause toggles, hostile ENS hook targets, multi-actor flows, and ghost settlement counters.
+
+## Prime invariants now emphasized
+
+- Manager token conservation against escrow, agent bonds, validator bonds, and dispute bonds.
+- Discovery token conservation against still-locked stakes/bonds/budgets plus total claimable balances.
+- One-shot settlement tracking for dispute bonds, validator bonds, agent bonds, and discovery score bonds.
+- Snapshot immutability for live manager jobs once assignment occurs.
+- Cross-contract linkage coherence between procurements and Prime jobs.
+- Pause-clock/helper-view coherence so helper views do not advertise impossible actions.
+- Completion-NFT issuance restricted to true completion paths only.
+- Best-effort ENS job-page hooks exercised under healthy and hostile targets without settlement-accounting corruption claims.
 
 ## Replay and triage
 
