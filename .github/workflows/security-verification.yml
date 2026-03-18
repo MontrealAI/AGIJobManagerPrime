@@ -8,7 +8,7 @@ on:
 jobs:
   security-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 75
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,11 +33,17 @@ jobs:
       - name: Forge build
         run: FOUNDRY_PROFILE=ci forge build
 
-      - name: Forge unit + fuzz tests
+      - name: Forge security unit + fuzz suite
         run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
 
-      - name: Forge invariants
-        run: FOUNDRY_PROFILE=ci forge test --match-path "forge-test/invariant/*.t.sol"
+      - name: Prime focused fuzz campaigns
+        run: npm run forge:fuzz
+
+      - name: Prime stateful invariants
+        run: npm run forge:invariant
+
+      - name: Prime soak profile
+        run: npm run forge:soak
 
       - name: Setup Python
         uses: actions/setup-python@v5
