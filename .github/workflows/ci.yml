@@ -9,7 +9,7 @@ on:
 jobs:
   prime-canonical:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,6 +19,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
 
       - name: Install dependencies
         run: npm ci
