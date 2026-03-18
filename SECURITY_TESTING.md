@@ -40,7 +40,8 @@ The Foundry layer is the canonical property-testing layer for Prime. It is inten
 Use deterministic Foundry profiles and replay the emitted seed directly. Recommended commands:
 
 ```bash
-FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol -vvvv
+FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolInvariants -vvvv
+FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolGhostInvariants -vvvv
 FOUNDRY_PROFILE=soak forge test --match-path forge-test/invariant/*.t.sol --match-test invariant_ -vvvv
 ```
 
@@ -50,3 +51,10 @@ FOUNDRY_PROFILE=soak forge test --match-path forge-test/invariant/*.t.sol --matc
 - Foundry fuzzing and invariants preserve manager/discovery solvency and state-machine coherence.
 - Bytecode size and deploy-smoke checks remain green.
 - Slither stays focused on residual manual review areas rather than already-proven accounting invariants.
+
+
+## Added audit-grade campaigns
+
+- `PrimeLibraryAndOwnershipFuzz.t.sol` fuzzes `BondMath`, `ReputationMath`, `UriUtils`, and `BusinessOwnable2Step` boundary behavior.
+- `PrimeProtocolGhostInvariants.t.sol` adds a second stateful handler with ghost accounting, hostile ENS hook toggles, claim tracking, pause fuzzing, and manager/discovery cross-checks.
+- The ghost suite is intended to provide hard evidence for conservation, monotonicity, pause-clock correctness, one-shot settlement, and completion-NFT gating.
