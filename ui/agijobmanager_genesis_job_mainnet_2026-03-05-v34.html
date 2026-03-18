@@ -6321,25 +6321,27 @@ function normalizeIpfsToHttp(uri){
       const approvals = Number(job.approvals || 0);
       const disapprovals = Number(job.disapprovals || 0);
       const totalVotes = approvals + disapprovals;
-      const validationPct = getNumericText("validationRewardPct");
-      const rewardPool = payout * validationPct / 100n;
+      const snapshotDegraded = !isJobOpen(job);
+      const validationPct = snapshotDegraded ? null : getNumericText("validationRewardPct");
+      const rewardPool = validationPct == null ? null : (payout * validationPct / 100n);
       const agentPayoutPctAvailable = job.agentPayoutPct != null;
       const agentPct = BigInt(agentPayoutPctAvailable ? job.agentPayoutPct : 0);
-      const agentPayout = payout * agentPct / 100n;
-      const retained = payout > agentPayout + rewardPool ? payout - agentPayout - rewardPool : 0n;
-      const validatorBond = computeValidatorBondFromPayout(payout);
-      const slashBps = getNumericText("validatorSlashBps");
-      const slashedPerIncorrect = validatorBond * slashBps / 10000n;
-      const quorum = Number(el("voteQuorum")?.textContent || 0);
-      const reqA = Number(el("reqApprovals")?.textContent || 0);
-      const reqD = Number(el("reqDisapprovals")?.textContent || 0);
-      const reviewPeriod = getProtocolNumber('completionReviewPeriod');
+      const agentPayout = rewardPool == null ? null : (payout * agentPct / 100n);
+      const retained = rewardPool == null || agentPayout == null ? null : (payout > agentPayout + rewardPool ? payout - agentPayout - rewardPool : 0n);
+      const validatorBond = snapshotDegraded ? null : computeValidatorBondFromPayout(payout);
+      const slashBps = snapshotDegraded ? null : getNumericText("validatorSlashBps");
+      const slashedPerIncorrect = validatorBond == null || slashBps == null ? null : (validatorBond * slashBps / 10000n);
+      const quorum = snapshotDegraded ? null : Number(el("voteQuorum")?.textContent || 0);
+      const reqA = snapshotDegraded ? null : Number(el("reqApprovals")?.textContent || 0);
+      const reqD = snapshotDegraded ? null : Number(el("reqDisapprovals")?.textContent || 0);
+      const reviewPeriod = snapshotDegraded ? null : getProtocolNumber('completionReviewPeriod');
       const completionAt = Number(job.completionRequestedAt || 0);
       const reviewEnded = !!completionAt && reviewPeriod != null && nowSec() > completionAt + reviewPeriod;
       let headline = "Pending review";
       let rationale = "The job is still moving through the protocol lifecycle.";
-      if(job.completed) { headline = "Settled"; rationale = "The job already reached a terminal settlement path."; }
-      else if(job.expired) { headline = "Expired"; rationale = "The assigned duration elapsed without a valid completion request."; }
+      if(job.completed) { headline = snapshotDegraded ? "Settled (snapshot economics unavailable)" : "Settled"; rationale = snapshotDegraded ? "Prime settles against assignment-time snapshots that are not publicly exposed here; terminal status is known but reward/slash math is not authoritative in this console." : "The job already reached a terminal settlement path."; }
+      else if(job.expired) { headline = snapshotDegraded ? "Expired (snapshot economics unavailable)" : "Expired"; rationale = snapshotDegraded ? "Expiry is visible, but snapshot-dependent settlement parameters are not publicly exposed for authoritative simulation here." : "The assigned duration elapsed without a valid completion request."; }
+      else if(snapshotDegraded) { headline = "Snapshot-dependent Prime job"; rationale = "Prime snapshots reward %, slash bps, quorum, review windows, and vote thresholds when the agent applies. Those snapshots are not publicly readable here, so current globals are not treated as authoritative."; }
       else if(job.disputed) { headline = "Disputed"; rationale = "A dispute path is active; moderator/owner resolution governs the next outcome."; }
       else if(!job.completionRequested) { headline = "Not in review yet"; rationale = "Finalization is not available before a completion request exists."; }
       else if(reviewPeriod == null) { headline = "Review window unknown"; rationale = "Completion-review timing could not be read from the RPC provider. Refresh with a healthy provider before sending finalize/dispute transactions."; }
@@ -6349,7 +6351,7 @@ function normalizeIpfsToHttp(uri){
       else if(reviewEnded && disapprovals>approvals) { headline = "Finalize now → employer-win path"; rationale = "Disapprovals exceed approvals after the review window and quorum is satisfied."; }
       else if(approvals >= reqA && approvals > disapprovals) { headline = "Approval threshold reached"; rationale = "A positive finalize path is forming. The exact challenge-window countdown is not exposed by the current public view methods."; }
       else if(disapprovals >= reqD) { headline = "Dispute threshold reached"; rationale = "Required disapprovals can move the job into dispute before ordinary finalization."; }
-      return { payout, rewardPool, agentPayout, retained, validatorBond, slashedPerIncorrect, approvals, disapprovals, totalVotes, headline, rationale, quorum, reqA, reqD, reviewEnded, agentPayoutPctAvailable };
+      return { payout, rewardPool, agentPayout, retained, validatorBond, slashedPerIncorrect, approvals, disapprovals, totalVotes, headline, rationale, quorum, reqA, reqD, reviewEnded, agentPayoutPctAvailable, snapshotDegraded };
     }
     async function fetchJobTimeline(jobId){
       const names = ["JobCreated","JobApplied","JobCompletionRequested","JobValidated","JobDisapproved","JobDisputed","JobCompleted","JobExpired","NFTIssued","EnsHookAttempted"];
@@ -6421,15 +6423,16 @@ function normalizeIpfsToHttp(uri){
       const assignedAt = Number(job.assignedAt || 0);
       const duration = Number(job.duration || 0);
       const completionRequestedAt = Number(job.completionRequestedAt || 0);
-      const reviewPeriod = getProtocolNumber('completionReviewPeriod');
-      const challengePeriod = getProtocolNumber('challengePeriodAfterApproval');
+      const snapshotDegraded = !isJobOpen(job);
+      const reviewPeriod = snapshotDegraded ? null : getProtocolNumber('completionReviewPeriod');
+      const challengePeriod = snapshotDegraded ? null : getProtocolNumber('challengePeriodAfterApproval');
       const expiryTs = assignedAt && duration ? assignedAt + duration : 0;
       const reviewTs = completionRequestedAt && reviewPeriod != null ? completionRequestedAt + reviewPeriod : 0;
       const challengeTs = completionRequestedAt && challengePeriod != null ? completionRequestedAt + challengePeriod : 0;
       return [
         {label:"Assignment / expiry window", when: expiryTs, desc: expiryTs ? formatDateTime(expiryTs) : "Not assigned"},
-        {label:"Completion review end", when: reviewTs, desc: reviewPeriod == null ? "Unknown (RPC read failed)" : (reviewTs ? formatDateTime(reviewTs) : "No completion request yet")},
-        {label:"Earliest approval challenge end", when: challengeTs, desc: challengePeriod == null ? "Unknown (RPC read failed)" : (challengeTs ? formatDateTime(challengeTs) : "Needs completion request / approval threshold")}
+        {label:"Completion review end", when: reviewTs, desc: reviewPeriod == null ? (snapshotDegraded ? 'Unavailable: Prime uses assignment-time review snapshots.' : 'Unknown (RPC read failed)') : (reviewTs ? formatDateTime(reviewTs) : 'No completion request yet')},
+        {label:"Earliest approval challenge end", when: challengeTs, desc: challengePeriod == null ? (snapshotDegraded ? 'Unavailable: Prime uses assignment-time challenge snapshots.' : 'Unknown (RPC read failed)') : (challengeTs ? formatDateTime(challengeTs) : 'Needs completion request / approval threshold')}
       ].map(x=>`<div class="countdownCard"><div class="smallNote">${x.label}</div><div style="font-size:1.02rem;font-weight:700;margin:6px 0">${fmtRemaining(x.when)}</div><div class="smallNote">${x.desc}</div></div>`).join('');
     }
     function buildPreflight(job, sim){
@@ -6498,8 +6501,8 @@ function normalizeIpfsToHttp(uri){
       el('jobOverview').innerHTML = [
         ['Employer', shortAddr(job.employer)], ['Assigned agent', job.assignedAgent==='0x0000000000000000000000000000000000000000' ? '—' : shortAddr(job.assignedAgent)],
         ['Payout', formatUnitsToAmount(job.payout)+' $AGIALPHA'], ['Duration', secondsToHuman(job.duration)],
-        ['Agent payout %', formatAgentPayoutPctLabel(job)], ['Validator reward pool', formatUnitsToAmount(sim.rewardPool)+' $AGIALPHA'],
-        ['Validator bond', formatUnitsToAmount(sim.validatorBond)+' $AGIALPHA'], ['Dispute bond', formatUnitsToAmount(computeDisputeBondFromPayout(BigInt(job.payout)))+' $AGIALPHA'],
+        ['Agent payout %', formatAgentPayoutPctLabel(job)], ['Validator reward pool', sim.rewardPool == null ? 'Unavailable: assignment-time snapshot not public' : formatUnitsToAmount(sim.rewardPool)+' $AGIALPHA'],
+        ['Validator bond', sim.validatorBond == null ? 'Unavailable: assignment-time snapshot not public' : formatUnitsToAmount(sim.validatorBond)+' $AGIALPHA'], ['Dispute bond', formatUnitsToAmount(computeDisputeBondFromPayout(BigInt(job.payout)))+' $AGIALPHA'],
         ['Assigned at', formatDateTime(job.assignedAt)], ['Completion requested at', formatDateTime(job.completionRequestedAt)],
         ['Disputed at', formatDateTime(job.disputedAt)], ['Votes', `${sim.approvals} approve / ${sim.disapprovals} disapprove`]
       ].map(([k,v])=>`<div class="kvCard"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
@@ -6537,7 +6540,7 @@ function normalizeIpfsToHttp(uri){
         ['If the agent wins', sim.agentPayoutPctAvailable ? `Agent receives about <b>${formatUnitsToAmount(sim.agentPayout)} $AGIALPHA</b> plus returned agent bond. Validators split the reward pool and slashed incorrect-side bonds. Protocol-retained remainder: <b>${formatUnitsToAmount(sim.retained)} $AGIALPHA</b>.` : `The exact agent payout share is <b>unavailable from the current public read surface</b> because Prime settles against the apply-time snapshot. Validators still split the reward pool and incorrect-side slash flows still apply.`],
         ['If the employer wins', `Employer refund path returns payout minus validator reward pool when validators participated. Incorrect-side validators are slashed; if dispute-threshold disapprovals were reached, the agent bond can join the correct-side validator pool.`],
         ['Current likely next outcome', `<b>${escapeHtml(sim.headline)}</b><br>${escapeHtml(sim.rationale)}`],
-        ['Validator incentive snapshot', `Per-validator bond is about <b>${formatUnitsToAmount(sim.validatorBond)} $AGIALPHA</b>. Wrong-side slash per validator is about <b>${formatUnitsToAmount(sim.slashedPerIncorrect)} $AGIALPHA</b> under the current slash bps.`]
+        ['Validator incentive snapshot', sim.snapshotDegraded ? `Prime uses assignment-time validator bond/slash snapshots that are <b>not publicly readable here</b>, so this console avoids presenting current globals as authoritative.` : `Per-validator bond is about <b>${formatUnitsToAmount(sim.validatorBond)} $AGIALPHA</b>. Wrong-side slash per validator is about <b>${formatUnitsToAmount(sim.slashedPerIncorrect)} $AGIALPHA</b> under the current slash bps.`]
       ].map(([h,b])=>`<div class="simCard"><h4>${h}</h4><div class="smallNote">${b}</div></div>`).join('');
       el('jobFlowchart').innerHTML = [
         `<div class="flowStep"><b>1. Posted / assigned</b><br><span class="smallNote">Job escrow exists on-chain; if open, eligible agents may apply.</span></div>`,
@@ -6647,11 +6650,11 @@ function normalizeIpfsToHttp(uri){
         },
         economics: {
           agentPayoutPct: job.agentPayoutPct == null ? null : Number(job.agentPayoutPct),
-          agentPayout: formatUnitsToAmount(sim.agentPayout),
-          validatorRewardPool: formatUnitsToAmount(sim.rewardPool),
-          retainedRemainder: formatUnitsToAmount(sim.retained),
-          validatorBond: formatUnitsToAmount(sim.validatorBond),
-          slashedPerIncorrect: formatUnitsToAmount(sim.slashedPerIncorrect)
+          agentPayout: sim.agentPayout == null ? null : formatUnitsToAmount(sim.agentPayout),
+          validatorRewardPool: sim.rewardPool == null ? null : formatUnitsToAmount(sim.rewardPool),
+          retainedRemainder: sim.retained == null ? null : formatUnitsToAmount(sim.retained),
+          validatorBond: sim.validatorBond == null ? null : formatUnitsToAmount(sim.validatorBond),
+          slashedPerIncorrect: sim.slashedPerIncorrect == null ? null : formatUnitsToAmount(sim.slashedPerIncorrect)
         },
         nextLikelyOutcome: {
           headline: sim.headline,
@@ -6776,11 +6779,11 @@ function normalizeIpfsToHttp(uri){
       updateAGITokenAddress:[{name:'newToken',type:'address'}], updateEnsRegistry:[{name:'newRegistry',type:'address'}], updateNameWrapper:[{name:'newWrapper',type:'address'}],
       updateRootNodes:[{name:'clubRoot',type:'bytes32'},{name:'agentRoot',type:'bytes32'},{name:'alphaClubRoot',type:'bytes32'},{name:'alphaAgentRoot',type:'bytes32'}],
       setEnsJobPages:[{name:'newEnsPages',type:'address'}], rescueETH:[{name:'amount',type:'uint256'}], rescueERC20:[{name:'token',type:'address'},{name:'to',type:'address'},{name:'amount',type:'uint256'}], rescueToken:[{name:'token',type:'address'},{name:'data',type:'bytes'}],
-      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'winner',type:'uint8'},{name:'reasonURI',type:'string'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'approveCompletion',type:'bool'}],
+      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'winner',type:'uint8'},{name:'reasonURI',type:'string'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'employerWins',type:'bool'}],
       setJobLabelPrefix:[{name:'prefix',type:'string'}], setENSRegistry:[{name:'registry',type:'address'}], setNameWrapper:[{name:'wrapper',type:'address'}], setPublicResolver:[{name:'resolver',type:'address'}],
       setJobsRoot:[{name:'rootNode',type:'bytes32'},{name:'rootName',type:'string'}], setJobManager:[{name:'jobManager',type:'address'}],
       lockConfiguration:[],
-      migrateLegacyWrappedJobPage:[{name:'jobId',type:'uint256'},{name:'label',type:'string'}], createJobPage:[{name:'jobId',type:'uint256'},{name:'agent',type:'address'},{name:'specURI',type:'string'}],
+      migrateLegacyWrappedJobPage:[{name:'jobId',type:'uint256'},{name:'label',type:'string'}], createJobPage:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'specURI',type:'string'}],
       onAgentAssigned:[{name:'jobId',type:'uint256'},{name:'agent',type:'address'}], onCompletionRequested:[{name:'jobId',type:'uint256'},{name:'jobCompletionURI',type:'string'}],
       revokePermissions:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'}], lockJobENS:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'},{name:'burnFuses',type:'bool'}]
     };
@@ -6907,7 +6910,7 @@ function normalizeIpfsToHttp(uri){
       if(el('managerModeratorPosture')) el('managerModeratorPosture').textContent = isModerator ? 'Connected wallet is moderator' : 'Connected wallet is not moderator';
       if(el('managerAdminPostureBadges')) el('managerAdminPostureBadges').innerHTML = [postureBadge(!!userAccount, 'Wallet connected', 'Wallet disconnected'),postureBadge(!!isManagerOwner, 'AGIJobManager owner', 'Not AGIJobManager owner'),postureBadge(!!isModerator, 'Moderator', 'Not moderator')].join(' ');
       if(el('ensAdminPostureBadges')) el('ensAdminPostureBadges').innerHTML = [postureBadge(!!userAccount, 'Wallet connected', 'Wallet disconnected'),postureBadge(!!isEnsOwner, 'ENSJobPages owner', 'Not ENSJobPages owner')].join(' ');
-      if(el('managerRoutineControls')) el('managerRoutineControls').innerHTML = ['pause','unpause','pauseIntake','unpauseIntake','pauseAll','unpauseAll','setSettlementPaused','addModerator','removeModerator','blacklistAgent','blacklistValidator','delistJob','withdrawAGI','setUseEnsJobTokenURI','updateMerkleRoots','setBaseIpfsUrl','setRequiredValidatorApprovals','setRequiredValidatorDisapprovals','setPremiumReputationThreshold','setVoteQuorum','setMaxJobPayout','setJobDurationLimit','setMaxActiveJobsPerAgent','setCompletionReviewPeriod','setDisputeReviewPeriod','setValidatorBondParams','setAgentBondParams','setAgentBond','setValidatorSlashBps','setChallengePeriodAfterApproval','setValidationRewardPercentage','addAdditionalValidator','removeAdditionalValidator','addAdditionalAgent','removeAdditionalAgent','addAGIType','disableAGIType'].map(m=>adminControlButton('manager',m,false)).join(' ');
+      if(el('managerRoutineControls')) el('managerRoutineControls').innerHTML = ['pause','unpause','setSettlementPaused','addModerator','removeModerator','blacklistAgent','blacklistValidator','withdrawAGI','updateMerkleRoots','setRequiredValidatorApprovals','setRequiredValidatorDisapprovals','setPremiumReputationThreshold','setVoteQuorum','setMaxJobPayout','setJobDurationLimit','setMaxActiveJobsPerAgent','setCompletionReviewPeriod','setDisputeReviewPeriod','setValidatorBondParams','setAgentBondParams','setValidatorSlashBps','setChallengePeriodAfterApproval','setValidationRewardPercentage','addAdditionalValidator','removeAdditionalValidator','addAdditionalAgent','removeAdditionalAgent','addAGIType','disableAGIType'].map(m=>adminControlButton('manager',m,false)).join(' ');
       if(el('managerDangerControls')) el('managerDangerControls').innerHTML = ['updateAGITokenAddress','updateEnsRegistry','updateNameWrapper','updateRootNodes','setEnsJobPages','lockIdentityConfiguration','rescueETH','rescueERC20','rescueToken','resolveDisputeWithCode','resolveStaleDispute','withdrawAGI'].map(m=>adminControlButton('manager',m,true)).join(' ');
       if(el('ensRoutineControls')) el('ensRoutineControls').innerHTML = ['setJobLabelPrefix','setENSRegistry','setNameWrapper','setPublicResolver','setJobsRoot','setJobManager','setUseEnsJobTokenURI','createJobPage','onAgentAssigned','onCompletionRequested','revokePermissions','lockJobENS'].map(m=>adminControlButton('ens',m,false)).join(' ');
       if(el('ensDangerControls')) el('ensDangerControls').innerHTML = ['lockConfiguration','migrateLegacyWrappedJobPage'].map(m=>adminControlButton('ens',m,true)).join(' ');
