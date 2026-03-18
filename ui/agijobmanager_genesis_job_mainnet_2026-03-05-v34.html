@@ -5617,7 +5617,14 @@ async function updateSummary(){
     async function requestCompletion(jobId){
       if(!requireConnected()) return;
       if(!mustBeReadyToWrite()) return;
-      try{ await openCompletionAssistant(jobId); }
+      try{
+        const job = await fetchJobSnapshot(jobId);
+        if(Number(job.checkpointWindow || 0) > 0 && !job.checkpointSubmitted){
+          setToast('This job has an active checkpoint requirement. The current v34 console does not yet expose submitCheckpoint(), so completion cannot be safely prepared here until the checkpoint is satisfied.', 'warn');
+          return;
+        }
+        await openCompletionAssistant(jobId);
+      }
       catch(e){ console.error(e); setToast(e.message || String(e), "bad"); }
     }
 
@@ -5733,6 +5740,11 @@ async function updateSummary(){
       if(!mustBeReadyToWrite()) return;
       try{
         const job = jobCache.get(String(jobId));
+        if(job){
+          const me = String(userAccount || '').toLowerCase();
+          const isParticipant = String(job.employer || '').toLowerCase() === me || String(job.assignedAgent || '').toLowerCase() === me;
+          if(!isParticipant){ setToast('Only the employer or assigned agent can dispute this job on Prime.', 'warn'); return; }
+        }
         const disputeBond = computeDisputeBondFromPayout(BigInt(job?.payout || 0));
         openActionReview({
           title:`Start dispute · Job #${jobId}`,
@@ -6380,11 +6392,13 @@ function normalizeIpfsToHttp(uri){
         Number(job.intakeMode || 0) === 0 ||
         (Number(job.intakeMode || 0) === 1 && isSelectedAgent)
       );
+      const checkpointReady = !Number(job.checkpointWindow || 0) || !!job.checkpointSubmitted;
+      const isParticipant = String(job.employer || '').toLowerCase() === String(userAccount || '').toLowerCase() || String(job.assignedAgent || '').toLowerCase() === String(userAccount || '').toLowerCase();
       if(canApply) actions.push(`<button class="btn" ${txAttr} onclick="applyForJob(${i})">Apply</button>`);
-      if(!isOpen && job.assignedAgent.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired && !job.completionRequested){ actions.push(`<button class="btn" ${txAttr} onclick="requestCompletion(${i})">Request completion</button>`); }
+      if(!isOpen && job.assignedAgent.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired && !job.completionRequested && checkpointReady){ actions.push(`<button class="btn" ${txAttr} onclick="requestCompletion(${i})">Request completion</button>`); }
       if(verified.club && job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn" ${txAttr} onclick="validateJob(${i})">Approve</button>`); actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disapproveJob(${i})">Disapprove</button>`); }
       if(job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn btn-primary" ${txAttr} onclick="finalizeJob(${i})">Finalize</button>`); }
-      if(job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disputeJob(${i})">Dispute</button>`); }
+      if(job.completionRequested && !job.completed && !job.expired && !job.disputed && isParticipant){ actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disputeJob(${i})">Dispute</button>`); }
       if(!job.completed && !job.expired && !job.disputed && !isOpen){ actions.push(`<button class="btn" ${txAttr} onclick="expireJob(${i})">Expire</button>`); }
       if(isOpen && job.employer.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired){ actions.push(`<button class="btn btn-danger" ${txAttr} onclick="cancelJob(${i})">Cancel</button>`); }
       if(job.completed || job.expired){ actions.push(`<button class="btn" ${txAttr} onclick="lockEns(${i})">Lock ENS</button>`); }
@@ -6749,7 +6763,7 @@ function normalizeIpfsToHttp(uri){
       addAdditionalAgent:[{name:'a',type:'address'}], removeAdditionalAgent:[{name:'a',type:'address'}],
       addAGIType:[{name:'token',type:'address'},{name:'agiType',type:'uint256'}], disableAGIType:[{name:'token',type:'address'}],
       updateAGITokenAddress:[{name:'newToken',type:'address'}], updateEnsRegistry:[{name:'newRegistry',type:'address'}], updateNameWrapper:[{name:'newWrapper',type:'address'}],
-      updateRootNodes:[{name:'clubRoot',type:'bytes32'},{name:'alphaClubRoot',type:'bytes32'},{name:'agentRoot',type:'bytes32'},{name:'alphaAgentRoot',type:'bytes32'}],
+      updateRootNodes:[{name:'clubRoot',type:'bytes32'},{name:'agentRoot',type:'bytes32'},{name:'alphaClubRoot',type:'bytes32'},{name:'alphaAgentRoot',type:'bytes32'}],
       setEnsJobPages:[{name:'newEnsPages',type:'address'}], rescueETH:[{name:'amount',type:'uint256'}], rescueERC20:[{name:'token',type:'address'},{name:'to',type:'address'},{name:'amount',type:'uint256'}], rescueToken:[{name:'token',type:'address'},{name:'data',type:'bytes'}],
       resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'winner',type:'uint8'},{name:'reasonURI',type:'string'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'approveCompletion',type:'bool'}],
       setJobLabelPrefix:[{name:'prefix',type:'string'}], setENSRegistry:[{name:'registry',type:'address'}], setNameWrapper:[{name:'wrapper',type:'address'}], setPublicResolver:[{name:'resolver',type:'address'}],
@@ -6820,10 +6834,13 @@ function normalizeIpfsToHttp(uri){
       const isManagerOwner = !!account && !!managerOwner && account === managerOwner;
       const isEnsOwner = !!account && !!ensOwner && account === ensOwner;
       const isModerator = !!APP_STATE.admin?.isModerator;
-      const moderatorMethods = new Set(['resolveDisputeWithCode','resolveStaleDispute']);
-      const authorized = target === 'ens' ? isEnsOwner : (isManagerOwner || (isModerator && moderatorMethods.has(method)));
+      const moderatorOnlyMethods = new Set(['resolveDisputeWithCode']);
+      const ownerOnlyMethods = new Set(['resolveStaleDispute']);
+      const authorized = target === 'ens'
+        ? isEnsOwner
+        : (ownerOnlyMethods.has(method) ? isManagerOwner : (moderatorOnlyMethods.has(method) ? isModerator : isManagerOwner));
       if(!authorized){
-        const needed = target === 'ens' ? 'ENSJobPages owner' : (moderatorMethods.has(method) ? 'AGIJobManager owner or moderator' : 'AGIJobManager owner');
+        const needed = target === 'ens' ? 'ENSJobPages owner' : (moderatorOnlyMethods.has(method) ? 'AGIJobManager moderator' : (ownerOnlyMethods.has(method) ? 'AGIJobManager owner' : 'AGIJobManager owner'));
         setToast(`Not authorized for ${method}. Required posture: ${needed}.`, 'bad');
         return;
       }
@@ -6832,7 +6849,7 @@ function normalizeIpfsToHttp(uri){
       const ok = await requestActionConfirmation({
         title: `${target === 'ens' ? 'ENSJobPages' : 'AGIJobManager'} · ${method}`,
         body: danger ? 'High-risk administrative call. Validate target, authorization posture, and irreversible impact before submitting.' : 'Administrative write call review.',
-        checks:[{state:'Authorization', badge: 'warn', text:'Wallet must be owner or delegated moderator for this method.'}],
+        checks:[{state:'Authorization', badge: 'warn', text:'Wallet must already match the exact owner/moderator role enforced by this method on-chain.'}],
         method: `${method}(${args.join(', ')})`,
         confirmLabel: danger ? 'Submit high-risk action' : 'Submit admin action'
       });
