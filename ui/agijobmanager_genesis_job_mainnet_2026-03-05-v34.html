@@ -2683,7 +2683,7 @@ const AGIJobManagerABI = [
     ];
 
 
-    const PublicResolverABI = [{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"key","type":"string"}],"name":"text","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+    const PublicResolverABI = [{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"addr","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"key","type":"string"}],"name":"text","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
     const ENSRegistryResolverABI = [{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
 
     const ERC20ABI = [
@@ -5350,6 +5350,8 @@ async function updateSummary(){
         agentPayoutPctStatus: 'Unavailable from current Prime public read surface; settlement uses the apply-time snapshot.',
         approvals: Array.isArray(approvals) ? approvals.length : 0,
         disapprovals: Array.isArray(disapprovals) ? disapprovals.length : 0,
+        approvalVoters: Array.isArray(approvals) ? approvals.map(ev=>String(ev?.returnValues?.validator || '').toLowerCase()).filter(Boolean) : [],
+        disapprovalVoters: Array.isArray(disapprovals) ? disapprovals.map(ev=>String(ev?.returnValues?.validator || '').toLowerCase()).filter(Boolean) : [],
         completionRequestedAt: completionBlock?.timestamp || 0,
         disputedAt: disputeBlock?.timestamp || 0,
         completionURI: latestCompletion?.returnValues?.jobCompletionURI || '',
@@ -5619,8 +5621,8 @@ async function updateSummary(){
       if(!mustBeReadyToWrite()) return;
       try{
         const job = await fetchJobSnapshot(jobId);
-        if(Number(job.checkpointWindow || 0) > 0 && !job.checkpointSubmitted){
-          setToast('This job has an active checkpoint requirement. The current v34 console does not yet expose submitCheckpoint(), so completion cannot be safely prepared here until the checkpoint is satisfied.', 'warn');
+        if(Number(job.checkpointDeadline || 0) > 0 && !job.checkpointSubmitted && nowSec() > Number(job.checkpointDeadline || 0)){
+          setToast('This job missed its checkpoint deadline without a submitted checkpoint. Prime completion would now revert until that state is resolved.', 'warn');
           return;
         }
         await openCompletionAssistant(jobId);
@@ -5634,6 +5636,8 @@ async function updateSummary(){
       if(!verified.club){setToast("Verify your club.agi.eth subdomain first.", "warn");return;}
       try{
         const job = jobCache.get(String(jobId));
+        const me = String(userAccount || '').toLowerCase();
+        if(job && ((job.approvalVoters || []).includes(me) || (job.disapprovalVoters || []).includes(me))){ setToast('This wallet has already voted on this Prime job.', 'warn'); return; }
         const requiredBond = computeValidatorBondFromPayout(BigInt(job?.payout || 0));
         openActionReview({
           title:`Approve completion · Job #${jobId}`,
@@ -5672,6 +5676,8 @@ async function updateSummary(){
       if(!verified.club){setToast("Verify your club.agi.eth subdomain first.", "warn");return;}
       try{
         const job = jobCache.get(String(jobId));
+        const me = String(userAccount || '').toLowerCase();
+        if(job && ((job.approvalVoters || []).includes(me) || (job.disapprovalVoters || []).includes(me))){ setToast('This wallet has already voted on this Prime job.', 'warn'); return; }
         const requiredBond = computeValidatorBondFromPayout(BigInt(job?.payout || 0));
         openActionReview({
           title:`Disapprove completion · Job #${jobId}`,
@@ -5897,7 +5903,11 @@ async function updateSummary(){
         if(!resolverCheckDegraded){
           const ensRegistry = new web3.eth.Contract(ENSRegistryResolverABI, managerEnsAddr);
           const nodeResolver = await ensRegistry.methods.resolver(tokenID).call().catch(()=>"0x0000000000000000000000000000000000000000");
-          resolverAddrMatch = !!nodeResolver && String(nodeResolver).toLowerCase() === acct;
+          if(nodeResolver && !isZeroAddress(nodeResolver)){
+            const resolver = new web3.eth.Contract(PublicResolverABI, nodeResolver);
+            const resolvedAddr = await resolver.methods.addr(tokenID).call().catch(()=>"0x0000000000000000000000000000000000000000");
+            resolverAddrMatch = !!resolvedAddr && String(resolvedAddr).toLowerCase() === acct;
+          }
         }
         const isAuthorized = ownerLc === acct || approvedLc === acct || !!approvedForAll || resolverAddrMatch;
         if(isAuthorized){
@@ -6392,16 +6402,17 @@ function normalizeIpfsToHttp(uri){
         Number(job.intakeMode || 0) === 0 ||
         (Number(job.intakeMode || 0) === 1 && isSelectedAgent)
       );
-      const checkpointReady = !Number(job.checkpointWindow || 0) || !!job.checkpointSubmitted;
+      const checkpointReady = !Number(job.checkpointDeadline || 0) || !!job.checkpointSubmitted || nowSec() <= Number(job.checkpointDeadline || 0);
       const isParticipant = String(job.employer || '').toLowerCase() === String(userAccount || '').toLowerCase() || String(job.assignedAgent || '').toLowerCase() === String(userAccount || '').toLowerCase();
+      const me = String(userAccount || '').toLowerCase();
+      const alreadyVoted = (job.approvalVoters || []).includes(me) || (job.disapprovalVoters || []).includes(me);
       if(canApply) actions.push(`<button class="btn" ${txAttr} onclick="applyForJob(${i})">Apply</button>`);
       if(!isOpen && job.assignedAgent.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired && !job.completionRequested && checkpointReady){ actions.push(`<button class="btn" ${txAttr} onclick="requestCompletion(${i})">Request completion</button>`); }
-      if(verified.club && job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn" ${txAttr} onclick="validateJob(${i})">Approve</button>`); actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disapproveJob(${i})">Disapprove</button>`); }
+      if(verified.club && job.completionRequested && !job.completed && !job.expired && !job.disputed && !alreadyVoted){ actions.push(`<button class="btn" ${txAttr} onclick="validateJob(${i})">Approve</button>`); actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disapproveJob(${i})">Disapprove</button>`); }
       if(job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn btn-primary" ${txAttr} onclick="finalizeJob(${i})">Finalize</button>`); }
       if(job.completionRequested && !job.completed && !job.expired && !job.disputed && isParticipant){ actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disputeJob(${i})">Dispute</button>`); }
       if(!job.completed && !job.expired && !job.disputed && !isOpen){ actions.push(`<button class="btn" ${txAttr} onclick="expireJob(${i})">Expire</button>`); }
       if(isOpen && job.employer.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired){ actions.push(`<button class="btn btn-danger" ${txAttr} onclick="cancelJob(${i})">Cancel</button>`); }
-      if(job.completed || job.expired){ actions.push(`<button class="btn" ${txAttr} onclick="lockEns(${i})">Lock ENS</button>`); }
       actions.push(`<button class="btn" onclick="openJobDetails(${i})">Details</button>`);
       return actions;
     }
