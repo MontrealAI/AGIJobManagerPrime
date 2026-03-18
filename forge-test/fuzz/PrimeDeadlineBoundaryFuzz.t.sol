@@ -133,6 +133,7 @@ contract PrimeDeadlineBoundaryFuzz is Test {
         vm.prank(manager.owner());
         discovery.pause();
         vm.warp(block.timestamp + 25);
+        vm.prank(agent);
         vm.expectRevert();
         discovery.revealApplication(pid, "", new bytes32[](0), salt, "ipfs://app");
         vm.prank(manager.owner());

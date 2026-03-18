@@ -33,8 +33,8 @@ jobs:
       - name: Forge build
         run: FOUNDRY_PROFILE=ci forge build
 
-      - name: Prime focused fuzz campaigns
-        run: npm run forge:fuzz
+      - name: Forge security unit + fuzz suite
+        run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
 
       - name: Prime stateful invariants
         run: npm run forge:invariant
