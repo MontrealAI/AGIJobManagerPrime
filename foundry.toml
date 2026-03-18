@@ -17,8 +17,8 @@ invariant = { runs = 64, depth = 40, fail_on_revert = false }
 
 [profile.ci]
 fuzz = { runs = 256, seed = "0x000000000000000000000000000000000000000000000000000000000000c1c1" }
-invariant = { runs = 64, depth = 45, fail_on_revert = false }
+invariant = { runs = 64, depth = 45, fail_on_revert = false, seed = "0x000000000000000000000000000000000000000000000000000000000000c1c1" }
 
 [profile.soak]
 fuzz = { runs = 2048, seed = "0x00000000000000000000000000000000000000000000000000000000000050a5" }
-invariant = { runs = 256, depth = 120, fail_on_revert = false }
+invariant = { runs = 256, depth = 120, fail_on_revert = false, seed = "0x00000000000000000000000000000000000000000000000000000000000050a5" }
