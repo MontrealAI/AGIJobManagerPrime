@@ -163,7 +163,22 @@ contract PrimeGhostHandler is Test {
     function managerAction(uint256 jobSeed, uint256 actorSeed, uint8 mode) external {
         if (manager.nextJobId() == 0) return;
         uint256 jobId = bound(jobSeed, 0, manager.nextJobId() - 1);
-        address actor = actors[bound(actorSeed, 0, actors.length - 1)];
+        (, , , , , address employer, address assignedAgent, ) = manager.jobAccounting(jobId);
+        address actor;
+
+        if (mode % 7 == 0) {
+            actor = agents[bound(actorSeed, 0, agents.length - 1)];
+        } else if (mode % 7 == 1) {
+            actor = assignedAgent == address(0) ? agents[bound(actorSeed, 0, agents.length - 1)] : assignedAgent;
+        } else if (mode % 7 == 2 || mode % 7 == 3) {
+            actor = validators[bound(actorSeed, 0, validators.length - 1)];
+        } else if (mode % 7 == 4) {
+            if (assignedAgent != address(0) && (actorSeed & 1) == 1) actor = assignedAgent;
+            else actor = employer;
+        } else {
+            actor = actors[bound(actorSeed, 0, actors.length - 1)];
+        }
+
         vm.prank(actor);
         if (mode % 7 == 0) {
             try manager.applyForJob(jobId, "", new bytes32[](0), new bytes32[](0)) {} catch {}
