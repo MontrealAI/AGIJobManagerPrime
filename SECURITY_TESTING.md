@@ -6,30 +6,47 @@ Use deterministic installs before all checks:
 npm ci
 ```
 
-## Required checks
+## Assurance tiers
+
+### Fast local / PR-safe
 
 ```bash
-npm ci && npm test
-~/.foundry/bin/forge test
-slither . --config-file slither.config.json
+npm run forge:fuzz
+npm run forge:invariant
+```
+
+### CI assurance tier
+
+```bash
+npm run test:prime:ci
+```
+
+### Heavy soak / audit-prep tier
+
+```bash
+npm run forge:soak
+```
+
+The Foundry layer is the canonical property-testing layer for Prime. It is intended to catch the overwhelming majority of reachable state-machine, accounting, deadline, pause, and incentive bugs before external review. It does **not** replace an external audit. Instead, it narrows what auditors need to review by supplying reproducible handler-based invariant coverage, focused boundary fuzzing, and explicit accounting assertions.
+
+## Property-testing architecture
+
+- `forge-test/harness/` contains Prime-only harnesses that expose read-only observability for jobs, procurements, applications, and score commits.
+- `forge-test/fuzz/` contains focused campaigns for deadline boundaries, pause-safe clocks, and discovery incentive accounting.
+- `forge-test/invariant/` contains handler-based stateful fuzzing over `AGIJobManagerPrime` + `AGIJobDiscoveryPrime` with owner actions, pause toggles, realistic actor roles, and cross-contract flows.
+
+## Replay and triage
+
+Use deterministic Foundry profiles and replay the emitted seed directly. Recommended commands:
+
+```bash
+FOUNDRY_PROFILE=ci forge test --match-path forge-test/invariant/*.t.sol -vvvv
+FOUNDRY_PROFILE=soak forge test --match-path forge-test/invariant/*.t.sol --match-test invariant_ -vvvv
 ```
 
 ## Expected outcomes
 
-- Truffle unit/integration suite passes and bytecode size guard remains below EIP-170.
-- Foundry fuzz + invariants pass without invariant violations.
-- Slither reports no High/Medium issues on project contracts.
-
-## Echidna
-
-This repository relies on Foundry invariant tests as the primary property-testing layer.
-
-## Slither configuration notes
-
-`slither.config.json` suppresses a small set of noisy detectors for this repository:
-
-- `reentrancy-*` and `reentrancy-balance`: core settlement/auth entrypoints are already guarded (`nonReentrant`) and covered by regression/invariant suites.
-- `divide-before-multiply`: used in bounded bond/reward math with explicit caps and dedicated tests.
-- `mapping-deletion`: expected for deleting job structs containing mappings after terminal settlement.
-- `uninitialized-local`: false positives on Solidity default-initialized locals.
-- `unused-return`: intentional best-effort ENS/namewrapper interactions where failures must not brick core flows.
+- Truffle regression coverage passes for legacy and Prime integration flows.
+- Foundry fuzzing and invariants preserve manager/discovery solvency and state-machine coherence.
+- Bytecode size and deploy-smoke checks remain green.
+- Slither stays focused on residual manual review areas rather than already-proven accounting invariants.
