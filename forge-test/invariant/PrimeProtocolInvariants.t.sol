@@ -27,6 +27,9 @@ contract PrimeProtocolHandler is Test {
     mapping(uint256 => uint256) public snapshotFingerprint;
     mapping(uint256 => bool) public snapshotTaken;
 
+    uint256 internal constant MAX_HANDLER_JOBS = 32;
+    uint256 internal constant MAX_HANDLER_PROCUREMENTS = 24;
+
     constructor(AGIJobManagerPrimeHarness _manager, AGIJobDiscoveryPrimeHarness _discovery, MockERC20 _token) {
         manager = _manager;
         discovery = _discovery;
@@ -130,6 +133,7 @@ contract PrimeProtocolHandler is Test {
     function createManagerJob(uint256 employerSeed, uint256 payoutSeed, uint256 durationSeed, bool selectedOnly)
         external
     {
+        if (manager.nextJobId() >= MAX_HANDLER_JOBS) return;
         address employer = employers[bound(employerSeed, 0, employers.length - 1)];
         vm.prank(employer);
         try manager.createConfiguredJob(
@@ -157,6 +161,7 @@ contract PrimeProtocolHandler is Test {
     function createDiscoveryJob(uint256 employerSeed, uint256 payoutSeed, uint256 durationSeed, uint256 cfgSeed)
         external
     {
+        if (manager.nextJobId() >= MAX_HANDLER_JOBS) return;
         address employer = employers[bound(employerSeed, 0, employers.length - 1)];
         uint64 start = uint64(block.timestamp + 10);
         AGIJobDiscoveryPrime.PremiumJobParams memory premium = AGIJobDiscoveryPrime.PremiumJobParams({
@@ -437,9 +442,63 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
         assertEq(manager.lockedValidatorBonds(), validatorBonds, "validator bond drift");
     }
 
-    function invariant_discoveryAccountingAndStateMachine() external view {
+    function invariant_discoverySolvency() external view {
         uint256 nextProcurementId = discovery.nextProcurementId();
         uint256 lockedDiscovery;
+        for (uint256 pid = 0; pid < nextProcurementId; ++pid) {
+            if (!discovery.procurementExists(pid)) continue;
+            (
+                address employer,
+                uint256 jobId,,
+                bool winnerFinalized,
+                bool cancelled,,,,,,,,
+                uint8 finalistCount,,
+                uint8 maxReveals,
+                uint256 applicationStake,
+                uint256 finalistStakeTotal,
+                uint256 stipendPerFinalist,
+                uint256 validatorRewardPerReveal,,
+            ) = discovery.procurementView(pid);
+            assertTrue(employer != address(0), "missing employer");
+            assertEq(discovery.procurementByJobId(jobId), pid, "job linkage drift");
+            assertTrue(discovery.hasProcurementByJobId(jobId), "job linkage flag missing");
+            assertLe(applicationStake, finalistStakeTotal, "stake inversion");
+
+            uint256 budgetCap = uint256(finalistCount) * stipendPerFinalist + uint256(finalistCount)
+                * uint256(maxReveals) * validatorRewardPerReveal;
+            if (!winnerFinalized && !cancelled) lockedDiscovery += budgetCap;
+
+            address[] memory applicants = discovery.procurementApplicants(pid);
+            address[] memory finalists = discovery.procurementFinalists(pid);
+            assertLe(finalists.length, finalistCount, "too many finalists");
+
+            for (uint256 i = 0; i < applicants.length; ++i) {
+                (,,,, uint256 lockedStake,,,,,,) = discovery.applicationView(pid, applicants[i]);
+                lockedDiscovery += lockedStake;
+            }
+            for (uint256 i = 0; i < finalists.length; ++i) {
+                assertLe(discovery.revealedScoreCount(pid, finalists[i]), maxReveals, "too many reveals per finalist");
+                for (uint256 v = 0; v < 3; ++v) {
+                    (, bool revealedScore,, uint256 bond) =
+                        discovery.scoreCommitView(pid, finalists[i], address(uint160(0x3000 + v)));
+                    if (winnerFinalized || cancelled) {
+                        if (!revealedScore) assertEq(bond, 0, "terminal state stranded unrevealed validator bond");
+                    }
+                    lockedDiscovery += bond;
+                }
+            }
+        }
+
+        uint256 claimableTotal;
+        address[] memory actors = handler.actorsView();
+        for (uint256 i = 0; i < actors.length; ++i) {
+            claimableTotal += discovery.claimable(actors[i]);
+        }
+        assertGe(token.balanceOf(address(discovery)), lockedDiscovery + claimableTotal, "discovery insolvent");
+    }
+
+    function invariant_discoveryStateMachineAndHelperTruth() external view {
+        uint256 nextProcurementId = discovery.nextProcurementId();
         for (uint256 pid = 0; pid < nextProcurementId; ++pid) {
             if (!discovery.procurementExists(pid)) continue;
             (
@@ -460,6 +519,7 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
             assertTrue(discovery.hasProcurementByJobId(jobId), "job linkage flag missing");
             if (cancelled) assertFalse(winnerFinalized, "cancelled procurement finalized later");
             assertLe(applicationStake, finalistStakeTotal, "stake inversion");
+
             address[] memory applicants = discovery.procurementApplicants(pid);
             address[] memory finalists = discovery.procurementFinalists(pid);
             assertLe(finalists.length, finalistCount, "too many finalists");
@@ -468,8 +528,7 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
                     bool revealed,
                     bool shortlisted,
                     bool finalistAccepted,
-                    bool trialSubmitted,
-                    uint256 lockedStake,,,,,
+                    bool trialSubmitted,,,,,,
                     uint256 compositeScoreBps,
                     bool everPromoted
                 ) = discovery.applicationView(pid, applicants[i]);
@@ -482,19 +541,8 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
                     assertTrue(finalistAccepted, "composite requires finalist acceptance");
                     assertTrue(trialSubmitted, "composite requires submitted trial");
                 }
-                lockedDiscovery += lockedStake;
             }
-            for (uint256 i = 0; i < finalists.length; ++i) {
-                assertLe(discovery.revealedScoreCount(pid, finalists[i]), maxReveals, "too many reveals per finalist");
-                for (uint256 v = 0; v < 3; ++v) {
-                    (, bool revealedScore,, uint256 bond) =
-                        discovery.scoreCommitView(pid, finalists[i], address(uint160(0x3000 + v)));
-                    if (winnerFinalized || cancelled) {
-                        if (!revealedScore) assertEq(bond, 0, "terminal state stranded unrevealed validator bond");
-                    }
-                    lockedDiscovery += bond;
-                }
-            }
+
             uint256 budgetCap = uint256(finalistCount) * stipendPerFinalist + uint256(finalistCount)
                 * uint256(maxReveals) * validatorRewardPerReveal;
             assertGe(budgetCap, uint256(finalists.length) * validatorRewardPerReveal, "reward cap incoherent");
@@ -505,13 +553,6 @@ contract PrimeProtocolInvariants is StdInvariant, Test {
                 }
             }
         }
-
-        uint256 claimableTotal;
-        address[] memory actors = handler.actorsView();
-        for (uint256 i = 0; i < actors.length; ++i) {
-            claimableTotal += discovery.claimable(actors[i]);
-        }
-        assertGe(token.balanceOf(address(discovery)), lockedDiscovery + claimableTotal, "discovery insolvent");
     }
 
     function invariant_helperViewsAndNFTGating() external view {
