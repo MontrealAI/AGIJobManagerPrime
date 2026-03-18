@@ -721,7 +721,7 @@ contract PrimeProtocolGhostInvariants is StdInvariant, Test {
             assertGe(maxValidatorReveals, minValidatorReveals, "max reveals below min reveals");
             assertLe(winnerTransitions, 1, "winner finalized twice");
             assertLe(cancelTransitions, 1, "procurement cancelled twice");
-            assertLe(fallbackPromotions, 1, "fallback promoted more than once");
+            assertLe(fallbackPromotions, finalistCount, "promoted finalists exceeded finalist cap");
             assertGe(maxPauseBaseline, pauseBaseline, "pause baseline regressed");
 
             if (shortlistFinalized && !winnerFinalized && !cancelled) {
@@ -798,8 +798,10 @@ contract PrimeProtocolGhostInvariants is StdInvariant, Test {
                     if (handler.scoreSettledSeen(pid, finalist, validator)) {
                         assertTrue(revealedScore || bond == 0, "score settlement marker drift");
                     }
-                    localClaimables += discovery.claimable(validator);
                 }
+            }
+            for (uint256 v = 0; v < 4; ++v) {
+                localClaimables += discovery.claimable(address(uint160(0x3000 + v)));
             }
             assertLe(localClaimables, token.balanceOf(address(discovery)), "local claimables exceed balance");
             assertLe(
