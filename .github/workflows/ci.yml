@@ -31,5 +31,8 @@ jobs:
       - name: Prime canonical compile/test/size/smoke
         run: npm run test:prime:ci
 
+      - name: Prime soak smoke (reduced nightly-style profile)
+        run: FOUNDRY_PROFILE=ci forge test --match-path "forge-test/invariant/PrimeProtocolInvariants.t.sol"
+
       - name: UI smoke test
         run: npm run test:ui
