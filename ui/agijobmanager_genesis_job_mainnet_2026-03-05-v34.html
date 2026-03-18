@@ -2432,7 +2432,7 @@ Evaluation methodology"></textarea>
       if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Enter procurement id, application URI, and salt.'; };
       if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
       if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
-      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist:String(el('scoreCommitFinalist')?.value||''), score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
+      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${String(el('scoreCommitFinalist')?.value||'0x0000000000000000000000000000000000000000').toLowerCase()}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist:String(el('scoreCommitFinalist')?.value||''), score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
       if(el('clearApplicationCommitBtn')) el('clearApplicationCommitBtn').onclick = ()=>{ ['procurementCommitId','procurementApplicationUri','procurementCommitSalt'].forEach(id=>{ if(el(id)) el(id).value=''; }); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = '—'; };
       if(el('clearScoreCommitBtn')) el('clearScoreCommitBtn').onclick = ()=>{ ['scoreCommitProcurementId','scoreCommitFinalist','scoreCommitValue','scoreCommitSalt','scoreCommitOutputField'].forEach(id=>{ if(el(id)) el(id).value=''; }); };
       setTimeout(primeRefreshRegistryBindings, 1200);
@@ -5337,10 +5337,6 @@ async function updateSummary(){
       const expired = Array.isArray(expiredEvents) && expiredEvents.length > 0;
       const disputed = Array.isArray(disputes) && disputes.length > 0 && !completed && !expired;
       const completionRequested = completionEvents.length > 0;
-      const agentPayoutPctRead = assignedAgent && assignedAgent !== '0x0000000000000000000000000000000000000000'
-        ? await runSafeReadStep(`getHighestPayoutPercentage(${assignedAgent})`, ()=>agiJobManager.methods.getHighestPayoutPercentage(assignedAgent).call(), {silent:true})
-        : 0;
-      const agentPayoutPct = agentPayoutPctRead?.__safeReadError ? 0 : Number(agentPayoutPctRead || 0);
       return {
         id:Number(jobId),
         employer: rv.employer || created.returnValues?.employer || '0x0000000000000000000000000000000000000000',
@@ -5350,7 +5346,8 @@ async function updateSummary(){
         assignedAt: assignedBlock?.timestamp || 0,
         completed, disputed, expired, cancelled,
         completionRequested,
-        agentPayoutPct,
+        agentPayoutPct: null,
+        agentPayoutPctStatus: 'Unavailable from current Prime public read surface; settlement uses the apply-time snapshot.',
         approvals: Array.isArray(approvals) ? approvals.length : 0,
         disapprovals: Array.isArray(disapprovals) ? disapprovals.length : 0,
         completionRequestedAt: completionBlock?.timestamp || 0,
@@ -5578,6 +5575,12 @@ async function updateSummary(){
       if(!verified.agent){setToast("Verify your agent.agi.eth subdomain first.", "warn");return;}
       try{
         const job = jobCache.get(String(jobId));
+        if(job){
+          const intakeMode = Number(job.intakeMode || 0);
+          const selectedMatches = String(job.selectedAgent || '').toLowerCase() === String(userAccount || '').toLowerCase();
+          if(intakeMode === 1 && !selectedMatches){ setToast('This SelectedAgentOnly job can only be applied to by the designated selected agent.', 'warn'); return; }
+          if(intakeMode === 2){ setToast('PerJobMerkleRoot applications require a per-job proof that this UI does not currently reconstruct from public state.', 'warn'); return; }
+        }
         const approvalCap = estimatedAgentApprovalForJob(job);
         openActionReview({
           title:`Apply for Job #${jobId}`,
@@ -5971,6 +5974,7 @@ function normalizeIpfsToHttp(uri){
       setCompletionPreviewImage(state.preview?.image || '');
       if(el('completionValidatorGuidance')) el('completionValidatorGuidance').innerHTML = state.validatorNote || '';
     }
+    const MAX_COMPLETION_URI_BYTES = 2048;
     function normalizeCompletionUriField(showToast=true){
       const field = el('completionUriInput');
       if(!field) return null;
@@ -5982,7 +5986,7 @@ function normalizeIpfsToHttp(uri){
       result.checks = [
         {label:'Completion URI syntax', state: normalized.valid ? 'Valid' : 'Invalid', cls: normalized.valid ? 'good' : 'bad'},
         {label:'Canonical format', state: normalized.isCanonicalIpfs ? 'ipfs:// preferred' : (normalized.valid ? 'Valid but not canonical IPFS' : 'Needs correction'), cls: normalized.isCanonicalIpfs ? 'good' : (normalized.valid ? 'warn' : 'bad')},
-        {label:'On-chain URI length', state: normalized.uriBytes <= 1024 ? `${normalized.uriBytes}/1024 bytes` : `${normalized.uriBytes}/1024 bytes`, cls: normalized.uriBytes <= 1024 ? 'good' : 'bad'}
+        {label:'On-chain URI length', state: normalized.uriBytes <= MAX_COMPLETION_URI_BYTES ? `${normalized.uriBytes}/${MAX_COMPLETION_URI_BYTES} bytes` : `${normalized.uriBytes}/${MAX_COMPLETION_URI_BYTES} bytes`, cls: normalized.uriBytes <= MAX_COMPLETION_URI_BYTES ? 'good' : 'bad'}
       ];
       renderCompletionInspection(result);
       completionAssistantState.inspected = null;
@@ -6002,7 +6006,7 @@ function normalizeIpfsToHttp(uri){
       const checks = [];
       checks.push({label:'Completion URI syntax', state: normalized.valid ? 'Valid' : 'Invalid', cls: normalized.valid ? 'good' : 'bad'});
       checks.push({label:'Canonical format', state: normalized.isCanonicalIpfs ? 'ipfs:// preferred' : (normalized.valid ? 'Valid but not canonical IPFS' : 'Needs correction'), cls: normalized.isCanonicalIpfs ? 'good' : (normalized.valid ? 'warn' : 'bad')});
-      checks.push({label:'On-chain URI length', state: `${normalized.uriBytes}/1024 bytes`, cls: normalized.uriBytes <= 1024 ? 'good' : 'bad'});
+      checks.push({label:'On-chain URI length', state: `${normalized.uriBytes}/${MAX_COMPLETION_URI_BYTES} bytes`, cls: normalized.uriBytes <= MAX_COMPLETION_URI_BYTES ? 'good' : 'bad'});
       if(!normalized.valid){
         result.posture = 'Invalid URI';
         result.checks = checks;
@@ -6178,7 +6182,7 @@ function normalizeIpfsToHttp(uri){
       if(!normalized.valid) throw new Error('Enter a valid Job Completion URI. Bare CIDs can be normalized automatically.');
       let inspection = completionAssistantState.inspected;
       if(!inspection || inspection.normalized?.canonical !== normalized.canonical){ inspection = await inspectCompletionUri(true); }
-      if(normalized.uriBytes > 1024) throw new Error('The completion URI exceeds the contract limit of 1024 bytes.');
+      if(normalized.uriBytes > MAX_COMPLETION_URI_BYTES) throw new Error(`The completion URI exceeds the contract limit of ${MAX_COMPLETION_URI_BYTES} bytes.`);
       const posture = inspection?.posture || '';
       if(/direct image/i.test(posture)){
         const ok = await requestActionConfirmation({title:'Direct image completion URI detected', body:'This completion URI appears to point directly to an image rather than metadata JSON. That can weaken downstream NFT display and indexer compatibility.', checks:[{state:'Metadata posture', badge:'warn', text:'Continue only if you explicitly want a direct-image URI.'}], method:'requestJobCompletion(jobId, completionURI)', confirmLabel:'Continue with direct image'});
@@ -6274,6 +6278,12 @@ function normalizeIpfsToHttp(uri){
         return BigInt(String(v));
       }catch{return fallback;}
     }
+
+    function formatAgentPayoutPctLabel(job){
+      if(job?.agentPayoutPct == null) return job?.agentPayoutPctStatus || 'Unavailable from current public read surface';
+      return `${job.agentPayoutPct}%`;
+    }
+
     function computeValidatorBondFromPayout(payout){
       if(!payout || payout<=0n) return 0n;
       const bps = getProtocolBigInt("validatorBondBps");
@@ -6291,7 +6301,8 @@ function normalizeIpfsToHttp(uri){
       const totalVotes = approvals + disapprovals;
       const validationPct = getNumericText("validationRewardPct");
       const rewardPool = payout * validationPct / 100n;
-      const agentPct = BigInt(job.agentPayoutPct || 0);
+      const agentPayoutPctAvailable = job.agentPayoutPct != null;
+      const agentPct = BigInt(agentPayoutPctAvailable ? job.agentPayoutPct : 0);
       const agentPayout = payout * agentPct / 100n;
       const retained = payout > agentPayout + rewardPool ? payout - agentPayout - rewardPool : 0n;
       const validatorBond = computeValidatorBondFromPayout(payout);
@@ -6316,7 +6327,7 @@ function normalizeIpfsToHttp(uri){
       else if(reviewEnded && disapprovals>approvals) { headline = "Finalize now → employer-win path"; rationale = "Disapprovals exceed approvals after the review window and quorum is satisfied."; }
       else if(approvals >= reqA && approvals > disapprovals) { headline = "Approval threshold reached"; rationale = "A positive finalize path is forming. The exact challenge-window countdown is not exposed by the current public view methods."; }
       else if(disapprovals >= reqD) { headline = "Dispute threshold reached"; rationale = "Required disapprovals can move the job into dispute before ordinary finalization."; }
-      return { payout, rewardPool, agentPayout, retained, validatorBond, slashedPerIncorrect, approvals, disapprovals, totalVotes, headline, rationale, quorum, reqA, reqD, reviewEnded };
+      return { payout, rewardPool, agentPayout, retained, validatorBond, slashedPerIncorrect, approvals, disapprovals, totalVotes, headline, rationale, quorum, reqA, reqD, reviewEnded, agentPayoutPctAvailable };
     }
     async function fetchJobTimeline(jobId){
       const names = ["JobCreated","JobApplied","JobCompletionRequested","JobValidated","JobDisapproved","JobDisputed","JobCompleted","JobExpired","NFTIssued","EnsHookAttempted"];
@@ -6364,7 +6375,12 @@ function normalizeIpfsToHttp(uri){
       const actions = [];
       const txAttr = (isMainnet && hasAcceptedTerms) ? 'data-tx="1"' : 'data-tx="1" disabled';
       const isOpen = job.assignedAgent === "0x0000000000000000000000000000000000000000";
-      if(isOpen && verified.agent) actions.push(`<button class="btn" ${txAttr} onclick="applyForJob(${i})">Apply</button>`);
+      const isSelectedAgent = verified.agent && String(job.selectedAgent || '').toLowerCase() === String(userAccount || '').toLowerCase();
+      const canApply = isOpen && verified.agent && (
+        Number(job.intakeMode || 0) === 0 ||
+        (Number(job.intakeMode || 0) === 1 && isSelectedAgent)
+      );
+      if(canApply) actions.push(`<button class="btn" ${txAttr} onclick="applyForJob(${i})">Apply</button>`);
       if(!isOpen && job.assignedAgent.toLowerCase()===userAccount?.toLowerCase() && !job.completed && !job.expired && !job.completionRequested){ actions.push(`<button class="btn" ${txAttr} onclick="requestCompletion(${i})">Request completion</button>`); }
       if(verified.club && job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn" ${txAttr} onclick="validateJob(${i})">Approve</button>`); actions.push(`<button class="btn btn-danger" ${txAttr} onclick="disapproveJob(${i})">Disapprove</button>`); }
       if(job.completionRequested && !job.completed && !job.expired && !job.disputed){ actions.push(`<button class="btn btn-primary" ${txAttr} onclick="finalizeJob(${i})">Finalize</button>`); }
@@ -6457,7 +6473,7 @@ function normalizeIpfsToHttp(uri){
       el('jobOverview').innerHTML = [
         ['Employer', shortAddr(job.employer)], ['Assigned agent', job.assignedAgent==='0x0000000000000000000000000000000000000000' ? '—' : shortAddr(job.assignedAgent)],
         ['Payout', formatUnitsToAmount(job.payout)+' $AGIALPHA'], ['Duration', secondsToHuman(job.duration)],
-        ['Agent payout %', String(job.agentPayoutPct)+'%'], ['Validator reward pool', formatUnitsToAmount(sim.rewardPool)+' $AGIALPHA'],
+        ['Agent payout %', formatAgentPayoutPctLabel(job)], ['Validator reward pool', formatUnitsToAmount(sim.rewardPool)+' $AGIALPHA'],
         ['Validator bond', formatUnitsToAmount(sim.validatorBond)+' $AGIALPHA'], ['Dispute bond', formatUnitsToAmount(computeDisputeBondFromPayout(BigInt(job.payout)))+' $AGIALPHA'],
         ['Assigned at', formatDateTime(job.assignedAt)], ['Completion requested at', formatDateTime(job.completionRequestedAt)],
         ['Disputed at', formatDateTime(job.disputedAt)], ['Votes', `${sim.approvals} approve / ${sim.disapprovals} disapprove`]
@@ -6493,7 +6509,7 @@ function normalizeIpfsToHttp(uri){
       }
       el('jobTimeline').innerHTML = timelineHtml.join('');
       el('jobSimulationCards').innerHTML = [
-        ['If the agent wins', `Agent receives about <b>${formatUnitsToAmount(sim.agentPayout)} $AGIALPHA</b> plus returned agent bond. Validators split the reward pool and slashed incorrect-side bonds. Protocol-retained remainder: <b>${formatUnitsToAmount(sim.retained)} $AGIALPHA</b>.`],
+        ['If the agent wins', sim.agentPayoutPctAvailable ? `Agent receives about <b>${formatUnitsToAmount(sim.agentPayout)} $AGIALPHA</b> plus returned agent bond. Validators split the reward pool and slashed incorrect-side bonds. Protocol-retained remainder: <b>${formatUnitsToAmount(sim.retained)} $AGIALPHA</b>.` : `The exact agent payout share is <b>unavailable from the current public read surface</b> because Prime settles against the apply-time snapshot. Validators still split the reward pool and incorrect-side slash flows still apply.`],
         ['If the employer wins', `Employer refund path returns payout minus validator reward pool when validators participated. Incorrect-side validators are slashed; if dispute-threshold disapprovals were reached, the agent bond can join the correct-side validator pool.`],
         ['Current likely next outcome', `<b>${escapeHtml(sim.headline)}</b><br>${escapeHtml(sim.rationale)}`],
         ['Validator incentive snapshot', `Per-validator bond is about <b>${formatUnitsToAmount(sim.validatorBond)} $AGIALPHA</b>. Wrong-side slash per validator is about <b>${formatUnitsToAmount(sim.slashedPerIncorrect)} $AGIALPHA</b> under the current slash bps.`]
@@ -6605,7 +6621,7 @@ function normalizeIpfsToHttp(uri){
           ensNode: ens?.node || null
         },
         economics: {
-          agentPayoutPct: Number(job.agentPayoutPct || 0),
+          agentPayoutPct: job.agentPayoutPct == null ? null : Number(job.agentPayoutPct),
           agentPayout: formatUnitsToAmount(sim.agentPayout),
           validatorRewardPool: formatUnitsToAmount(sim.rewardPool),
           retainedRemainder: formatUnitsToAmount(sim.retained),
