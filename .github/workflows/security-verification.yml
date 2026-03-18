@@ -33,11 +33,14 @@ jobs:
       - name: Forge build
         run: FOUNDRY_PROFILE=ci forge build
 
-      - name: Forge unit + fuzz tests
-        run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
+      - name: Forge Prime fuzz profile
+        run: npm run forge:fuzz
 
-      - name: Forge invariants
+      - name: Forge Prime invariants (CI profile)
         run: FOUNDRY_PROFILE=ci forge test --match-path "forge-test/invariant/*.t.sol"
+
+      - name: Forge Prime focused fuzz (CI profile)
+        run: FOUNDRY_PROFILE=ci forge test --match-path "forge-test/fuzz/*.t.sol"
 
       - name: Setup Python
         uses: actions/setup-python@v5

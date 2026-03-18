@@ -14,13 +14,20 @@ remappings = [
 fs_permissions = [{ access = "read", path = "./" }]
 
 [fuzz]
-runs = 512
+runs = 768
+max_test_rejects = 200000
+seed = "0x0000000000000000000000000000000000000000000000000000000000f00d"
 
 [invariant]
-runs = 64
-depth = 40
-
+runs = 96
+depth = 80
+fail_on_revert = false
+call_override = false
 
 [profile.ci]
-fuzz = { runs = 256 }
-invariant = { runs = 48, depth = 35 }
+fuzz = { runs = 512, max_test_rejects = 100000, seed = "0x0000000000000000000000000000000000000000000000000000000000c1c1" }
+invariant = { runs = 72, depth = 60, fail_on_revert = false, call_override = false }
+
+[profile.soak]
+fuzz = { runs = 4096, max_test_rejects = 400000, seed = "0x000000000000000000000000000000000000000000000000000000000050a0" }
+invariant = { runs = 256, depth = 180, fail_on_revert = false, call_override = false }
