@@ -7729,6 +7729,8 @@ function normalizeIpfsToHttp(uri){
       function premiumValidation(struct){
         const errs = []; const checks = [];
         const payout = BigInt(struct.job.payout||0); const duration = BigInt(struct.job.duration||0);
+        const maxPayout = getProtocolBigInt('maxJobPayout', 0n);
+        const durationLimit = getProtocolBigInt('jobDurationLimit', 0n);
         const uri = struct.job.jobSpecURI || '';
         const fd = Number(struct.proc.finalistCount||0), minR = Number(struct.proc.minValidatorReveals||0), maxR = Number(struct.proc.maxValidatorRevealsPerFinalist||0), hw = Number(struct.proc.historicalWeightBps||0), tw = Number(struct.proc.trialWeightBps||0);
         const times = ['commitDeadline','revealDeadline','finalistAcceptDeadline','trialDeadline','scoreCommitDeadline','scoreRevealDeadline'].map(k=>Number(struct.proc[k]||0));
@@ -7742,6 +7744,8 @@ function normalizeIpfsToHttp(uri){
         if(!(Number(struct.proc.selectedAcceptanceWindow||0) > 0)) errs.push('Selected acceptance window must be greater than zero.');
         if(!(payout > 0n)) errs.push('Payout must be greater than zero.');
         if(!(duration > 0n)) errs.push('Duration must be greater than zero.');
+        if(maxPayout > 0n && payout > maxPayout) errs.push(`Payout exceeds the live settlement max job payout of ${formatUnitsToAmount(maxPayout)} $AGIALPHA.`);
+        if(durationLimit > 0n && duration > durationLimit) errs.push(`Duration exceeds the live settlement duration limit of ${secondsToHuman(durationLimit.toString())}.`);
         if(!uri || !isValidUriLoose(uri)) errs.push('Provide a valid Job Spec URI (ipfs://, https://, http://, or ens://).');
         if(!userAccount) errs.push('Connect wallet before creating a premium discovery job.');
         if(!isMainnet) errs.push('Switch to Ethereum Mainnet before creating a premium discovery job.');
@@ -7749,6 +7753,8 @@ function normalizeIpfsToHttp(uri){
         checks.push({ok:!!userAccount,text:userAccount?'Wallet connected.':'Wallet not connected.'});
         checks.push({ok:!!isMainnet,text:isMainnet?'On Ethereum Mainnet.':'Wrong network.'});
         checks.push({ok:!!hasAcceptedTerms,text:hasAcceptedTerms?'Terms accepted.':'Terms not accepted.'});
+        checks.push({ok:maxPayout === 0n || payout <= maxPayout,text:maxPayout > 0n ? `Settlement max payout: ${formatUnitsToAmount(maxPayout)} $AGIALPHA.` : 'Settlement max payout unavailable from live reads.'});
+        checks.push({ok:durationLimit === 0n || duration <= durationLimit,text:durationLimit > 0n ? `Settlement duration limit: ${secondsToHuman(durationLimit.toString())}.` : 'Settlement duration limit unavailable from live reads.'});
         return {errors:errs, checks};
       }
       function blockTimestampSafe(){ return Math.floor(Date.now()/1000); }
@@ -7875,13 +7881,14 @@ function normalizeIpfsToHttp(uri){
         if(pel('premiumDiscoveryDetails') && details) pel('premiumDiscoveryDetails').value = details;
         if(pel('premiumDiscoveryPayout') && payout) pel('premiumDiscoveryPayout').value = payout;
         if(pel('premiumDiscoveryDurationDays') && duration){ const days = Math.max(1, Math.round(Number(duration)/86400)); pel('premiumDiscoveryDurationDays').value = String(days); }
-        premiumApplyRecommendedEconomics(); premiumRefresh();
+        if(!mirrorOnly && !premiumState.manualEconomics) premiumApplyRecommendedEconomics();
+        premiumRefresh();
       }
       function premiumInit(){
         if(!pel('premiumDiscoverySection')) return;
         premiumUsePreset('balanced', false);
         premiumApplyRecommendedEconomics();
-        premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; premiumRefresh(); }); });
+        premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; if(id === 'premiumDiscoveryPayout' && !premiumState.manualEconomics) premiumApplyRecommendedEconomics(); premiumRefresh(); }); });
         document.querySelectorAll('[data-premium-preset]').forEach(btn=>btn.addEventListener('click', ()=>premiumUsePreset(btn.dataset.premiumPreset, true)));
         document.querySelectorAll('[data-premium-duration-days]').forEach(btn=>btn.addEventListener('click', ()=>{ if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = btn.dataset.premiumDurationDays; document.querySelectorAll('[data-premium-duration-days]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
         document.querySelectorAll('[data-premium-base-mode]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.baseMode = btn.dataset.premiumBaseMode; document.querySelectorAll('[data-premium-base-mode]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
