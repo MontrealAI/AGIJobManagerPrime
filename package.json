@@ -33,7 +33,7 @@
     "deploy:prime:dry-run:mainnet": "cd hardhat && npm run deploy:prime:dry-run:mainnet",
     "deploy:prime:mainnet": "cd hardhat && npm run deploy:prime:mainnet",
     "deploy:prime:sepolia": "cd hardhat && npm run deploy:prime:sepolia",
-    "test:prime:unit": "npx truffle test --network test test/prime.discovery-settlement.test.js",
+    "test:prime:unit": "npx truffle test --network test test/prime.discovery-settlement.test.js test/prime.discovery.pause-clock.test.js test/prime.ownership-pause.mainnet.test.js test/prime.manager.pause-clock.test.js",
     "test:size:benchmark": "node scripts/benchmark-prime-bytecode.js"
   },
   "dependencies": {

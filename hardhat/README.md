@@ -14,7 +14,7 @@ Prime architecture:
 4. Call `AGIJobManagerPrime.setDiscoveryModule(discoveryAddress)`.
 5. If deployer != final owner, transfer manager ownership immediately and initiate discovery two-step ownership (`transferOwnership`) requiring later `acceptOwnership()`.
 6. Optionally verify contracts (`VERIFY=1`) on Etherscan.
-7. Preflight-check AGIJobManagerPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
+7. Preflight-check AGIJobManagerPrime and AGIJobDiscoveryPrime runtime/initcode (including ABI-encoded constructor args) against mainnet limits before broadcast.
 8. Read and persist the manager-created completion NFT address for operators and indexers.
 9. Write deployment artifacts and verify-target manifests.
 
@@ -70,7 +70,7 @@ Post-deploy ownership handoff:
 - If discovery pending owner was wrong, current owner can call `cancelOwnershipTransfer()`.
 
 Pause controls:
-- Manager: `pause()/unpause()` for intake stop, plus `setSettlementPaused(bool)` for settlement freeze.
+- Manager: `pause()/unpause()` for intake stop, plus `setSettlementPaused(bool)` for settlement freeze. Manager-owned windows (selection/application/checkpoint/completion/challenge/stale-dispute) are evaluated on pause-adjusted effective time.
 - Discovery: `setIntakePaused(bool)` blocks only new procurement attachment/creation, while in-flight procurements continue. `pause()/unpause()` is break-glass and now freezes procurement phase clocks (commit/reveal/accept/trial/score windows) until unpause. Settlement freeze follows manager `setSettlementPaused(bool)` for winner/fallback settlement-coupled actions.
 
 ## Deploy config
