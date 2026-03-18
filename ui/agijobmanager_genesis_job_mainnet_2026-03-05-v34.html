@@ -1818,7 +1818,7 @@ Evaluation methodology"></textarea>
           <div class="tripleGrid" style="margin-top:12px">
             <div><label for="scoreCommitProcurementId">Procurement id</label><input id="scoreCommitProcurementId" type="number" min="0"></div>
             <div><label for="scoreCommitFinalist">Finalist address</label><input id="scoreCommitFinalist" type="text" placeholder="0x..."></div>
-            <div><label for="scoreCommitValue">Score (bps)</label><input id="scoreCommitValue" type="number" min="0" max="10000" placeholder="e.g. 8750"></div>
+            <div><label for="scoreCommitValue">Score (0-100)</label><input id="scoreCommitValue" type="number" min="0" max="100" placeholder="e.g. 87"></div>
           </div>
           <div class="tripleGrid" style="margin-top:12px">
             <div><label for="scoreCommitSalt">Salt</label><input id="scoreCommitSalt" type="text" placeholder="Generate or paste hex salt"></div>
@@ -1829,7 +1829,7 @@ Evaluation methodology"></textarea>
             <button class="btn" id="saveScoreCommitBtn">Save locally</button>
             <button class="btn" id="clearScoreCommitBtn">Clear local</button>
           </div>
-          <div class="commitFormula">Suggested local commitment: keccak256(abi.encodePacked(procurementId, validator, finalist, scoreBps, salt))</div>
+          <div class="commitFormula">Suggested local commitment: keccak256(abi.encodePacked(procurementId, finalist, validator, score, salt))</div>
         </div>
       </div>
       <div class="statusline" style="margin-top:14px"><b>Vault notebook</b>: <span id="procurementVaultStatus">No local Prime procurement notes yet.</span></div>
@@ -2391,7 +2391,7 @@ Evaluation methodology"></textarea>
       target.textContent = entries.map(item => `${item.kind} #${item.procurementId} · ${item.commitment || 'draft'} · ${item.wallet || 'wallet pending'}`).join(' | ');
     }
     function primeComputeApplicationCommitment(){
-      if(!window.Web3 || !window.web3) return '';
+      if(!web3?.utils?.soliditySha3) return '';
       const procurementId = String(el('procurementCommitId')?.value || '').trim();
       const applicationURI = String(el('procurementApplicationUri')?.value || '').trim();
       const salt = String(el('procurementCommitSalt')?.value || '').trim();
@@ -2400,14 +2400,16 @@ Evaluation methodology"></textarea>
       return web3.utils.soliditySha3({type:'uint256',value:procurementId},{type:'address',value:agent},{type:'string',value:applicationURI},{type:'bytes32',value:salt}) || '';
     }
     function primeComputeScoreCommitment(){
-      if(!window.Web3 || !window.web3) return '';
+      if(!web3?.utils?.soliditySha3) return '';
       const procurementId = String(el('scoreCommitProcurementId')?.value || '').trim();
       const finalist = String(el('scoreCommitFinalist')?.value || '').trim() || '0x0000000000000000000000000000000000000000';
-      const scoreBps = String(el('scoreCommitValue')?.value || '').trim();
+      const score = String(el('scoreCommitValue')?.value || '').trim();
       const salt = String(el('scoreCommitSalt')?.value || '').trim();
       const validator = userAccount || '0x0000000000000000000000000000000000000000';
-      if(!procurementId || !scoreBps || !salt) return '';
-      return web3.utils.soliditySha3({type:'uint256',value:procurementId},{type:'address',value:validator},{type:'address',value:finalist},{type:'uint256',value:scoreBps},{type:'bytes32',value:salt}) || '';
+      if(!procurementId || !score || !salt) return '';
+      const scoreNum = Number(score);
+      if(!Number.isFinite(scoreNum) || scoreNum < 0 || scoreNum > 100) return '';
+      return web3.utils.soliditySha3({type:'uint256',value:procurementId},{type:'address',value:finalist},{type:'address',value:validator},{type:'uint8',value:scoreNum},{type:'bytes32',value:salt}) || '';
     }
     async function primeRefreshRegistryBindings(){
       try{
@@ -2430,7 +2432,7 @@ Evaluation methodology"></textarea>
       if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Enter procurement id, application URI, and salt.'; };
       if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
       if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
-      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist:String(el('scoreCommitFinalist')?.value||''), scoreBps:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
+      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist:String(el('scoreCommitFinalist')?.value||''), score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
       if(el('clearApplicationCommitBtn')) el('clearApplicationCommitBtn').onclick = ()=>{ ['procurementCommitId','procurementApplicationUri','procurementCommitSalt'].forEach(id=>{ if(el(id)) el(id).value=''; }); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = '—'; };
       if(el('clearScoreCommitBtn')) el('clearScoreCommitBtn').onclick = ()=>{ ['scoreCommitProcurementId','scoreCommitFinalist','scoreCommitValue','scoreCommitSalt','scoreCommitOutputField'].forEach(id=>{ if(el(id)) el(id).value=''; }); };
       setTimeout(primeRefreshRegistryBindings, 1200);
@@ -5335,6 +5337,10 @@ async function updateSummary(){
       const expired = Array.isArray(expiredEvents) && expiredEvents.length > 0;
       const disputed = Array.isArray(disputes) && disputes.length > 0 && !completed && !expired;
       const completionRequested = completionEvents.length > 0;
+      const agentPayoutPctRead = assignedAgent && assignedAgent !== '0x0000000000000000000000000000000000000000'
+        ? await runSafeReadStep(`getHighestPayoutPercentage(${assignedAgent})`, ()=>agiJobManager.methods.getHighestPayoutPercentage(assignedAgent).call(), {silent:true})
+        : 0;
+      const agentPayoutPct = agentPayoutPctRead?.__safeReadError ? 0 : Number(agentPayoutPctRead || 0);
       return {
         id:Number(jobId),
         employer: rv.employer || created.returnValues?.employer || '0x0000000000000000000000000000000000000000',
@@ -5344,6 +5350,7 @@ async function updateSummary(){
         assignedAt: assignedBlock?.timestamp || 0,
         completed, disputed, expired, cancelled,
         completionRequested,
+        agentPayoutPct,
         approvals: Array.isArray(approvals) ? approvals.length : 0,
         disapprovals: Array.isArray(disapprovals) ? disapprovals.length : 0,
         completionRequestedAt: completionBlock?.timestamp || 0,
