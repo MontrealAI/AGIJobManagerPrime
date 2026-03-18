@@ -7673,6 +7673,7 @@ function normalizeIpfsToHttp(uri){
       function premiumUsePreset(name, forceEconomics=true){
         premiumState.preset = name;
         if(name !== 'custom'){
+          premiumState.manualEconomics = false;
           const preset = PREMIUM_PRESETS[name] || PREMIUM_PRESETS.balanced;
           [['premiumDiscoveryCommitHours',preset.schedule.commit],['premiumDiscoveryRevealHours',preset.schedule.reveal],['premiumDiscoveryFinalistAcceptHours',preset.schedule.accept],['premiumDiscoveryTrialHours',preset.schedule.trial],['premiumDiscoveryScoreCommitHours',preset.schedule.scoreCommit],['premiumDiscoveryScoreRevealHours',preset.schedule.scoreReveal],['premiumDiscoverySelectedAcceptanceHours',preset.schedule.selected],['premiumDiscoveryCheckpointHours',preset.schedule.checkpoint],['premiumDiscoveryFinalistCount',preset.counts.finalists],['premiumDiscoveryMinValidatorReveals',preset.counts.minReveal],['premiumDiscoveryMaxValidatorRevealsPerFinalist',preset.counts.maxReveal],['premiumDiscoveryHistoricalWeightBps',preset.weights.historical],['premiumDiscoveryTrialWeightBps',preset.weights.trial]].forEach(([id,v])=>{ if(pel(id)) pel(id).value = v; });
           if(forceEconomics) premiumApplyRecommendedEconomics();
@@ -7681,6 +7682,7 @@ function normalizeIpfsToHttp(uri){
         premiumRefresh();
       }
       function premiumApplyRecommendedEconomics(){
+        if(premiumState.preset === 'custom') return;
         const payout = premiumReadAmount('premiumDiscoveryPayout');
         const preset = PREMIUM_PRESETS[premiumState.preset] || PREMIUM_PRESETS.balanced;
         premiumWriteAmount('premiumDiscoveryApplicationStake', premiumRoundUnits(payout, preset.economicsBps.application));
@@ -7897,13 +7899,14 @@ function normalizeIpfsToHttp(uri){
           premiumState.exactDurationSeconds = durationSeconds;
           if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = String((durationSeconds/86400).toFixed(durationSeconds % 86400 === 0 ? 0 : 2));
         }
-        premiumApplyRecommendedEconomics(); premiumRefresh();
+        if(!premiumState.manualEconomics && premiumState.preset !== 'custom') premiumApplyRecommendedEconomics();
+        premiumRefresh();
       }
       function premiumInit(){
         if(!pel('premiumDiscoverySection')) return;
         premiumUsePreset('balanced', false);
         premiumApplyRecommendedEconomics();
-        premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(id === 'premiumDiscoveryDurationDays') premiumState.exactDurationSeconds = null; if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; premiumRefresh(); }); });
+        premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(id === 'premiumDiscoveryDurationDays') premiumState.exactDurationSeconds = null; if(id === 'premiumDiscoveryPayout' && !premiumState.manualEconomics && premiumState.preset !== 'custom') premiumApplyRecommendedEconomics(); if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; premiumRefresh(); }); });
         document.querySelectorAll('[data-premium-preset]').forEach(btn=>btn.addEventListener('click', ()=>premiumUsePreset(btn.dataset.premiumPreset, true)));
         document.querySelectorAll('[data-premium-duration-days]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.exactDurationSeconds = null; if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = btn.dataset.premiumDurationDays; document.querySelectorAll('[data-premium-duration-days]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
         document.querySelectorAll('[data-premium-base-mode]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.baseMode = btn.dataset.premiumBaseMode; document.querySelectorAll('[data-premium-base-mode]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
