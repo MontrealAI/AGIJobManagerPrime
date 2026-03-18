@@ -68,9 +68,11 @@ async function main() {
 
   const previousDeployConfig = process.env.DEPLOY_CONFIG;
   const previousConfirmations = process.env.CONFIRMATIONS;
+  const previousEnsJobPages = process.env.ENS_JOB_PAGES;
 
   process.env.DEPLOY_CONFIG = configPath;
   process.env.CONFIRMATIONS = '1';
+  process.env.ENS_JOB_PAGES = await mockToken.getAddress();
 
   try {
     const { entries: beforeEntries } = listPrimeArtifacts('hardhat');
@@ -90,6 +92,10 @@ async function main() {
       throw new Error('Manager discovery module wiring does not match deployed AGIJobDiscoveryPrime address.');
     }
 
+    if (!artifact.setEnsJobPages?.executed || artifact.setEnsJobPages?.target !== await mockToken.getAddress()) {
+      throw new Error('Expected ENS job pages wiring to execute in smoke run when ENS_JOB_PAGES is configured.');
+    }
+
     console.log(`[smoke] verified artifact ${artifactPath}`);
     console.log(`[smoke] manager=${artifact.contracts.AGIJobManagerPrime.address}`);
     console.log(`[smoke] discovery=${artifact.contracts.AGIJobDiscoveryPrime.address}`);
@@ -100,6 +106,9 @@ async function main() {
 
     if (previousConfirmations === undefined) delete process.env.CONFIRMATIONS;
     else process.env.CONFIRMATIONS = previousConfirmations;
+
+    if (previousEnsJobPages === undefined) delete process.env.ENS_JOB_PAGES;
+    else process.env.ENS_JOB_PAGES = previousEnsJobPages;
   }
 }
 
