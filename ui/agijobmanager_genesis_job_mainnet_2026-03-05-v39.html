@@ -8328,6 +8328,17 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const validatorBond = premiumReadAmount('premiumDiscoveryValidatorScoreBond');
         const applicationStake = premiumReadAmount('premiumDiscoveryApplicationStake');
         const weightSplit = `${Math.round(Number(struct.proc.historicalWeightBps||0)/100)} / ${Math.round(Number(struct.proc.trialWeightBps||0)/100)}`;
+        const commitHours = Math.max(0, Number(pel('premiumDiscoveryCommitHours')?.value || 0));
+        const revealHours = Math.max(0, Number(pel('premiumDiscoveryRevealHours')?.value || 0));
+        const finalistAcceptHours = Math.max(0, Number(pel('premiumDiscoveryFinalistAcceptHours')?.value || 0));
+        const trialHours = Math.max(0, Number(pel('premiumDiscoveryTrialHours')?.value || 0));
+        const scoreCommitHours = Math.max(0, Number(pel('premiumDiscoveryScoreCommitHours')?.value || 0));
+        const scoreRevealHours = Math.max(0, Number(pel('premiumDiscoveryScoreRevealHours')?.value || 0));
+        const totalCycleHours = commitHours + revealHours + finalistAcceptHours + trialHours + scoreCommitHours + scoreRevealHours;
+        const totalCycleDays = totalCycleHours / 24;
+        const bondRewardRatio = validatorReward > 0n ? Number(validatorBond) / Number(validatorReward) : 0;
+        const finalistStakeStipendRatio = premiumReadAmount('premiumDiscoveryStipendPerFinalist') > 0n ? Number(finalistStake) / Number(premiumReadAmount('premiumDiscoveryStipendPerFinalist')) : 0;
+        const applicationFinalistRatio = finalistStake > 0n ? Number(applicationStake) / Number(finalistStake) : 0;
         const rows = [
           ['Commit opens', formatDateTime(schedule.base)],
           ['Commit closes', formatDateTime(struct.proc.commitDeadline)],
@@ -8360,7 +8371,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:(PREMIUM_PRESETS[premiumState.preset]||{}).name || premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure), localBudget:premiumFormat(localBudget), onchainBudget:budgetQuote.onchain != null ? premiumFormat(budgetQuote.onchain) : 'Unavailable'}, job:struct.job, proc:struct.proc}, null, 2);
         if(pel('premiumHeroFinalists')) pel('premiumHeroFinalists').textContent = `${struct.proc.finalistCount||0} finalists`;
         if(pel('premiumHeroValidators')) pel('premiumHeroValidators').textContent = `${struct.proc.maxValidatorRevealsPerFinalist||0}-validator civic body`;
-        if(pel('premiumHeroCycle')) pel('premiumHeroCycle').textContent = '15-day designation cycle';
+        if(pel('premiumHeroCycle')) pel('premiumHeroCycle').textContent = `${totalCycleDays % 1 === 0 ? totalCycleDays.toFixed(0) : totalCycleDays.toFixed(2)}-day designation cycle`;
         if(pel('premiumHeroBudgetCap')) pel('premiumHeroBudgetCap').textContent = payout > 0n ? `${pct.toFixed(2)}% discovery-budget cap` : '7.02% discovery-budget cap';
         if(pel('premiumHeroExposureHint')) pel('premiumHeroExposureHint').textContent = payout > 0n ? `${((Number((exposure*10000n)/payout))/100).toFixed(2)}% employer max exposure` : '107.02% employer max exposure';
         if(pel('premiumBudgetMaxFormula')) pel('premiumBudgetMaxFormula').textContent = payout > 0n ? `${premiumFormat(budget)} = ${pct.toFixed(2)}% max reserve` : '7.02% max reserve';
@@ -8370,9 +8381,9 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           const mismatch = budgetQuote.onchain != null && budgetQuote.onchain !== localBudget;
           pel('premiumBudgetQuoteCheck').innerHTML = mismatch ? `<span class="premiumWarningNote">Warning:</span> local quote ${escapeHtml(premiumFormat(localBudget))} vs on-chain quote ${escapeHtml(premiumFormat(budgetQuote.onchain))}; final review should prefer the on-chain quote.` : `Local quote ${escapeHtml(premiumFormat(localBudget))}${budgetQuote.onchain != null ? ` · on-chain quote ${escapeHtml(premiumFormat(budgetQuote.onchain))}` : ' · on-chain quote unavailable until AGIJobDiscoveryPrime is connected'}.`;
         }
-        if(pel('premiumIncentiveRatios')) pel('premiumIncentiveRatios').textContent = 'Validator bond / validator reward = 35 / 12 = 2.92x · finalist stake / finalist stipend = 125 / 150 = 0.83x · application stake / finalist stake = 30 / 125 = 0.24x. Bond exceeds reward, stipend exceeds finalist stake, and entry stake stays far below finalist stake.';
+        if(pel('premiumIncentiveRatios')) pel('premiumIncentiveRatios').textContent = `Validator bond / validator reward = ${premiumFormat(validatorBond)} / ${premiumFormat(validatorReward)} = ${bondRewardRatio ? bondRewardRatio.toFixed(2) : '0.00'}x · finalist stake / finalist stipend = ${premiumFormat(finalistStake)} / ${premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))} = ${finalistStakeStipendRatio ? finalistStakeStipendRatio.toFixed(2) : '0.00'}x · application stake / finalist stake = ${premiumFormat(applicationStake)} / ${premiumFormat(finalistStake)} = ${applicationFinalistRatio ? applicationFinalistRatio.toFixed(2) : '0.00'}x. Validator bond remains materially larger than reward, finalist stipend should exceed finalist stake, and application stake should stay meaningfully lower than finalist stake.`;
         if(pel('premiumOverviewDoctrineTable')) pel('premiumOverviewDoctrineTable').innerHTML = [
-          ['Finalists', String(struct.proc.finalistCount||0)], ['Reveals', `${struct.proc.minValidatorReveals||0} minimum / ${struct.proc.maxValidatorRevealsPerFinalist||0} max`], ['Weights', `${weightSplit}`], ['Application stake', premiumFormat(applicationStake)], ['Finalist stake', premiumFormat(finalistStake)], ['Stipend', premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))], ['Validator reward', premiumFormat(validatorReward)], ['Validator bond', premiumFormat(validatorBond)], ['Discovery budget cap', payout > 0n ? `${premiumFormat(budget)} (${pct.toFixed(2)}%)` : '—'], ['Employer max exposure', premiumFormat(exposure)], ['Total procurement cycle', '15 days']
+          ['Finalists', String(struct.proc.finalistCount||0)], ['Reveals', `${struct.proc.minValidatorReveals||0} minimum / ${struct.proc.maxValidatorRevealsPerFinalist||0} max`], ['Weights', `${weightSplit}`], ['Application stake', premiumFormat(applicationStake)], ['Finalist stake', premiumFormat(finalistStake)], ['Stipend', premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))], ['Validator reward', premiumFormat(validatorReward)], ['Validator bond', premiumFormat(validatorBond)], ['Discovery budget cap', payout > 0n ? `${premiumFormat(budget)} (${pct.toFixed(2)}%)` : '—'], ['Employer max exposure', premiumFormat(exposure)], ['Total procurement cycle', `${totalCycleDays % 1 === 0 ? totalCycleDays.toFixed(0) : totalCycleDays.toFixed(2)} days`]
         ].map(([k,v])=>`<div class="premiumMetric"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(v)}</span></div>`).join('');
         if(pel('premiumDiscoveryCoachSummary')) pel('premiumDiscoveryCoachSummary').textContent = `3 finalists preserve ideological diversity while keeping stipend budget fixed at ${premiumFormat(stipendBudget)} before validator rewards.`;
         if(pel('premiumDiscoveryCoachFunding')) pel('premiumDiscoveryCoachFunding').textContent = `Reserved discovery budget = ${premiumFormat(budget)} at max participation, ${premiumFormat(minRobustBudget)} at minimum robust quorum, leaving ${premiumFormat(slackBudget)} available for refund.`;
@@ -8752,19 +8763,6 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function fmtEth(id){ return $(id)?.textContent || '—'; }
       function frictionLabel(v){ if(v <= 0) return 'disabled'; if(v < 0.05) return 'low-friction'; if(v < 0.2) return 'medium-friction'; return 'high-friction'; }
       function updateCoach(){
-        const finalists = Math.max(0, val('premiumDiscoveryFinalistCount'));
-        const minReveals = Math.max(0, val('premiumDiscoveryMinValidatorReveals'));
-        const maxReveals = Math.max(0, val('premiumDiscoveryMaxValidatorRevealsPerFinalist'));
-        const hist = Math.max(0, val('premiumDiscoveryHistoricalWeightBps'));
-        const trial = Math.max(0, val('premiumDiscoveryTrialWeightBps'));
-        const checkpoint = Math.max(0, val('premiumDiscoveryCheckpointHours'));
-        const appStake = Math.max(0, Number($('premiumDiscoveryApplicationStake')?.value || 0));
-        if($('premiumDiscoveryCoachSummary')) $('premiumDiscoveryCoachSummary').textContent = `This setup advances ${finalists || 0} finalist${finalists===1?'':'s'}. At least ${minReveals || 0} revealed validator scores per finalist are required for robust winner selection.`;
-        if($('premiumDiscoveryCoachFunding')) $('premiumDiscoveryCoachFunding').textContent = `You are budgeting for up to ${finalists * maxReveals} paid reveal slots. Employer upfront exposure = payout escrow + procurement budget (${fmtEth('premiumDiscoveryTotalExposure')}).`;
-        if($('premiumDiscoveryCoachSelection')) $('premiumDiscoveryCoachSelection').textContent = `Trial work currently has ${Math.round(trial/100)}% of the final winner score and historical quality has ${Math.round(hist/100)}%.`;
-        if($('premiumDiscoveryCoachRisk')) $('premiumDiscoveryCoachRisk').textContent = `Application stake is ${frictionLabel(appStake)}. Checkpoint window is ${checkpoint > 0 ? 'active' : 'disabled'}.`;
-        const exposureText = ($('premiumDiscoveryTotalExposure')?.textContent || '—').includes('—') ? 'Enter payout to preview current exposure.' : `Current employer exposure: ${$('premiumDiscoveryTotalExposure').textContent}`;
-        if($('premiumHeroExposureHint')) $('premiumHeroExposureHint').textContent = exposureText;
         if($('premiumDiscoveryStats')) $('premiumDiscoveryStats').textContent = `${$('premiumStatsUnrevealed')?.textContent || '—'} unrevealed / ${$('premiumStatsFinalistDefaults')?.textContent || '—'} finalist defaults`;
       }
       function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims & participant actions'; }
