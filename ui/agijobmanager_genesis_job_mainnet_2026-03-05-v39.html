@@ -1178,6 +1178,7 @@
               <div class="premiumExplainCard"><strong>How to choose finalists / reveals / weights</strong><ul class="premiumHintList"><li>2 finalists = faster / cheaper.</li><li>3 finalists = recommended default.</li><li>4+ finalists = deeper search / higher stipend cost.</li><li>3 min reveals = default.</li><li>5 min reveals = stronger confidence / more coordination.</li><li>Higher max reveals = more scoring diversity / more budget.</li><li>40/60 = balanced.</li><li>35/65 = leaner / faster.</li><li>30/70 = stronger trial emphasis.</li></ul></div>
               <div class="premiumExplainCard"><strong>Employer-funded vs participant-funded</strong><ul class="premiumHintList"><li>Application stake = anti-spam.</li><li>Finalist stake = seriousness signal.</li><li>Stipend = pay finalists for serious time.</li><li>Validator reward = attract scorers.</li><li>Validator bond = discourage careless scoring.</li><li>Employer funds payout escrow plus procurement budget; participants fund their own stakes and bonds.</li></ul></div>
               <div class="premiumExplainCard"><strong>What happens after winner designation</strong><ul class="premiumHintList"><li>The winner is handed into the linked <code>SelectedAgentOnly</code> settlement flow.</li><li>The selected acceptance window and checkpoint window continue in AGIJobManagerPrime.</li><li><code>claim()</code> uses a pull-payment model for earned balances.</li></ul></div>
+              <div class="premiumExplainCard"><strong>Pause-aware deadline behavior and no-winner risk</strong><ul class="premiumHintList"><li>Deadlines only stop when <code>AGIJobDiscoveryPrime</code> itself is paused; intake-only pauses do not freeze the effective procurement clock.</li><li>If finalists do not reach <code>minValidatorReveals</code>, robust winner designation can fail and the procurement can close without a designatable winner.</li></ul></div>
             </div>
           </section>
 
@@ -1185,14 +1186,7 @@
             <div class="premiumCreateLayout">
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard" id="premiumDiscoveryHowTo">
-                  <div class="premiumStepHeader">
-                    <div>
-                      <div class="premiumStepNumber">1</div>
-                      <h3>Preset</h3>
-                      <p class="premiumStepLead">Start from a curated premium configuration, then adjust only what matters.</p>
-                    </div>
-                    <span class="premiumStepStatus" id="premiumStepStatusPreset" data-state="ready">Ready</span>
-                  </div>
+                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">1</div><h3>Job basics</h3><p class="premiumStepLead">Choose a recommended default first, then set the settlement job spec URI, short on-chain details, payout escrow, and downstream selected-agent duration.</p></div><span class="premiumStepStatus" id="premiumStepStatusBasics" data-state="empty">Empty</span></div>
                   <div class="premiumQuickChips" style="margin-bottom:12px"><button class="btn" id="premiumDiscoveryUseRecommendedBtn" type="button">Use Balanced Prime</button></div>
                   <div class="premiumPresetRow" id="premiumDiscoveryPreset">
                     <button type="button" class="premiumPresetChip active" data-premium-preset="balanced"><b>Balanced Prime — recommended</b><div class="premiumPresetMeta"><span>Speed: balanced</span><span>Cost posture: balanced</span><span>Assurance posture: balanced</span><span>Finalists: 3</span><span>Min reveals: 3</span><span>Weights: 4000 / 6000</span></div></button>
@@ -1200,11 +1194,7 @@
                     <button type="button" class="premiumPresetChip" data-premium-preset="assurance"><b>High Assurance</b><div class="premiumPresetMeta"><span>Speed: slower</span><span>Cost posture: higher</span><span>Assurance posture: higher</span><span>Finalists: 4</span><span>Min reveals: 5</span><span>Weights: 3000 / 7000</span></div></button>
                     <button type="button" class="premiumPresetChip" data-premium-preset="custom"><b>Custom</b><div class="premiumPresetMeta"><span>Keep the same safeguards</span><span>Edit all schedule, selection, and economics fields</span></div></button>
                   </div>
-                </div>
-
-                <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">2</div><h3>Job basics</h3><p class="premiumStepLead">jobSpecURI is the settlement job spec URI, details are short on-chain settlement details, payout is escrowed in AGIJobManagerPrime, and duration is the downstream selected-agent settlement duration.</p></div><span class="premiumStepStatus" id="premiumStepStatusBasics" data-state="empty">Empty</span></div>
-                  <div class="premiumQuickChips"><button class="btn" type="button" id="premiumDiscoveryImportFromBuilderBtn">Import from current job builder</button><button class="btn" type="button" id="premiumDiscoveryMirrorBuilderBtn">Mirror payout + duration + details</button></div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumDiscoveryImportFromBuilderBtn">Import from current job builder</button><button class="btn" type="button" id="premiumDiscoveryMirrorBuilderBtn">Mirror payout + duration + details</button></div>
                   <div class="premiumInputGrid" style="margin-top:12px">
                     <div class="premiumField"><label for="premiumDiscoveryJobSpecURI">Job Spec URI</label><input id="premiumDiscoveryJobSpecURI" type="text" placeholder="ipfs://... or ens://..."><small>Settlement job spec URI used when the downstream selected-agent job is created.</small></div>
                     <div class="premiumField"><label for="premiumDiscoveryDetails">Details</label><input id="premiumDiscoveryDetails" type="text" placeholder="Short on-chain summary"><small>Keep details short; rich description belongs in metadata.</small></div>
@@ -1215,7 +1205,7 @@
                 </div>
 
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">3</div><h3>Timeline</h3><p class="premiumStepLead">Use the human schedule builder by default. Raw timestamps stay available behind expert mode.</p></div><span class="premiumStepStatus" id="premiumStepStatusTimeline" data-state="ready">Ready</span></div>
+                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">2</div><h3>Timeline</h3><p class="premiumStepLead">Use the human schedule builder by default. Raw timestamps stay available behind expert mode. Selected acceptance and checkpoint windows are post-procurement settlement controls.</p></div><span class="premiumStepStatus" id="premiumStepStatusTimeline" data-state="ready">Ready</span></div>
                   <div class="premiumSegmentRow"><button type="button" class="premiumSegBtn btn active" data-premium-base-mode="now">Start now</button><button type="button" class="premiumSegBtn btn" data-premium-base-mode="custom">Custom base time</button><button type="button" class="premiumSegBtn btn" id="premiumDiscoveryRawToggle">Expert mode: raw timestamps</button></div>
                   <div class="premiumInputGrid" style="margin-top:12px">
                     <div class="premiumField"><label for="premiumDiscoveryBaseTime">Custom base time</label><input id="premiumDiscoveryBaseTime" type="datetime-local"><small>Leave blank to start from current browser time at submission.</small></div>
@@ -1233,7 +1223,7 @@
                 </div>
 
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">4</div><h3>Selection design</h3><p class="premiumStepLead">Make finalist depth, reveal requirements, weights, stakes, and scoring economics legible before review.</p></div><span class="premiumStepStatus" id="premiumStepStatusSelection" data-state="ready">Ready</span></div>
+                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">3</div><h3>Selection design</h3><p class="premiumStepLead">Choose finalist depth, reveal requirements, weights, reputation posture, and checkpoint posture without guessing.</p></div><span class="premiumStepStatus" id="premiumStepStatusSelection" data-state="ready">Ready</span></div>
                   <div class="premiumInputGrid three">
                     <div class="premiumField"><label for="premiumDiscoveryFinalistCount">Finalist count</label><input id="premiumDiscoveryFinalistCount" type="number" min="1" max="8" step="1"></div>
                     <div class="premiumField"><label for="premiumDiscoveryMinValidatorReveals">Minimum validator reveals</label><input id="premiumDiscoveryMinValidatorReveals" type="number" min="1" max="32" step="1"></div>
@@ -1241,11 +1231,17 @@
                     <div class="premiumField"><label for="premiumDiscoveryHistoricalWeightBps">Historical weight (bps)</label><input id="premiumDiscoveryHistoricalWeightBps" type="number" min="0" max="10000" step="100"></div>
                     <div class="premiumField"><label for="premiumDiscoveryTrialWeightBps">Trial weight (bps)</label><input id="premiumDiscoveryTrialWeightBps" type="number" min="0" max="10000" step="100"></div>
                     <div class="premiumField"><label for="premiumDiscoveryMinReputation">Minimum reputation</label><input id="premiumDiscoveryMinReputation" type="number" min="0" step="1" value="0"><small><span id="premiumDiscoveryMinReputationHelper">0 means inherit the protocol premium threshold.</span></small></div>
-                    <div class="premiumField"><label for="premiumDiscoveryApplicationStake">Application stake</label><input id="premiumDiscoveryApplicationStake" type="number" min="0" step="0.0001"></div>
-                    <div class="premiumField"><label for="premiumDiscoveryFinalistStakeTotal">Finalist stake total</label><input id="premiumDiscoveryFinalistStakeTotal" type="number" min="0" step="0.0001"></div>
-                    <div class="premiumField"><label for="premiumDiscoveryStipendPerFinalist">Stipend per finalist</label><input id="premiumDiscoveryStipendPerFinalist" type="number" min="0" step="0.0001"></div>
-                    <div class="premiumField"><label for="premiumDiscoveryValidatorRewardPerReveal">Validator reward per reveal</label><input id="premiumDiscoveryValidatorRewardPerReveal" type="number" min="0" step="0.0001"></div>
-                    <div class="premiumField"><label for="premiumDiscoveryValidatorScoreBond">Validator score bond</label><input id="premiumDiscoveryValidatorScoreBond" type="number" min="0" step="0.0001"></div>
+                  </div>
+                </div>
+
+                <div class="premiumStepCard">
+                  <div class="premiumStepHeader"><div><div class="premiumStepNumber">4</div><h3>Economics</h3><p class="premiumStepLead">Set anti-spam stakes, finalist seriousness, stipend funding, validator rewards, and validator score bonds in plain English.</p></div><span class="premiumStepStatus" id="premiumStepStatusEconomics" data-state="ready">Ready</span></div>
+                  <div class="premiumInputGrid three">
+                    <div class="premiumField"><label for="premiumDiscoveryApplicationStake">Application stake</label><input id="premiumDiscoveryApplicationStake" type="number" min="0" step="0.0001"><small>Anti-spam deposit for applicants.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryFinalistStakeTotal">Finalist stake total</label><input id="premiumDiscoveryFinalistStakeTotal" type="number" min="0" step="0.0001"><small>Seriousness signal required from shortlisted finalists.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryStipendPerFinalist">Stipend per finalist</label><input id="premiumDiscoveryStipendPerFinalist" type="number" min="0" step="0.0001"><small>Employer-funded trial compensation for each finalist.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryValidatorRewardPerReveal">Validator reward per reveal</label><input id="premiumDiscoveryValidatorRewardPerReveal" type="number" min="0" step="0.0001"><small>Employer-funded reward to attract scoring participation.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryValidatorScoreBond">Validator score bond</label><input id="premiumDiscoveryValidatorScoreBond" type="number" min="0" step="0.0001"><small>Participant-funded bond that discourages careless scoring.</small></div>
                   </div>
                 </div>
 
@@ -1256,7 +1252,7 @@
                     <div class="premiumApprovalCard"><div class="premiumApprovalCardHeader"><div><b>Discovery approval</b><div class="premiumStepNote">Procurement budget allowance to AGIJobDiscoveryPrime.</div></div><span class="premiumApprovalState bad" id="premiumDiscoveryApprovalState">Needs approval</span></div><div class="helper" id="premiumDiscoveryDiscoveryAllowance">Allowance unavailable</div><button class="btn" type="button" id="premiumDiscoveryApproveDiscoveryBtn">Approve procurement budget</button></div>
                   </div>
                   <div class="premiumQuickChips" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumDiscoveryApproveBothBtn">Approve both</button><button class="btn" type="button" id="premiumDiscoveryRefreshAllowanceBtn">Refresh allowances</button></div>
-                  <div class="premiumStepNote" style="margin-top:10px">Two approvals may both be required because the settlement payout escrow and the discovery procurement budget are spent by different contracts.</div>
+                  <div class="premiumStepNote" style="margin-top:10px">Two approvals may both be required because the settlement payout escrow and the discovery procurement budget are spent by different contracts through separate <code>safeTransferFrom</code> pulls.</div>
                   <details style="margin-top:12px"><summary><b>Expert details</b> · raw payload, tuple preview, and selector</summary><div class="premiumCode" id="premiumDiscoveryStructPreview" style="margin-top:12px">Waiting for inputs…</div></details>
                 </div>
 
@@ -1267,7 +1263,6 @@
                   <div class="statusline" style="margin-top:12px"><b>Result</b>: <span id="premiumDiscoveryResult">No premium discovery job created yet.</span></div>
                 </div>
               </div>
-
               <aside class="premiumStickyRail">
                 <div class="premiumAsideCard" id="premiumDiscoveryBudgetPreview">
                   <div class="subtleTitle">Recommended default snapshot</div>
