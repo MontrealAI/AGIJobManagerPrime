@@ -8810,7 +8810,14 @@ function normalizeIpfsToHttp(uri){
     const original=window.buildCommandPaletteItems;
     if(typeof original!=='function' || original.__v38Deduped) return;
     window.buildCommandPaletteItems=function(){
-      const items=original();
+      const items=original().map(item=>{
+        const next={...item};
+        if(next.action==='premium-attach') next.action='premium-open-attach';
+        else if(next.action==='premium-inspect' && /load procurement by id/i.test(String(next.title||''))) next.action='premium-load-procurement';
+        else if(next.action==='premium-inspect') next.action='premium-open-inspector';
+        else if(next.action==='premium-claim') next.action='premium-claim-discovery';
+        return next;
+      });
       const seen=new Set();
       return items.filter(item=>{
         const key=[item?.title||'', item?.action||''].join('::');
