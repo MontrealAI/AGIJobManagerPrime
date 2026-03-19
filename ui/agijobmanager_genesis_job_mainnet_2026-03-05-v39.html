@@ -985,94 +985,9 @@
 
 
   <style id="v39-premium-discovery-styles">
-    #premiumDiscoverySection{position:relative;overflow:hidden;padding:22px;border-radius:28px}
-    #premiumDiscoverySection::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(243,236,249,.36));pointer-events:none}
-    #premiumDiscoverySection > *{position:relative}
-    .premiumFlagshipDeck{display:grid;gap:18px}
-    .premiumIntegratedTop{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.92fr);gap:16px;align-items:stretch}
-    .premiumIntegratedPrimary,.premiumIntegratedAside,.premiumStepCard,.premiumAsideCard,.premiumExplainCard,.premiumInspectorCard,.premiumDataCard,.premiumMiniCard,.premiumAttachSummary,.premiumReviewSummary{border:1px solid rgba(121,96,150,.14);background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(247,242,250,.9));border-radius:22px;box-shadow:0 14px 34px rgba(91,69,120,.06)}
-    .premiumIntegratedPrimary,.premiumIntegratedAside{padding:20px}
-    .premiumIntegratedPrimary h2{margin:8px 0 10px;font-size:clamp(1.8rem,3vw,2.75rem);line-height:1.03;color:#241a2d;max-width:15ch}
-    .premiumIntegratedPrimary p,.premiumIntegratedPrimary .helper,.premiumIntegratedAside .helper,.premiumExplainCard,.premiumDataCard div,.premiumStepLead,.premiumStepNote,.premiumTimelineLine,.premiumSupportList li{overflow-wrap:anywhere}
-    .premiumIntegratedSupport{margin:0;color:var(--text-soft);line-height:1.6;max-width:65ch}
-    .premiumChipRow,.premiumPrimaryCtas,.premiumUtilityCtas,.premiumQuickChips,.premiumSegmentRow,.premiumRoleActionRow,.premiumMobileReview{display:flex;gap:10px;flex-wrap:wrap}
-    .premiumHighlightChip,.premiumTinyBadge,.premiumStepStatus,.premiumApprovalState{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:8px 12px;border-radius:999px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);font-weight:600;color:#43314f}
-    .premiumHighlightChip{min-height:38px}
-    .premiumAtomicNote{margin-top:14px;padding:14px 16px;border-radius:18px;border:1px solid rgba(111,75,195,.16);background:rgba(111,75,195,.05)}
-    .premiumAtomicNote b{display:block;margin-bottom:6px;color:#241a2d}
-    .premiumIntegratedAside{display:grid;gap:12px;align-content:start}
-    .premiumAsideSummaryGrid,.premiumMetricGrid,.premiumOverviewGrid,.premiumCreateLayout,.premiumOpsGrid,.premiumInspectorStatusGrid,.premiumDataGrid,.premiumClaimsGrid,.premiumActionGrid,.premiumFundingGrid,.premiumAttachTopGrid,.premiumAttachCards,.premiumWhenGrid{display:grid;gap:12px}
-    .premiumAsideSummaryGrid{grid-template-columns:1fr 1fr}
-    .premiumMiniCard{padding:14px 15px}
-    .premiumMiniCard .k,.premiumInspectorCard .k,.premiumMetric .k{display:block;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-soft);margin-bottom:6px}
-    .premiumMiniCard .v,.premiumInspectorCard .v,.premiumMetric .v{display:block;font-weight:700;color:#241a2d}
-    .premiumSurfaceNav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px 0 8px;margin:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-    .premiumSurfaceNav::-webkit-scrollbar{display:none}
-    .premiumSurfaceTab{flex:0 0 auto;min-height:44px;padding:12px 16px;border-radius:999px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.84);font:inherit;font-weight:700;color:#382543;cursor:pointer;white-space:nowrap}
-    .premiumSurfaceTab.active,.premiumSurfaceTab[aria-selected="true"]{background:linear-gradient(135deg,rgba(111,75,195,.14),rgba(255,255,255,.98));border-color:rgba(111,75,195,.34);box-shadow:0 12px 26px rgba(91,69,120,.08)}
-    .premiumSurfacePanel{display:none}
-    .premiumSurfacePanel.active{display:block}
-    .premiumOverviewGrid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:4px}
-    .premiumExplainCard{padding:18px}
-    .premiumExplainCard strong{display:block;margin-bottom:10px;color:#241a2d;font-size:1.02rem}
-    .premiumHintList{margin:0;padding-left:18px;color:var(--text-soft);line-height:1.6}
-    .premiumHintList li+li{margin-top:6px}
-    .premiumCreateLayout{grid-template-columns:minmax(0,1.18fr) minmax(310px,.82fr);align-items:start}
-    .premiumBuilderSteps,.premiumStickyRail{display:grid;gap:14px}
-    .premiumStickyRail{position:sticky;top:84px}
-    .premiumStepCard,.premiumAsideCard{padding:18px;min-width:0}
-    .premiumStepHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
-    .premiumStepNumber{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:rgba(111,75,195,.1);color:#5b3da6;font-weight:800;margin-bottom:10px}
-    .premiumStepHeader h3{margin:0 0 6px;color:#241a2d}
-    .premiumStepLead{color:var(--text-soft);line-height:1.55;margin:0;max-width:70ch}
-    .premiumStepStatus[data-state="ready"],.premiumApprovalState.good{background:rgba(47,122,103,.08);border-color:rgba(47,122,103,.24);color:#2f7a5f}
-    .premiumStepStatus[data-state="warning"],.premiumApprovalState.warn{background:rgba(154,111,47,.08);border-color:rgba(154,111,47,.24);color:#9a6a1d}
-    .premiumStepStatus[data-state="empty"],.premiumApprovalState.bad{background:rgba(168,79,111,.08);border-color:rgba(168,79,111,.18);color:#8d4c66}
-    .premiumPresetRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-    .premiumPresetChip{display:grid;gap:8px;align-content:start;min-height:164px;padding:16px;border-radius:20px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.78);text-align:left;cursor:pointer;font:inherit;color:#382543}
-    .premiumPresetChip b{font-size:1rem}
-    .premiumPresetMeta{display:grid;gap:4px;font-size:.88rem;color:var(--text-soft);line-height:1.4}
-    .premiumPresetChip.active{border-color:rgba(111,75,195,.34);background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(242,235,251,.95));box-shadow:0 14px 28px rgba(91,69,120,.08)}
-    .premiumInputGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .premiumInputGrid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .premiumField{display:grid;gap:6px;min-width:0}
-    .premiumField label{font-weight:700;color:#382543}
-    .premiumField small,.premiumStepNote,.premiumAttachNote,.premiumRoleNote{color:var(--text-soft);line-height:1.5}
-    .premiumTimeline{display:grid;gap:10px}
-    .premiumTimelineLine{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1fr) auto;gap:10px;padding:12px 14px;border:1px solid rgba(121,96,150,.12);border-radius:16px;background:rgba(255,255,255,.72);align-items:start}
-    .premiumTimelineLine b{display:block;color:#241a2d}
-    .premiumTimelineLine small{display:block;color:var(--text-soft);line-height:1.45}
-    .premiumTimelineLine span:last-child{font-weight:700;color:#5b3da6;white-space:nowrap}
-    .premiumSummaryRail{display:grid;gap:12px}
-    .premiumMetricGrid{grid-template-columns:1fr 1fr}
-    .premiumMetric{padding:14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78)}
-    .premiumValidationList{display:grid;gap:8px}
-    .premiumValidationItem{padding:12px 14px;border-radius:14px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78)}
-    .premiumValidationItem.good{border-color:rgba(47,122,103,.2);background:rgba(47,122,103,.07);color:#2f7a5f}
-    .premiumValidationItem.bad{border-color:rgba(168,79,111,.2);background:rgba(168,79,111,.07);color:#8d4c66}
-    .premiumCode{white-space:pre-wrap;word-break:break-word;overflow:auto;max-width:100%}
-    .premiumFundingGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .premiumApprovalCard{padding:16px;border-radius:18px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);display:grid;gap:10px}
-    .premiumApprovalCardHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-    .premiumAttachTopGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .premiumAttachCards{grid-template-columns:minmax(0,1.18fr) minmax(310px,.82fr)}
-    .premiumAttachSummary{padding:16px}
-    .premiumInspectorStatusGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .premiumInspectorCard,.premiumDataCard{padding:16px;min-width:0}
-    .premiumDataGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .premiumAddressList{display:flex;flex-wrap:wrap;gap:8px}
-    .premiumAddressChip{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);font:inherit;color:#382543;cursor:pointer;max-width:100%}
-    .premiumAddressChip code{max-width:100%;overflow:hidden;text-overflow:ellipsis}
-    .premiumClaimsGrid{grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr)}
-    .premiumActionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .premiumLocalNote{padding:12px 14px;border-radius:16px;border:1px dashed rgba(121,96,150,.24);background:rgba(255,255,255,.64)}
-    .premiumRoleTray{padding:16px;border-radius:18px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);display:grid;gap:10px}
-    .premiumRoleTrayHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-    .premiumRoleActionRow .btn{flex:1 1 220px}
-    .premiumStickyBar{position:sticky;bottom:0;z-index:6;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;margin-top:16px;border-radius:20px 20px 0 0;border:1px solid rgba(121,96,150,.18);background:rgba(255,255,255,.95);box-shadow:0 -8px 24px rgba(91,69,120,.08)}
-    .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-    @media (max-width:1200px){.premiumIntegratedTop,.premiumCreateLayout,.premiumAttachCards,.premiumClaimsGrid{grid-template-columns:1fr}.premiumStickyRail{position:static}.premiumOverviewGrid{grid-template-columns:1fr 1fr}.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:900px){#premiumDiscoverySection{padding:18px}.premiumAsideSummaryGrid,.premiumMetricGrid,.premiumFundingGrid,.premiumDataGrid,.premiumActionGrid,.premiumInputGrid,.premiumInputGrid.three,.premiumOverviewGrid,.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid{grid-template-columns:1fr}.premiumStickyBar{padding:12px 14px}.premiumPrimaryCtas .btn,.premiumUtilityCtas .btn,.premiumRoleActionRow .btn,.premiumMobileReview .btn{width:100%}.premiumSurfaceNav{margin-bottom:12px}}
+    #premiumDiscoverySection{position:relative;overflow:hidden;padding:24px;border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(247,242,250,.9));border:1px solid rgba(121,96,150,.14)}
+    #premiumDiscoverySection::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top left,rgba(140,112,207,.12),transparent 34%),radial-gradient(circle at top right,rgba(223,211,243,.36),transparent 32%);pointer-events:none}
+    #premiumDiscoverySection>*{position:relative}.premiumFlagshipDeck,.premiumBuilderSteps,.premiumStickyRail,.premiumSummaryRail,.premiumTimeline,.premiumArticleRail,.premiumCastGrid,.premiumBeatGrid,.premiumDoctrineGrid,.premiumSupportStack,.premiumActionGrid,.premiumCreateLayout,.premiumAttachCards,.premiumClaimsGrid,.premiumOverviewStack,.premiumInspectorStatusGrid,.premiumDataGrid,.premiumFundingGrid,.premiumAttachTopGrid,.premiumAttachCards,.premiumAsideSummaryGrid{display:grid;gap:14px}.premiumIntegratedTop{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.92fr);gap:18px;align-items:start}.premiumIntegratedPrimary,.premiumIntegratedAside,.premiumStepCard,.premiumAsideCard,.premiumExplainCard,.premiumInspectorCard,.premiumDataCard,.premiumMiniCard,.premiumAttachSummary,.premiumReviewSummary,.premiumLifecycleCard,.premiumCommissionStrip,.premiumLaunchBlock,.premiumCastCard,.premiumBeatCard,.premiumDoctrineCard,.premiumInspectorMock{border:1px solid rgba(121,96,150,.14);background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,244,251,.92));border-radius:24px;box-shadow:0 16px 40px rgba(91,69,120,.06)}.premiumIntegratedPrimary,.premiumIntegratedAside,.premiumStepCard,.premiumAsideCard,.premiumExplainCard,.premiumLaunchBlock,.premiumAttachSummary,.premiumInspectorCard,.premiumDataCard,.premiumLifecycleCard,.premiumCommissionStrip,.premiumCastCard,.premiumBeatCard,.premiumDoctrineCard,.premiumInspectorMock{padding:18px}.premiumEditorialEyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid rgba(111,75,195,.18);background:rgba(111,75,195,.06);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:#5b3da6;font-weight:700}.premiumIntegratedPrimary h2{margin:10px 0 10px;font-size:clamp(2rem,4vw,4rem);line-height:.96;color:#201523;letter-spacing:-.05em;max-width:11ch}.premiumIntegratedPrimary p,.premiumIntegratedPrimary .helper,.premiumIntegratedAside .helper,.premiumExplainCard,.premiumDataCard div,.premiumStepLead,.premiumStepNote,.premiumTimelineLine,.premiumSupportList li,.premiumLifecycleCard,.premiumDoctrineCard,.premiumBeatCard,.premiumCastCard{overflow-wrap:anywhere}.premiumIntegratedSupport{margin:0;color:var(--text-soft);line-height:1.68;max-width:67ch;font-size:1rem}.premiumChipRow,.premiumPrimaryCtas,.premiumUtilityCtas,.premiumQuickChips,.premiumSegmentRow,.premiumRoleActionRow,.premiumMobileReview,.premiumCTACluster,.premiumNoteRow,.premiumFormulaChips,.premiumPresetRationaleChips{display:flex;gap:10px;flex-wrap:wrap}.premiumHighlightChip,.premiumTinyBadge,.premiumStepStatus,.premiumApprovalState,.premiumFormulaChip,.premiumRolePill{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:8px 12px;border-radius:999px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.84);font-weight:600;color:#43314f}.premiumHighlightChip{min-height:38px;background:rgba(255,255,255,.92)}.premiumAtomicNote,.premiumIllustrativeNote,.premiumFormulaNote{margin-top:14px;padding:14px 16px;border-radius:18px;border:1px solid rgba(111,75,195,.16);background:rgba(111,75,195,.05)}.premiumIllustrativeNote{border-color:rgba(121,96,150,.14);background:rgba(255,255,255,.82)}.premiumAtomicNote b,.premiumFormulaNote b{display:block;margin-bottom:6px;color:#241a2d}.premiumIntegratedAside{display:grid;gap:12px;align-content:start}.premiumAsideSummaryGrid{grid-template-columns:1fr 1fr}.premiumMiniCard .k,.premiumInspectorCard .k,.premiumMetric .k{display:block;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-soft);margin-bottom:6px}.premiumMiniCard .v,.premiumInspectorCard .v,.premiumMetric .v{display:block;font-weight:700;color:#241a2d}.premiumSurfaceNav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px 0 8px;margin:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.premiumSurfaceNav::-webkit-scrollbar{display:none}.premiumSurfaceTab{flex:0 0 auto;min-height:46px;padding:12px 18px;border-radius:999px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.86);font:inherit;font-weight:700;color:#382543;cursor:pointer;white-space:nowrap}.premiumSurfaceTab.active,.premiumSurfaceTab[aria-selected="true"]{background:linear-gradient(135deg,rgba(111,75,195,.14),rgba(255,255,255,.98));border-color:rgba(111,75,195,.34);box-shadow:0 12px 26px rgba(91,69,120,.08)}.premiumSurfacePanel{display:none}.premiumSurfacePanel.active{display:block}.premiumOverviewStack{margin-top:4px}.premiumCreateLayout{grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr);align-items:start}.premiumStickyRail{position:sticky;top:84px}.premiumStepHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}.premiumStepNumber{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:rgba(111,75,195,.1);color:#5b3da6;font-weight:800;margin-bottom:10px}.premiumStepHeader h3{margin:0 0 6px;color:#241a2d}.premiumStepLead{color:var(--text-soft);line-height:1.58;margin:0;max-width:70ch}.premiumStepStatus[data-state="ready"],.premiumApprovalState.good{background:rgba(47,122,103,.08);border-color:rgba(47,122,103,.24);color:#2f7a5f}.premiumStepStatus[data-state="warning"],.premiumApprovalState.warn{background:rgba(154,111,47,.08);border-color:rgba(154,111,47,.24);color:#9a6a1d}.premiumStepStatus[data-state="empty"],.premiumApprovalState.bad{background:rgba(168,79,111,.08);border-color:rgba(168,79,111,.18);color:#8d4c66}.premiumLauncherBlock{display:grid;gap:12px;padding:18px;border-radius:24px;border:1px solid rgba(121,96,150,.14);background:linear-gradient(180deg,rgba(250,247,252,.98),rgba(255,255,255,.92))}.premiumLauncherHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.premiumLauncherHead h3{margin:0;color:#241a2d}.premiumLauncherHead p{margin:6px 0 0;color:var(--text-soft);line-height:1.55;max-width:62ch}.premiumLauncherActions{display:flex;flex-wrap:wrap;gap:10px}.premiumPresetRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.premiumPresetChip{display:grid;gap:8px;align-content:start;min-height:154px;padding:16px;border-radius:20px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.8);text-align:left;cursor:pointer;font:inherit;color:#382543}.premiumPresetChip.active{border-color:rgba(111,75,195,.34);background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(242,235,251,.95));box-shadow:0 14px 28px rgba(91,69,120,.08)}.premiumPresetMeta{display:grid;gap:4px;font-size:.88rem;color:var(--text-soft);line-height:1.4}.premiumInputGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.premiumInputGrid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.premiumField{display:grid;gap:6px;min-width:0}.premiumField label{font-weight:700;color:#382543}.premiumField small,.premiumStepNote,.premiumAttachNote,.premiumRoleNote{color:var(--text-soft);line-height:1.5}.premiumTimelineLine,.premiumTimelineRow{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1fr) auto;gap:10px;padding:12px 14px;border:1px solid rgba(121,96,150,.12);border-radius:16px;background:rgba(255,255,255,.74);align-items:start}.premiumTimelineRow{grid-template-columns:minmax(140px,.8fr) minmax(0,1fr)}.premiumTimelineLine b,.premiumTimelineRow strong{display:block;color:#241a2d}.premiumTimelineLine small{display:block;color:var(--text-soft);line-height:1.45}.premiumTimelineLine span:last-child{font-weight:700;color:#5b3da6;white-space:nowrap}.premiumMetricGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.premiumMetric{padding:14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.8)}.premiumValidationList{display:grid;gap:8px}.premiumValidationItem{padding:12px 14px;border-radius:14px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78)}.premiumValidationItem.good{border-color:rgba(47,122,103,.2);background:rgba(47,122,103,.07);color:#2f7a5f}.premiumValidationItem.bad{border-color:rgba(168,79,111,.2);background:rgba(168,79,111,.07);color:#8d4c66}.premiumCode{white-space:pre-wrap;word-break:break-word;overflow:auto;max-width:100%}.premiumFundingGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.premiumApprovalCard{padding:16px;border-radius:18px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);display:grid;gap:10px}.premiumApprovalCardHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.premiumAttachTopGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.premiumAttachCards{grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr)}.premiumInspectorStatusGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.premiumDataGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.premiumClaimsGrid{grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr)}.premiumActionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.premiumLocalNote{padding:12px 14px;border-radius:16px;border:1px dashed rgba(121,96,150,.24);background:rgba(255,255,255,.64)}.premiumRoleTray{padding:16px;border-radius:18px;border:1px solid rgba(121,96,150,.14);background:rgba(255,255,255,.82);display:grid;gap:10px}.premiumRoleTrayHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.premiumRoleActionRow .btn{flex:1 1 220px}.premiumCommissionStrip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.premiumCommissionStrip .premiumMiniCard{padding:0;border:none;background:none;box-shadow:none}.premiumArticleRail{grid-template-columns:repeat(10,minmax(220px,1fr));overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.premiumLifecycleCard{min-width:220px}.premiumLifecycleCard code{font-size:.82rem}.premiumLifecycleMeta{display:grid;gap:8px;margin-top:12px}.premiumLifecycleMeta span{display:block;color:var(--text-soft);font-size:.88rem;line-height:1.45}.premiumLifecycleMeta strong{display:block;color:#241a2d;font-size:.84rem;letter-spacing:.08em;text-transform:uppercase}.premiumCastGrid{grid-template-columns:repeat(5,minmax(0,1fr))}.premiumCastCard h4,.premiumBeatCard h4,.premiumDoctrineCard h4{margin:0 0 8px;color:#241a2d}.premiumCastCard p,.premiumBeatCard p,.premiumDoctrineCard p{margin:0;color:var(--text-soft);line-height:1.58}.premiumBeatGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.premiumDoctrineGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.premiumFormulaGrid{display:grid;gap:10px}.premiumMonoFormula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.14);background:#faf7fc;color:#33223f;overflow:auto}.premiumStickyBar{position:sticky;bottom:0;z-index:6;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;margin-top:16px;border-radius:20px 20px 0 0;border:1px solid rgba(121,96,150,.18);background:rgba(255,255,255,.95);box-shadow:0 -8px 24px rgba(91,69,120,.08)}@media (max-width:1200px){.premiumIntegratedTop,.premiumCreateLayout,.premiumAttachCards,.premiumClaimsGrid{grid-template-columns:1fr}.premiumStickyRail{position:static}.premiumCastGrid,.premiumBeatGrid,.premiumDoctrineGrid,.premiumCommissionStrip,.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:900px){#premiumDiscoverySection{padding:18px}.premiumAsideSummaryGrid,.premiumMetricGrid,.premiumFundingGrid,.premiumDataGrid,.premiumActionGrid,.premiumInputGrid,.premiumInputGrid.three,.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid,.premiumCastGrid,.premiumBeatGrid,.premiumDoctrineGrid,.premiumCommissionStrip{grid-template-columns:1fr}.premiumStickyBar{padding:12px 14px}.premiumPrimaryCtas .btn,.premiumUtilityCtas .btn,.premiumRoleActionRow .btn,.premiumMobileReview .btn,.premiumLauncherActions .btn{width:100%}.premiumSurfaceNav{margin-bottom:12px}.premiumLauncherHead{display:grid}.premiumIntegratedPrimary h2{max-width:none}.premiumArticleRail{display:flex;overflow-x:auto;gap:12px;scroll-snap-type:x proximity}.premiumLifecycleCard{scroll-snap-align:start;width:86vw;min-width:86vw}.premiumTimelineLine,.premiumTimelineRow{grid-template-columns:1fr}.premiumStickyBar{flex-direction:column;align-items:stretch}}
   </style>
 
 </head>
@@ -1108,15 +1023,15 @@
       <div class="premiumFlagshipDeck">
         <div class="premiumIntegratedTop">
           <div class="premiumIntegratedPrimary">
-            <div class="eyebrow" id="premiumDiscoveryFlagshipLabel">AGIJobDiscoveryPrime · premium procurement</div>
+            <div class="eyebrow" id="premiumDiscoveryFlagshipLabel">Signature premium procurement · AGI governance design</div>
             <h2>Run a real on-chain procurement, then hand the winner into settlement.</h2>
-            <div class="helper">createPremiumJobWithDiscovery creates a SelectedAgentOnly settlement job and a premium procurement in one atomic transaction, so you can compare serious candidates before assignment begins.</div>
-            <p class="premiumIntegratedSupport">Candidates first commit applications, then reveal, finalists are shortlisted, funded trial work is submitted, validators score, a winner is designated, and that winner is handed straight into AGIJobManagerPrime for selected-agent settlement. It is the right path when candidate comparison matters more than posting speed, and it is far safer than typing raw ABI tuples by hand.</p>
+            <div class="helper">A canonical AGIJobDiscoveryPrime commission for selecting the architect of recursive AI self-governance before settlement begins.</div>
+            <p class="premiumIntegratedSupport">This illustrative article exemplar shows how a sovereign employer can post a high-stakes governance-design mission, collect serious committed applications, shortlist finalists, fund paid trials, gather validator scoring, designate a winner, and then hand that winner into AGIJobManagerPrime for SelectedAgentOnly settlement.</p>
             <div class="premiumChipRow">
-              <span class="premiumHighlightChip">SelectedAgentOnly settlement job created atomically</span>
-              <span class="premiumHighlightChip">Payout escrow pulled into AGIJobManagerPrime</span>
-              <span class="premiumHighlightChip">Procurement budget pulled into AGIJobDiscoveryPrime</span>
-              <span class="premiumHighlightChip">If procurement creation fails, everything reverts</span>
+              <span class="premiumHighlightChip">Illustrative article exemplar</span>
+              <span class="premiumHighlightChip">Atomic premium create</span>
+              <span class="premiumHighlightChip">Two approvals, one launch review</span>
+              <span class="premiumHighlightChip">Winner → SelectedAgentOnly settlement</span>
             </div>
             <div class="premiumAtomicNote">
               <b>Atomic premium create · selector <code>0xdbbf8960</code></b>
@@ -1125,9 +1040,9 @@
               </div>
             </div>
             <div class="premiumPrimaryCtas" style="margin-top:16px">
-              <button class="btn btn-primary" type="button" data-premium-hero-target="create">Start Premium Discovery</button>
-              <button class="btn" type="button" data-premium-hero-target="attach">Attach Procurement</button>
-              <button class="btn" type="button" data-premium-hero-target="inspect">Open Procurement Inspector</button>
+              <button class="btn btn-primary" type="button" data-premium-hero-target="create">Load “To Govern Their Own Kind” exemplar</button>
+              <button class="btn" type="button" data-premium-hero-target="attach">Open create builder</button>
+              <button class="btn" type="button" data-premium-hero-target="inspect">Open lifecycle map</button>
               <a class="btn" href="#jobsSection">Browse Jobs</a>
             </div>
             <div class="premiumUtilityCtas">
@@ -1139,10 +1054,10 @@
           </div>
           <aside class="premiumIntegratedAside">
             <div class="premiumAsideSummaryGrid">
-              <div class="premiumMiniCard"><span class="k">Recommended default</span><span class="v">Balanced Prime</span><small class="helper">3 finalists · 3 minimum reveals · 5 max reveals · 40 / 60 historical-trial weighting.</small></div>
-              <div class="premiumMiniCard"><span class="k">Funding and approvals</span><span class="v" id="premiumHeroExposureHint">Enter payout to preview exposure.</span><small class="helper">Employer funds payout escrow to Manager and procurement budget to Discovery. Two approvals can be required because two contracts call <code>safeTransferFrom</code>.</small></div>
-              <div class="premiumMiniCard"><span class="k">Best-use guidance</span><span class="v">Compare serious candidates before assignment</span><small class="helper">Use Premium Discovery for important hires where candidate comparison matters. Use standard <code>createJob</code> when you already know the agent or want a simple open posting.</small></div>
-              <div class="premiumMiniCard"><span class="k">Current readiness</span><span class="v" id="premiumHeroWalletReady">Connect wallet</span><small class="helper">Approval posture: <span id="premiumHeroApprovalPosture">Refresh allowances below.</span></small></div>
+              <div class="premiumMiniCard"><span class="k">Why procurement-first</span><span class="v">Merit-first, not first-touch</span><small class="helper">Shortlist + trials + validator scoring are the center of the process.</small></div>
+              <div class="premiumMiniCard"><span class="k">Funding model</span><span class="v" id="premiumHeroExposureHint">Employer funds escrow + discovery budget</span><small class="helper">Participants fund stakes / bonds; employer funds the reserved budget surfaces.</small></div>
+              <div class="premiumMiniCard"><span class="k">Handoff model</span><span class="v">Winner enters SelectedAgentOnly settlement</span><small class="helper">Acceptance and checkpoint continue in AGIJobManagerPrime after designation.</small></div>
+              <div class="premiumMiniCard"><span class="k">Game-theoretic posture</span><span class="v" id="premiumHeroWalletReady">Anti-spam · seriousness staking · paid trials</span><small class="helper">Validator robustness, fallback promotion, and pull-claim resilience protect continuity. <span id="premiumHeroApprovalPosture">Refresh allowances below.</span></small></div>
             </div>
             <div class="premiumExplainCard">
               <strong>How it works</strong>
@@ -1172,9 +1087,9 @@
         <div class="premiumSurfacePanels">
           <section class="premiumSurfacePanel" data-premium-panel="overview" id="premiumOverviewPanel" role="tabpanel" aria-labelledby="premiumTabOverview">
             <div class="premiumOverviewGrid">
-              <div class="premiumExplainCard" id="premiumDiscoveryOverviewWhy"><strong>Why Premium Discovery</strong><ul class="premiumHintList"><li>Run a true candidate selection process before settlement starts.</li><li>Collect committed applications, shortlist finalists, fund trial work, and score finalists with validators.</li><li>Keep every write on a review-first path.</li></ul></div>
+              <div class="premiumExplainCard" id="premiumDiscoveryOverviewWhy"><strong>Why this is the quintessential AGIJobDiscoveryPrime use case</strong><ul class="premiumHintList"><li>This mission is too important for first-touch assignment.</li><li>Sealed commitment deters shallow applications and strategic copying.</li><li>Shortlisting plus paid finalist trials make constitutional design quality legible before assignment.</li><li>Validator scoring adds a civic body before designation.</li><li>ManagerPrime handoff preserves conservative settlement guarantees.</li></ul></div>
               <div class="premiumExplainCard"><strong>When not to use it</strong><ul class="premiumHintList"><li>Skip it when standard <code>createJob</code> is enough.</li><li>Do not use it if you do not need finalist comparison, validator scoring, or committed application discipline.</li></ul></div>
-              <div class="premiumExplainCard"><strong>Recommended defaults</strong><ul class="premiumHintList"><li>Balanced Prime is the recommended default for most searches.</li><li>3 finalists, 3 minimum reveals, 5 maximum reveals, and 40/60 weighting give a strong default posture.</li><li><code>minReputation = 0</code> means inherit the protocol premium threshold; it does not mean no threshold.</li></ul></div>
+              <div class="premiumExplainCard"><strong>Why procurement-firsts</strong><ul class="premiumHintList"><li>Merit-first, not first-touch is the recommended default for most searches.</li><li>3 finalists, 3 minimum reveals, 5 maximum reveals, and 40/60 weighting give a strong default posture.</li><li><code>minReputation = 0</code> means inherit the protocol premium threshold; it does not mean no threshold.</li></ul></div>
               <div class="premiumExplainCard"><strong>How to choose finalists / reveals / weights</strong><ul class="premiumHintList"><li>2 finalists = faster / cheaper.</li><li>3 finalists = recommended default.</li><li>4+ finalists = deeper search / higher stipend cost.</li><li>3 min reveals = default.</li><li>5 min reveals = stronger confidence / more coordination.</li><li>Higher max reveals = more scoring diversity / more budget.</li><li>40/60 = balanced.</li><li>35/65 = leaner / faster.</li><li>30/70 = stronger trial emphasis.</li></ul></div>
               <div class="premiumExplainCard"><strong>Employer-funded vs participant-funded</strong><ul class="premiumHintList"><li>Application stake = anti-spam.</li><li>Finalist stake = seriousness signal.</li><li>Stipend = pay finalists for serious time.</li><li>Validator reward = attract scorers.</li><li>Validator bond = discourage careless scoring.</li><li>Employer funds payout escrow plus procurement budget; participants fund their own stakes and bonds.</li></ul></div>
               <div class="premiumExplainCard"><strong>What happens after winner designation</strong><ul class="premiumHintList"><li>The winner is handed into the linked <code>SelectedAgentOnly</code> settlement flow.</li><li>The selected acceptance window and checkpoint window continue in AGIJobManagerPrime.</li><li><code>claim()</code> uses a pull-payment model for earned balances.</li></ul></div>
@@ -1187,21 +1102,23 @@
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard" id="premiumDiscoveryHowTo">
                   <div class="premiumStepHeader"><div><div class="premiumStepNumber">1</div><h3>Job basics</h3><p class="premiumStepLead">Choose a recommended default first, then set the settlement job spec URI, short on-chain details, payout escrow, and downstream selected-agent duration.</p></div><span class="premiumStepStatus" id="premiumStepStatusBasics" data-state="empty">Empty</span></div>
-                  <div class="premiumQuickChips" style="margin-bottom:12px"><button class="btn" id="premiumDiscoveryUseRecommendedBtn" type="button">Use Balanced Prime</button></div>
+                  <div class="premiumQuickChips" style="margin-bottom:12px"><button class="btn" id="premiumDiscoveryUseRecommendedBtn" type="button">Use Merit-first, not first-touch</button></div>
                   <div class="premiumPresetRow" id="premiumDiscoveryPreset">
-                    <button type="button" class="premiumPresetChip active" data-premium-preset="balanced"><b>Balanced Prime — recommended</b><div class="premiumPresetMeta"><span>Speed: balanced</span><span>Cost posture: balanced</span><span>Assurance posture: balanced</span><span>Finalists: 3</span><span>Min reveals: 3</span><span>Weights: 4000 / 6000</span></div></button>
-                    <button type="button" class="premiumPresetChip" data-premium-preset="fast"><b>Fast / Lean</b><div class="premiumPresetMeta"><span>Speed: faster</span><span>Cost posture: lean</span><span>Assurance posture: lean</span><span>Finalists: 2</span><span>Min reveals: 3</span><span>Weights: 3500 / 6500</span></div></button>
+                    <button type="button" class="premiumPresetChip active" data-premium-preset="balanced"><b>Merit-first, not first-touch — recommended</b><div class="premiumPresetMeta"><span>Canonical article exemplar</span><span>3 finalists · 5 minimum reveals</span><span>35 / 65 weighting</span><span>Governance constitution search</span></div></button>
+                    <button type="button" class="premiumPresetChip" data-premium-preset="fast"><b>Balanced live template</b><div class="premiumPresetMeta"><span>General premium discovery baseline</span><span>3 finalists</span><span>40 / 60 weighting</span><span>Editable after load</span></div></button>
                     <button type="button" class="premiumPresetChip" data-premium-preset="assurance"><b>High Assurance</b><div class="premiumPresetMeta"><span>Speed: slower</span><span>Cost posture: higher</span><span>Assurance posture: higher</span><span>Finalists: 4</span><span>Min reveals: 5</span><span>Weights: 3000 / 7000</span></div></button>
                     <button type="button" class="premiumPresetChip" data-premium-preset="custom"><b>Custom</b><div class="premiumPresetMeta"><span>Keep the same safeguards</span><span>Edit all schedule, selection, and economics fields</span></div></button>
                   </div>
                   <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumDiscoveryImportFromBuilderBtn">Import from current job builder</button><button class="btn" type="button" id="premiumDiscoveryMirrorBuilderBtn">Mirror payout + duration + details</button></div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumDiscoveryLoadExemplarBtnInline">Load the “To Govern Their Own Kind” exemplar</button><button class="btn" type="button" id="premiumDiscoveryLoadBalancedBtn">Load balanced live template</button><button class="btn btn-danger" type="button" id="premiumDiscoveryClearTemplateBtn">Clear template</button><button class="btn" type="button" id="premiumDiscoveryCopySpecBtn">Copy draft spec</button></div>
                   <div class="premiumInputGrid" style="margin-top:12px">
-                    <div class="premiumField"><label for="premiumDiscoveryJobSpecURI">Job Spec URI</label><input id="premiumDiscoveryJobSpecURI" type="text" placeholder="ipfs://... or ens://..."><small>Settlement job spec URI used when the downstream selected-agent job is created.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryJobSpecURI">Job Spec URI</label><input id="premiumDiscoveryJobSpecURI" type="text" placeholder="ipfs://replace-with-govern-their-own-kind-spec"><small>Clearly marked placeholder. Publish the structured draft below to IPFS or another URI target before launch.</small></div>
                     <div class="premiumField"><label for="premiumDiscoveryDetails">Details</label><input id="premiumDiscoveryDetails" type="text" placeholder="Short on-chain summary"><small>Keep details short; rich description belongs in metadata.</small></div>
-                    <div class="premiumField"><label for="premiumDiscoveryPayout">Payout escrow ($AGIALPHA)</label><input id="premiumDiscoveryPayout" type="number" min="0" step="0.0001" placeholder="e.g. 1000"><small>Escrowed up front in AGIJobManagerPrime.</small></div>
-                    <div class="premiumField"><label for="premiumDiscoveryDurationDays">Settlement duration</label><input id="premiumDiscoveryDurationDays" type="number" min="0.25" step="0.25" value="7"><small>Downstream selected-agent settlement duration.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryPayout">Payout escrow ($AGIALPHA)</label><input id="premiumDiscoveryPayout" type="number" min="0" step="0.0001" placeholder="Illustrative and editable"><small>Deliberate field. Use recommendation chips below or enter your own amount.</small></div>
+                    <div class="premiumField"><label for="premiumDiscoveryDurationDays">Settlement duration</label><input id="premiumDiscoveryDurationDays" type="number" min="0.25" step="0.25" value="45"><small>Recommended exemplar duration is 45 days = <span id="premiumDurationSecondsMirror">3,888,000</span> seconds.</small></div>
                   </div>
-                  <div class="premiumQuickChips" style="margin-top:12px"><button type="button" class="premiumDurationChip btn" data-premium-duration-days="3">3 days</button><button type="button" class="premiumDurationChip btn active" data-premium-duration-days="7">7 days</button><button type="button" class="premiumDurationChip btn" data-premium-duration-days="14">14 days</button><button type="button" class="premiumMicroBtn btn" id="premiumDiscoveryUseGeneratedUriBtn">Use generated URI</button><button type="button" class="premiumMicroBtn btn" id="premiumDiscoveryAdvancedMetadataBtn">Open advanced metadata builder</button></div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button type="button" class="premiumDurationChip btn active" data-premium-duration-days="45">45 days</button><button type="button" class="premiumPayoutChip btn" data-premium-payout="50000">50,000 AGIALPHA</button><button type="button" class="premiumPayoutChip btn" data-premium-payout="100000">100,000 AGIALPHA</button><button type="button" class="premiumPayoutChip btn" data-premium-payout="250000">250,000 AGIALPHA</button><button type="button" class="premiumMicroBtn btn" id="premiumDiscoveryUseGeneratedUriBtn">Use generated URI</button><button type="button" class="premiumMicroBtn btn" id="premiumDiscoveryAdvancedMetadataBtn">Open advanced metadata builder</button></div>
+                  <div class="premiumInputGrid" style="margin-top:12px"><div class="premiumField"><label for="premiumDiscoveryMissionBrief">Sample mission brief draft</label><textarea id="premiumDiscoveryMissionBrief"></textarea></div><div class="premiumField"><label for="premiumDiscoverySpecTemplate">Structured publishable spec draft</label><textarea id="premiumDiscoverySpecTemplate"></textarea></div></div>
                 </div>
 
                 <div class="premiumStepCard">
@@ -1265,7 +1182,7 @@
               </div>
               <aside class="premiumStickyRail">
                 <div class="premiumAsideCard" id="premiumDiscoveryBudgetPreview">
-                  <div class="subtleTitle">Recommended default snapshot</div>
+                  <div class="subtleTitle">Why procurement-first snapshot</div>
                   <div class="premiumMetricGrid">
                     <div class="premiumMetric"><span class="k">Payout escrow</span><span class="v" id="premiumDiscoveryPayoutEscrowValue">—</span></div>
                     <div class="premiumMetric"><span class="k">Procurement budget</span><span class="v" id="premiumDiscoveryBudgetValue">—</span></div>
@@ -1308,6 +1225,7 @@
 
           <section class="premiumSurfacePanel" data-premium-panel="attach" id="premiumAttachSection" role="tabpanel" aria-labelledby="premiumTabAttach">
             <div id="premiumAttachPanel"></div>
+            <div class="premiumExplainCard"><strong>Secondary path for this use case</strong><div class="helper">This article’s canonical flow is atomic premium create. Attach procurement is for an already-created unassigned <code>SelectedAgentOnly</code> job and funds discovery only, not the original payout escrow.</div></div>
             <div class="premiumAttachTopGrid">
               <div class="premiumField"><label for="premiumAttachJobId">Existing job id</label><input id="premiumAttachJobId" type="number" min="0" placeholder="e.g. 12"></div>
               <div class="premiumField"><label for="premiumAttachEligibility">Eligibility check</label><button class="btn" type="button" id="premiumAttachInspectJobBtn">Inspect eligibility</button></div>
@@ -1369,7 +1287,7 @@
             <div class="premiumOpsGrid">
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><h3>Procurement control tower</h3><p class="premiumStepLead">Resolve by procurement id or job id, translate next-action codes into plain English, inspect live participant lists, and route review-first operational writes.</p></div></div>
+                  <div class="premiumStepHeader"><div><h3>Procurement control tower</h3><p class="premiumStepLead">Resolve by procurement id or job id, translate next-action codes into plain English, inspect live participant lists, and route review-first operational writes. Before live data is loaded, this surface teaches the exemplar lifecycle without mixing example cast with authoritative on-chain data.</p></div></div>
                   <div class="premiumInputGrid three">
                     <div class="premiumField"><label for="premiumInspectorProcurementId">Procurement id</label><input id="premiumInspectorProcurementId" type="number" min="0" placeholder="e.g. 7"></div>
                     <div class="premiumField"><label for="premiumInspectorJobId">Linked job id</label><input id="premiumInspectorJobId" type="number" min="0" placeholder="e.g. 12"></div>
@@ -1381,7 +1299,7 @@
                     <div class="premiumInspectorCard"><span class="k">Next action</span><span class="v" id="premiumInspectorNextActionReadable">—</span><span id="premiumInspectorNextAction">—</span><small id="premiumInspectorNextActionMeta">Load a procurement to translate live state.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Who should act</span><span class="v" id="premiumInspectorActor">—</span><small id="premiumInspectorActionClass">—</small></div>
                     <div class="premiumInspectorCard"><span class="k">Wait state vs action state</span><span class="v" id="premiumInspectorWaitState">—</span><small id="premiumInspectorAdvanceHint">—</small></div>
-                    <div class="premiumInspectorCard"><span class="k">Shortlist / winner / fallback</span><span class="v" id="premiumInspectorFinalizable">—</span><small id="premiumInspectorWalletPosture">Connect wallet</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Shortlist / winner / fallback</span><span class="v" id="premiumInspectorFinalizable">—</span><small id="premiumInspectorWalletPosture">Anti-spam · seriousness staking · paid trials</small></div>
                     <div class="premiumInspectorCard"><span class="k">Wallet claimable balance</span><span class="v" id="premiumInspectorWalletClaimable">—</span><small>Current connected wallet posture.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Discovery budget posture</span><span class="v" id="premiumInspectorBudgetPosture">—</span><small id="premiumInspectorBudgetMeta">Budget against max reveal slots.</small></div>
                   </div>
@@ -1423,9 +1341,9 @@
             <div class="premiumClaimsGrid">
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><h3>Claims & participant actions</h3><p class="premiumStepLead">Claimable balances, penalty preview, discovery stats, optional application inspection, and participant actions now live in one operational surface.</p></div></div>
+                  <div class="premiumStepHeader"><div><h3>Claims & participant actions</h3><p class="premiumStepLead">Claimable balances, penalty preview, discovery stats, optional application inspection, and participant actions now live in one operational surface. Use it to understand how a candidate or validator participates in this illustrative exemplar: commitment, reveal, finalist acceptance, trial submission, validator scoring, then claims.</p></div></div>
                   <div class="premiumInspectorStatusGrid">
-                    <div class="premiumInspectorCard"><span class="k">Claimable balances</span><span class="v" id="premiumDiscoveryClaimable">—</span><small id="premiumClaimableHint">Connect wallet to load.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Claimable balances</span><span class="v" id="premiumDiscoveryClaimable">—</span><small id="premiumClaimableHint">Anti-spam · seriousness staking · paid trials to load.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Discovery penalty preview</span><span class="v" id="premiumDiscoveryPenalty">—</span><small id="premiumPenaltyPreviewHint">Discovery default risk on current wallet.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Discovery stats for current wallet</span><span class="v" id="premiumDiscoveryStats">—</span><small id="premiumStatsUnrevealed">Unrevealed apps pending read.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Finalist defaults</span><span class="v" id="premiumStatsFinalistDefaults">—</span><small id="premiumStatsLastDefault">—</small></div>
@@ -1569,11 +1487,11 @@
         <div class="row" style="align-items:flex-start;gap:16px">
           <div style="flex:1;min-width:280px">
             <div class="eyebrow">Mission Control</div>
-            <div class="missionTitle" id="missionNextActionTitle">Connect wallet</div>
+            <div class="missionTitle" id="missionNextActionTitle">Anti-spam · seriousness staking · paid trials</div>
             <div class="helper" id="missionNextActionBody">Connect your Ethereum mainnet wallet to unlock live protocol state, role verification, job posting, validation, and settlement flows.</div>
             <div class="missionPill" id="missionPosturePill">Write access locked</div>
             <div class="heroActions">
-              <button class="btn btn-primary" id="missionPrimaryBtn">Connect wallet</button>
+              <button class="btn btn-primary" id="missionPrimaryBtn">Anti-spam · seriousness staking · paid trials</button>
               <button class="btn" id="missionSecondaryBtn">Open create job</button>
               <button class="btn" id="openCommandPaletteBtn">Command Palette</button>
             </div>
@@ -3131,10 +3049,10 @@ Evaluation methodology"></textarea>
       primeVaultRender();
       if(el('generateApplicationSaltBtn')) el('generateApplicationSaltBtn').onclick = ()=>{ el('procurementCommitSalt').value = randomSaltHex(); };
       if(el('generateScoreSaltBtn')) el('generateScoreSaltBtn').onclick = ()=>{ el('scoreCommitSalt').value = randomSaltHex(); };
-      if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(!userAccount){ setToast('Connect the wallet that will later reveal this application before computing the commitment.', 'warn'); } if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Connect wallet, then enter procurement id, application URI, and salt.'; };
-      if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(!userAccount || !(el('scoreCommitFinalist')?.value || '').trim()){ setToast('Connect wallet and enter the finalist address before computing a score commitment.', 'warn'); } if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
-      if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Connect wallet before saving an application commitment notebook entry.', 'warn'); return; } const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
-      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Connect wallet before saving a validator score commitment notebook entry.', 'warn'); return; } const finalist = String(el('scoreCommitFinalist')?.value || '').trim(); if(!finalist){ setToast('Enter the finalist address before saving a validator score commitment.', 'warn'); return; } const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${finalist.toLowerCase()}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist, score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
+      if(el('computeApplicationCommitBtn')) el('computeApplicationCommitBtn').onclick = ()=>{ const out = primeComputeApplicationCommitment(); if(!userAccount){ setToast('Connect the wallet that will later reveal this application before computing the commitment.', 'warn'); } if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = out || 'Anti-spam · seriousness staking · paid trials, then enter procurement id, application URI, and salt.'; };
+      if(el('computeScoreCommitBtn')) el('computeScoreCommitBtn').onclick = ()=>{ const out = primeComputeScoreCommitment(); if(!userAccount || !(el('scoreCommitFinalist')?.value || '').trim()){ setToast('Anti-spam · seriousness staking · paid trials and enter the finalist address before computing a score commitment.', 'warn'); } if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = out || ''; };
+      if(el('saveApplicationCommitBtn')) el('saveApplicationCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Anti-spam · seriousness staking · paid trials before saving an application commitment notebook entry.', 'warn'); return; } const commitment = primeComputeApplicationCommitment(); const pid = String(el('procurementCommitId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`app:${pid}:${userAccount||'anon'}`] = {kind:'application', procurementId:pid, wallet:userAccount||'', uri:String(el('procurementApplicationUri')?.value||''), salt:String(el('procurementCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = commitment || 'Draft saved without computed commitment'; };
+      if(el('saveScoreCommitBtn')) el('saveScoreCommitBtn').onclick = ()=>{ if(!userAccount){ setToast('Anti-spam · seriousness staking · paid trials before saving a validator score commitment notebook entry.', 'warn'); return; } const finalist = String(el('scoreCommitFinalist')?.value || '').trim(); if(!finalist){ setToast('Enter the finalist address before saving a validator score commitment.', 'warn'); return; } const commitment = primeComputeScoreCommitment(); const pid = String(el('scoreCommitProcurementId')?.value || '').trim(); if(!pid) return; const data = primeVaultLoad(); data[`score:${pid}:${finalist.toLowerCase()}:${userAccount||'anon'}`] = {kind:'score', procurementId:pid, wallet:userAccount||'', finalist, score:String(el('scoreCommitValue')?.value||''), salt:String(el('scoreCommitSalt')?.value||''), commitment}; primeVaultSave(data); if(el('scoreCommitOutputField')) el('scoreCommitOutputField').value = commitment || ''; };
       if(el('clearApplicationCommitBtn')) el('clearApplicationCommitBtn').onclick = ()=>{ ['procurementCommitId','procurementApplicationUri','procurementCommitSalt'].forEach(id=>{ if(el(id)) el(id).value=''; }); if(el('applicationCommitmentOutput')) el('applicationCommitmentOutput').textContent = '—'; };
       if(el('clearScoreCommitBtn')) el('clearScoreCommitBtn').onclick = ()=>{ ['scoreCommitProcurementId','scoreCommitFinalist','scoreCommitValue','scoreCommitSalt','scoreCommitOutputField'].forEach(id=>{ if(el(id)) el(id).value=''; }); };
       setTimeout(primeRefreshRegistryBindings, 1200);
@@ -3224,7 +3142,7 @@ Evaluation methodology"></textarea>
       if(el('createJobReadinessNote')) el('createJobReadinessNote').textContent = createMsg;
       const completionMsg = completionAssistantState.jobId == null
         ? 'Open an assigned job and click Request completion to use the assistant.'
-        : (!userAccount ? 'Connect wallet to submit completion.' : (!isMainnet ? 'Switch to Ethereum Mainnet to submit completion.' : (!hasAcceptedTerms ? 'Accept the Terms & Conditions before submitting completion.' : 'Paste a bare CID, ipfs:// URI, or gateway URL. The assistant will canonicalize it, inspect metadata, and preview NFT readiness.')));
+        : (!userAccount ? 'Anti-spam · seriousness staking · paid trials to submit completion.' : (!isMainnet ? 'Switch to Ethereum Mainnet to submit completion.' : (!hasAcceptedTerms ? 'Accept the Terms & Conditions before submitting completion.' : 'Paste a bare CID, ipfs:// URI, or gateway URL. The assistant will canonicalize it, inspect metadata, and preview NFT readiness.')));
       if(el('completionAssistantHint')) el('completionAssistantHint').textContent = completionMsg;
       updateMissionControl();
     }
@@ -4083,10 +4001,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('missionValidatorStatus')) el('missionValidatorStatus').textContent = verified.club ? `${verified.club}${verified.clubAlpha ? ' · alpha' : ''}` : 'Unverified';
       if(el('missionWriteStatus')) el('missionWriteStatus').textContent = isMainnet && hasAcceptedTerms ? 'Unlocked' : 'Locked';
 
-      let title = 'Connect wallet';
+      let title = 'Anti-spam · seriousness staking · paid trials';
       let body = 'Connect your Ethereum mainnet wallet to unlock live protocol state, role verification, job posting, validation, and settlement flows.';
       let pill = 'Write access locked';
-      let primary = {label:'Connect wallet', action:'connect'};
+      let primary = {label:'Anti-spam · seriousness staking · paid trials', action:'connect'};
       let secondary = {label:'Command Palette', action:'command'};
       const bridgedBal = parseDisplayedNumber(el('bridgeAcceptedBalance')?.textContent || '0');
       const p = APP_STATE.identity?.preview;
@@ -4120,7 +4038,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     }
     function buildCommandPaletteItems(){
       const items = [
-        !userAccount ? {title:'Connect wallet', subtitle:'Unlock live mainnet data and contract actions.', tags:'wallet connect mainnet', action:'connect'} : null,
+        !userAccount ? {title:'Anti-spam · seriousness staking · paid trials', subtitle:'Unlock live mainnet data and contract actions.', tags:'wallet connect mainnet', action:'connect'} : null,
         userAccount && !isMainnet ? {title:'Switch to Ethereum Mainnet', subtitle:'Leave read-only mode and unlock write actions.', tags:'network mainnet switch', action:'switch-mainnet'} : null,
         {title:'Refresh live protocol data', subtitle:'Reload balances, jobs, parameters, ENS previews, and NFT data.', tags:'refresh reload sync', action:'refresh'},
         {title:'Open create job section', subtitle:'Jump directly to the employer workflow and metadata builder.', tags:'create employer job builder', action:'create'},
@@ -4843,7 +4761,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const blocked = !userAccount || !isMainnet || !hasAcceptedTerms || !local.ok || !APP_STATE.registrar.parentUsable || badRecipient || !isAvailable || !isContractValid;
       if(el('mintAlphaAgentBtn')) el('mintAlphaAgentBtn').disabled = !!blocked;
       if(el('mintAlphaStatus')){
-        if(!userAccount) el('mintAlphaStatus').textContent = 'Connect wallet to mint.';
+        if(!userAccount) el('mintAlphaStatus').textContent = 'Anti-spam · seriousness staking · paid trials to mint.';
         else if(!isMainnet) el('mintAlphaStatus').textContent = 'Switch to Ethereum mainnet.';
         else if(!hasAcceptedTerms) el('mintAlphaStatus').textContent = 'Accept terms to unlock writes.';
         else if(!APP_STATE.registrar.parentUsable) el('mintAlphaStatus').textContent = 'Parent not usable right now.';
@@ -4931,7 +4849,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return p;
     }
     function identityWriteLockedReason(preview){
-      if(!userAccount) return 'Connect wallet to continue.';
+      if(!userAccount) return 'Anti-spam · seriousness staking · paid trials to continue.';
       if(!isMainnet) return 'Switch to Ethereum mainnet.';
       if(!hasAcceptedTerms) return 'Accept terms to unlock writes.';
       if(!preview) return 'Preview unavailable.';
@@ -8065,12 +7983,38 @@ function normalizeIpfsToHttp(uri){
 
   <script id="v39-premium-discovery">
 (function(){
+      const PREMIUM_EXEMPLAR = {detailsDraft:'Premium governance-design procurement for recursive AI self-governance architecture; shortlist finalists, fund trials, score with validators, and hand the designated winner into SelectedAgentOnly settlement.', missionBrief:`Mission
+Design the architecture for recursive self-governance of meta-agents.
+
+Objective
+Preserve autonomy, enable collective decision-making, support recursive amendment / upgrade, and keep implementation legible and enforceable.
+
+Required deliverables
+Governance constitution, amendment process, validator role design, fallback logic, and implementation notes.
+
+Trial task
+Submit a paid finalist memo that models one amendment cycle and one conflict-resolution cycle.
+
+Evaluation criteria
+Clarity, enforceability, recursive stability, amendment safety, adversarial resilience, and implementation legibility.
+
+Governance principles
+Autonomy, transparency, accountable amendment, bounded power, resilient fallback routing.
+
+Handoff expectations
+Winner enters SelectedAgentOnly settlement and continues through ManagerPrime checkpoints.`, specTemplate:`Mission: Design the architecture for recursive self-governance of meta-agents
+Objective: Produce a constitutional, upgradeable governance architecture for meta-agent systems.
+Required deliverables: governance constitution, amendment process, validator role design, fallback and dispute logic, implementation notes.
+Trial task: finalist memo + trial artifact showing one amendment cycle and one crisis response flow.
+Evaluation criteria: clarity, incentive alignment, validator robustness, amendment safety, operational legibility.
+Governance principles: preserve autonomy, support collective decision-making, enable recursive amendment, keep enforcement legible.
+Handoff expectations: designated winner transitions into SelectedAgentOnly settlement and continues execution in AGIJobManagerPrime.`};
       const PREMIUM_PRESETS = {
-        balanced:{name:'Balanced Prime', note:'Recommended for most premium searches.', schedule:{commit:72,reveal:24,accept:48,trial:168,scoreCommit:24,scoreReveal:24,selected:48,checkpoint:72}, counts:{finalists:3,minReveal:3,maxReveal:5}, weights:{historical:4000,trial:6000}, economicsBps:{application:25, finalistStake:100, stipend:100, validatorReward:10, validatorBond:25}, posture:'balanced'},
-        fast:{name:'Fast / Lean', note:'Lower cost, less competition depth.', schedule:{commit:36,reveal:18,accept:24,trial:96,scoreCommit:18,scoreReveal:18,selected:24,checkpoint:48}, counts:{finalists:2,minReveal:3,maxReveal:4}, weights:{historical:3500,trial:6500}, economicsBps:{application:20, finalistStake:75, stipend:60, validatorReward:8, validatorBond:15}, posture:'lean'},
-        assurance:{name:'High Assurance', note:'Higher cost, stronger selection confidence.', schedule:{commit:96,reveal:36,accept:72,trial:240,scoreCommit:36,scoreReveal:36,selected:72,checkpoint:96}, counts:{finalists:4,minReveal:5,maxReveal:8}, weights:{historical:3000,trial:7000}, economicsBps:{application:30, finalistStake:125, stipend:125, validatorReward:12, validatorBond:30}, posture:'high-assurance'}
+        govern:{name:'To Govern Their Own Kind — governance constitution search', note:'Canonical governance-design article exemplar.', schedule:{commit:72,reveal:24,accept:48,trial:168,scoreCommit:24,scoreReveal:24,selected:72,checkpoint:168}, counts:{finalists:3,minReveal:5,maxReveal:7}, weights:{historical:3500,trial:6500}, economicsBps:{application:30, finalistStake:125, stipend:150, validatorReward:12, validatorBond:35}, posture:'governance-signature'},
+        balanced:{name:'Balanced live template', note:'General premium discovery baseline.', schedule:{commit:72,reveal:24,accept:48,trial:168,scoreCommit:24,scoreReveal:24,selected:48,checkpoint:72}, counts:{finalists:3,minReveal:3,maxReveal:5}, weights:{historical:4000,trial:6000}, economicsBps:{application:25, finalistStake:100, stipend:100, validatorReward:10, validatorBond:25}, posture:'balanced'},
+        custom:{name:'Custom', note:'Editable premium procurement posture.', schedule:{commit:72,reveal:24,accept:48,trial:168,scoreCommit:24,scoreReveal:24,selected:72,checkpoint:168}, counts:{finalists:3,minReveal:5,maxReveal:7}, weights:{historical:3500,trial:6500}, economicsBps:{application:30, finalistStake:125, stipend:150, validatorReward:12, validatorBond:35}, posture:'custom'}
       };
-      const premiumState = {preset:'balanced', baseMode:'now', rawMode:false, manualEconomics:false, exactDurationSeconds:null};
+      const premiumState = {preset:'govern', baseMode:'now', rawMode:false, manualEconomics:false, exactDurationSeconds:3888000};
       const premiumIds = ['premiumDiscoveryJobSpecURI','premiumDiscoveryDetails','premiumDiscoveryPayout','premiumDiscoveryDurationDays','premiumDiscoveryBaseTime','premiumDiscoveryCommitHours','premiumDiscoveryRevealHours','premiumDiscoveryFinalistAcceptHours','premiumDiscoveryTrialHours','premiumDiscoveryScoreCommitHours','premiumDiscoveryScoreRevealHours','premiumDiscoverySelectedAcceptanceHours','premiumDiscoveryCheckpointHours','premiumDiscoveryCommitDeadline','premiumDiscoveryRevealDeadline','premiumDiscoveryFinalistAcceptDeadline','premiumDiscoveryTrialDeadline','premiumDiscoveryScoreCommitDeadline','premiumDiscoveryScoreRevealDeadline','premiumDiscoveryFinalistCount','premiumDiscoveryMinValidatorReveals','premiumDiscoveryMaxValidatorRevealsPerFinalist','premiumDiscoveryHistoricalWeightBps','premiumDiscoveryTrialWeightBps','premiumDiscoveryMinReputation','premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'];
       function pel(id){ return document.getElementById(id); }
       function premiumRoundUnits(raw, bps){ return raw <= 0n ? 0n : (raw * BigInt(bps)) / 10000n; }
@@ -8135,6 +8079,16 @@ function normalizeIpfsToHttp(uri){
         [['premiumDiscoveryCommitDeadline',commitDeadline],['premiumDiscoveryRevealDeadline',revealDeadline],['premiumDiscoveryFinalistAcceptDeadline',finalistAcceptDeadline],['premiumDiscoveryTrialDeadline',trialDeadline],['premiumDiscoveryScoreCommitDeadline',scoreCommitDeadline],['premiumDiscoveryScoreRevealDeadline',scoreRevealDeadline]].forEach(([id,v])=>{ if(pel(id)) pel(id).value = String(v); });
         return {base, commitDeadline, revealDeadline, finalistAcceptDeadline, trialDeadline, scoreCommitDeadline, scoreRevealDeadline};
       }
+      function premiumLoadExemplar(){
+        premiumUsePreset('govern', true);
+        if(pel('premiumDiscoveryJobSpecURI')) pel('premiumDiscoveryJobSpecURI').value = 'ipfs://replace-with-govern-their-own-kind-spec';
+        if(pel('premiumDiscoveryDetails')) pel('premiumDiscoveryDetails').value = PREMIUM_EXEMPLAR.detailsDraft;
+        if(pel('premiumDiscoveryMissionBrief')) pel('premiumDiscoveryMissionBrief').value = PREMIUM_EXEMPLAR.missionBrief;
+        if(pel('premiumDiscoverySpecTemplate')) pel('premiumDiscoverySpecTemplate').value = PREMIUM_EXEMPLAR.specTemplate;
+        if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = '45';
+        premiumState.exactDurationSeconds = 3888000;
+        premiumRefresh();
+      }
       function premiumStruct(){
         const payout = premiumReadAmount('premiumDiscoveryPayout');
         const schedule = premiumSchedule();
@@ -8174,7 +8128,7 @@ function normalizeIpfsToHttp(uri){
         if(!(payout > 0n)) errs.push('Payout must be greater than zero.');
         if(!(duration > 0n)) errs.push('Duration must be greater than zero.');
         if(!uri || !isValidUriLoose(uri)) errs.push('Provide a valid Job Spec URI (ipfs://, https://, http://, or ens://).');
-        if(!userAccount) errs.push('Connect wallet before creating a premium discovery job.');
+        if(!userAccount) errs.push('Anti-spam · seriousness staking · paid trials before creating a premium discovery job.');
         if(!isMainnet) errs.push('Switch to Ethereum Mainnet before creating a premium discovery job.');
         if(!hasAcceptedTerms) errs.push('Accept the Terms & Conditions before creating a premium discovery job.');
         checks.push({ok:!!userAccount,text:userAccount?'Wallet connected.':'Wallet not connected.'});
@@ -8188,10 +8142,10 @@ function normalizeIpfsToHttp(uri){
         const write = String(document.getElementById('missionWriteStatus')?.textContent || 'Locked').trim();
         const readiness = [wallet, network, write].filter(Boolean).join(' · ');
         if(pel('premiumHeroWalletReady')) pel('premiumHeroWalletReady').textContent = readiness || 'Not connected';
-        const managerState = String(meta.managerState ?? pel('premiumManagerApprovalState')?.textContent || 'Unavailable').trim();
-        const discoveryState = String(meta.discoveryState ?? pel('premiumDiscoveryApprovalState')?.textContent || 'Unavailable').trim();
-        const managerAllowance = String(meta.managerAllowance ?? pel('premiumDiscoveryManagerAllowance')?.textContent || '').trim();
-        const discoveryAllowance = String(meta.discoveryAllowance ?? pel('premiumDiscoveryDiscoveryAllowance')?.textContent || '').trim();
+        const managerState = String((meta.managerState ?? pel('premiumManagerApprovalState')?.textContent) || 'Unavailable').trim();
+        const discoveryState = String((meta.discoveryState ?? pel('premiumDiscoveryApprovalState')?.textContent) || 'Unavailable').trim();
+        const managerAllowance = String((meta.managerAllowance ?? pel('premiumDiscoveryManagerAllowance')?.textContent) || '').trim();
+        const discoveryAllowance = String((meta.discoveryAllowance ?? pel('premiumDiscoveryDiscoveryAllowance')?.textContent) || '').trim();
         if(pel('premiumHeroApprovalPosture')){
           pel('premiumHeroApprovalPosture').textContent = `Manager ${managerState.toLowerCase()} · Discovery ${discoveryState.toLowerCase()}`;
           pel('premiumHeroApprovalPosture').title = [managerAllowance, discoveryAllowance].filter(Boolean).join(' | ') || 'Refresh allowances below.';
@@ -8212,8 +8166,8 @@ function normalizeIpfsToHttp(uri){
         const formValid = validation.errors.length === 0;
         if(!userAccount || !agiToken){
           const validationHint = !formValid && validation.errors.length ? ` Fix validation first: ${validation.errors[0]}` : '';
-          if(managerNode) managerNode.textContent = `Connect wallet on mainnet to read manager allowance.${validationHint}`;
-          if(discoveryNode) discoveryNode.textContent = `Connect wallet on mainnet to read discovery allowance.${validationHint}`;
+          if(managerNode) managerNode.textContent = `Anti-spam · seriousness staking · paid trials on mainnet to read manager allowance.${validationHint}`;
+          if(discoveryNode) discoveryNode.textContent = `Anti-spam · seriousness staking · paid trials on mainnet to read discovery allowance.${validationHint}`;
           setApprovalState(managerStateNode, 'Unavailable', 'bad');
           setApprovalState(discoveryStateNode, 'Unavailable', 'bad');
           premiumSyncHeroSummary({
@@ -8311,7 +8265,7 @@ function normalizeIpfsToHttp(uri){
         const appStakeDisplay = Number(pel('premiumDiscoveryApplicationStake')?.value||0);
         const checkpointHours = Number(pel('premiumDiscoveryCheckpointHours')?.value||0);
         const weightSplit = `${Math.round(Number(struct.proc.historicalWeightBps||0)/100)} / ${Math.round(Number(struct.proc.trialWeightBps||0)/100)}`;
-        const applicationStakePosture = appStakeDisplay <= 0 ? 'disabled' : appStakeDisplay < 0.05 ? 'low-friction' : appStakeDisplay < 0.2 ? 'medium-friction' : 'high-friction';
+        const applicationStakePosture = appStakeDisplay <= 0 ? 'disabled' : appStakeDisplay < 100 ? 'anti-spam light' : appStakeDisplay < 1000 ? 'serious commitment' : 'high seriousness';
         const rows = [
           ['Commit opens', formatDateTime(schedule.base)],
           ['Commit closes', formatDateTime(struct.proc.commitDeadline)],
@@ -8336,6 +8290,7 @@ function normalizeIpfsToHttp(uri){
         if(pel('premiumDiscoveryWeightSplit')) pel('premiumDiscoveryWeightSplit').textContent = `${weightSplit} historical/trial`;
         if(pel('premiumDiscoveryParticipationPosture')) pel('premiumDiscoveryParticipationPosture').textContent = applicationStakePosture;
         if(pel('premiumDiscoveryCheckpointPosture')) pel('premiumDiscoveryCheckpointPosture').textContent = checkpointHours > 0 ? 'active' : 'disabled';
+        if(pel('premiumDurationSecondsMirror')) pel('premiumDurationSecondsMirror').textContent = Number(premiumDurationSeconds()).toLocaleString();
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure)}, job:struct.job, proc:struct.proc}, null, 2);
         premiumSyncHeroSummary();
         const validation = premiumValidation(struct);
@@ -8370,14 +8325,22 @@ function normalizeIpfsToHttp(uri){
       }
       function premiumInit(){
         if(!pel('premiumDiscoverySection')) return;
-        premiumUsePreset('balanced', false);
+        premiumUsePreset('govern', false);
         premiumApplyRecommendedEconomics();
         premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(id === 'premiumDiscoveryDurationDays') premiumState.exactDurationSeconds = null; if(id === 'premiumDiscoveryPayout' && !premiumState.manualEconomics && premiumState.preset !== 'custom') premiumApplyRecommendedEconomics(); if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; premiumRefresh(); }); });
         document.querySelectorAll('[data-premium-preset]').forEach(btn=>btn.addEventListener('click', ()=>premiumUsePreset(btn.dataset.premiumPreset, true)));
         document.querySelectorAll('[data-premium-duration-days]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.exactDurationSeconds = null; if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = btn.dataset.premiumDurationDays; document.querySelectorAll('[data-premium-duration-days]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
         document.querySelectorAll('[data-premium-base-mode]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.baseMode = btn.dataset.premiumBaseMode; document.querySelectorAll('[data-premium-base-mode]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
         pel('premiumDiscoveryRawToggle')?.addEventListener('click', ()=>{ premiumState.rawMode = !premiumState.rawMode; pel('premiumDiscoveryRawTimes').style.display = premiumState.rawMode ? 'grid' : 'none'; pel('premiumDiscoveryRawToggle').classList.toggle('active', premiumState.rawMode); premiumRefresh(); });
-        pel('premiumDiscoveryUseRecommendedBtn')?.addEventListener('click', ()=>premiumUsePreset('balanced', true));
+        pel('premiumDiscoveryUseRecommendedBtn')?.addEventListener('click', ()=>premiumLoadExemplar());
+        pel('premiumDiscoveryLoadExemplarBtn')?.addEventListener('click', ()=>premiumLoadExemplar());
+        pel('premiumDiscoveryLoadExemplarBtnInline')?.addEventListener('click', ()=>premiumLoadExemplar());
+        pel('premiumDiscoveryLoadBalancedBtn')?.addEventListener('click', ()=>premiumUsePreset('balanced', true));
+        pel('premiumDiscoveryClearTemplateBtn')?.addEventListener('click', ()=>{ ['premiumDiscoveryJobSpecURI','premiumDiscoveryDetails','premiumDiscoveryPayout','premiumDiscoveryMissionBrief','premiumDiscoverySpecTemplate'].forEach(id=>{ if(pel(id)) pel(id).value=''; }); premiumState.exactDurationSeconds=null; premiumRefresh(); });
+        pel('premiumDiscoveryCopySpecBtn')?.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(pel('premiumDiscoverySpecTemplate')?.value || '')); setToast('Draft spec copied.', 'ok'); }catch(e){ setToast('Copy failed.', 'warn'); } });
+        pel('premiumDiscoveryBrowseJobsBtn')?.addEventListener('click', ()=>document.getElementById('jobsSection')?.scrollIntoView({behavior:'smooth', block:'start'}));
+        pel('premiumDiscoveryOpenLifecycleBtn')?.addEventListener('click', ()=>document.getElementById('premiumDiscoverySection')?.scrollIntoView({behavior:'smooth', block:'start'}));
+        document.querySelectorAll('[data-premium-payout]').forEach(btn=>btn.addEventListener('click', ()=>{ if(pel('premiumDiscoveryPayout')) pel('premiumDiscoveryPayout').value = btn.dataset.premiumPayout; if(!premiumState.manualEconomics) premiumApplyRecommendedEconomics(); premiumRefresh(); }));
         pel('premiumDiscoveryImportFromBuilderBtn')?.addEventListener('click', ()=>premiumImportFromBuilder(false));
         pel('premiumDiscoveryMirrorBuilderBtn')?.addEventListener('click', ()=>premiumImportFromBuilder(true));
         pel('premiumDiscoveryUseGeneratedUriBtn')?.addEventListener('click', ()=>{ if(pel('premiumDiscoveryJobSpecURI')) pel('premiumDiscoveryJobSpecURI').value = String(lastUploadedMetadataURI || document.getElementById('generatedSpecURI')?.textContent || '').trim(); premiumRefresh(); });
@@ -8406,7 +8369,7 @@ function normalizeIpfsToHttp(uri){
           if(action === 'premium-open-inspector') { if(setPanel) setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
           if(action === 'premium-load-procurement') { if(setPanel) setPanel('inspect'); return loadProcurement(); }
           if(action === 'premium-claim-discovery') { if(setPanel) setPanel('claims'); return reviewClaim(); }
-          if(action === 'premium-recommended') return premiumUsePreset('balanced', true);
+          if(action === 'premium-recommended') return premiumUsePreset('govern', true);
           if(action === 'premium-fast') return premiumUsePreset('fast', true);
           if(action === 'premium-assurance') return premiumUsePreset('assurance', true);
           if(action === 'premium-import') return premiumImportFromBuilder(false);
@@ -8420,10 +8383,10 @@ function normalizeIpfsToHttp(uri){
             const extra = [
               {title:'Open Premium Discovery', subtitle:'Jump to the flagship premium discovery composer.', tags:'premium discovery flagship create', action:'premium'},
               {title:'Open Discovery Create', subtitle:'Jump to the create premium job workbench.', tags:'premium discovery create', action:'premium-open-create'},
-              {title:'Open Attach Procurement', subtitle:'Jump to attachProcurementToExistingJob for SelectedAgentOnly jobs.', tags:'premium discovery attach procurement', action:'premium-open-attach'},
-              {title:'Open Procurement Inspector', subtitle:'Inspect a procurement by procurementId or jobId.', tags:'premium discovery inspector', action:'premium-open-inspector'},
-              {title:'Apply Balanced Prime preset', subtitle:'Load Balanced Prime scheduling and economics recommendations.', tags:'premium recommended balanced defaults', action:'premium-recommended'},
-              {title:'Apply Fast / Lean preset', subtitle:'Load Fast / Lean discovery defaults.', tags:'premium fast lean preset', action:'premium-fast'},
+              {title:'Open Open create builder', subtitle:'Jump to attachProcurementToExistingJob for SelectedAgentOnly jobs.', tags:'premium discovery attach procurement', action:'premium-open-attach'},
+              {title:'Open lifecycle map', subtitle:'Inspect a procurement by procurementId or jobId.', tags:'premium discovery inspector', action:'premium-open-inspector'},
+              {title:'Apply Merit-first, not first-touch preset', subtitle:'Load Merit-first, not first-touch scheduling and economics recommendations.', tags:'premium recommended balanced defaults', action:'premium-recommended'},
+              {title:'Apply Balanced live template preset', subtitle:'Load Balanced live template discovery defaults.', tags:'premium fast lean preset', action:'premium-fast'},
               {title:'Apply High Assurance preset', subtitle:'Load High Assurance discovery defaults.', tags:'premium assurance preset', action:'premium-assurance'},
               {title:'Import premium job from builder', subtitle:'Pull URI, payout, duration, and details from the current create-job builder.', tags:'premium import builder metadata', action:'premium-import'},
               {title:'Refresh discovery allowances', subtitle:'Reload manager + discovery allowance posture for premium creation.', tags:'premium allowance refresh approvals', action:'premium-refresh-allowance'},
@@ -8607,7 +8570,7 @@ function normalizeIpfsToHttp(uri){
           if($('premiumInspectorWaitState')) $('premiumInspectorWaitState').textContent = decoded.mode;
           if($('premiumInspectorFinalizable')) $('premiumInspectorFinalizable').textContent=`shortlist ${shortlistOk?'yes':'no'} · winner ${winnerOk?'yes':'no'} · fallback ${fallbackOk?'yes':'no'}`;
           if($('premiumInspectorAdvanceHint')) $('premiumInspectorAdvanceHint').textContent = (shortlistOk || winnerOk || fallbackOk) ? 'advanceProcurement is meaningful now.' : 'advanceProcurement may currently be a no-op or revert.';
-          if($('premiumInspectorWalletPosture')) $('premiumInspectorWalletPosture').textContent = userAccount ? (String(userAccount).toLowerCase()===String(proc.employer).toLowerCase() ? 'Employer wallet' : 'Connected non-employer wallet') : 'Connect wallet';
+          if($('premiumInspectorWalletPosture')) $('premiumInspectorWalletPosture').textContent = userAccount ? (String(userAccount).toLowerCase()===String(proc.employer).toLowerCase() ? 'Employer wallet' : 'Connected non-employer wallet') : 'Anti-spam · seriousness staking · paid trials';
           if($('premiumInspectorWalletClaimable')) $('premiumInspectorWalletClaimable').textContent = `Current wallet claimable: ${fmtUnits(walletClaimable)}`;
           if($('premiumInspectorBudgetPosture')) $('premiumInspectorBudgetPosture').textContent = budgetPosture;
           if($('premiumInspectorBudgetMeta')) $('premiumInspectorBudgetMeta').textContent = `Stipend ${fmtUnits(stipendBudget)} + validator reveal budget ${fmtUnits(revealBudget)} at max participation.`;
