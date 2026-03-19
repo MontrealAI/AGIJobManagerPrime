@@ -8340,7 +8340,15 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const stipendPerFinalist = premiumReadAmount('premiumDiscoveryStipendPerFinalist');
         const finalistStakeStipendRatio = stipendPerFinalist > 0n ? Number(finalistStake) / Number(stipendPerFinalist) : 0;
         const applicationFinalistRatio = finalistStake > 0n ? Number(applicationStake) / Number(finalistStake) : 0;
-        const bpsOf = (raw)=> payout > 0n ? Number((raw * 10000n) / payout) : 0;
+        const formatBpsOf = (raw)=>{
+          if(raw <= 0n) return '0.0000';
+          if(payout <= 0n) return '—';
+          const scaled = (raw * 100000000n) / payout;
+          if(scaled === 0n) return '<0.0001';
+          const whole = scaled / 10000n;
+          const frac = String(scaled % 10000n).padStart(4,'0');
+          return `${whole}.${frac}`;
+        };
         const rows = [
           ['Commit opens', formatDateTime(schedule.base)],
           ['Commit closes', formatDateTime(struct.proc.commitDeadline)],
@@ -8383,7 +8391,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           const mismatch = budgetQuote.onchain != null && budgetQuote.onchain !== localBudget;
           pel('premiumBudgetQuoteCheck').innerHTML = mismatch ? `<span class="premiumWarningNote">Warning:</span> local quote ${escapeHtml(premiumFormat(localBudget))} vs on-chain quote ${escapeHtml(premiumFormat(budgetQuote.onchain))}; final review should prefer the on-chain quote.` : `Local quote ${escapeHtml(premiumFormat(localBudget))}${budgetQuote.onchain != null ? ` · on-chain quote ${escapeHtml(premiumFormat(budgetQuote.onchain))}` : ' · on-chain quote unavailable until AGIJobDiscoveryPrime is connected'}.`;
         }
-        if(pel('premiumIncentiveRatios')) pel('premiumIncentiveRatios').textContent = `Validator bond / validator reward = ${bpsOf(validatorBond)} / ${bpsOf(validatorReward)} = ${bondRewardRatio ? bondRewardRatio.toFixed(2) : '0.00'}x · finalist stake / finalist stipend = ${bpsOf(finalistStake)} / ${bpsOf(stipendPerFinalist)} = ${finalistStakeStipendRatio ? finalistStakeStipendRatio.toFixed(2) : '0.00'}x · application stake / finalist stake = ${bpsOf(applicationStake)} / ${bpsOf(finalistStake)} = ${applicationFinalistRatio ? applicationFinalistRatio.toFixed(2) : '0.00'}x.`;
+        if(pel('premiumIncentiveRatios')) pel('premiumIncentiveRatios').textContent = `Validator bond / validator reward = ${premiumFormat(validatorBond)} / ${premiumFormat(validatorReward)} = ${bondRewardRatio ? bondRewardRatio.toFixed(2) : '0.00'}x (${formatBpsOf(validatorBond)} / ${formatBpsOf(validatorReward)} bps at current payout) · finalist stake / finalist stipend = ${premiumFormat(finalistStake)} / ${premiumFormat(stipendPerFinalist)} = ${finalistStakeStipendRatio ? finalistStakeStipendRatio.toFixed(2) : '0.00'}x (${formatBpsOf(finalistStake)} / ${formatBpsOf(stipendPerFinalist)} bps) · application stake / finalist stake = ${premiumFormat(applicationStake)} / ${premiumFormat(finalistStake)} = ${applicationFinalistRatio ? applicationFinalistRatio.toFixed(2) : '0.00'}x (${formatBpsOf(applicationStake)} / ${formatBpsOf(finalistStake)} bps).`;
         if(pel('premiumOverviewDoctrineTable')) pel('premiumOverviewDoctrineTable').innerHTML = [
           ['Finalists', String(struct.proc.finalistCount||0)], ['Reveals', `${struct.proc.minValidatorReveals||0} minimum / ${struct.proc.maxValidatorRevealsPerFinalist||0} max`], ['Weights', `${weightSplit}`], ['Application stake', premiumFormat(applicationStake)], ['Finalist stake', premiumFormat(finalistStake)], ['Stipend', premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))], ['Validator reward', premiumFormat(validatorReward)], ['Validator bond', premiumFormat(validatorBond)], ['Discovery budget cap', payout > 0n ? `${premiumFormat(budget)} (${pct.toFixed(2)}%)` : '—'], ['Employer max exposure', premiumFormat(exposure)], ['Total procurement cycle', `${totalCycleDays % 1 === 0 ? totalCycleDays.toFixed(0) : totalCycleDays.toFixed(2)} days`]
         ].map(([k,v])=>`<div class="premiumMetric"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(v)}</span></div>`).join('');
