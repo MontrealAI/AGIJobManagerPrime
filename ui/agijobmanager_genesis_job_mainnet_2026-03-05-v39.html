@@ -8187,6 +8187,21 @@ function normalizeIpfsToHttp(uri){
         checks.push({ok:!!hasAcceptedTerms,text:hasAcceptedTerms?'Terms accepted.':'Terms not accepted.'});
         return {errors:errs, checks};
       }
+      function premiumSyncHeroSummary(meta={}){
+        const wallet = String(document.getElementById('missionWalletStatus')?.textContent || document.getElementById('walletStatus')?.textContent || 'Not connected').trim();
+        const network = String(document.getElementById('missionNetworkStatus')?.textContent || document.getElementById('chainStatus')?.textContent || '—').trim();
+        const write = String(document.getElementById('missionWriteStatus')?.textContent || 'Locked').trim();
+        const readiness = [wallet, network, write].filter(Boolean).join(' · ');
+        if(pel('premiumHeroWalletReady')) pel('premiumHeroWalletReady').textContent = readiness || 'Not connected';
+        const managerState = String(meta.managerState ?? pel('premiumManagerApprovalState')?.textContent || 'Unavailable').trim();
+        const discoveryState = String(meta.discoveryState ?? pel('premiumDiscoveryApprovalState')?.textContent || 'Unavailable').trim();
+        const managerAllowance = String(meta.managerAllowance ?? pel('premiumDiscoveryManagerAllowance')?.textContent || '').trim();
+        const discoveryAllowance = String(meta.discoveryAllowance ?? pel('premiumDiscoveryDiscoveryAllowance')?.textContent || '').trim();
+        if(pel('premiumHeroApprovalPosture')){
+          pel('premiumHeroApprovalPosture').textContent = `Manager ${managerState.toLowerCase()} · Discovery ${discoveryState.toLowerCase()}`;
+          pel('premiumHeroApprovalPosture').title = [managerAllowance, discoveryAllowance].filter(Boolean).join(' | ') || 'Refresh allowances below.';
+        }
+      }
       function blockTimestampSafe(){ return Math.floor(Date.now()/1000); }
       async function premiumRefreshAllowances(){
         const managerNode = pel('premiumDiscoveryManagerAllowance'); const discoveryNode = pel('premiumDiscoveryDiscoveryAllowance');
@@ -8206,6 +8221,12 @@ function normalizeIpfsToHttp(uri){
           if(discoveryNode) discoveryNode.textContent = `Connect wallet on mainnet to read discovery allowance.${validationHint}`;
           setApprovalState(managerStateNode, 'Unavailable', 'bad');
           setApprovalState(discoveryStateNode, 'Unavailable', 'bad');
+          premiumSyncHeroSummary({
+            managerState:'Unavailable',
+            discoveryState:'Unavailable',
+            managerAllowance:managerNode?.textContent || '',
+            discoveryAllowance:discoveryNode?.textContent || ''
+          });
           return {managerAllowance:0n, discoveryAllowance:0n, payout:0n, budget:0n, formValid};
         }
         const payout = BigInt(struct.job.payout||0);
@@ -8217,6 +8238,12 @@ function normalizeIpfsToHttp(uri){
         if(discoveryNode) discoveryNode.textContent = `${premiumFormat(discoveryAllowance)} current allowance · ${premiumFormat(budget)} required${invalidSuffix}`;
         setApprovalState(managerStateNode, !formValid || payout <= 0n ? 'Unavailable' : (managerAllowance >= payout ? 'Approved' : 'Needs approval'), !formValid || payout <= 0n ? 'bad' : (managerAllowance >= payout ? 'good' : 'warn'));
         setApprovalState(discoveryStateNode, !formValid || budget <= 0n ? 'Unavailable' : (discoveryAllowance >= budget ? 'Approved' : 'Needs approval'), !formValid || budget <= 0n ? 'bad' : (discoveryAllowance >= budget ? 'good' : 'warn'));
+        premiumSyncHeroSummary({
+          managerState:managerStateNode?.textContent || 'Unavailable',
+          discoveryState:discoveryStateNode?.textContent || 'Unavailable',
+          managerAllowance:managerNode?.textContent || '',
+          discoveryAllowance:discoveryNode?.textContent || ''
+        });
         if(pel('premiumDiscoveryApproveManagerBtn')) pel('premiumDiscoveryApproveManagerBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || payout <= 0n || managerAllowance >= payout;
         if(pel('premiumDiscoveryApproveDiscoveryBtn')) pel('premiumDiscoveryApproveDiscoveryBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || budget <= 0n || discoveryAllowance >= budget;
         if(pel('premiumDiscoveryApproveBothBtn')) pel('premiumDiscoveryApproveBothBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || (payout <= 0n && budget <= 0n) || (managerAllowance >= payout && discoveryAllowance >= budget);
@@ -8315,6 +8342,7 @@ function normalizeIpfsToHttp(uri){
         if(pel('premiumDiscoveryParticipationPosture')) pel('premiumDiscoveryParticipationPosture').textContent = applicationStakePosture;
         if(pel('premiumDiscoveryCheckpointPosture')) pel('premiumDiscoveryCheckpointPosture').textContent = checkpointHours > 0 ? 'active' : 'disabled';
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure)}, job:struct.job, proc:struct.proc}, null, 2);
+        premiumSyncHeroSummary();
         const validation = premiumValidation(struct);
         if(pel('premiumDiscoveryValidationList')) pel('premiumDiscoveryValidationList').innerHTML = [
           ...validation.checks.map(item=>`<div class="premiumValidationItem ${item.ok?'good':'bad'}">${escapeHtml(item.text)}</div>`),
@@ -8366,6 +8394,15 @@ function normalizeIpfsToHttp(uri){
         pel('premiumDiscoverySubmitBtn')?.addEventListener('click', ()=>premiumReviewAndSubmit().catch(e=>setToast(e.message||String(e),'bad')));
         pel('premiumDiscoveryStickySubmitBtn')?.addEventListener('click', ()=>premiumReviewAndSubmit().catch(e=>setToast(e.message||String(e),'bad')));
         pel('premiumDiscoveryOpenLowerProcurementBtn')?.addEventListener('click', ()=>{ const node = document.getElementById('procurementCommitId'); if(node) node.scrollIntoView({behavior:'smooth', block:'start'}); });
+        document.querySelectorAll('[data-premium-hero-target]').forEach(btn=>btn.addEventListener('click', ()=>{
+          const target = String(btn.getAttribute('data-premium-hero-target') || '').trim();
+          const map = {create:'premium-open-create', attach:'premium-open-attach', inspect:'premium-open-inspector', claims:'premium-claim-discovery'};
+          if(map[target] && typeof window.missionAction === 'function'){
+            window.missionAction(map[target]);
+            return;
+          }
+          if(target === 'create') document.getElementById('premiumDiscoverySection')?.scrollIntoView({behavior:'smooth', block:'start'});
+        }));
         const originalMissionAction = window.missionAction;
         window.missionAction = function(action){
           if(action === 'premium') return scrollToId('premiumDiscoverySection');
@@ -8451,6 +8488,13 @@ function normalizeIpfsToHttp(uri){
         });
       }
       document.querySelectorAll('[data-premium-surface]').forEach(btn=>btn.addEventListener('click',()=>setPanel(btn.dataset.premiumSurface)));
+      document.querySelectorAll('[data-premium-hero-target]').forEach(btn=>btn.addEventListener('click', ()=>{
+        const name = btn.getAttribute('data-premium-hero-target');
+        if(name === 'create') setPanel('create');
+        else if(name === 'attach') setPanel('attach');
+        else if(name === 'inspect') setPanel('inspect');
+        else if(name === 'claims') setPanel('claims');
+      }));
       const attachIds=['CommitHours','RevealHours','FinalistAcceptHours','TrialHours','ScoreCommitHours','ScoreRevealHours','SelectedAcceptanceHours','CheckpointHours','FinalistCount','MinValidatorReveals','MaxValidatorRevealsPerFinalist','HistoricalWeightBps','TrialWeightBps','MinReputation','ApplicationStake','FinalistStakeTotal','StipendPerFinalist','ValidatorRewardPerReveal','ValidatorScoreBond'];
       function useBalancedAttach(){
         const map={CommitHours:72,RevealHours:24,FinalistAcceptHours:48,TrialHours:168,ScoreCommitHours:24,ScoreRevealHours:24,SelectedAcceptanceHours:48,CheckpointHours:72,FinalistCount:3,MinValidatorReveals:3,MaxValidatorRevealsPerFinalist:5,HistoricalWeightBps:4000,TrialWeightBps:6000};
