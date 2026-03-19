@@ -8551,9 +8551,29 @@ function normalizeIpfsToHttp(uri){
           const intakeMode = Number(info.intakeMode ?? info[0] ?? 0);
           const assignedAgent = info.assignedAgent ?? info[7] ?? '0x0000000000000000000000000000000000000000';
           const likely = intakeMode===1 && /^0x0{40}$/i.test(String(assignedAgent)) && !hasProc;
-          if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = `intakeMode ${intakeMode===1?'SelectedAgentOnly':'not SelectedAgentOnly'} · assignedAgent ${assignedAgent} · existing procurement ${hasProc?'present':'none'} · ${likely?'attach likely valid':'attach likely to revert'}`;
+          const intakeLabel = intakeMode===1 ? 'SelectedAgentOnly' : 'not SelectedAgentOnly';
+          const assignedLabel = /^0x0{40}$/i.test(String(assignedAgent)) ? 'Unassigned' : assignedAgent;
+          const existingLabel = hasProc ? 'Present' : 'None';
+          const visibleStatus = `${intakeLabel} · assigned ${assignedLabel} · procurement ${existingLabel} · ${likely?'attach likely valid':'attach likely to revert'}`;
+          if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = visibleStatus;
+          if($('premiumAttachEligibility')) $('premiumAttachEligibility').textContent = visibleStatus;
+          if($('premiumAttachIntakeMode')) $('premiumAttachIntakeMode').textContent = intakeLabel;
+          if($('premiumAttachAssignedAgent')) $('premiumAttachAssignedAgent').textContent = assignedLabel;
+          if($('premiumAttachExistingProcurement')) $('premiumAttachExistingProcurement').textContent = existingLabel;
           if($('premiumAttachValidity')) $('premiumAttachValidity').textContent = likely ? 'Likely valid' : 'Likely revert';
-        }catch(err){ if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = `Attach inspection failed: ${err.message||err}`; }
+          if($('premiumAttachStatusChip')) $('premiumAttachStatusChip').textContent = likely ? 'Ready' : 'Warning';
+          if($('premiumAttachStatusChip')) $('premiumAttachStatusChip').dataset.state = likely ? 'ready' : 'warning';
+        }catch(err){
+          const msg = `Attach inspection failed: ${err.message||err}`;
+          if($('premiumAttachSelectionCheck')) $('premiumAttachSelectionCheck').textContent = msg;
+          if($('premiumAttachEligibility')) $('premiumAttachEligibility').textContent = msg;
+          if($('premiumAttachValidity')) $('premiumAttachValidity').textContent = 'Inspect failed';
+          if($('premiumAttachIntakeMode')) $('premiumAttachIntakeMode').textContent = 'Unavailable';
+          if($('premiumAttachAssignedAgent')) $('premiumAttachAssignedAgent').textContent = 'Unavailable';
+          if($('premiumAttachExistingProcurement')) $('premiumAttachExistingProcurement').textContent = 'Unavailable';
+          if($('premiumAttachStatusChip')) $('premiumAttachStatusChip').textContent = 'Warning';
+          if($('premiumAttachStatusChip')) $('premiumAttachStatusChip').dataset.state = 'warning';
+        }
       }
       async function reviewAttach(){
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId) return setToast('Enter a job id before attaching procurement.','warn');
@@ -8628,7 +8648,9 @@ function normalizeIpfsToHttp(uri){
       function actionInputs(){ return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:String($('premiumActionSubdomain')?.value||'').trim(), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:String($('premiumActionFinalist')?.value||'').trim(), score:String($('premiumActionScore')?.value||'').trim()}; }
       function bind(){
         $('premiumAttachUseRecommendedBtn')?.addEventListener('click', useBalancedAttach);
-        $('premiumAttachImportFromCreateBtn')?.addEventListener('click', ()=>{ attachIds.forEach(id=>{ const a=$("premiumAttach"+id); const b=$("premiumDiscovery"+id); if(a&&b&&b.value!=='') a.value=b.value; }); refreshAttachPreview(); });
+        const mirrorAttachFromCreate = ()=>{ attachIds.forEach(id=>{ const a=$("premiumAttach"+id); const b=$("premiumDiscovery"+id); if(a&&b&&b.value!=='') a.value=b.value; }); refreshAttachPreview(); };
+        $('premiumAttachImportFromCreateBtn')?.addEventListener('click', mirrorAttachFromCreate);
+        $('premiumAttachPresetMirror')?.addEventListener('click', mirrorAttachFromCreate);
         ['premiumAttachJobId',...attachIds.map(x=>'premiumAttach'+x)].forEach(id=>$(id)?.addEventListener('input', refreshAttachPreview));
         $('premiumAttachInspectJobBtn')?.addEventListener('click', ()=>inspectAttachJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumAttachRefreshAllowanceBtn')?.addEventListener('click', ()=>refreshAttachPreview().catch(e=>setToast(e.message||String(e),'bad')));
