@@ -8249,6 +8249,13 @@ function normalizeIpfsToHttp(uri){
       function blockTimestampSafe(){ return Math.floor(Date.now()/1000); }
       async function premiumRefreshAllowances(){
         const managerNode = pel('premiumDiscoveryManagerAllowance'); const discoveryNode = pel('premiumDiscoveryDiscoveryAllowance');
+        const managerStateNode = pel('premiumManagerApprovalState'); const discoveryStateNode = pel('premiumDiscoveryApprovalState');
+        const setApprovalState = (node, state, tone)=>{
+          if(!node) return;
+          node.textContent = state;
+          node.classList.remove('good','warn','bad');
+          node.classList.add(tone);
+        };
         const struct = premiumStruct();
         const validation = premiumValidation(struct);
         const formValid = validation.errors.length === 0;
@@ -8256,6 +8263,8 @@ function normalizeIpfsToHttp(uri){
           const validationHint = !formValid && validation.errors.length ? ` Fix validation first: ${validation.errors[0]}` : '';
           if(managerNode) managerNode.textContent = `Connect wallet on mainnet to read manager allowance.${validationHint}`;
           if(discoveryNode) discoveryNode.textContent = `Connect wallet on mainnet to read discovery allowance.${validationHint}`;
+          setApprovalState(managerStateNode, 'Unavailable', 'bad');
+          setApprovalState(discoveryStateNode, 'Unavailable', 'bad');
           return {managerAllowance:0n, discoveryAllowance:0n, payout:0n, budget:0n, formValid};
         }
         const payout = BigInt(struct.job.payout||0);
@@ -8265,6 +8274,8 @@ function normalizeIpfsToHttp(uri){
         const invalidSuffix = !formValid && validation.errors.length ? ` · fix validation first: ${validation.errors[0]}` : '';
         if(managerNode) managerNode.textContent = `${premiumFormat(managerAllowance)} current allowance · ${premiumFormat(payout)} required${invalidSuffix}`;
         if(discoveryNode) discoveryNode.textContent = `${premiumFormat(discoveryAllowance)} current allowance · ${premiumFormat(budget)} required${invalidSuffix}`;
+        setApprovalState(managerStateNode, !formValid || payout <= 0n ? 'Unavailable' : (managerAllowance >= payout ? 'Approved' : 'Needs approval'), !formValid || payout <= 0n ? 'bad' : (managerAllowance >= payout ? 'good' : 'warn'));
+        setApprovalState(discoveryStateNode, !formValid || budget <= 0n ? 'Unavailable' : (discoveryAllowance >= budget ? 'Approved' : 'Needs approval'), !formValid || budget <= 0n ? 'bad' : (discoveryAllowance >= budget ? 'good' : 'warn'));
         if(pel('premiumDiscoveryApproveManagerBtn')) pel('premiumDiscoveryApproveManagerBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || payout <= 0n || managerAllowance >= payout;
         if(pel('premiumDiscoveryApproveDiscoveryBtn')) pel('premiumDiscoveryApproveDiscoveryBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || budget <= 0n || discoveryAllowance >= budget;
         if(pel('premiumDiscoveryApproveBothBtn')) pel('premiumDiscoveryApproveBothBtn').disabled = !formValid || !isMainnet || !hasAcceptedTerms || (payout <= 0n && budget <= 0n) || (managerAllowance >= payout && discoveryAllowance >= budget);
@@ -8477,7 +8488,19 @@ function normalizeIpfsToHttp(uri){
       }
       function fmtUnits(v){ try{return premiumFormat(BigInt(v||0));}catch(e){return String(v||'0');} }
       function humanTs(v){ return Number(v||0)>0 ? formatDateTime(String(v)) : '—'; }
-      function setPanel(name){ document.querySelectorAll('[data-premium-surface]').forEach(b=>b.classList.toggle('active', b.dataset.premiumSurface===name)); document.querySelectorAll('[data-premium-panel]').forEach(p=>p.classList.toggle('active', p.dataset.premiumPanel===name)); }
+      function setPanel(name){
+        document.querySelectorAll('[data-premium-surface]').forEach(btn=>{
+          const active = btn.dataset.premiumSurface===name;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-selected', active ? 'true' : 'false');
+          btn.setAttribute('tabindex', active ? '0' : '-1');
+        });
+        document.querySelectorAll('[data-premium-panel]').forEach(panel=>{
+          const active = panel.dataset.premiumPanel===name;
+          panel.classList.toggle('active', active);
+          panel.hidden = !active;
+        });
+      }
       document.querySelectorAll('[data-premium-surface]').forEach(btn=>btn.addEventListener('click',()=>setPanel(btn.dataset.premiumSurface)));
       const attachIds=['CommitHours','RevealHours','FinalistAcceptHours','TrialHours','ScoreCommitHours','ScoreRevealHours','SelectedAcceptanceHours','CheckpointHours','FinalistCount','MinValidatorReveals','MaxValidatorRevealsPerFinalist','HistoricalWeightBps','TrialWeightBps','MinReputation','ApplicationStake','FinalistStakeTotal','StipendPerFinalist','ValidatorRewardPerReveal','ValidatorScoreBond'];
       function useBalancedAttach(){
@@ -8547,14 +8570,39 @@ function normalizeIpfsToHttp(uri){
             userAccount ? agiJobDiscovery.methods.claimable(userAccount).call().catch(()=>'0') : Promise.resolve('0')
           ]);
           const decoded=actionMap[nextCode] || {label:`${nextCode||'—'} · Unmapped`, actor:'Operator review', mode:'Read state', note:'Inspect raw state and contract responses.'};
+          const finalistsCount = Number(proc.finalistCount ?? 0);
+          const maxReveals = Number(proc.maxValidatorRevealsPerFinalist ?? 0);
+          const stipendBudget = BigInt(proc.stipendPerFinalist || 0) * BigInt(finalistsCount);
+          const revealBudget = BigInt(proc.validatorRewardPerReveal || 0) * BigInt(finalistsCount * maxReveals);
+          const budgetPosture = finalistsCount > 0 ? `${finalistsCount * maxReveals} reveal slots budgeted` : 'Budget not configured';
+          const phaseName = ({
+            WC:'Application commit',
+            RA:'Application reveal',
+            FS:'Shortlist finalization',
+            FA:'Finalist acceptance',
+            ST:'Trial submission',
+            CS:'Score commit',
+            RS:'Score reveal',
+            FW:'Winner finalization',
+            PF:'Fallback promotion',
+            WA:'Winner assigned',
+            WSA:'Selected-agent acceptance'
+          })[nextCode] || 'Operator review';
           if($('premiumInspectorNextAction')) $('premiumInspectorNextAction').textContent=decoded.label; if($('premiumInspectorNextActionReadable')) $('premiumInspectorNextActionReadable').textContent=decoded.label;
           if($('premiumInspectorNextActionMeta')) $('premiumInspectorNextActionMeta').textContent=decoded.note;
+          if($('premiumInspectorProcurementIdValue')) $('premiumInspectorProcurementIdValue').textContent = pid;
+          if($('premiumInspectorJobIdValue')) $('premiumInspectorJobIdValue').textContent = String(proc.jobId ?? '—');
+          if($('premiumInspectorEmployer')) $('premiumInspectorEmployer').textContent = proc.employer || '—';
+          if($('premiumInspectorPhase')) $('premiumInspectorPhase').textContent = phaseName;
           if($('premiumInspectorActor')) $('premiumInspectorActor').textContent=decoded.actor;
           if($('premiumInspectorActionClass')) $('premiumInspectorActionClass').textContent=decoded.mode;
+          if($('premiumInspectorWaitState')) $('premiumInspectorWaitState').textContent = decoded.mode;
           if($('premiumInspectorFinalizable')) $('premiumInspectorFinalizable').textContent=`shortlist ${shortlistOk?'yes':'no'} · winner ${winnerOk?'yes':'no'} · fallback ${fallbackOk?'yes':'no'}`;
           if($('premiumInspectorAdvanceHint')) $('premiumInspectorAdvanceHint').textContent = (shortlistOk || winnerOk || fallbackOk) ? 'advanceProcurement is meaningful now.' : 'advanceProcurement may currently be a no-op or revert.';
           if($('premiumInspectorWalletPosture')) $('premiumInspectorWalletPosture').textContent = userAccount ? (String(userAccount).toLowerCase()===String(proc.employer).toLowerCase() ? 'Employer wallet' : 'Connected non-employer wallet') : 'Connect wallet';
           if($('premiumInspectorWalletClaimable')) $('premiumInspectorWalletClaimable').textContent = `Current wallet claimable: ${fmtUnits(walletClaimable)}`;
+          if($('premiumInspectorBudgetPosture')) $('premiumInspectorBudgetPosture').textContent = budgetPosture;
+          if($('premiumInspectorBudgetMeta')) $('premiumInspectorBudgetMeta').textContent = `Stipend ${fmtUnits(stipendBudget)} + validator reveal budget ${fmtUnits(revealBudget)} at max participation.`;
           if($('premiumInspectorCore')) $('premiumInspectorCore').innerHTML = `Employer <code>${escapeHtml(proc.employer||'—')}</code><br>Job id <b>${escapeHtml(String(proc.jobId||'—'))}</b><br>Shortlist finalized <b>${proc.shortlistFinalized?'yes':'no'}</b> · Winner finalized <b>${proc.winnerFinalized?'yes':'no'}</b> · Cancelled <b>${proc.cancelled?'yes':'no'}</b><br>Weights <b>${proc.historicalWeightBps}</b> / <b>${proc.trialWeightBps}</b> · Finalists <b>${proc.finalistCount}</b> · Min reveals <b>${proc.minValidatorReveals}</b> · Max reveals <b>${proc.maxValidatorRevealsPerFinalist}</b>`;
           if($('premiumInspectorDeadlines')) $('premiumInspectorDeadlines').innerHTML = `Commit ${humanTs(proc.commitDeadline)}<br>Reveal ${humanTs(proc.revealDeadline)}<br>Finalist accept ${humanTs(proc.finalistAcceptDeadline)}<br>Trial ${humanTs(proc.trialDeadline)}<br>Score commit ${humanTs(proc.scoreCommitDeadline)}<br>Score reveal ${humanTs(proc.scoreRevealDeadline)}<br>Selected acceptance window ${secondsToHuman(proc.selectedAcceptanceWindow)} · Checkpoint ${secondsToHuman(proc.checkpointWindow)}`;
           if($('premiumInspectorApplicants')) $('premiumInspectorApplicants').innerHTML = applicants.length ? applicants.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No applicants loaded.';
@@ -8655,7 +8703,22 @@ function normalizeIpfsToHttp(uri){
 (function(){
   const $ = id => document.getElementById(id);
   function syncAlias(srcId,dstId,isValue){ const src=$(srcId), dst=$(dstId); if(!src||!dst) return; const fn=()=>{ if(isValue) dst.value=src.value; else dst.textContent=src.textContent; }; ['input','change'].forEach(evt=>src.addEventListener(evt,fn)); fn(); }
-  function setHeroMirrors(){ const wallet = ($('missionWalletStatus')?.textContent||$('walletStatus')?.textContent||'Not connected').trim(); const network = ($('missionNetworkStatus')?.textContent||$('chainStatus')?.textContent||'—').trim(); const terms = ($('missionTermsStatus')?.textContent||'Pending').trim(); const write = ($('missionWriteStatus')?.textContent||'Locked').trim(); if($('premiumHeroWalletReady')) $('premiumHeroWalletReady').textContent = `${wallet} · ${network} · ${write}`; if($('premiumHeroApprovalPosture')) $('premiumHeroApprovalPosture').textContent = `${terms} · ${write}`; }
+  function setHeroMirrors(){
+    const wallet = ($('missionWalletStatus')?.textContent||$('walletStatus')?.textContent||'Not connected').trim();
+    const network = ($('missionNetworkStatus')?.textContent||$('chainStatus')?.textContent||'—').trim();
+    const write = ($('missionWriteStatus')?.textContent||'Locked').trim();
+    const managerState = ($('premiumManagerApprovalState')?.textContent || '').trim();
+    const discoveryState = ($('premiumDiscoveryApprovalState')?.textContent || '').trim();
+    const managerAllowance = ($('premiumDiscoveryManagerAllowance')?.textContent || '').trim();
+    const discoveryAllowance = ($('premiumDiscoveryDiscoveryAllowance')?.textContent || '').trim();
+    if($('premiumHeroWalletReady')) $('premiumHeroWalletReady').textContent = `${wallet} · ${network} · ${write}`;
+    if($('premiumHeroApprovalPosture')){
+      const managerLabel = managerState ? `Manager ${managerState.toLowerCase()}` : 'Manager unavailable';
+      const discoveryLabel = discoveryState ? `Discovery ${discoveryState.toLowerCase()}` : 'Discovery unavailable';
+      $('premiumHeroApprovalPosture').textContent = `${managerLabel} · ${discoveryLabel}`;
+      $('premiumHeroApprovalPosture').title = [managerAllowance, discoveryAllowance].filter(Boolean).join(' | ') || 'Refresh allowances below.';
+    }
+  }
   function syncInspectorAlias(){ if($('premiumInspectorApplicationAgent') && $('premiumInspectorAgentAddress')) $('premiumInspectorAgentAddress').value = $('premiumInspectorApplicationAgent').value || ''; }
   function patchTabs(){
     document.querySelectorAll('[data-premium-hero-target]').forEach(btn=>btn.addEventListener('click', ()=>{
