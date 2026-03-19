@@ -1225,7 +1225,7 @@
             </div>
           </section>
 
-          <section class="premiumSurfacePanel" data-premium-panel="attach id="premiumAttachSection" role="tabpanel" aria-labelledby="premiumTabAttach">
+          <section class="premiumSurfacePanel" data-premium-panel="attach" id="premiumAttachSection" role="tabpanel" aria-labelledby="premiumTabAttach">
             <div id="premiumAttachPanel"></div>
             <div class="premiumExplainCard" style="margin-bottom:12px"><strong>Secondary path for this exemplar</strong><div class="helper">The canonical flow for “To Govern Their Own Kind” is atomic premium create. Attach procurement is for an already-created, unassigned <code>SelectedAgentOnly</code> job and funds discovery only — not the original payout escrow.</div></div>
             <div class="premiumAttachTopGrid">
@@ -8114,6 +8114,8 @@ The designated winner enters SelectedAgentOnly settlement in AGIJobManagerPrime,
         const errs = []; const checks = [];
         const payout = BigInt(struct.job.payout||0); const duration = BigInt(struct.job.duration||0);
         const uri = struct.job.jobSpecURI || '';
+        const placeholderUri = String(PREMIUM_EXEMPLAR.uriPlaceholder || '').trim().toLowerCase();
+        const isPlaceholderUri = !!uri && String(uri).trim().toLowerCase() === placeholderUri;
         const fd = Number(struct.proc.finalistCount||0), minR = Number(struct.proc.minValidatorReveals||0), maxR = Number(struct.proc.maxValidatorRevealsPerFinalist||0), hw = Number(struct.proc.historicalWeightBps||0), tw = Number(struct.proc.trialWeightBps||0);
         const times = ['commitDeadline','revealDeadline','finalistAcceptDeadline','trialDeadline','scoreCommitDeadline','scoreRevealDeadline'].map(k=>Number(struct.proc[k]||0));
         if(!(blockTimestampSafe() < times[0])) errs.push('Commit deadline must be in the future.');
@@ -8127,6 +8129,7 @@ The designated winner enters SelectedAgentOnly settlement in AGIJobManagerPrime,
         if(!(payout > 0n)) errs.push('Payout must be greater than zero.');
         if(!(duration > 0n)) errs.push('Duration must be greater than zero.');
         if(!uri || !isValidUriLoose(uri)) errs.push('Provide a valid Job Spec URI (ipfs://, https://, http://, or ens://).');
+        if(isPlaceholderUri) errs.push('Replace the illustrative exemplar URI with a real metadata URI before review.');
         if(!userAccount) errs.push('Connect wallet before creating a premium discovery job.');
         if(!isMainnet) errs.push('Switch to Ethereum Mainnet before creating a premium discovery job.');
         if(!hasAcceptedTerms) errs.push('Accept the Terms & Conditions before creating a premium discovery job.');
