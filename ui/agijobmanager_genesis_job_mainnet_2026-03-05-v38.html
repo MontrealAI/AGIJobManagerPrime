@@ -1548,6 +1548,8 @@
                     <div class="premiumField"><label for="premiumActionFinalist">Finalist address</label><input id="premiumActionFinalist" type="text" placeholder="0x…"></div>
                     <div class="premiumField"><label for="premiumActionScore">Validator score (0-100)</label><input id="premiumActionScore" type="number" min="0" max="100" step="1"></div>
                   </div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumActionGenerateApplicationCommitmentBtn">Generate application commitment</button><button class="btn" type="button" id="premiumActionGenerateScoreCommitmentBtn">Generate score commitment</button></div>
+                  <div class="premiumStepNote" id="premiumActionCommitmentHelper" style="margin-top:10px">Use the connected wallet plus the local fields above to derive commitments without leaving this flagship tab.</div>
                   <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn" type="button" id="premiumActionCommitApplicationBtn">Review commitApplication</button><button class="btn" type="button" id="premiumActionRevealApplicationBtn">Review revealApplication</button><button class="btn" type="button" id="premiumActionAcceptFinalistBtn">Review acceptFinalist</button><button class="btn" type="button" id="premiumActionSubmitTrialBtn">Review submitTrial</button><button class="btn" type="button" id="premiumActionCommitScoreBtn">Review commitFinalistScore</button><button class="btn" type="button" id="premiumActionRevealScoreBtn">Review revealFinalistScore</button></div>
                   <div class="statusline" style="margin-top:12px"><b>Participant result</b>: <span id="premiumActionResult">No participant action submitted yet.</span></div>
                 </div>
@@ -8646,6 +8648,20 @@ function normalizeIpfsToHttp(uri){
       async function loadApplicationView(pid, agent, targetId){ if(!pid || !agent) return; try{ const view=await agiJobDiscovery.methods.applicationView(String(pid), agent).call(); const payload={revealed:view.revealed??view[0], shortlisted:view.shortlisted??view[1], finalistAccepted:view.finalistAccepted??view[2], trialSubmitted:view.trialSubmitted??view[3], lockedStake:view.lockedStake??view[4], applicationURI:view.applicationURI??view[5], trialURI:view.trialURI??view[6], historicalScoreBps:view.historicalScoreBps??view[7], trialScoreBps:view.trialScoreBps??view[8], compositeScoreBps:view.compositeScoreBps??view[9], everPromoted:view.everPromoted??view[10]}; if($(targetId)) $(targetId).textContent=JSON.stringify(payload,null,2); if(targetId==='premiumInspectorApplicationView' && $('premiumClaimsAgent')) $('premiumClaimsAgent').value=agent; if(targetId==='premiumInspectorApplicationView' && $('premiumDiscoveryApplicationInspectAgent')) $('premiumDiscoveryApplicationInspectAgent').value=agent; }catch(err){ if($(targetId)) $(targetId).textContent=`Application view failed: ${err.message||err}`; } }
       function reviewDiscoveryWrite({title, method, facts=[], checks=[], run, confirmLabel}){ openActionReview({title, body:`You are about to call AGIJobDiscoveryPrime.${method}.`, facts:[{label:'Function', value:method}, ...facts], checks:[...checks, {state:'Safety', badge:'warn', text:'This action stays review-first and does not bypass wallet confirmation.'}], confirmLabel:confirmLabel||title, method, run}); }
       function actionInputs(){ return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:String($('premiumActionSubdomain')?.value||'').trim(), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:String($('premiumActionFinalist')?.value||'').trim(), score:String($('premiumActionScore')?.value||'').trim()}; }
+      function setCommitmentHelper(message){ if($('premiumActionCommitmentHelper')) $('premiumActionCommitmentHelper').textContent = message; }
+      function generateApplicationCommitment(){
+        const {pid, uri, salt} = actionInputs();
+        const applicant = String(userAccount || '').trim();
+        if(!web3?.utils?.soliditySha3 || !applicant || !pid || !uri || !salt){ setCommitmentHelper('Application commitment needs connected wallet, procurement id, application URI, and salt.'); return; }
+        $('premiumActionCommitment').value = web3.utils.soliditySha3({type:'uint256',value:pid},{type:'address',value:applicant},{type:'string',value:uri},{type:'bytes32',value:salt}) || '';
+        setCommitmentHelper(`Application commitment generated locally for wallet ${applicant}. It stays local until you submit commitApplication.`); }
+      function generateScoreCommitment(){
+        const {pid, finalist, salt, score} = actionInputs();
+        const validator = String(userAccount || '').trim();
+        const scoreNum = Number(score);
+        if(!web3?.utils?.soliditySha3 || !validator || !pid || !finalist || !salt || score==='' || !Number.isFinite(scoreNum) || scoreNum < 0 || scoreNum > 100){ setCommitmentHelper('Score commitment needs connected wallet, procurement id, finalist, score 0-100, and salt.'); return; }
+        $('premiumActionCommitment').value = web3.utils.soliditySha3({type:'uint256',value:pid},{type:'address',value:finalist},{type:'address',value:validator},{type:'uint8',value:scoreNum},{type:'bytes32',value:salt}) || '';
+        setCommitmentHelper(`Score commitment generated locally for validator ${validator}. It stays local until you submit commitFinalistScore.`); }
       function bind(){
         $('premiumAttachUseRecommendedBtn')?.addEventListener('click', useBalancedAttach);
         const mirrorAttachFromCreate = ()=>{ attachIds.forEach(id=>{ const a=$("premiumAttach"+id); const b=$("premiumDiscovery"+id); if(a&&b&&b.value!=='') a.value=b.value; }); refreshAttachPreview(); };
@@ -8670,6 +8686,8 @@ function normalizeIpfsToHttp(uri){
         $('premiumActionSubmitTrialBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.uri) return setToast('Enter procurement id and trial URI.','warn'); reviewDiscoveryWrite({title:'Review submitTrial', method:'submitTrial(procurementId,trialURI)', facts:[{label:'Procurement id',value:x.pid},{label:'Trial URI',value:x.uri}], run:async()=>{ await runTrackedTx('submitTrial', ()=>agiJobDiscovery.methods.submitTrial(x.pid, x.uri).send({from:userAccount}), {pendingDetail:'Submitting finalist trial.', successDetail:'Finalist trial confirmed.'}); $('premiumActionResult').textContent=`submitTrial confirmed for procurement ${x.pid}.`; }}); });
         $('premiumActionCommitScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.commitment) return setToast('Enter procurement id, finalist, and commitment.','warn'); reviewDiscoveryWrite({title:'Review commitFinalistScore', method:'commitFinalistScore(procurementId,finalist,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Commitment',value:x.commitment}], run:async()=>{ await runTrackedTx('commitFinalistScore', ()=>agiJobDiscovery.methods.commitFinalistScore(x.pid, x.finalist, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting validator score commitment.', successDetail:'Validator score commitment confirmed.'}); $('premiumActionResult').textContent=`commitFinalistScore confirmed for procurement ${x.pid}.`; }}); });
         $('premiumActionRevealScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.salt||x.score==='') return setToast('Enter procurement id, finalist, score, and salt.','warn'); reviewDiscoveryWrite({title:'Review revealFinalistScore', method:'revealFinalistScore(procurementId,finalist,score,salt,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Score',value:x.score}], run:async()=>{ await runTrackedTx('revealFinalistScore', ()=>agiJobDiscovery.methods.revealFinalistScore(x.pid, x.finalist, Number(x.score), x.salt, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Revealing validator score.', successDetail:'Validator score reveal confirmed.'}); $('premiumActionResult').textContent=`revealFinalistScore confirmed for procurement ${x.pid}.`; }}); });
+        $('premiumActionGenerateApplicationCommitmentBtn')?.addEventListener('click', generateApplicationCommitment);
+        $('premiumActionGenerateScoreCommitmentBtn')?.addEventListener('click', generateScoreCommitment);
         const originalBuild = window.buildCommandPaletteItems;
         if(typeof originalBuild === 'function'){
           window.buildCommandPaletteItems = function(){
@@ -8732,7 +8750,17 @@ function normalizeIpfsToHttp(uri){
 
 (function(){
   const $ = id => document.getElementById(id);
-  function syncAlias(srcId,dstId,isValue){ const src=$(srcId), dst=$(dstId); if(!src||!dst) return; const fn=()=>{ if(isValue) dst.value=src.value; else dst.textContent=src.textContent; }; ['input','change'].forEach(evt=>src.addEventListener(evt,fn)); fn(); }
+  function syncAlias(srcId,dstId,isValue){
+    const src=$(srcId), dst=$(dstId);
+    if(!src||!dst) return;
+    const fn=()=>{ if(isValue) dst.value=src.value; else dst.textContent=src.textContent; };
+    ['input','change'].forEach(evt=>src.addEventListener(evt,fn));
+    if(!isValue && 'MutationObserver' in window){
+      const obs = new MutationObserver(fn);
+      obs.observe(src, {childList:true, characterData:true, subtree:true});
+    }
+    fn();
+  }
   function setHeroMirrors(){
     const wallet = ($('missionWalletStatus')?.textContent||$('walletStatus')?.textContent||'Not connected').trim();
     const network = ($('missionNetworkStatus')?.textContent||$('chainStatus')?.textContent||'—').trim();
