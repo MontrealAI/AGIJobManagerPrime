@@ -1092,7 +1092,7 @@
           <aside class="premiumIntegratedAside">
             <div class="premiumSupportCardGrid premiumHeroMetrics">
               <div class="premiumMiniCard"><span class="k">Finalist slate</span><span class="v" id="premiumHeroFinalists">3 finalists</span><small class="helper">Canonical trio for ideological diversity with linear stipend cost.</small></div>
-              <div class="premiumMiniCard"><span class="k">Validator civic body</span><span class="v" id="premiumHeroValidators">7-validator civic body</span><small class="helper">5 minimum reveals plus 2-validator liveness slack above quorum.</small></div>
+              <div class="premiumMiniCard"><span class="k">Validator reveal cap</span><span class="v" id="premiumHeroValidators">7 reveals per finalist</span><small class="helper" id="premiumHeroValidatorsHelper">5 minimum reveals plus 2-reveal slack above quorum per finalist, for up to 21 total reveal slots across the flagship trio.</small></div>
               <div class="premiumMiniCard"><span class="k">Designation cycle</span><span class="v" id="premiumHeroCycle">15-day designation cycle</span><small class="helper">72h commit + 24h reveal + 48h finalist accept + 168h trial + 24h score commit + 24h score reveal.</small></div>
               <div class="premiumMiniCard"><span class="k">Discovery-budget cap</span><span class="v" id="premiumHeroBudgetCap">7.02% discovery-budget cap</span><small class="helper">3 × 150 bps stipend + 3 × 7 × 12 bps validator rewards = 702 bps.</small></div>
               <div class="premiumMiniCard"><span class="k">Employer max exposure</span><span class="v" id="premiumHeroExposureHint">107.02% employer max exposure</span><small class="helper">Payout escrow + max reserved procurement budget, updated live from payout.</small></div>
@@ -8380,7 +8380,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumDiscoveryCheckpointPosture')) pel('premiumDiscoveryCheckpointPosture').textContent = checkpointHours > 0 ? 'active' : 'disabled';
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:(PREMIUM_PRESETS[premiumState.preset]||{}).name || premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure), localBudget:premiumFormat(localBudget), onchainBudget:budgetQuote.onchain != null ? premiumFormat(budgetQuote.onchain) : 'Unavailable'}, job:struct.job, proc:struct.proc}, null, 2);
         if(pel('premiumHeroFinalists')) pel('premiumHeroFinalists').textContent = `${struct.proc.finalistCount||0} finalists`;
-        if(pel('premiumHeroValidators')) pel('premiumHeroValidators').textContent = Number(struct.proc.maxValidatorRevealsPerFinalist||0) > 0 ? `${Number(struct.proc.maxValidatorRevealsPerFinalist||0)}-validator civic body` : 'Validator participation pending';
+        if(pel('premiumHeroValidators')) pel('premiumHeroValidators').textContent = Number(struct.proc.maxValidatorRevealsPerFinalist||0) > 0 ? `${Number(struct.proc.maxValidatorRevealsPerFinalist||0)} reveals per finalist` : 'Validator participation pending';
+        if(pel('premiumHeroValidatorsHelper')) pel('premiumHeroValidatorsHelper').textContent = Number(struct.proc.finalistCount||0) > 0 ? `${Number(struct.proc.minValidatorReveals||0)} minimum reveals plus ${Math.max(0, Number(struct.proc.maxValidatorRevealsPerFinalist||0) - Number(struct.proc.minValidatorReveals||0))} reveal slack above quorum per finalist, for up to ${Number(struct.proc.finalistCount||0) * Number(struct.proc.maxValidatorRevealsPerFinalist||0)} total reveal slots across all finalists.` : 'Validator participation pending.';
         if(pel('premiumHeroCycle')) pel('premiumHeroCycle').textContent = `${totalCycleDays % 1 === 0 ? totalCycleDays.toFixed(0) : totalCycleDays.toFixed(2)}-day designation cycle`;
         if(pel('premiumHeroBudgetCap')) pel('premiumHeroBudgetCap').textContent = payout > 0n ? `${pct.toFixed(2)}% discovery-budget cap` : '7.02% discovery-budget cap';
         if(pel('premiumHeroExposureHint')) pel('premiumHeroExposureHint').textContent = payout > 0n ? `${((Number((exposure*10000n)/payout))/100).toFixed(2)}% employer max exposure` : '107.02% employer max exposure';
@@ -8398,7 +8399,24 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumDiscoveryCoachSummary')) pel('premiumDiscoveryCoachSummary').textContent = `3 finalists preserve ideological diversity while keeping stipend budget fixed at ${premiumFormat(stipendBudget)} before validator rewards.`;
         if(pel('premiumDiscoveryCoachFunding')) pel('premiumDiscoveryCoachFunding').textContent = `Reserved discovery budget = ${premiumFormat(budget)} at max participation, ${premiumFormat(minRobustBudget)} at minimum robust quorum, leaving ${premiumFormat(slackBudget)} available for refund.`;
         if(pel('premiumDiscoveryCoachSelection')) pel('premiumDiscoveryCoachSelection').textContent = `History carries ${Math.round(Number(struct.proc.historicalWeightBps||0)/100)}%, but trial work carries ${Math.round(Number(struct.proc.trialWeightBps||0)/100)}%, so designation leans toward live evidence instead of incumbency.`;
-        if(pel('premiumIncentiveRatioExplain')) pel('premiumIncentiveRatioExplain').textContent = `Validator bond remains materially larger than reward, so careless scoring is unattractive. Finalist stipend remains slightly larger than finalist stake, so honest finalist participation is economically worthwhile. Application stake remains much smaller than finalist stake, so serious candidates can enter without overpaying for admission.`;
+        if(pel('premiumIncentiveRatioExplain')){
+          const validatorRelation = validatorBond > validatorReward
+            ? `Validator bond exceeds reward by ${premiumFormat(validatorBond - validatorReward)}, so careless scoring is economically unattractive.`
+            : validatorBond < validatorReward
+              ? `Validator reward now exceeds bond by ${premiumFormat(validatorReward - validatorBond)}, so scoring assurance is looser than the flagship default.`
+              : 'Validator bond matches reward exactly, so scoring discipline is neutral rather than bond-heavy.';
+          const finalistRelation = stipendPerFinalist > finalistStake
+            ? `Finalist stipend exceeds finalist stake by ${premiumFormat(stipendPerFinalist - finalistStake)}, so compliant participation is still paid net-positive.`
+            : stipendPerFinalist < finalistStake
+              ? `Finalist stake now exceeds stipend by ${premiumFormat(finalistStake - stipendPerFinalist)}, so finalist participation is more punitive than the flagship baseline.`
+              : 'Finalist stipend matches finalist stake exactly, so the trial is economically neutral before winner settlement.';
+          const applicationRelation = applicationStake < finalistStake
+            ? `Application stake stays below finalist stake by ${premiumFormat(finalistStake - applicationStake)}, so serious challengers can still enter more cheaply than finalists commit.`
+            : applicationStake > finalistStake
+              ? `Application stake now exceeds finalist stake by ${premiumFormat(applicationStake - finalistStake)}, so entry is more expensive than finalist commitment.`
+              : 'Application stake matches finalist stake exactly, so entry no longer carries a cheaper admission path.';
+          pel('premiumIncentiveRatioExplain').textContent = `${validatorRelation} ${finalistRelation} ${applicationRelation}`;
+        }
         if(pel('premiumDiscoveryCoachRisk')) pel('premiumDiscoveryCoachRisk').textContent = `Applicant reveal failure can forfeit ${premiumFormat(applicationStake)}; finalists recover ${premiumFormat(finalistStake)} and earn ${premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))} on compliant trials; validators risk ${premiumFormat(validatorBond)} to earn ${premiumFormat(validatorReward)} per credible reveal.`;
         premiumSyncHeroSummary();
         const validation = premiumValidation(struct);
