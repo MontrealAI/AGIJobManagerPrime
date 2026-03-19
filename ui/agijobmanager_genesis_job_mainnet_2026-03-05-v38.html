@@ -1115,9 +1115,9 @@
           <span class="pill">Review-first transaction flow</span>
         </div>
         <div class="v35-actionChips premiumHeroActions">
-          <a class="v35-actionChip primary" href="#premiumDiscoverySection">Start Premium Discovery</a>
-          <a class="v35-actionChip" href="#premiumAttachSection">Attach Procurement</a>
-          <a class="v35-actionChip" href="#premiumInspectorSection">Open Procurement Inspector</a>
+          <button type="button" class="v35-actionChip primary" data-premium-hero-target="create">Start Premium Discovery</button>
+          <button type="button" class="v35-actionChip" data-premium-hero-target="attach">Attach Procurement</button>
+          <button type="button" class="v35-actionChip" data-premium-hero-target="inspect">Open Procurement Inspector</button>
           <a class="v35-actionChip" href="#jobsSection">Browse Jobs</a>
         </div>
         <div class="premiumHeroUtilityRow">
@@ -1133,7 +1133,7 @@
             <div class="v35-panelLabel">Recommended default</div>
             <h3>Balanced Prime</h3>
             <p><b>3 finalists</b> · <b>3 minimum validator reveals</b> · <b>40 / 60</b> historical-trial weights.</p>
-            <div class="helper" id="premiumHeroExposureHint">Enter payout to preview current exposure.</div>
+            <div class="helper" id="premiumHeroExposureHintLegacy">Enter payout to preview current exposure.</div>
           </div>
           <div class="premiumSignalCard">
             <div class="v35-panelLabel">When to use this</div>
@@ -8345,6 +8345,10 @@ function normalizeIpfsToHttp(uri){
         const validatorBudget = BigInt(struct.proc.finalistCount||0) * BigInt(struct.proc.maxValidatorRevealsPerFinalist||0) * BigInt(struct.proc.validatorRewardPerReveal||0);
         const exposure = payout + budget;
         const pct = payout > 0n ? Number((budget * 10000n) / payout) / 100 : 0;
+        const appStakeDisplay = Number(pel('premiumDiscoveryApplicationStake')?.value||0);
+        const checkpointHours = Number(pel('premiumDiscoveryCheckpointHours')?.value||0);
+        const weightSplit = `${Math.round(Number(struct.proc.historicalWeightBps||0)/100)} / ${Math.round(Number(struct.proc.trialWeightBps||0)/100)}`;
+        const applicationStakePosture = appStakeDisplay <= 0 ? 'disabled' : appStakeDisplay < 0.05 ? 'low-friction' : appStakeDisplay < 0.2 ? 'medium-friction' : 'high-friction';
         const rows = [
           ['Commit opens', formatDateTime(schedule.base)],
           ['Commit closes', formatDateTime(struct.proc.commitDeadline)],
@@ -8366,7 +8370,9 @@ function normalizeIpfsToHttp(uri){
         if(pel('premiumDiscoveryParticipationFinalists')) pel('premiumDiscoveryParticipationFinalists').textContent = String(struct.proc.finalistCount||0);
         if(pel('premiumDiscoveryParticipationSlots')) pel('premiumDiscoveryParticipationSlots').textContent = String(Number(struct.proc.finalistCount||0) * Number(struct.proc.maxValidatorRevealsPerFinalist||0));
         if(pel('premiumDiscoveryParticipationMinimum')) pel('premiumDiscoveryParticipationMinimum').textContent = `${struct.proc.minValidatorReveals||0} per finalist target`;
-        if(pel('premiumDiscoveryParticipationPosture')) pel('premiumDiscoveryParticipationPosture').textContent = (PREMIUM_PRESETS[premiumState.preset]?.posture || 'custom').replace('-', ' ');
+        if(pel('premiumDiscoveryWeightSplit')) pel('premiumDiscoveryWeightSplit').textContent = `${weightSplit} historical/trial`;
+        if(pel('premiumDiscoveryParticipationPosture')) pel('premiumDiscoveryParticipationPosture').textContent = applicationStakePosture;
+        if(pel('premiumDiscoveryCheckpointPosture')) pel('premiumDiscoveryCheckpointPosture').textContent = checkpointHours > 0 ? 'active' : 'disabled';
         if(pel('premiumDiscoveryStructPreview')) pel('premiumDiscoveryStructPreview').textContent = JSON.stringify({human:{preset:premiumState.preset, payout:premiumFormat(payout), procurementBudget:premiumFormat(budget), totalExposure:premiumFormat(exposure)}, job:struct.job, proc:struct.proc}, null, 2);
         const validation = premiumValidation(struct);
         if(pel('premiumDiscoveryValidationList')) pel('premiumDiscoveryValidationList').innerHTML = [
@@ -8689,7 +8695,9 @@ function normalizeIpfsToHttp(uri){
         if($('premiumDiscoveryCoachFunding')) $('premiumDiscoveryCoachFunding').textContent = `You are budgeting for up to ${finalists * maxReveals} paid reveal slots. Employer upfront exposure = payout escrow + procurement budget (${fmtEth('premiumDiscoveryTotalExposure')}).`;
         if($('premiumDiscoveryCoachSelection')) $('premiumDiscoveryCoachSelection').textContent = `Trial work currently has ${Math.round(trial/100)}% of the final winner score and historical quality has ${Math.round(hist/100)}%.`;
         if($('premiumDiscoveryCoachRisk')) $('premiumDiscoveryCoachRisk').textContent = `Application stake is ${frictionLabel(appStake)}. Checkpoint window is ${checkpoint > 0 ? 'active' : 'disabled'}.`;
-        if($('premiumHeroExposureHint')) $('premiumHeroExposureHint').textContent = ($('premiumDiscoveryTotalExposure')?.textContent || '—').includes('—') ? 'Enter payout to preview current exposure.' : `Current employer exposure: ${$('premiumDiscoveryTotalExposure').textContent}`;
+        const exposureText = ($('premiumDiscoveryTotalExposure')?.textContent || '—').includes('—') ? 'Enter payout to preview current exposure.' : `Current employer exposure: ${$('premiumDiscoveryTotalExposure').textContent}`;
+        if($('premiumHeroExposureHint')) $('premiumHeroExposureHint').textContent = exposureText;
+        if($('premiumHeroExposureHintLegacy')) $('premiumHeroExposureHintLegacy').textContent = exposureText;
         if($('premiumDiscoveryStats')) $('premiumDiscoveryStats').textContent = `${$('premiumStatsUnrevealed')?.textContent || '—'} unrevealed / ${$('premiumStatsFinalistDefaults')?.textContent || '—'} finalist defaults`;
       }
       function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims & participant actions'; }
