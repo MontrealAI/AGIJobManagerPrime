@@ -8592,12 +8592,22 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumDiscoveryDetailsDraftText')) pel('premiumDiscoveryDetailsDraftText').textContent = 'Generic premium procurement draft. Load the flagship article example explicitly if you want the constitutional mission text.';
         premiumRefresh();
       }
-      function premiumResetNumericFields(){
+      function premiumLoadDoctrineOnly(resetNarrative=true){
+        premiumState.exemplarLoaded = false;
         premiumState.exactDurationSeconds = 3888000;
         if(pel('premiumDiscoveryPayout')) pel('premiumDiscoveryPayout').value = '100000';
         if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = '45';
         if(pel('premiumDiscoveryMinReputation')) pel('premiumDiscoveryMinReputation').value = '0';
+        if(resetNarrative){
+          if(pel('premiumDiscoveryJobSpecURI')) pel('premiumDiscoveryJobSpecURI').value = '';
+          if(pel('premiumDiscoveryDetails')) pel('premiumDiscoveryDetails').value = '';
+          if(pel('premiumDiscoverySpecTemplate')) pel('premiumDiscoverySpecTemplate').textContent = 'Use the bridge above to load the flagship article draft into this generic builder.';
+          if(pel('premiumDiscoveryDetailsDraftText')) pel('premiumDiscoveryDetailsDraftText').textContent = 'Generic premium procurement draft. Load the flagship article example explicitly if you want the constitutional mission text.';
+        }
         premiumUsePreset('govern', true);
+      }
+      function premiumResetNumericFields(){
+        premiumLoadDoctrineOnly(false);
       }
       function premiumImportFromBuilder(mirrorOnly=false){
         const spec = String(document.getElementById('jobSpecURI')?.value || lastUploadedMetadataURI || '').trim();
@@ -8618,7 +8628,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function premiumInit(){
         if(!pel('premiumDiscoverySection')) return;
         premiumRenderNarrative();
-        premiumLoadExemplar();
+        premiumLoadDoctrineOnly(true);
         premiumIds.forEach(id=>{ const node = pel(id); if(node) node.addEventListener('input', ()=>{ if(id === 'premiumDiscoveryDurationDays') premiumState.exactDurationSeconds = null; if(id === 'premiumDiscoveryPayout' && !premiumState.manualEconomics && premiumState.preset !== 'custom') premiumApplyRecommendedEconomics(); if(['premiumDiscoveryApplicationStake','premiumDiscoveryFinalistStakeTotal','premiumDiscoveryStipendPerFinalist','premiumDiscoveryValidatorRewardPerReveal','premiumDiscoveryValidatorScoreBond'].includes(id)) premiumState.manualEconomics = true; premiumRefresh(); }); });
         document.querySelectorAll('[data-premium-preset]').forEach(btn=>btn.addEventListener('click', ()=>premiumUsePreset(btn.dataset.premiumPreset, true)));
         document.querySelectorAll('[data-premium-duration-days]').forEach(btn=>btn.addEventListener('click', ()=>{ premiumState.exactDurationSeconds = null; if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = btn.dataset.premiumDurationDays; document.querySelectorAll('[data-premium-duration-days]').forEach(chip=>chip.classList.toggle('active', chip===btn)); premiumRefresh(); }));
@@ -8628,8 +8638,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         pel('premiumDiscoveryUseExemplarBtn')?.addEventListener('click', ()=>premiumLoadExemplar());
         pel('premiumLoadExemplarBtn')?.addEventListener('click', ()=>{ premiumLoadExemplar(); if(typeof setPanel === 'function') setPanel('create'); document.getElementById('premiumCreatePanel')?.scrollIntoView({behavior:'smooth', block:'start'}); });
         pel('premiumBridgeLoadExampleBtn')?.addEventListener('click', ()=>premiumLoadExemplar());
-        pel('premiumDiscoveryUseRecommendedBtn')?.addEventListener('click', ()=>premiumUsePreset('govern', true));
-        pel('premiumBridgeLoadDoctrineBtn')?.addEventListener('click', ()=>premiumUsePreset('govern', true));
+        pel('premiumDiscoveryUseRecommendedBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
+        pel('premiumBridgeLoadDoctrineBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
         pel('premiumDiscoveryClearTemplateBtn')?.addEventListener('click', ()=>premiumClearTemplate());
         pel('premiumBridgeClearExampleBtn')?.addEventListener('click', ()=>premiumClearTemplate());
         pel('premiumDiscoveryResetNumericBtn')?.addEventListener('click', ()=>premiumResetNumericFields());
@@ -8664,7 +8674,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if(action === 'premium-open-inspector') { if(setPanel) setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
           if(action === 'premium-load-procurement') { if(setPanel) setPanel('inspect'); return loadProcurement(); }
           if(action === 'premium-claim-discovery') { if(setPanel) setPanel('claims'); return reviewClaim(); }
-          if(action === 'premium-recommended') return premiumLoadExemplar();
+          if(action === 'premium-recommended') return premiumLoadDoctrineOnly(true);
           if(action === 'premium-fast') return premiumUsePreset('fast', true);
           if(action === 'premium-assurance') return premiumUsePreset('assurance', true);
           if(action === 'premium-import') return premiumImportFromBuilder(false);
