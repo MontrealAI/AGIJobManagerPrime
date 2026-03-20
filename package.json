@@ -27,7 +27,7 @@
     "slither": "./scripts/security/run-slither.sh",
     "deploy:agijobmanager:prod": "AGIJOBMANAGER_DEPLOY=1 npx truffle migrate --f 6 --to 6",
     "test:prime": "npm run test:prime:unit && npm run forge:fuzz && npm run forge:invariant",
-    "test:prime:ci": "npm run forge:fuzz:ci && npm run forge:invariant:all && npm run test:prime:unit && npm run test:size && npm run test:prime:deploy-smoke",
+    "test:prime:ci": "npm run forge:fuzz:ci && npm run forge:fuzz:manager && npm run forge:invariant:all && npm run forge:invariant:clock && npm run test:prime:unit && npm run test:size && npm run test:prime:deploy-smoke",
     "test:size": "cd hardhat && npm run compile && cd .. && node scripts/check-bytecode-size.js",
     "test:prime:deploy-smoke": "cd hardhat && npm run compile && npm run deploy:prime:smoke",
     "deploy:prime:dry-run:mainnet": "cd hardhat && npm run deploy:prime:dry-run:mainnet",
@@ -37,14 +37,17 @@
     "test:size:benchmark": "node scripts/benchmark-prime-bytecode.js",
     "forge:fuzz": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=default forge test --match-path \"forge-test/fuzz/*.t.sol\"",
     "forge:soak": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=soak forge test --match-path \"forge-test/invariant/*.t.sol\"",
-    "test:prime:security": "npm run forge:fuzz:ci && npm run forge:invariant:all && npm run forge:soak",
+    "test:prime:security": "npm run forge:fuzz:ci && npm run forge:fuzz:manager && npm run forge:invariant:all && npm run forge:invariant:clock && npm run forge:soak",
     "forge:invariant:prime": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolInvariants",
     "forge:invariant:ghost": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolGhostInvariants",
-    "test:prime:audit": "npm run forge:fuzz && npm run forge:invariant:prime && npm run forge:invariant:ghost && npm run forge:soak",
+    "test:prime:audit": "npm run forge:fuzz && npm run forge:fuzz:manager && npm run forge:invariant:prime && npm run forge:invariant:ghost && npm run forge:invariant:clock && npm run forge:soak",
     "forge:fuzz:ci": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-path \"forge-test/fuzz/*.t.sol\"",
     "forge:invariant:all": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-path \"forge-test/invariant/*.t.sol\"",
     "forge:replay:ghost": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolGhostInvariants -vvvv",
-    "forge:replay:prime": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolInvariants -vvvv"
+    "forge:replay:prime": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeProtocolInvariants -vvvv",
+    "forge:fuzz:manager": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimeManagerSettlementFuzz",
+    "forge:invariant:clock": "PATH=\"$HOME/.foundry/bin:$PATH\" FOUNDRY_PROFILE=ci forge test --match-contract PrimePauseDeadlineInvariants",
+    "test:prime:pr": "npm run forge:fuzz && npm run forge:invariant"
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.9.6"
