@@ -9,9 +9,10 @@
 AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work agreements, with optional ENS-backed public job pages.
 
 > [!IMPORTANT]
-> **New here? For the Prime standalone surface, start with [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md).**  
-> This is the clearest README entry point for the current Prime standalone workflow while the repo-published Pages UI remains legacy-only.  
-> **Current checked-in Prime standalone snapshot:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html` *(its packet metadata still self-identifies as v26)*  
+> **New here? Start with the current checked-in Prime standalone snapshot: [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html).**  
+> This is the direct Prime standalone surface in the repository.  
+> **Snapshot caveat:** its autonomous packet metadata still self-identifies as `v26`.  
+> **Legacy standalone guide/reference path:** `docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md` *(still documents the older v21 flow and should be treated as supporting context only)*  
 > **Repo-published GitHub Pages artifact:** `agijobmanager.html` *(legacy AGIJobManager UI, not the Prime standalone console)*  
 > **Deployment / cutover authority remains:** `hardhat/README.md` and `docs/DEPLOYMENT/README.md`
 
@@ -19,8 +20,8 @@ AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work a
 
 | Need | Go here |
 | --- | --- |
-| Prime standalone guide path | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) |
 | Current checked-in Prime standalone snapshot | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) *(packet metadata still reports v26)* |
+| Legacy standalone guide/reference path | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still documents the older v21 flow)* |
 | Standalone UI inventory | [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md) *(inventory still reflects earlier versioned-artifact entries)* |
 | Repo-published GitHub Pages artifact | [`agijobmanager.html`](agijobmanager.html) *(legacy AGIJobManager UI)* |
 | Broader UI docs | [`docs/ui/README.md`](docs/ui/README.md) and [`ui/README.md`](ui/README.md) |
@@ -42,12 +43,12 @@ Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.
 
 ## Start here by role (30-second routing)
 
-- **Newcomer / evaluator / reviewer:** start with [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md), then open the current checked-in Prime standalone snapshot [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html). Keep in mind that the snapshot's packet metadata still self-identifies as v26.
+- **Newcomer / evaluator / reviewer:** start with the current checked-in Prime standalone snapshot [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html). Keep in mind that the snapshot's packet metadata still self-identifies as v26, and use [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) only as legacy supporting context.
 - **New operator / deployer:** start with [`hardhat/README.md`](hardhat/README.md) (**official path**) and then the deployment index [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md).
 - **Contract owner (Etherscan-first):** start with [`docs/DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md`](docs/DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md), then [`docs/OWNER_RUNBOOK.md`](docs/OWNER_RUNBOOK.md).
 - **ENSJobPages replacement operator:** use one canonical flow in [`docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`](docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md).
 - **Troubleshooting during deployment/cutover:** go to [`docs/TROUBLESHOOTING_DEPLOYMENT_AND_ENS.md`](docs/TROUBLESHOOTING_DEPLOYMENT_AND_ENS.md).
-- **Standalone HTML UI operator/reviewer:** start with [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md). Use [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) for the current checked-in Prime standalone snapshot, noting that its packet metadata still self-identifies as v26. Use [`agijobmanager.html`](agijobmanager.html) only if you specifically need the repo-published legacy AGIJobManager Pages UI.
+- **Standalone HTML UI operator/reviewer:** start with [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) for the current checked-in Prime standalone snapshot, noting that its packet metadata still self-identifies as v26. Use [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) only as legacy supporting context, and use [`agijobmanager.html`](agijobmanager.html) only if you specifically need the repo-published legacy AGIJobManager Pages UI.
 - **Broader/full UI contributor:** use [`docs/ui/README.md`](docs/ui/README.md) for Next.js UI roadmap, runbooks, and release/testing docs.
 
 ## Canonical operator answers (quick reference)
@@ -88,8 +89,8 @@ Irreversible actions (delay until validated):
 
 ### UI surfaces (what exists now)
 
-- **Prime standalone guide path (current README entry point):** [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still carries earlier versioned-artifact wording)*
-- **Current checked-in Prime standalone snapshot:** [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) *(packet metadata still self-identifies as v26)*
+- **Current checked-in Prime standalone snapshot (current README entry point):** [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) *(packet metadata still self-identifies as v26)*
+- **Legacy standalone guide/reference path:** [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still documents the older v21 flow)*
 - **Repo-published GitHub Pages artifact:** [`agijobmanager.html`](agijobmanager.html) *(legacy AGIJobManager UI, not the Prime standalone console)*
 - **Standalone inventory / broader UI docs:** [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md), [`ui/README.md`](ui/README.md), [`docs/ui/README.md`](docs/ui/README.md) *(these references still include earlier versioned-artifact inventory wording)*
 - **Deployment/operator tooling (official):** `hardhat/` + `docs/DEPLOYMENT/`
@@ -100,8 +101,8 @@ Irreversible actions (delay until validated):
 
 | If you need to... | Use this | Why |
 | --- | --- | --- |
-| Read Prime standalone/operator context first | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) | Best current README entry point for the Prime standalone workflow; the guide still carries earlier versioned-artifact wording. |
-| Open the current checked-in Prime standalone snapshot | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) | Current checked-in Prime snapshot, but its autonomous packet metadata still self-identifies as v26. |
+| Open the current checked-in Prime standalone snapshot | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) | Direct Prime standalone surface in the repo, but its autonomous packet metadata still self-identifies as v26. |
+| Read the legacy standalone guide/reference path | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) | Legacy supporting context only; it still documents the older v21 flow rather than the current Prime snapshot. |
 | Open the repo-published GitHub Pages artifact | [`agijobmanager.html`](agijobmanager.html) | Published legacy AGIJobManager UI; useful for the existing Pages surface, but not the Prime standalone console. |
 | Browse standalone artifact inventory or broader UI docs | [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md), [`ui/README.md`](ui/README.md), [`docs/ui/README.md`](docs/ui/README.md) | Artifact inventory and broader UI/documentation context; these references still include earlier versioned-artifact entries. |
 | Deploy/replace contracts and ENS components | [`hardhat/README.md`](hardhat/README.md) + [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md) | Canonical deployment and operator runbooks; the UI is not the deployment authority. |
@@ -118,8 +119,8 @@ Irreversible actions (delay until validated):
 - Root Truffle config + migration scripts: **legacy/supported** deployment flow for backward compatibility and reproducibility.
 
 ### Documentation entry points
-- Prime standalone guide path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still carries earlier versioned-artifact wording)*
 - Current checked-in Prime standalone snapshot: [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) *(packet metadata still self-identifies as v26)*
+- Legacy standalone guide/reference path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still documents the older v21 flow)*
 - Repo-published GitHub Pages artifact: [`agijobmanager.html`](agijobmanager.html) *(legacy AGIJobManager UI)*
 - Standalone inventory: [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md) *(still reflects earlier versioned-artifact entries)*
 - Canonical deployment index: [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md)
@@ -236,8 +237,8 @@ Legacy Truffle build/test flows remain available for reference compatibility (`n
 
 - Main documentation index: [`docs/README.md`](docs/README.md)
 - UI docs hub (broader UI): [`docs/ui/README.md`](docs/ui/README.md)
-- Prime standalone guide path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still carries earlier versioned-artifact wording)*
 - Current checked-in Prime standalone snapshot (repo): [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) *(packet metadata still self-identifies as v26)*
+- Legacy standalone guide/reference path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) *(still documents the older v21 flow)*
 - Repo-published GitHub Pages artifact: [`agijobmanager.html`](agijobmanager.html) *(legacy AGIJobManager UI)*
 - UI directory inventory: [`ui/README.md`](ui/README.md)
 - Quintessential walkthrough: [`docs/QUINTESSENTIAL_USE_CASE.md`](docs/QUINTESSENTIAL_USE_CASE.md)
