@@ -10,7 +10,7 @@ AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work a
 
 > [!IMPORTANT]
 > **New here? Start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html).**  
-> This is the fastest way to open the current standalone Prime mainnet UI.  
+> This is the fastest way to open the current hosted standalone Prime mainnet console.  
 > **Repo-pinned equivalent artifact:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`  
 > **Current standalone/operator guide path:** `docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`  
 > **Deployment / cutover authority remains:** `hardhat/README.md` and `docs/DEPLOYMENT/README.md`
