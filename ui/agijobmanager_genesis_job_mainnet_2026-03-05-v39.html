@@ -8640,8 +8640,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         pel('premiumBridgeLoadExampleBtn')?.addEventListener('click', ()=>premiumLoadExemplar());
         pel('premiumDiscoveryUseRecommendedBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
         pel('premiumBridgeLoadDoctrineBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
-        pel('premiumDiscoveryClearTemplateBtn')?.addEventListener('click', ()=>premiumClearTemplate());
-        pel('premiumBridgeClearExampleBtn')?.addEventListener('click', ()=>premiumClearTemplate());
+        pel('premiumDiscoveryClearTemplateBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
+        pel('premiumBridgeClearExampleBtn')?.addEventListener('click', ()=>premiumLoadDoctrineOnly(true));
         pel('premiumDiscoveryResetNumericBtn')?.addEventListener('click', ()=>premiumResetNumericFields());
         pel('premiumCopyDraftSpecBtn')?.addEventListener('click', async ()=>{ const body = pel('premiumDiscoverySpecTemplate')?.textContent || PREMIUM_EXEMPLAR.missionBrief; try{ await navigator.clipboard.writeText(body); setToast('Draft spec copied.', 'ok'); }catch(e){ setToast('Clipboard unavailable in this environment.', 'warn'); } });
         pel('premiumDiscoveryImportFromBuilderBtn')?.addEventListener('click', ()=>premiumImportFromBuilder(false));
@@ -8674,7 +8674,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if(action === 'premium-open-inspector') { if(setPanel) setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
           if(action === 'premium-load-procurement') { if(setPanel) setPanel('inspect'); return loadProcurement(); }
           if(action === 'premium-claim-discovery') { if(setPanel) setPanel('claims'); return reviewClaim(); }
-          if(action === 'premium-recommended') return premiumLoadDoctrineOnly(true);
+          if(action === 'premium-recommended') return premiumLoadExemplar();
           if(action === 'premium-fast') return premiumUsePreset('fast', true);
           if(action === 'premium-assurance') return premiumUsePreset('assurance', true);
           if(action === 'premium-import') return premiumImportFromBuilder(false);
