@@ -5689,7 +5689,8 @@ async function updateSummary(){
         aMin,aBps,aMax,maxActive,
         vBps,vMin,vMax,vSlash,
         vReward,maxPayout,jobLimit,
-        pausedState,settlePausedRead,drpRead
+        pausedState,settlePausedRead,drpRead,
+        premiumReputationRead
       ] = await Promise.all([
         agiJobManager.methods.agentBond().call(),
         agiJobManager.methods.agentBondBps().call(),
@@ -5704,11 +5705,13 @@ async function updateSummary(){
         agiJobManager.methods.jobDurationLimit().call(),
         agiJobManager.methods.paused().call(),
         runSafeReadStep('settlementPaused', ()=>agiJobManager.methods.settlementPaused().call(), {silent:true}),
-        runSafeReadStep('disputeReviewPeriod', ()=>agiJobManager.methods.disputeReviewPeriod().call(), {silent:true})
+        runSafeReadStep('disputeReviewPeriod', ()=>agiJobManager.methods.disputeReviewPeriod().call(), {silent:true}),
+        runSafeReadStep('premiumReputationThreshold', ()=>agiJobManager.methods.premiumReputationThreshold().call(), {silent:true})
       ]);
       const maxActiveSafe = maxActive?.__safeReadError ? '—' : maxActive;
       const settlePaused = settlePausedRead?.__safeReadError ? (prior.settlementPaused ?? null) : !!settlePausedRead;
       const drp = drpRead?.__safeReadError ? (prior.disputeReviewPeriod ?? null) : Number(drpRead);
+      const premiumReputationThreshold = premiumReputationRead?.__safeReadError ? (prior.premiumReputationThreshold ?? null) : Number(premiumReputationRead);
 
       el("agentBondMin").textContent = formatUnitsToAmount(aMin);
       el("agentBondBps").textContent = aBps;
@@ -5729,14 +5732,18 @@ async function updateSummary(){
         requiredValidatorApprovals: Number(ra),
         requiredValidatorDisapprovals: Number(rd),
         voteQuorum: Number(vq),
+        premiumReputationThreshold,
+        validationRewardPercentage: Number(vReward),
         validatorBondBps: String(vBps),
         validatorBondMin: String(vMin),
         validatorBondMax: String(vMax),
+        validatorSlashBps: Number(vSlash),
         agentBondBps: String(aBps),
         agentBondMin: String(aMin),
         agentBondMax: String(aMax),
         jobDurationLimit: String(jobLimit)
       };
+      window.dispatchEvent(new CustomEvent('protocolstate:updated'));
       el("validationRewardPct").textContent = String(vReward) + "%";
       el("maxJobPayout").textContent = formatUnitsToAmount(maxPayout);
       el("jobDurationLimit").textContent = jobLimit;
@@ -8651,6 +8658,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       }
       if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', premiumInit, {once:true}); else premiumInit();
       window.addEventListener('load', ()=>setTimeout(()=>premiumRefresh().catch(()=>{}), 250));
+      window.addEventListener('protocolstate:updated', ()=>{ premiumRenderNarrative(); premiumRefresh().catch(()=>{}); });
     })();
 
 (function(){
