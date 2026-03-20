@@ -274,9 +274,9 @@
     body.has-open-modal{overflow:hidden}
     body.has-open-modal #v26MobileDock,
     body.has-open-modal #v26MobileSheet{opacity:0;pointer-events:none;visibility:hidden}
-    .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:1200;overflow:auto;overscroll-behavior:contain}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:1400;overflow:hidden;overscroll-behavior:contain;isolation:isolate}
     .modalBackdrop.open{display:flex}
-    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1201;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow:auto;overscroll-behavior:contain;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1401;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
     .modalHeader{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin:-18px -18px 14px;padding:18px;background:linear-gradient(180deg,rgba(27,10,52,.995),rgba(27,10,52,.94) 78%,rgba(27,10,52,.78));backdrop-filter:blur(8px);border-radius:22px 22px 0 0}
     .modalClose{min-width:42px;height:42px;border-radius:12px;border:1px solid hsl(var(--border));background:rgba(255,255,255,.05);color:hsl(var(--foreground));cursor:pointer;font-size:22px}
     .detailGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
@@ -428,10 +428,13 @@
     .reviewChecklist{display:grid;gap:8px;margin-top:14px}
     .reviewCheck{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)}
     .reviewMethodBox{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;line-height:1.5;padding:12px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid hsl(var(--border));margin-top:14px}
-    .reviewFooter{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom));z-index:2;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px;padding:14px 0 calc(2px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(18,7,34,0),rgba(18,7,34,.92) 18%,rgba(18,7,34,.995))}
+    .reviewFooter{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));z-index:2;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:16px -18px -24px;padding:14px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(18,7,34,0),rgba(18,7,34,.92) 18%,rgba(18,7,34,.995))}
     .reviewFooter .helper{margin:0}
     #alphaMintReviewModal .modalCard,
     #alphaIdentityReviewModal .modalCard{width:min(820px,96vw);height:auto;min-height:0}
+    #alphaAgentMintSection .mintGrid,#alphaAgentMintSection .actions,#alphaAgentMintSection .reviewFacts{align-items:start}
+    #alphaAgentMintSection .mintPreview,#alphaAgentMintSection #alphaIdentityRootHealthCard{height:auto;min-height:0;overflow:hidden}
+    #alphaAgentMintSection .miniTable td:last-child,#alphaAgentMintSection .reviewFact .v{overflow-wrap:anywhere;word-break:break-word}
     #actionReviewModal .reviewFooter{justify-content:flex-end}
     @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts{grid-template-columns:1fr}}
     @media (max-width:700px){
@@ -520,7 +523,7 @@
       .stickyBar,.stickySubsection{position:static;top:auto}
       .scrollTerms{height:auto;min-height:0;max-height:none;padding-right:0}
       .modalBackdrop{padding:0;align-items:flex-end}
-      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);border-radius:18px 18px 0 0;padding:14px 12px calc(18px + env(safe-area-inset-bottom));margin-top:auto}
+      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);border-radius:18px 18px 0 0;padding:14px 12px calc(24px + env(safe-area-inset-bottom));margin-top:auto}
       .modalHeader{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(27,10,52,.92));padding-bottom:10px}
       .modalClose{min-width:44px;height:44px}
       .codeBox,.exportBox,.packetBox,.reviewMethodBox,.bridgeRouteBox{font-size:.8rem;max-height:260px}
@@ -987,7 +990,8 @@
       .v35-heroCopy,.v35-heroPanel,.primeHeroSurface,.primePanel,.elitePanel,.card{padding:18px!important;border-radius:22px!important}
       .v35-actionChips,.v35-stateRow,.primeBadgeRow{overflow:auto;flex-wrap:nowrap;padding-bottom:4px}
       .v35-actionChip,.v35-stateChip,.primeBadgeRow .pill{white-space:nowrap}
-      .modalCard,.commandModalCard,.reviewModalCard{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
+      .modalCard,.commandModalCard,.reviewModalCard{padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+      .reviewFooter{bottom:calc(-24px - env(safe-area-inset-bottom))!important;margin:16px -12px -24px!important;padding:14px 12px calc(18px + env(safe-area-inset-bottom))!important}
       .modalHeader{background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,242,250,.95))!important;border-bottom:1px solid rgba(121,96,150,.12)!important;color:#261d2d!important}
       .modalHeader .eyebrow,.modalHeader .helper,.modalHeader .muted{color:rgba(82,63,98,.68)!important}
       .modalClose{background:rgba(255,255,255,.92)!important;border-color:rgba(121,96,150,.16)!important;color:#382543!important}
@@ -4960,11 +4964,16 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return p;
     }
     function identityWriteLockedReason(preview){
+      const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       if(!userAccount) return 'Connect wallet to continue.';
       if(!isMainnet) return 'Switch to Ethereum mainnet.';
       if(!hasAcceptedTerms) return 'Accept terms to unlock writes.';
+      if(!local.ok) return local.reason;
       if(!preview) return 'Preview unavailable.';
       if(!preview.validLabel) return 'Invalid label.';
+      if(preview.status === 6 || preview.rootActiveOut === false) return 'Identity root is inactive.';
+      if(preview.status === 7 || preview.rootUsable === false) return 'Identity parent is not usable.';
+      if(preview.pausedOut) return 'Identity contract is paused.';
       return '';
     }
     async function refreshIdentityState(){
@@ -5037,10 +5046,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentitySyncBtn')) el('alphaIdentitySyncBtn').disabled = !syncEnabled;
       if(el('alphaIdentityActionStatus')){
         if(lockedReason) el('alphaIdentityActionStatus').textContent = lockedReason;
-        else if(mismatchWarnings.length) el('alphaIdentityActionStatus').textContent = mismatchWarnings.join(' ');
+        else if(registerEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: register(label) mints wrapped ENS name + soulbound identity to connected wallet.';
         else if(claimEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: claimIdentity(label) for wrapped names already owned by your wallet.';
         else if(syncEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: syncIdentityByLabel(label) repair path for desynced / expired identity posture.';
-        else if(registerEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: register(label) mints wrapped ENS name + soulbound identity to connected wallet.';
+        else if(mismatchWarnings.length) el('alphaIdentityActionStatus').textContent = mismatchWarnings.join(' ');
         else el('alphaIdentityActionStatus').textContent = 'No eligible identity write action for current preview state.';
       }
 
@@ -5090,12 +5099,14 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     function openAlphaIdentityReview(action){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity.preview;
+      const lockedReason = identityWriteLockedReason(preview);
       const actionMeta = {
-        register:{title:'Register Alpha Agent Identity', helper:'register(label) mints the wrapped ENS name plus the soulbound identity to the connected wallet.', enabled:!!preview?.registrable},
-        claimIdentity:{title:'Claim Alpha Agent Identity', helper:'claimIdentity(label) recovers identity for a wrapped name that is already owned by the connected wallet.', enabled:!!preview?.claimable},
-        syncIdentityByLabel:{title:'Sync Alpha Agent Identity', helper:'syncIdentityByLabel(label) is a repair-only path for expired or desynced local identity posture.', enabled:!!preview?.identityExists && (preview?.status===3 || preview?.status===4)}
-      }[action] || {title:`${action} Alpha Agent Identity`, helper:'Contract-faithful action preview.', enabled:false};
+        register:{title:'Register Alpha Agent Identity', helper:'register(label) mints the wrapped ENS name plus the soulbound identity to the connected wallet.', enabled:!lockedReason && !!preview?.registrable, cta:'Submit register(label)'},
+        claimIdentity:{title:'Claim Alpha Agent Identity', helper:'claimIdentity(label) recovers identity for a wrapped name that is already owned by the connected wallet.', enabled:!lockedReason && !!preview?.claimable, cta:'Submit claimIdentity(label)'},
+        syncIdentityByLabel:{title:'Sync Alpha Agent Identity', helper:'syncIdentityByLabel(label) is a repair-only path for expired or desynced local identity posture.', enabled:!lockedReason && !!preview?.identityExists && (preview?.status===3 || preview?.status===4), cta:'Submit syncIdentityByLabel(label)'}
+      }[action] || {title:`${action} Alpha Agent Identity`, helper:'Contract-faithful action preview.', enabled:false, cta:'Submit'};
       if(!local.ok) return setToast(local.reason, 'warn');
+      if(lockedReason) return setToast(lockedReason, 'warn');
       if(!actionMeta.enabled) return setToast('Current preview does not allow that identity action yet.', 'warn');
       const facts = [
         ['Contract', FREE_TRIAL_REGISTRAR_IDENTITY],
@@ -5111,11 +5122,14 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityReviewFacts')) el('alphaIdentityReviewFacts').innerHTML = facts.map(([k,v])=>`<div class="reviewFact"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(String(v||''))}</span></div>`).join('');
       if(el('alphaIdentityReviewTitle')) el('alphaIdentityReviewTitle').textContent = actionMeta.title;
       if(el('alphaIdentityReviewHelper')) el('alphaIdentityReviewHelper').textContent = actionMeta.helper;
-      if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').dataset.identityAction = action;
+      if(el('confirmAlphaIdentityReviewBtn')){
+        el('confirmAlphaIdentityReviewBtn').dataset.identityAction = action;
+        el('confirmAlphaIdentityReviewBtn').textContent = actionMeta.cta;
+      }
       const m=el('alphaIdentityReviewModal'); if(m){ m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
       syncModalState();
     }
-    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } syncModalState(); }
+    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Submit'; syncModalState(); }
     async function runAlphaIdentityAction(action){
       if(!requireWalletForRegistrarWrite()) return;
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
