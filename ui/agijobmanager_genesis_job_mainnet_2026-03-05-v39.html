@@ -19,6 +19,7 @@
       --warn:#9a6a1d;
     }
     html{scroll-behavior:smooth;background:hsl(var(--background));}
+    *,*::before,*::after{box-sizing:border-box;}
     body{
       font-family:'Montserrat',sans-serif;
       background:
@@ -260,19 +261,23 @@
     .stickySubsection{position:sticky;top:8px}
     @media (max-width:900px){.builderGrid,.tripleGrid,.ensGrid,.previewHero{grid-template-columns:1fr}}
 
-    .mintGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
-    .mintPreview{border:1px solid hsl(var(--border));border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
-    .mintPreview .line{margin:6px 0;color:var(--text-soft);word-break:break-all}
+    .mintGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:12px;align-items:start}
+    .mintGrid > *{min-width:0}
+    .mintPreview{min-width:0;border:1px solid hsl(var(--border));border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
+    .mintPreview .line{margin:6px 0;color:var(--text-soft);overflow-wrap:anywhere;word-break:break-word}
     .mintPreview b{color:hsl(var(--foreground))}
     .inlineError{font-size:.85rem;color:var(--warn);margin-top:6px}
     .recentNames{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .recentNames button{font-size:.84rem;padding:6px 10px}
+    .recentNames button,.pill,.chip{font-size:.84rem;padding:6px 10px;white-space:nowrap;word-break:normal}
     @media (max-width:900px){.mintGrid{grid-template-columns:1fr}}
 
-    .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:22px;z-index:70}
+    body.has-open-modal{overflow:hidden}
+    body.has-open-modal #v26MobileDock,
+    body.has-open-modal #v26MobileSheet{opacity:0;pointer-events:none;visibility:hidden}
+    .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:140;overscroll-behavior:contain}
     .modalBackdrop.open{display:flex}
-    .modalCard{width:min(1180px,96vw);max-height:92vh;overflow:auto;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px}
-    .modalHeader{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}
+    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:141;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow:auto;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+    .modalHeader{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin:-18px -18px 14px;padding:18px;background:linear-gradient(180deg,rgba(27,10,52,.995),rgba(27,10,52,.94) 78%,rgba(27,10,52,.78));backdrop-filter:blur(8px);border-radius:22px 22px 0 0}
     .modalClose{min-width:42px;height:42px;border-radius:12px;border:1px solid hsl(var(--border));background:rgba(255,255,255,.05);color:hsl(var(--foreground));cursor:pointer;font-size:22px}
     .detailGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
     .detailSection{padding:14px;border:1px solid hsl(var(--border));border-radius:16px;background:rgba(255,255,255,.03)}
@@ -416,6 +421,7 @@
     .reviewModalCard{width:min(820px,96vw)}
     .reviewBodyText{color:var(--text-soft);line-height:1.55}
     .reviewFacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+    .reviewFacts,.reviewChecklist,.reviewFooter,.actions{min-width:0}
     .reviewFact{padding:12px;border:1px solid hsl(var(--border));border-radius:14px;background:rgba(255,255,255,.03);overflow:hidden}
     .reviewFact .k{display:block;font-size:.8rem;color:var(--text-soft);margin-bottom:4px}
     .reviewFact .v{display:block;font-size:.96rem;font-weight:700;overflow-wrap:anywhere;word-break:break-word}
@@ -424,7 +430,17 @@
     .reviewMethodBox{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;line-height:1.5;padding:12px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid hsl(var(--border));margin-top:14px}
     .reviewFooter{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px}
     .reviewFooter .helper{margin:0}
+    #alphaMintReviewModal .modalCard,
+    #alphaIdentityReviewModal .modalCard{width:min(820px,96vw)}
+    #alphaMintReviewModal .actions,
+    #alphaIdentityReviewModal .actions,
+    #actionReviewModal .reviewFooter{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom));z-index:2;display:flex;justify-content:flex-end;gap:10px;padding:14px 0 calc(2px + env(safe-area-inset-bottom));margin-top:16px;background:linear-gradient(180deg,rgba(18,7,34,0),rgba(18,7,34,.92) 18%,rgba(18,7,34,.995))}
     @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts{grid-template-columns:1fr}}
+    @media (max-width:700px){
+      .modalBackdrop{align-items:flex-end;padding:0}
+      .modalCard,.commandModalCard,.reviewModalCard,#alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+      .modalHeader{border-radius:22px 22px 0 0}
+    }
 
 
     .bridgeTopline{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
@@ -4177,6 +4193,17 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       return true;
     }
+    function requireWalletForRegistrarWrite(){
+      return requireWalletConnection() && mustBeReadyToWrite();
+    }
+    function updateViewportVars(){
+      const viewportHeight = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 0;
+      if(viewportHeight) document.documentElement.style.setProperty('--app-vh', `${viewportHeight * 0.01}px`);
+    }
+    function syncModalState(){
+      const anyOpenModal = !!document.querySelector('.modalBackdrop.open');
+      document.body.classList.toggle('has-open-modal', anyOpenModal);
+    }
 
     function parseAmountToUnits(s){
       const str = String(s||"").trim();
@@ -4826,7 +4853,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       refreshIdentityState().catch(()=>{});
     }
     async function openAlphaMintReview(){
-      if(!requireWalletConnection() || !mustBeReadyToWrite()) return;
+      if(!requireWalletForRegistrarWrite()) return;
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       if(!local.ok){
         await updateAlphaMintPreview().catch(()=>{});
@@ -4868,10 +4895,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       ].map(([k,v])=>`<div class="reviewFact"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(String(v||''))}</span></div>`).join('');
       const modal = el('alphaMintReviewModal');
       if(modal){ modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
+      syncModalState();
     }
-    function closeAlphaMintReview(){ const modal = el('alphaMintReviewModal'); if(modal){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); } }
+    function closeAlphaMintReview(){ const modal = el('alphaMintReviewModal'); if(modal){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); } syncModalState(); }
     async function mintAlphaAgentName(){
-      if(!requireWalletConnection() || !mustBeReadyToWrite()) return;
+      if(!requireWalletForRegistrarWrite()) return;
       if(!freeTrialRegistrar){
         if(!web3) return setToast('Wallet provider unavailable. Reconnect wallet and retry.', 'bad');
         freeTrialRegistrar = new web3.eth.Contract(FreeTrialSubdomainRegistrarABI, FREE_TRIAL_REGISTRAR);
@@ -4895,11 +4923,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       setToast(`Minted ${local.label}.${ALPHA_AGENT_PARENT} · expiry ${expiry}`, 'ok');
       saveRecentAlphaAgentName(local.label);
       if(el('agentSub')) el('agentSub').value = local.label;
-      await refreshFreeTrialRegistrarState().catch((e)=>setToast(`Registrar state refresh warning: ${e.message||String(e)}`, 'warn'));
-      await updateAlphaMintPreview().catch(()=>{});
-      await verifySubdomain('agent', true).catch((e)=>setToast(`Alpha verification refresh warning: ${e.message||String(e)}`, 'warn'));
-      await refreshIdentityState().catch((e)=>setToast(`Alpha identity refresh warning: ${e.message||String(e)}`, 'warn'));
-      await updateMissionControl().catch((e)=>setToast(`Mission control refresh warning: ${e.message||String(e)}`, 'warn'));
+      refreshFreeTrialRegistrarState().catch((e)=>setToast(`Registrar state refresh warning: ${e.message||String(e)}`, 'warn'));
+      updateAlphaMintPreview().catch(()=>{});
+      verifySubdomain('agent', true).catch((e)=>setToast(`Alpha verification refresh warning: ${e.message||String(e)}`, 'warn'));
+      refreshIdentityState().catch((e)=>setToast(`Alpha identity refresh warning: ${e.message||String(e)}`, 'warn'));
+      updateMissionControl().catch((e)=>setToast(`Mission control refresh warning: ${e.message||String(e)}`, 'warn'));
     }
     function renderRegistrarAdminControls(){
       const box = el('registrarAdminControls');
@@ -5074,8 +5102,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityReviewTitle')) el('alphaIdentityReviewTitle').textContent = `${action} Alpha Agent Identity`;
       if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').dataset.identityAction = action;
       const m=el('alphaIdentityReviewModal'); if(m){ m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
+      syncModalState();
     }
-    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } }
+    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } syncModalState(); }
     async function runAlphaIdentityAction(action){
       if(!requireConnected() || !mustBeReadyToWrite()) return;
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
@@ -5089,12 +5118,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!send) return;
       const receipt = await runTrackedTx(`Alpha identity ${action} ${local.label}`, send, {pendingDetail:`Submitting ${action}…`, successDetail:`${action} confirmed.`});
       if(el('agentSub')) el('agentSub').value = local.label;
-      await verifySubdomain('agent', true);
-      await refreshFreeTrialRegistrarState();
-      await refreshIdentityState();
-      await updateMissionControl();
-      await updateDynamicInsights().catch(()=>{});
-      await loadJobs().catch(()=>{});
+      verifySubdomain('agent', true).catch((e)=>setToast(`Alpha verification refresh warning: ${e.message||String(e)}`, 'warn'));
+      refreshFreeTrialRegistrarState().catch((e)=>setToast(`Registrar state refresh warning: ${e.message||String(e)}`, 'warn'));
+      refreshIdentityState().catch((e)=>setToast(`Alpha identity refresh warning: ${e.message||String(e)}`, 'warn'));
+      updateMissionControl().catch((e)=>setToast(`Mission control refresh warning: ${e.message||String(e)}`, 'warn'));
+      updateDynamicInsights().catch(()=>{});
+      loadJobs().catch(()=>{});
       saveRecentAlphaAgentName(local.label);
       const p = APP_STATE.identity?.preview;
       setToast(`Identity action ${action} confirmed for ${local.label}.${ALPHA_AGENT_PARENT} · tokenId ${p?.tokenId || 'n/a'} · tx ${shortAddr(receipt?.transactionHash || '')}`, 'ok');
@@ -7740,7 +7769,7 @@ function normalizeIpfsToHttp(uri){
           if(el('commandPaletteModal')?.classList.contains('open')) closeCommandPalette(); else openCommandPalette();
           return;
         }
-        if(e.key === "Escape"){ closeJobDetails(); closeCompletionAssistant(); closeCommandPalette(); closeActionReview(); closeAlphaMintReview(); return; }
+        if(e.key === "Escape"){ closeJobDetails(); closeCompletionAssistant(); closeCommandPalette(); closeActionReview(); closeAlphaMintReview(); closeAlphaIdentityReview(); return; }
         if(!el('commandPaletteModal')?.classList.contains('open')) return;
         const input = el('commandPaletteInput');
         const items = filteredCommandItems(input?.value || '');
@@ -9016,6 +9045,14 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         refreshAttachPreview().catch(()=>{});
         loadClaims().catch(()=>{});
       }
+      updateViewportVars();
+      syncModalState();
+      window.visualViewport?.addEventListener('resize', updateViewportVars);
+      window.addEventListener('resize', updateViewportVars);
+      window.addEventListener('pageshow', ()=>{ updateViewportVars(); syncModalState(); });
+      window.addEventListener('focus', ()=>{ updateViewportVars(); syncModalState(); });
+      document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ updateViewportVars(); syncModalState(); } });
+      new MutationObserver(syncModalState).observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
       if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind, {once:true}); else bind();
     })();
 
