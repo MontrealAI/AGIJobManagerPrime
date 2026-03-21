@@ -7473,10 +7473,11 @@ async function updateSummary(){
       const out = isAgent ? el("agentOut") : el("clubOut");
       const pill = isAgent ? el("agentPill") : el("clubPill");
       const suffix = isAgent ? (alpha ? SUFFIX.alphaAgent : SUFFIX.agent) : (alpha ? SUFFIX.alphaClub : SUFFIX.club);
+      const syncVerificationSurfaces = ()=>{ updateVerificationSummary(); updatePreflightSummary(); persistUiContinuity(); };
       const clearRoleVerification = ()=>{ verified[kind] = null; if(isAgent){ verified.agentAlpha = false; const ab = el("agentAlphaBadge"); if(ab) ab.style.display = "none"; } else { verified.clubAlpha = false; const cb = el("clubAlphaBadge"); if(cb) cb.style.display = "none"; const vb = el("validatorBadge"); if(vb) vb.style.display = "none"; } };
       const sub = (input.value||"").trim();
       if(!/^[a-z0-9-]+$/.test(sub)){
-        clearRoleVerification(); out.textContent="Invalid format. Use lowercase letters, numbers, hyphens."; pill.className="pill bad"; pill.textContent=(isAgent?"Agent":"Club")+" ENS: invalid"; updateReadinessUI(); return;
+        clearRoleVerification(); out.textContent="Invalid format. Use lowercase letters, numbers, hyphens."; pill.className="pill bad"; pill.textContent=(isAgent?"Agent":"Club")+" ENS: invalid"; updateReadinessUI(); syncVerificationSurfaces(); return;
       }
       try{
         const full = `${sub}.${suffix}`;
@@ -7516,8 +7517,9 @@ async function updateSummary(){
           clearRoleVerification(); out.textContent = `Not authorized for this wallet: ${full}`; pill.className = "pill bad"; pill.textContent = (isAgent?"Agent":"Club") + " ENS: not verified";
         }
         updateReadinessUI();
+        syncVerificationSurfaces();
       }catch(e){
-        console.error(e); clearRoleVerification(); out.textContent = `Verification degraded/error: ${e.message || String(e)}`; pill.className = "pill bad"; pill.textContent = (isAgent?"Agent":"Club") + " ENS: degraded"; updateReadinessUI();
+        console.error(e); clearRoleVerification(); out.textContent = `Verification degraded/error: ${e.message || String(e)}`; pill.className = "pill bad"; pill.textContent = (isAgent?"Agent":"Club") + " ENS: degraded"; updateReadinessUI(); syncVerificationSurfaces();
       }
     }
 
