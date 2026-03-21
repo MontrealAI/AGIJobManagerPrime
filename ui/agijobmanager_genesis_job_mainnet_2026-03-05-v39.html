@@ -6569,10 +6569,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         if(!userAccount){el("walletStatus").textContent="Not connected";return;}
         el("walletStatus").textContent = shortAddr(userAccount);
 
-        chainId = await web3.eth.getChainId();
-        APP_STATE.wallet.chainId = Number(chainId);
+        chainId = Number(await web3.eth.getChainId());
+        APP_STATE.wallet.chainId = chainId;
         APP_STATE.wallet.account = userAccount;
-        APP_STATE.wallet.isMainnet = (Number(chainId) === 1);
+        APP_STATE.wallet.isMainnet = (chainId === 1);
         isMainnet = APP_STATE.wallet.isMainnet;
         el("chainStatus").textContent = `chainId ${chainId}` + (isMainnet ? " (Mainnet)" : " (Not Mainnet)");
         updateWriteGate();
