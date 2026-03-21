@@ -455,13 +455,29 @@
     #alphaAgentMintSection b{overflow-wrap:anywhere;word-break:break-word}
     #alphaAgentMintSection .actions{gap:10px}
     #alphaAgentMintSection .actions > *{min-width:0}
-    .alphaSectionIntro{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(260px,.78fr);gap:16px;margin-bottom:16px;align-items:start}
-    .alphaIntroCopy{display:grid;gap:10px}
-    .alphaIntroCard{padding:16px 18px;border-radius:18px;border:1px solid rgba(121,96,150,.12);background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,241,251,.76))}
+    .alphaSectionIntro{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr);gap:16px;margin-bottom:16px;align-items:start}
+    .alphaIntroCopy{display:grid;gap:12px}
+    .alphaIntroCard{padding:18px 20px;border-radius:20px;border:1px solid rgba(121,96,150,.12);background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,241,251,.78))}
     .alphaIntroStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    .alphaStat{padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.72)}
+    .alphaStat{padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.76)}
     .alphaStat .k{display:block;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft);margin-bottom:4px}
     .alphaStat .v{display:block;font-weight:700;line-height:1.4}
+    .alphaReadinessStrip{display:grid;gap:12px;padding:18px 20px;border-radius:20px;border:1px solid rgba(121,96,150,.14);background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,236,250,.84));box-shadow:0 16px 32px rgba(91,69,120,.06)}
+    .alphaReadinessHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+    .alphaReadinessLabel{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-soft)}
+    .alphaReadinessSummary{font-size:.94rem;line-height:1.55;color:#4c395a}
+    .alphaReadinessGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+    .alphaReadinessCard{display:grid;gap:6px;padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.8);min-width:0}
+    .alphaReadinessCard .k{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft)}
+    .alphaReadinessCard .v{font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+    .alphaReadinessCard[data-state="ready"]{border-color:rgba(47,122,95,.22);background:rgba(47,122,95,.08)}
+    .alphaReadinessCard[data-state="warn"]{border-color:rgba(154,106,29,.22);background:rgba(154,106,29,.08)}
+    .alphaReadinessCard[data-state="blocked"]{border-color:rgba(168,79,111,.22);background:rgba(168,79,111,.08)}
+    .alphaReadinessActions{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .alphaTermsToggle{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.82)}
+    .alphaTermsToggle input{margin-top:4px;flex:0 0 auto}
+    .alphaTermsToggle label{margin:0;color:#3d2e48;line-height:1.5;font-size:.92rem}
+    .alphaTopReadinessNote{padding:12px 14px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78);color:#4e3b5c;line-height:1.55}
     .alphaModeSurface{display:grid;gap:12px;padding:16px 18px;border-radius:20px;border:1px solid rgba(121,96,150,.16);background:linear-gradient(180deg, rgba(244,239,251,.96), rgba(255,255,255,.88));box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
     .alphaModeHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
     .alphaModeLabel{font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-soft)}
@@ -528,7 +544,11 @@
     #alphaIdentityReviewModal .reviewFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
     #alphaIdentityReviewModal .reviewFooter,#alphaMintReviewModal .reviewFooter{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
     #actionReviewModal .reviewFooter{justify-content:flex-end}
-    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics{grid-template-columns:1fr}}
+    @media (max-width:1120px){.alphaReadinessGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaReadinessGrid{grid-template-columns:1fr}}
+    @media (max-width:860px){#alphaAgentMintSection .mintGrid,.alphaQuickStartGrid,.alphaPreviewGrid{grid-template-columns:1fr}}
+    @media (max-width:640px){.alphaReadinessActions{flex-direction:column;align-items:stretch}.alphaTermsToggle{align-items:flex-start}}
+    @media (max-width:480px){.alphaPrimaryActions .btn,.alphaIdentityActions .btn,.alphaModeTabs .btn{min-height:50px}}
     @media (max-width:700px){
       .modalBackdrop{align-items:flex-end;padding:0}
       .modalCard,.commandModalCard,.reviewModalCard,#alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
@@ -2201,14 +2221,38 @@
     <div class="card" id="alphaAgentMintSection" data-surface="freeTrialRegistrarSection" data-alpha-mode="recommended">
       <div class="alphaSectionIntro">
         <div class="alphaIntroCopy">
-          <div>
+          <div class="alphaIntroCard">
             <h2 style="margin:0 0 10px">1.5) Alpha-Agent Free Trial &amp; Identity Console</h2>
-            <div class="helper">Register a <b>*.alpha.agent.agi.eth</b> label from the live mainnet free-trial stack. The recommended path uses <b>FreeTrialSubdomainRegistrarIdentity</b> to issue the wrapped ENS name and the soulbound Alpha-Agent identity together in one transaction. ENS-only registration remains available below as a clearly secondary expert flow.</div>
+            <div class="helper">Operational console for distinguished mainnet users. The recommended route uses <b>register(label)</b> on <b>FreeTrialSubdomainRegistrarIdentity</b> to mint the wrapped <b>*.alpha.agent.agi.eth</b> name and the soulbound Alpha-Agent identity together. Trial names are free except gas. ENS-only remains available as a quieter expert path.</div>
           </div>
           <div class="alphaIntroStats">
-            <div class="alphaStat"><span class="k">Recommended</span><span class="v">Name + identity in one transaction</span></div>
-            <div class="alphaStat"><span class="k">Identity posture</span><span class="v">Soulbound, approvals disabled, transfers disabled</span></div>
-            <div class="alphaStat"><span class="k">Economics</span><span class="v">0 ETH write value, gas only, 30 day trial window</span></div>
+            <div class="alphaStat"><span class="k">Recommended</span><span class="v">register(label) · wrapped name + identity in one transaction</span></div>
+            <div class="alphaStat"><span class="k">Identity posture</span><span class="v">Soulbound · approvals disabled · transfers disabled</span></div>
+            <div class="alphaStat"><span class="k">Contract terms</span><span class="v">0 ETH write value · gas only · 30 day trial · 90 day parent grace</span></div>
+          </div>
+        </div>
+        <div class="alphaReadinessStrip" aria-live="polite">
+          <div class="alphaReadinessHeader">
+            <div>
+              <div class="alphaReadinessLabel">Write access readiness</div>
+              <div class="subtleTitle" style="margin:4px 0 0">Surface wallet, network, terms, route, and root posture before any write</div>
+            </div>
+            <a class="btn smallBtn" href="#termsSection">Review full terms</a>
+          </div>
+          <div class="alphaReadinessSummary" id="alphaReadinessSummary">Checking wallet, mainnet, terms acceptance, route posture, and root health.</div>
+          <div class="alphaReadinessGrid">
+            <div class="alphaReadinessCard" id="alphaWalletReadyCard" data-state="blocked"><span class="k">Wallet</span><span class="v" id="alphaWalletReadyValue">Not connected</span></div>
+            <div class="alphaReadinessCard" id="alphaMainnetReadyCard" data-state="blocked"><span class="k">Network</span><span class="v" id="alphaMainnetReadyValue">Ethereum mainnet required</span></div>
+            <div class="alphaReadinessCard" id="alphaTermsReadyCard" data-state="blocked"><span class="k">Terms</span><span class="v" id="alphaTermsReadyValue">Acceptance required</span></div>
+            <div class="alphaReadinessCard" id="alphaRouteReadyCard" data-state="warn"><span class="k">Route</span><span class="v" id="alphaRouteReadyValue">Recommended path selected</span></div>
+            <div class="alphaReadinessCard" id="alphaRootReadyCard" data-state="warn"><span class="k">Root health</span><span class="v" id="alphaRootReadyValue">Checking rootHealth()</span></div>
+          </div>
+          <div class="alphaReadinessActions">
+            <div class="alphaTermsToggle">
+              <input type="checkbox" id="alphaTermsAcceptedTop">
+              <label for="alphaTermsAcceptedTop">I have reviewed and accept the AGIJobManager Terms &amp; Conditions. This unlocks Alpha-Agent writes after wallet and Ethereum mainnet are also ready.</label>
+            </div>
+            <div class="alphaTopReadinessNote" id="alphaTopReadinessNote">Acceptance here is mirrored with the canonical checkbox in the full legal section below.</div>
           </div>
         </div>
         <div class="alphaModeSurface">
@@ -2257,10 +2301,10 @@
               </div>
             </div>
             <div class="alphaPrimaryActions" style="margin-top:12px">
-              <button class="btn" id="mintAlphaAgentBtn">Mint free-trial name</button>
+              <button class="btn" id="mintAlphaAgentBtn">Mint ENS-only name</button>
               <button class="btn" id="refreshRegistrarStateBtn">Refresh contract state</button>
             </div>
-            <div class="statusline" id="mintAlphaStatus" style="margin-top:10px">Waiting for wallet + mainnet + terms.</div>
+            <div class="statusline" id="mintAlphaStatus" style="margin-top:10px">Waiting for wallet + Ethereum mainnet + terms readiness.</div>
             <div class="recentNames" id="recentAlphaAgentNames"></div>
           </div>
 
@@ -3398,12 +3442,14 @@ Evaluation methodology"></textarea>
       updateMissionControl();
     }
     function updateWriteGate(){
+      APP_STATE.wallet.termsAccepted = !!hasAcceptedTerms;
       const enabled = isMainnet && hasAcceptedTerms;
       const ids=['createJobBtn','premiumDiscoverySubmitBtn','premiumDiscoveryStickySubmitBtn','premiumDiscoveryApproveManagerBtn','premiumDiscoveryApproveDiscoveryBtn','premiumDiscoveryApproveBothBtn'];
       for(const id of ids){const b=document.getElementById(id); if(b) b.disabled=!enabled;}
       document.querySelectorAll('button[data-tx="1"]').forEach(b=>{b.disabled=!enabled;});
       updateReadinessUI();
       updatePrimaryActionHints();
+      updateAlphaReadinessStrip();
       if(uiBootstrapped) return;
       uiBootstrapped = true;
 
@@ -5053,6 +5099,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         else if(APP_STATE.registrar.parentUsable === null) el('mintAlphaStatus').textContent = `Ready to mint ${full} (free, gas only). Parent status read is degraded; transaction safety will be enforced onchain.`;
         else el('mintAlphaStatus').textContent = `Ready to mint ${full} (free, gas only).`;
       }
+      updateAlphaReadinessStrip();
       refreshIdentityState().catch(()=>{});
     }
     async function openAlphaMintReview(){
@@ -5174,6 +5221,54 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(preview.pausedOut) return 'Identity contract is paused.';
       return '';
     }
+    function setAlphaReadinessCard(id, state, text){
+      const card = el(id + 'Card');
+      const value = el(id + 'Value');
+      if(card) card.dataset.state = state;
+      if(value) value.textContent = text;
+    }
+    function updateAlphaReadinessStrip(){
+      const mode = APP_STATE.identity?.mode || 'recommended';
+      const preview = APP_STATE.identity?.preview || null;
+      const health = APP_STATE.identity?.rootHealth || null;
+      const routeText = mode === 'recommended'
+        ? 'Recommended identity route active'
+        : 'ENS-only expert route active';
+      const routeState = mode === 'recommended' ? 'ready' : 'warn';
+      setAlphaReadinessCard('alphaWalletReady', userAccount ? 'ready' : 'blocked', userAccount ? `${shortAddr(userAccount)} connected` : 'Not connected');
+      setAlphaReadinessCard('alphaMainnetReady', isMainnet ? 'ready' : 'blocked', isMainnet ? 'Ethereum mainnet confirmed' : 'Ethereum mainnet required');
+      setAlphaReadinessCard('alphaTermsReady', hasAcceptedTerms ? 'ready' : 'blocked', hasAcceptedTerms ? 'Accepted for writes' : 'Acceptance required');
+      setAlphaReadinessCard('alphaRouteReady', routeState, routeText);
+      let rootState = 'warn';
+      let rootText = 'Checking rootHealth()';
+      if(health){
+        if(health.rootUsable) { rootState = 'ready'; rootText = 'Root usable for writes'; }
+        else if(health.active === false || preview?.status === 6) { rootState = 'blocked'; rootText = 'Root inactive'; }
+        else if(preview?.status === 7) { rootState = 'blocked'; rootText = 'Parent unusable'; }
+        else { rootState = 'warn'; rootText = 'Diagnostics required'; }
+      }
+      setAlphaReadinessCard('alphaRootReady', rootState, rootText);
+      const summary = [];
+      summary.push(userAccount ? 'wallet connected' : 'connect wallet');
+      summary.push(isMainnet ? 'Ethereum mainnet ready' : 'switch to Ethereum mainnet');
+      summary.push(hasAcceptedTerms ? 'terms accepted' : 'accept terms');
+      summary.push(mode === 'recommended' ? 'recommended route selected' : 'ENS-only expert route selected');
+      summary.push(rootText.toLowerCase());
+      if(el('alphaReadinessSummary')) el('alphaReadinessSummary').textContent = `Write posture: ${summary.join(' · ')}.`;
+      const note = !userAccount ? 'Connect a wallet to begin.'
+        : !isMainnet ? 'Switch the connected wallet to Ethereum mainnet.'
+        : !hasAcceptedTerms ? 'Accept the terms here or in the legal section below to unlock writes.'
+        : (preview && identityWriteLockedReason(preview)) ? identityWriteLockedReason(preview)
+        : (preview?.status === 0 && preview?.registrable) ? 'register(label) is the exact recommended next action.'
+        : (preview?.status === 2 && preview?.claimable) ? 'claimIdentity(label) is the exact recommended next action.'
+        : (preview?.status === 4 || preview?.status === 3) ? 'syncIdentityByLabel(label) may be the correct repair path after review.'
+        : 'Ready for preview-driven operation.';
+      if(el('alphaTopReadinessNote')) el('alphaTopReadinessNote').textContent = note;
+      const topTerms = el('alphaTermsAcceptedTop');
+      const mainTerms = el('termsAccepted');
+      if(topTerms && topTerms.checked !== hasAcceptedTerms) topTerms.checked = !!hasAcceptedTerms;
+      if(mainTerms && mainTerms.checked !== hasAcceptedTerms) mainTerms.checked = !!hasAcceptedTerms;
+    }
     function setAlphaIdentityMode(mode){
       const nextMode = mode === 'ens-only' ? 'ens-only' : 'recommended';
       APP_STATE.identity = APP_STATE.identity || {};
@@ -5206,6 +5301,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         mintBtn.textContent = recommended ? 'Mint ENS-only name (expert path)' : 'Mint ENS-only name';
       }
       if(recipientField) recipientField.dataset.emphasis = recommended ? 'muted' : 'active';
+      updateAlphaReadinessStrip();
     }
     function updateAlphaIdentityExperience(){
       const preview = APP_STATE.identity?.preview || null;
@@ -5389,6 +5485,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         if(node){ node.style.display='none'; node.removeAttribute('src'); }
       }
       renderIdentityAdminControls(owner, pendingOwner);
+      updateAlphaReadinessStrip();
       updateMissionControl();
     }
     function openAlphaIdentityReview(action){
@@ -8149,7 +8246,7 @@ function normalizeIpfsToHttp(uri){
         window.ethereum.on("accountsChanged", async (accounts)=>{
           userAccount = accounts && accounts[0] ? accounts[0] : null; APP_STATE.wallet.account = userAccount;
           el("walletStatus").textContent = userAccount ? shortAddr(userAccount) : "Not connected";
-          verified.agent = null; verified.club = null; verified.agentAlpha=false; verified.clubAlpha=false; hasAcceptedTerms=false; const tac=el("termsAccepted"); if(tac) tac.checked=false; updateWriteGate();
+          verified.agent = null; verified.club = null; verified.agentAlpha=false; verified.clubAlpha=false; hasAcceptedTerms=false; const tac=el("termsAccepted"); if(tac) tac.checked=false; const topTac=el("alphaTermsAcceptedTop"); if(topTac) topTac.checked=false; updateWriteGate();
           el("agentPill").className="pill"; el("agentPill").textContent="Agent ENS: not verified";
           const aab=el("agentAlphaBadge"); if(aab) aab.style.display="none";
           el("clubPill").className="pill"; el("clubPill").textContent="Club ENS: not verified";
