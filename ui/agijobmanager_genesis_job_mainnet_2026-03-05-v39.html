@@ -4531,7 +4531,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(action === 'sync-alpha-identity') return openAlphaIdentityReview('syncIdentityByLabel');
       if(action === 'refresh-identity-preview') return refreshIdentityState();
       if(action === 'refresh-registrar') return refreshFreeTrialRegistrarState();
-      if(action === 'copy-minted-alpha'){ const n = (el('mintAlphaFullName')?.textContent || '').trim(); if(n && n !== '—') return navigator.clipboard.writeText(n).then(()=>setToast('Minted alpha-agent name copied.','ok')); return setToast('No minted alpha-agent name to copy yet.','warn'); }
+      if(action === 'copy-minted-alpha'){ const n = (el('mintAlphaFullName')?.textContent || '').trim(); if(n && n !== '—') return navigator.clipboard.writeText(n).then(()=>setToast('Alpha-Agent full name copied.','ok')); return setToast('No Alpha-Agent full name is loaded yet.','warn'); }
       if(action === 'copy-identity-tokenid'){ const t = (el('alphaIdentityTokenId')?.textContent || '').trim(); if(t && t !== '—') return navigator.clipboard.writeText(t).then(()=>setToast('Identity tokenId copied.','ok')); return setToast('No identity tokenId available.','warn'); }
       if(action === 'copy-identity-fullname'){ const n = (el('alphaIdentityFullName')?.textContent || '').trim(); if(n && n !== '—') return navigator.clipboard.writeText(n).then(()=>setToast('Identity full name copied.','ok')); return setToast('No identity full name available.','warn'); }
       if(action === 'create') return scrollToId('createJobSection');
@@ -4614,7 +4614,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         {title:'Refresh identity preview', subtitle:'Reload preview(label) and rootHealth() from identity registrar.', tags:'alpha identity preview refresh roothealth', action:'refresh-identity-preview'},
         {title:'Open Alpha identity console', subtitle:'Review canonical register(label) flow and registrar diagnostics.', tags:'alpha identity diagnostics', action:'mint-alpha'},
         {title:'Refresh Alpha root diagnostics', subtitle:'Reload rootHealth(), preview posture, parent status, and quiet compatibility diagnostics.', tags:'registrar refresh parent wrapper identity diagnostics', action:'refresh-registrar'},
-        {title:'Copy selected alpha-agent name', subtitle:'Copy the current preview full name.', tags:'alpha agent copy ens', action:'copy-minted-alpha'},
+        {title:'Copy selected Alpha-Agent full name', subtitle:'Copy the current preview full name.', tags:'alpha agent copy ens', action:'copy-minted-alpha'},
         {title:'Copy identity tokenId', subtitle:'Copy selected-label identity tokenId (node-based).', tags:'alpha identity tokenid copy', action:'copy-identity-tokenid'},
         {title:'Copy identity full name', subtitle:'Copy selected-label identity full ENS name.', tags:'alpha identity fullname copy', action:'copy-identity-fullname'},
         {title:'Read terms & conditions', subtitle:'Jump to the embedded terms section before signing.', tags:'terms legal read', action:'terms'},
@@ -4733,7 +4733,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         lastWallet:userAccount || '',
         lastChainId: chainId || null,
         verified:{...verified},
-        alphaContext:{label:String(el('mintAlphaLabel')?.value || '').trim().toLowerCase(), recentLabels:[...(APP_STATE.identity?.recentLabels || [])]}
+        alphaContext:{label:String(el('mintAlphaLabel')?.value || '').trim().toLowerCase(), recentLabels:[...loadRecentAlphaAgentNames()]}
       });
     }
     function announceContinuity(message, tone=''){ const note = el('sessionRestoreNote'); if(note) note.textContent = message; const banner = el('preflightRestoreBanner'); if(banner){ banner.textContent = message; banner.dataset.visible = 'true'; banner.dataset.tone = tone || 'restored'; } }
@@ -4758,6 +4758,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         tab?.click();
       }
       if(stored.alphaMode === 'recommended') setAlphaIdentityMode('recommended', {silent:true}); else setAlphaIdentityMode('recommended', {silent:true});
+      if(stored.alphaContext?.label && el('mintAlphaLabel') && !el('mintAlphaLabel').value) el('mintAlphaLabel').value = String(stored.alphaContext.label || '');
+      if(Array.isArray(stored.alphaContext?.recentLabels) && stored.alphaContext.recentLabels.length){ APP_STATE.identity = APP_STATE.identity || {}; APP_STATE.identity.recentLabels = [...stored.alphaContext.recentLabels]; try{ localStorage.setItem(RECENT_ALPHA_AGENT_KEY, JSON.stringify(stored.alphaContext.recentLabels.slice(0,8))); }catch{} }
       Object.entries(stored.openToggles || {}).forEach(([id, open])=>{ const node = el(id); if(node && 'open' in node) node.open = !!open; });
       if(restoreHash && stored.activeHash && !document.querySelector('.modalBackdrop.open')){
         const target = document.querySelector(stored.activeHash);
@@ -4770,6 +4772,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(preflightTerms && baseTerms && preflightTerms.checked !== baseTerms.checked) preflightTerms.checked = baseTerms.checked;
       if(baseTerms){ hasAcceptedTerms = !!baseTerms.checked; APP_STATE.wallet.termsAccepted = hasAcceptedTerms; }
       updateWriteGate();
+      renderRecentAlphaAgentNames();
+      updateAlphaMintPreview().catch(()=>{});
       const walletChanged = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() !== String(userAccount).toLowerCase();
       const chainChanged = stored.lastChainId && chainId && String(stored.lastChainId) !== String(chainId);
       if(walletChanged || chainChanged){
@@ -5407,7 +5411,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     async function refreshFreeTrialRegistrarState(){
       if(!web3){ return; }
       if(!freeTrialRegistrar) freeTrialRegistrar = new web3.eth.Contract(FreeTrialSubdomainRegistrarABI, FREE_TRIAL_REGISTRAR);
-      if(el('freeTrialRegistrarAddress')) el('freeTrialRegistrarAddress').textContent = FREE_TRIAL_REGISTRAR;
+      if(el('freeTrialRegistrarAddress')) el('freeTrialRegistrarAddress').textContent = 'Compatibility shim retained internally';
       APP_STATE.registrar.parentUsable = null;
       APP_STATE.registrar.parentActive = false;
       APP_STATE.registrar.managerAuthorized = false;
@@ -8735,7 +8739,7 @@ function normalizeIpfsToHttp(uri){
       const v26ExtraSections = [
         {id:'verifyEnsSection', label:'ENS Verify'},
         {id:'premiumDiscoverySection', label:'Premium Discovery'},
-        {id:'alphaAgentMintSection', label:'Alpha Mint'},
+        {id:'alphaAgentMintSection', label:'Alpha Identity'},
         {id:'activitySection', label:'Activity'},
         {id:'operationsDeckSection', label:'Operator Deck'},
         {id:'workflowSection', label:'Lifecycle'},
@@ -9893,10 +9897,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         restoreUiContinuity({ restoreHash:false });
         updateVerificationSummary();
         updatePreflightSummary();
-        if(userAccount && isMainnet){ refreshIdentityState().catch(()=>{}); }
+        if(userAccount && isMainnet){ refreshFreeTrialRegistrarState().catch(()=>{}); refreshIdentityState().catch(()=>{}); }
       };
       window.addEventListener('pageshow', gentleReturnRefresh);
       window.addEventListener('focus', gentleReturnRefresh);
+      window.addEventListener('resume', gentleReturnRefresh);
       document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) gentleReturnRefresh(); });
       new MutationObserver(syncModalState).observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
       if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind, {once:true}); else bind();
