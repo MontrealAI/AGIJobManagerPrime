@@ -4805,6 +4805,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       updateWriteGate();
       renderRecentAlphaAgentNames();
+      updateAlphaMintPreview({skipIdentityRefresh:true}).catch(()=>{});
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
       scheduleAlphaIdentityRefresh('restore');
@@ -5499,7 +5500,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       await updateAlphaMintPreview();
       await refreshIdentityState().catch(()=>{});
     }
-    async function updateAlphaMintPreview(){
+    async function updateAlphaMintPreview(options={}){
+      const opts = options || {};
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const full = local.ok ? `${local.label}.${ALPHA_AGENT_PARENT}` : '—';
       const previewIsFresh = local.ok && alphaIdentityPreviewIsFresh(local.label);
@@ -5529,7 +5531,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
-      refreshIdentityState().catch(()=>{});
+      if(!opts.skipIdentityRefresh) refreshIdentityState().catch(()=>{});
     }
     async function openAlphaMintReview(){
       setAlphaIdentityMode('recommended');
@@ -9934,7 +9936,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       };
       window.addEventListener('pageshow', gentleReturnRefresh);
       window.addEventListener('focus', gentleReturnRefresh);
-      window.addEventListener('resume', gentleReturnRefresh);
+      document.addEventListener('resume', gentleReturnRefresh);
       document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) gentleReturnRefresh(); });
       new MutationObserver(syncModalState).observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
       if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind, {once:true}); else bind();
