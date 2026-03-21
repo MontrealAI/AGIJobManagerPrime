@@ -4722,6 +4722,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           try{
             if(!userAccount || !isMainnet || !web3) return;
             await refreshIdentityState();
+          }catch(err){
+            console.warn('Scheduled Alpha identity refresh skipped:', err);
           }finally{
             alphaIdentityRefreshPromise = null;
           }
@@ -4794,13 +4796,18 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(topTerms && baseTerms && topTerms.checked !== baseTerms.checked) topTerms.checked = baseTerms.checked;
       if(preflightTerms && baseTerms && preflightTerms.checked !== baseTerms.checked) preflightTerms.checked = baseTerms.checked;
       if(baseTerms){ hasAcceptedTerms = !!baseTerms.checked; APP_STATE.wallet.termsAccepted = hasAcceptedTerms; }
+      const walletChanged = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() !== String(userAccount).toLowerCase();
+      const chainChanged = stored.lastChainId && chainId && String(stored.lastChainId) !== String(chainId);
+      if(walletChanged || chainChanged){
+        APP_STATE.identity = APP_STATE.identity || {};
+        APP_STATE.identity.preview = null;
+        APP_STATE.identity.previewLabel = '';
+      }
       updateWriteGate();
       renderRecentAlphaAgentNames();
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
       scheduleAlphaIdentityRefresh('restore');
-      const walletChanged = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() !== String(userAccount).toLowerCase();
-      const chainChanged = stored.lastChainId && chainId && String(stored.lastChainId) !== String(chainId);
       if(walletChanged || chainChanged){
         verified.agent = null; verified.club = null; verified.agentAlpha = false; verified.clubAlpha = false;
         announceContinuity('Local draft context was restored, but live role verification posture was cleared because the connected wallet or chain changed.', 'warning');
