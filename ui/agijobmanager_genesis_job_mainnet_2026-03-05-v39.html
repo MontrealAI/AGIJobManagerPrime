@@ -4745,7 +4745,17 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       try{ return JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {}; }catch(_){ return {}; }
     }
     function continuitySave(patch={}){
-      const next = {...continuityLoad(), ...patch, savedAt: Date.now()};
+      const current = continuityLoad();
+      const normalizedPatch = {...patch};
+      if(Object.prototype.hasOwnProperty.call(normalizedPatch, 'lastWallet') && !normalizedPatch.lastWallet){
+        if(current.lastWallet) normalizedPatch.lastWallet = current.lastWallet;
+        else delete normalizedPatch.lastWallet;
+      }
+      if(Object.prototype.hasOwnProperty.call(normalizedPatch, 'lastChainId') && (normalizedPatch.lastChainId === null || normalizedPatch.lastChainId === '')){
+        if(current.lastChainId != null && current.lastChainId !== '') normalizedPatch.lastChainId = current.lastChainId;
+        else delete normalizedPatch.lastChainId;
+      }
+      const next = {...current, ...normalizedPatch, savedAt: Date.now()};
       try{ localStorage.setItem(UI_CONTINUITY_KEY, JSON.stringify(next)); }catch{}
     }
     let alphaIdentityRefreshPromise = null;
@@ -4800,7 +4810,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const fields = stored.fields || {};
       const continuityScopedToWallet = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() === String(userAccount).toLowerCase();
       const continuityScopedToChain = (stored.lastChainId == null || chainId == null) ? true : String(stored.lastChainId) === String(chainId);
-      const sameSessionContext = continuityScopedToWallet && continuityScopedToChain;
+      const sameSessionContext = continuityScopedToChain && (!userAccount || continuityScopedToWallet);
       const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
       let restored = [];
       Object.entries(fields).forEach(([id, value])=>{
