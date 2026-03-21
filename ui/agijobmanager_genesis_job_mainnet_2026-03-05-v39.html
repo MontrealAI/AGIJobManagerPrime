@@ -4823,7 +4823,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const fields = stored.fields || {};
       const continuityScopedToWallet = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() === String(userAccount).toLowerCase();
       const continuityScopedToChain = (stored.lastChainId == null || chainId == null) ? true : String(stored.lastChainId) === String(chainId);
-      const sameSessionContext = continuityScopedToChain && (!userAccount || continuityScopedToWallet);
+      const sameSessionContext = continuityScopedToWallet && continuityScopedToChain;
       const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
       if(!sameSessionContext){
         UI_CONTINUITY_FIELDS.forEach(id=>{
@@ -8899,7 +8899,7 @@ function normalizeIpfsToHttp(uri){
         if(action === 'verify') return v26ScrollTo('verifyEnsSection');
         if(action === 'mint-alpha') return v26ScrollTo('alphaAgentMintSection');
         if(action === 'mint-alpha-identity') return v26ScrollTo('alphaAgentMintSection');
-        if(action === 'register-alpha-identity' && typeof missionAction === 'function') return missionAction('register-alpha-identity');
+        if(action === 'register-alpha-identity' && typeof missionAction === 'function'){ v26CloseSheet(); return missionAction('register-alpha-identity'); }
         if(action === 'claim-alpha-identity' && typeof missionAction === 'function') return missionAction('claim-alpha-identity');
         if(action === 'sync-alpha-identity' && typeof missionAction === 'function') return missionAction('sync-alpha-identity');
         if(action === 'activity') return v26ScrollTo('activitySection');
