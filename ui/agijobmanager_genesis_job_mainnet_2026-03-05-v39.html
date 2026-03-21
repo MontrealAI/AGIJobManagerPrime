@@ -4711,6 +4711,24 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const next = {...continuityLoad(), ...patch, savedAt: Date.now()};
       try{ localStorage.setItem(UI_CONTINUITY_KEY, JSON.stringify(next)); }catch{}
     }
+    let alphaIdentityRefreshPromise = null;
+    let alphaIdentityRefreshTimer = null;
+    function scheduleAlphaIdentityRefresh(reason='manual'){
+      if(alphaIdentityRefreshTimer) clearTimeout(alphaIdentityRefreshTimer);
+      alphaIdentityRefreshTimer = setTimeout(async ()=>{
+        alphaIdentityRefreshTimer = null;
+        if(alphaIdentityRefreshPromise) return alphaIdentityRefreshPromise;
+        alphaIdentityRefreshPromise = (async ()=>{
+          try{
+            if(!userAccount || !isMainnet || !web3) return;
+            await refreshIdentityState();
+          }finally{
+            alphaIdentityRefreshPromise = null;
+          }
+        })();
+        return alphaIdentityRefreshPromise;
+      }, reason === 'restore' ? 60 : 120);
+    }
     function persistUiContinuity(){
       const fields = {};
       UI_CONTINUITY_FIELDS.forEach(id=>{
@@ -4759,7 +4777,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       if(stored.alphaMode === 'recommended') setAlphaIdentityMode('recommended', {silent:true}); else setAlphaIdentityMode('recommended', {silent:true});
       if(stored.alphaContext?.label && el('mintAlphaLabel') && !el('mintAlphaLabel').value) el('mintAlphaLabel').value = String(stored.alphaContext.label || '');
-      if(Array.isArray(stored.alphaContext?.recentLabels) && stored.alphaContext.recentLabels.length){ APP_STATE.identity = APP_STATE.identity || {}; APP_STATE.identity.recentLabels = [...stored.alphaContext.recentLabels]; try{ localStorage.setItem(RECENT_ALPHA_AGENT_KEY, JSON.stringify(stored.alphaContext.recentLabels.slice(0,8))); }catch{} }
+      if(Array.isArray(stored.alphaContext?.recentLabels) && stored.alphaContext.recentLabels.length){
+        const mergedRecentLabels = [...new Set([...loadRecentAlphaAgentNames(), ...stored.alphaContext.recentLabels].filter(Boolean).map(v=>String(v).trim().toLowerCase()))].slice(0,8);
+        APP_STATE.identity = APP_STATE.identity || {};
+        APP_STATE.identity.recentLabels = [...mergedRecentLabels];
+        try{ localStorage.setItem(RECENT_ALPHA_AGENT_KEY, JSON.stringify(mergedRecentLabels)); }catch{}
+      }
       Object.entries(stored.openToggles || {}).forEach(([id, open])=>{ const node = el(id); if(node && 'open' in node) node.open = !!open; });
       if(restoreHash && stored.activeHash && !document.querySelector('.modalBackdrop.open')){
         const target = document.querySelector(stored.activeHash);
@@ -4773,7 +4796,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(baseTerms){ hasAcceptedTerms = !!baseTerms.checked; APP_STATE.wallet.termsAccepted = hasAcceptedTerms; }
       updateWriteGate();
       renderRecentAlphaAgentNames();
-      updateAlphaMintPreview().catch(()=>{});
+      updateAlphaIdentityReadiness();
+      updateAlphaIdentityExperience();
+      scheduleAlphaIdentityRefresh('restore');
       const walletChanged = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() !== String(userAccount).toLowerCase();
       const chainChanged = stored.lastChainId && chainId && String(stored.lastChainId) !== String(chainId);
       if(walletChanged || chainChanged){
@@ -5942,6 +5967,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const tokenId = preview?.tokenId || (preview?.node ? (()=>{ try{return BigInt(preview.node).toString();}catch{return 'n/a';} })() : 'n/a');
       saveRecentAlphaAgentName(local.label);
       if(el('agentSub')) el('agentSub').value = local.label;
+      persistUiContinuity();
       setToast(`Identity action ${action} confirmed for ${local.label}.${ALPHA_AGENT_PARENT} · tokenId ${tokenId} · tx ${shortAddr(receipt?.transactionHash || '')}`, 'ok');
       verifySubdomain('agent', true).catch(()=>{});
       refreshFreeTrialRegistrarState().catch(()=>{});
@@ -9897,7 +9923,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         restoreUiContinuity({ restoreHash:false });
         updateVerificationSummary();
         updatePreflightSummary();
-        if(userAccount && isMainnet){ refreshFreeTrialRegistrarState().catch(()=>{}); refreshIdentityState().catch(()=>{}); }
+        if(userAccount && isMainnet) scheduleAlphaIdentityRefresh('return');
       };
       window.addEventListener('pageshow', gentleReturnRefresh);
       window.addEventListener('focus', gentleReturnRefresh);
