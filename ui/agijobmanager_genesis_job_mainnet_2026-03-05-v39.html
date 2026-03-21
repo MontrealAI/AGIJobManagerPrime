@@ -477,7 +477,7 @@
     #alphaAgentMintSection b{overflow-wrap:anywhere;word-break:break-word}
     #alphaAgentMintSection .actions{gap:10px}
     #alphaAgentMintSection .actions > *{min-width:0}
-    .alphaSectionIntro{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(320px,.72fr);gap:18px;margin-bottom:18px;align-items:start}
+    .alphaSectionIntro{display:grid;grid-template-columns:minmax(0,1.14fr) minmax(420px,.86fr);gap:18px;margin-bottom:18px;align-items:start}
     .alphaIntroCopy{display:grid;gap:12px}
     .alphaIntroCard{padding:18px 20px;border-radius:22px;border:1px solid rgba(121,96,150,.12);background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,241,251,.82))}
     .alphaIntroStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -515,14 +515,14 @@
     .alphaReadinessActions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .alphaModeLabel{font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-soft)}
     .alphaReadinessGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-    .alphaReadinessFoot{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:12px;align-items:start}
+    .alphaReadinessFoot{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
     .alphaReadinessItem{padding:12px 13px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.82);display:grid;gap:4px}
     .alphaReadinessItem .k{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft)}
     .alphaReadinessItem .v{font-weight:700;line-height:1.45}
     .alphaReadinessItem[data-state="ready"]{border-color:rgba(47,122,95,.18);background:rgba(47,122,95,.08)}
     .alphaReadinessItem[data-state="blocked"]{border-color:rgba(168,79,111,.18);background:rgba(168,79,111,.08)}
     .alphaReadinessItem[data-state="caution"]{border-color:rgba(154,106,29,.18);background:rgba(154,106,29,.08)}
-    .alphaTermsInline{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.8)}
+    .alphaTermsInline{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.8)}
     .alphaReadinessMemo{padding:14px 16px;border-radius:18px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78);display:grid;gap:8px}
     .alphaReadinessMemoTitle{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-soft)}
     .alphaReadinessMemoBody{font-size:.94rem;line-height:1.58;color:#4e3b5c}
@@ -607,6 +607,14 @@
     .alphaDiagnosticsCard{padding:14px 16px;border-radius:16px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78)}
     .alphaDiagnosticsNote{font-size:.88rem;line-height:1.55;color:var(--text-soft)}
     .alphaDiagnostics details:not([open]) .alphaDiagnosticsBody{display:none}
+    .alphaVerificationDeck{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .alphaVerificationPanel{padding:18px 20px;border-radius:22px;border:1px solid rgba(121,96,150,.14);background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,241,251,.82));display:grid;gap:12px;box-shadow:0 14px 34px rgba(91,69,120,.06)}
+    .alphaVerificationPanel .row{align-items:flex-end}
+    .alphaVerificationPanel .row input{flex:1 1 240px}
+    .alphaVerificationSignals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .alphaVerificationSignal{padding:12px 14px;border-radius:15px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.78);display:grid;gap:4px}
+    .alphaVerificationSignal .k{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft)}
+    .alphaVerificationSignal .v{font-weight:700;line-height:1.45;overflow-wrap:anywhere;word-break:break-word}
     #alphaAgentMintSection[data-alpha-mode="recommended"] .alphaPrimaryRail{order:1}
     #alphaAgentMintSection[data-alpha-mode="recommended"] .alphaSecondaryRail{order:2}
     #alphaAgentMintSection[data-alpha-mode="recommended"] .alphaExpertDetails{background:linear-gradient(180deg, rgba(253,252,255,.94), rgba(247,241,251,.76));opacity:.78;transform:translateY(2px)}
@@ -616,7 +624,8 @@
     #alphaIdentityReviewModal .reviewFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
     #alphaIdentityReviewModal .reviewFooter,#alphaMintReviewModal .reviewFooter{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
     #actionReviewModal .reviewFooter{justify-content:flex-end}
-    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier{grid-template-columns:1fr}}
+    @media (max-width:1200px){.alphaSectionIntro,.alphaVerificationDeck{grid-template-columns:1fr}}
+    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier,.alphaVerificationSignals{grid-template-columns:1fr}}
     @media (max-width:700px){
       .modalBackdrop{align-items:flex-end;padding:0;overflow:auto}
       .modalCard,.commandModalCard,.reviewModalCard,#alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(32px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom))}
@@ -716,7 +725,7 @@
       .preflightIntro,.preflightGrid,.preflightChecklist,.preflightStatusGrid{grid-template-columns:1fr}
       .preflightAnchorRow,.preflightActions,.preflightCompactActions{display:grid;grid-template-columns:1fr}
       .preflightInlineCheck{flex-direction:column}
-      .reviewFooter{position:static!important;bottom:auto!important;margin:18px 0 0!important;padding:14px 0 calc(34px + env(safe-area-inset-bottom))!important;gap:10px;box-shadow:none;background:none;border-top:1px solid rgba(121,96,150,.12)}
+      .reviewFooter{position:sticky!important;bottom:0!important;margin:14px -12px calc(-14px - env(safe-area-inset-bottom))!important;padding:14px 12px calc(22px + env(safe-area-inset-bottom))!important;gap:10px;box-shadow:0 -18px 34px rgba(91,69,120,.18);background:linear-gradient(180deg,rgba(250,247,252,.08),rgba(250,247,252,.96) 20%,rgba(250,247,252,.995));border-top:1px solid rgba(121,96,150,.14)}
       .reviewFooter,.reviewFooter .actions,.premiumRoleActionRow,.heroActions,.actions,.builderActions{grid-template-columns:1fr}
       .reviewFooter .actions{display:grid;width:100%}
       .reviewFooter .btn-primary,.reviewFooter .btn[data-primary="true"],.actions .btn-primary,.builderActions .btn-primary,.heroActions .btn-primary,.premiumRoleActionRow .btn-primary{order:-2}
@@ -759,7 +768,7 @@
       .noticeTitle,.subtleTitle{font-size:1rem}
       .starBtn{width:44px;min-width:44px;height:44px}
       .reviewFooter{gap:10px}
-      .alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaModeGrid,.alphaReadinessGrid,.alphaReadinessFoot,.alphaLabelDossier,.alphaPreviewMetrics,.alphaPreviewSupport,.alphaActionGuideGrid,.alphaActionGuideRow,.alphaDecisionList,.alphaIntroStats{grid-template-columns:1fr!important}
+      .alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaModeGrid,.alphaReadinessGrid,.alphaReadinessFoot,.alphaLabelDossier,.alphaPreviewMetrics,.alphaPreviewSupport,.alphaActionGuideGrid,.alphaActionGuideRow,.alphaDecisionList,.alphaIntroStats,.alphaVerificationDeck,.alphaVerificationSignals{grid-template-columns:1fr!important}
       .alphaQuickFacts{grid-template-columns:1fr}
       .alphaPrimaryActions,.alphaSecondaryActions,.alphaModeTabs,.alphaTermsInlineActions{grid-template-columns:1fr!important;display:grid}
       .alphaRecommendedRoute,.alphaActionStatusNote,.alphaActionGuide,.alphaReadinessMemo,.alphaTermsInline{padding:14px}
@@ -2361,25 +2370,47 @@
         <div class="alphaQuickFact"><span class="k">Validator / club posture</span><span class="v" id="verifyClubSummary">Not verified</span></div>
         <div class="alphaQuickFact"><span class="k">Live continuity</span><span class="v" id="verifyContinuitySummary">Inputs restore on same wallet + chain return</span></div>
       </div>
-      <div class="twoCol">
-        <div>
-          <label for="agentSub">Agent subdomain (agent.agi.eth)</label>
+      <div class="alphaVerificationDeck">
+        <div class="alphaVerificationPanel">
+          <div>
+            <div class="alphaModeLabel">Agent verification</div>
+            <div class="subtleTitle" style="margin:4px 0 0">Confirm the operating agent label before you create, apply, or claim.</div>
+          </div>
           <div class="row" style="justify-content:flex-start">
-            <input id="agentSub" type="text" placeholder="e.g. alice" style="max-width:520px">
+            <div style="flex:1 1 280px;min-width:0">
+              <label for="agentSub">Agent subdomain (agent.agi.eth)</label>
+              <input id="agentSub" type="text" placeholder="e.g. alice" style="max-width:none">
+            </div>
             <button class="btn" id="verifyAgentBtn">Verify</button>
             <button class="btn" id="verifyAgentAlphaBtn">Verify Alpha</button>
           </div>
-          <div class="muted" id="agentOut" style="margin-top:8px"></div>
+          <div class="alphaVerificationSignals">
+            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyAgentLiveStatus">Not verified</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Connected wallet</span><span class="v" id="verifyWalletEcho">Reconnect restores same-wallet context</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Alpha posture</span><span class="v" id="verifyAgentAlphaSummary">Use Verify Alpha when needed</span></div>
+          </div>
+          <div class="muted" id="agentOut" style="margin-top:2px"></div>
         </div>
-        <div>
-          <label for="clubSub">Club subdomain (club.agi.eth)</label>
+        <div class="alphaVerificationPanel">
+          <div>
+            <div class="alphaModeLabel">Validator / club verification</div>
+            <div class="subtleTitle" style="margin:4px 0 0">Complete validator readiness early so approvals and disputes stay one-pass on mobile.</div>
+          </div>
           <div class="row" style="justify-content:flex-start">
-            <input id="clubSub" type="text" placeholder="e.g. validator1" style="max-width:520px">
+            <div style="flex:1 1 280px;min-width:0">
+              <label for="clubSub">Club subdomain (club.agi.eth)</label>
+              <input id="clubSub" type="text" placeholder="e.g. validator1" style="max-width:none">
+            </div>
             <button class="btn" id="verifyClubBtn">Verify</button>
             <button class="btn" id="verifyClubAlphaBtn">Verify Alpha</button>
           </div>
-          <div class="muted" id="clubOut" style="margin-top:8px"></div>
-          <div style="margin-top:10px">
+          <div class="alphaVerificationSignals">
+            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyClubLiveStatus">Not verified</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Validator mode</span><span class="v" id="verifyValidatorSummary">Club verification enables review posture</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Return flow</span><span class="v">Same wallet + chain restores inputs and refreshes live reads</span></div>
+          </div>
+          <div class="muted" id="clubOut" style="margin-top:2px"></div>
+          <div style="margin-top:2px">
             <button class="btn" id="buyClubBtn">Buy club subdomain</button>
           </div>
         </div>
@@ -4532,6 +4563,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(action === 'verify') return scrollToId('verifyEnsSection');
       if(action === 'mint-alpha') return scrollToId('alphaAgentMintSection');
       if(action === 'mint-alpha-identity') return scrollToId('alphaAgentMintSection');
+      if(action === 'register-alpha-identity') return openAlphaIdentityReview('register');
       if(action === 'claim-alpha-identity') return openAlphaIdentityReview('claimIdentity');
       if(action === 'sync-alpha-identity') return openAlphaIdentityReview('syncIdentityByLabel');
       if(action === 'refresh-identity-preview') return refreshIdentityState();
@@ -4588,7 +4620,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }else if(connected && isMainnet && hasAcceptedTerms && repairNeeded){
         title='Repair Alpha Agent Identity state'; body='preview(label) shows desynced or expired identity posture. Run syncIdentityByLabel(label) to repair or clean up stale identity state.'; pill='Identity repair recommended'; primary={label:'Sync Alpha Agent Identity',action:'sync-alpha-identity'}; secondary={label:'Refresh identity preview',action:'refresh-identity-preview'};
       }else if(connected && isMainnet && hasAcceptedTerms && p?.registrable){
-        title='Register Alpha-Agent name + identity'; body='Use register(label) to issue the wrapped alpha-agent name plus the soulbound Alpha-Agent identity together to the connected wallet in one transaction.'; pill='Identity register ready'; primary={label:'Register Alpha-Agent',action:'mint-alpha-identity'}; secondary={label:'Open Alpha identity console',action:'mint-alpha'};
+        title='Register Alpha-Agent name + identity'; body='Use register(label) to issue the wrapped alpha-agent name plus the soulbound Alpha-Agent identity together to the connected wallet in one transaction.'; pill='Identity register ready'; primary={label:'Review register(label)',action:'register-alpha-identity'}; secondary={label:'Open Alpha identity console',action:'mint-alpha'};
       }else if(connected && isMainnet && hasAcceptedTerms && jobStats.completion > 0 && verified.club){
         title='Review jobs waiting for validator attention'; body=`${jobStats.completion} job${jobStats.completion === 1 ? '' : 's'} currently show a live completion-review surface. Open the board, inspect the details modal, and vote only after independent evidence review.`; pill='Validator attention available'; primary={label:'Open Jobs',action:'jobs'}; secondary={label:'Activity Concierge',action:'activity'};
       }else if(connected && isMainnet && hasAcceptedTerms && jobStats.open > 0 && verified.agent){
@@ -4613,7 +4645,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         {title:'Open bridge console', subtitle:'Bridge from Solana and mint the official Ethereum $AGIALPHA.', tags:'bridge vault agialpha solana ethereum', action:'bridge'},
         {title:'Open jobs table', subtitle:'Review, sort, filter, and open the live job board.', tags:'jobs board table review', action:'jobs'},
         {title:'Open ENS verification', subtitle:'Verify agent or validator ENS ownership for this wallet.', tags:'ens verify agent validator', action:'verify'},
-        {title:'Register Alpha-Agent name + identity', subtitle:'Open the combined register(label) route for wrapped ENS + soulbound identity.', tags:'alpha identity register combined recommended', action:'mint-alpha-identity'},
+        {title:'Register Alpha-Agent name + identity', subtitle:'Open the combined register(label) review for wrapped ENS + soulbound identity.', tags:'alpha identity register combined recommended', action:'register-alpha-identity'},
         {title:'Claim Alpha Agent Identity', subtitle:'Use claimIdentity(label) when wrapped name already exists.', tags:'alpha identity claim', action:'claim-alpha-identity'},
         {title:'Sync Alpha Agent Identity', subtitle:'Repair desynced/expired identity state with syncIdentityByLabel(label).', tags:'alpha identity sync repair', action:'sync-alpha-identity'},
         {title:'Refresh identity preview', subtitle:'Reload preview(label) and rootHealth() from identity registrar.', tags:'alpha identity preview refresh roothealth', action:'refresh-identity-preview'},
@@ -4766,8 +4798,13 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const { restoreHash=false } = options || {};
       const stored = continuityLoad();
       const fields = stored.fields || {};
+      const continuityScopedToWallet = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() === String(userAccount).toLowerCase();
+      const continuityScopedToChain = (stored.lastChainId == null || chainId == null) ? true : String(stored.lastChainId) === String(chainId);
+      const sameSessionContext = continuityScopedToWallet && continuityScopedToChain;
+      const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
       let restored = [];
       Object.entries(fields).forEach(([id, value])=>{
+        if(!sameSessionContext && !portableFieldIds.has(id)) return;
         const node = el(id);
         if(!node) return;
         if(node.type === 'checkbox'){
@@ -4818,7 +4855,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         verified.agent = null; verified.club = null; verified.agentAlpha = false; verified.clubAlpha = false;
         announceContinuity('Local draft context was restored, but live role verification posture was cleared because the connected wallet or chain changed.', 'warning');
       }else{
-        const storedVerified = stored.verified || {};
+        const storedVerified = sameSessionContext ? (stored.verified || {}) : {};
         if(storedVerified.agent) verified.agent = storedVerified.agent;
         if(storedVerified.club) verified.club = storedVerified.club;
         if(typeof storedVerified.agentAlpha === 'boolean') verified.agentAlpha = storedVerified.agentAlpha;
@@ -4864,6 +4901,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('verifyContinuitySummary')) el('verifyContinuitySummary').textContent = continuity;
       if(el('preflightAgentStatus')) el('preflightAgentStatus').textContent = agentSummary;
       if(el('preflightClubStatus')) el('preflightClubStatus').textContent = clubSummary;
+      if(el('verifyAgentLiveStatus')) el('verifyAgentLiveStatus').textContent = agentSummary;
+      if(el('verifyClubLiveStatus')) el('verifyClubLiveStatus').textContent = clubSummary;
+      if(el('verifyWalletEcho')) el('verifyWalletEcho').textContent = userAccount ? `${shortAddr(userAccount)} · ${isMainnet ? 'Ethereum Mainnet' : 'wrong network'}` : 'Reconnect restores same-wallet context';
+      if(el('verifyAgentAlphaSummary')) el('verifyAgentAlphaSummary').textContent = verified.agentAlpha ? 'Alpha agent verified' : 'Use Verify Alpha when needed';
+      if(el('verifyValidatorSummary')) el('verifyValidatorSummary').textContent = verified.clubAlpha ? 'Alpha validator verified' : (verified.club ? 'Club verified for validator posture' : 'Club verification enables review posture');
     }
 
     function updatePreflightSummary(){
@@ -5730,7 +5772,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         tone = 'blocked';
         heading = 'Identity writes are currently blocked.';
         body = lockedReason;
-        suggestedMethod = 'No identity write available';
+        suggestedMethod = 'Complete readiness steps';
       } else if(preview){
         if(preview.status === 0 && preview.registrable){
           tone = 'ready';
