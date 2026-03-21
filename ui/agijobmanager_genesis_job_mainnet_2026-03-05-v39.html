@@ -1856,8 +1856,9 @@
           </div>
         </div>
         <div class="preflightSignalList">
-          <div class="preflightSignal"><b>Before You Transact</b><span class="helper">Experimental protocol, independent review, and transaction finality cautions now sit inside the same operating lane as terms and verification.</span></div>
-          <div class="preflightSignal"><b id="preflightAlphaStatus">Alpha identity posture pending</b><span class="helper" id="preflightAlphaHint">Connect wallet, confirm mainnet, accept the shared terms state, then preview the recommended name + identity route.</span></div>
+          <div class="preflightSignal"><b>Before You Transact</b><span class="helper">Experimental protocol, irreversible token movements, and smart-contract-governed outcomes stay visible here before you open any review modal or wallet confirmation.</span></div>
+          <div class="preflightSignal"><b>Verification posture</b><span class="helper">Agent: <span id="preflightAgentStatus">Not verified</span> · Validator / club: <span id="preflightClubStatus">Not verified</span>. Inputs persist on same-wallet same-chain return so IPFS checks do not wipe your progress.</span></div>
+          <div class="preflightSignal"><b id="preflightAlphaStatus">Alpha identity posture pending</b><span class="helper" id="preflightAlphaHint">Connect wallet, confirm mainnet, accept the shared terms state, verify early if needed, then preview the recommended combined name + identity route.</span></div>
         </div>
       </div>
     </section>
@@ -2350,7 +2351,7 @@
 
     <div class="card" id="verifyEnsSection">
       <h2 style="margin:0 0 12px">1) Verify ENS Subdomain Ownership</h2>
-      <div class="helper" style="margin-bottom:12px">Verify agent, validator / club, and Alpha posture here before opening approval, review, or write flows. This section now sits directly beneath wallet + terms readiness so mobile users can connect, accept, verify, and proceed in one pass before leaving for IPFS or MetaMask confirmations.</div>
+      <div class="helper" style="margin-bottom:12px">Verify agent, validator / club, and Alpha posture here before opening approval, review, or write flows. This section now sits directly beneath wallet + terms readiness so mobile users can connect, accept, verify, and proceed in one pass before leaving for IPFS or MetaMask confirmations, then return without losing the local verification setup for the same wallet and chain.</div>
       <div class="alphaQuickFacts" style="margin-bottom:14px">
         <div class="alphaQuickFact"><span class="k">Agent posture</span><span class="v" id="verifyAgentSummary">Not verified</span></div>
         <div class="alphaQuickFact"><span class="k">Validator / club posture</span><span class="v" id="verifyClubSummary">Not verified</span></div>
@@ -2705,9 +2706,12 @@
           <button class="modalClose" id="closeAlphaMintReviewBtn" aria-label="Close">×</button>
         </div>
         <div id="alphaMintReviewFacts" class="reviewFacts"></div>
-        <div class="actions reviewFooter" style="margin-top:12px">
-          <button class="btn" id="cancelAlphaMintReviewBtn">Cancel</button>
-          <button class="btn btn-primary" id="confirmAlphaMintReviewBtn">Submit mint</button>
+        <div class="reviewFooter" style="margin-top:12px">
+          <div class="helper">Compatibility-only alias. Final authorize control remains sticky and reachable on mobile.</div>
+          <div class="actions">
+            <button class="btn" id="cancelAlphaMintReviewBtn">Cancel</button>
+            <button class="btn btn-primary" id="confirmAlphaMintReviewBtn">Submit mint</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2716,7 +2720,10 @@
       <div class="modalCard reviewModalCard">
         <div class="modalHeader"><div><div class="eyebrow">Transaction Review</div><h2 style="margin:4px 0 6px" id="alphaIdentityReviewTitle">Alpha identity action</h2><div class="helper" id="alphaIdentityReviewHelper">Contract-faithful action preview.</div></div><button class="modalClose" id="closeAlphaIdentityReviewBtn" aria-label="Close">×</button></div>
         <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
-        <div class="actions reviewFooter" style="margin-top:12px"><button class="btn" id="cancelAlphaIdentityReviewBtn">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn">Submit</button></div>
+        <div class="reviewFooter" style="margin-top:12px">
+          <div class="helper">The final authorize control remains pinned in view on mobile while the review facts scroll independently above it.</div>
+          <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn">Submit</button></div>
+        </div>
       </div>
     </div>
 
@@ -4606,7 +4613,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         {title:'Sync Alpha Agent Identity', subtitle:'Repair desynced/expired identity state with syncIdentityByLabel(label).', tags:'alpha identity sync repair', action:'sync-alpha-identity'},
         {title:'Refresh identity preview', subtitle:'Reload preview(label) and rootHealth() from identity registrar.', tags:'alpha identity preview refresh roothealth', action:'refresh-identity-preview'},
         {title:'Open Alpha identity console', subtitle:'Review canonical register(label) flow and registrar diagnostics.', tags:'alpha identity diagnostics', action:'mint-alpha'},
-        {title:'Refresh Alpha compatibility diagnostics', subtitle:'Reload root posture, parent status, and compatibility reference diagnostics.', tags:'registrar refresh parent wrapper identity diagnostics', action:'refresh-registrar'},
+        {title:'Refresh Alpha root diagnostics', subtitle:'Reload rootHealth(), preview posture, parent status, and quiet compatibility diagnostics.', tags:'registrar refresh parent wrapper identity diagnostics', action:'refresh-registrar'},
         {title:'Copy selected alpha-agent name', subtitle:'Copy the current preview full name.', tags:'alpha agent copy ens', action:'copy-minted-alpha'},
         {title:'Copy identity tokenId', subtitle:'Copy selected-label identity tokenId (node-based).', tags:'alpha identity tokenid copy', action:'copy-identity-tokenid'},
         {title:'Copy identity full name', subtitle:'Copy selected-label identity full ENS name.', tags:'alpha identity fullname copy', action:'copy-identity-fullname'},
@@ -4813,6 +4820,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('verifyClubSummary')) el('verifyClubSummary').textContent = clubSummary;
       const continuity = !userAccount ? 'Connect wallet to refresh live ownership without losing local inputs' : isMainnet ? 'Same wallet + chain returns restore inputs, terms, and local verification posture' : 'Switch back to Ethereum Mainnet to revalidate live ENS posture';
       if(el('verifyContinuitySummary')) el('verifyContinuitySummary').textContent = continuity;
+      if(el('preflightAgentStatus')) el('preflightAgentStatus').textContent = agentSummary;
+      if(el('preflightClubStatus')) el('preflightClubStatus').textContent = clubSummary;
     }
 
     function updatePreflightSummary(){
@@ -9880,6 +9889,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         updateViewportVars();
         syncModalState();
         restoreUiContinuity({ restoreHash:false });
+        updateVerificationSummary();
+        updatePreflightSummary();
         if(userAccount && isMainnet){ refreshIdentityState().catch(()=>{}); }
       };
       window.addEventListener('pageshow', gentleReturnRefresh);
