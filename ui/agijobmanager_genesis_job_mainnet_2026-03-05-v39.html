@@ -4555,6 +4555,16 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('pulseWatchlistCount')) el('pulseWatchlistCount').textContent = String(jobFavorites.size);
       if(el('pulseVisibleSummary')) el('pulseVisibleSummary').textContent = jobStats.total ? `${jobStats.visible || 0} visible · ${jobStats.total} total jobs loaded · ${jobFavorites.size} watchlisted` : 'No jobs loaded yet.';
     }
+    function openAlphaRegisterPath(){
+      const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
+      const preview = APP_STATE.identity?.preview || null;
+      const previewFresh = local.ok && alphaIdentityPreviewIsFresh(local.label);
+      if(local.ok && previewFresh && preview?.registrable) return openAlphaIdentityReview('register');
+      scrollToId('alphaAgentMintSection');
+      if(el('mintAlphaLabel')) setTimeout(()=>el('mintAlphaLabel')?.focus(), 180);
+      const guidance = !local.ok ? 'Enter a valid alpha-agent label first, then let preview(label) load before reviewing register(label).' : !previewFresh ? 'Preview(label) is still loading for this label. Review the Alpha-Agent console and wait for the live recommendation.' : 'This label is not currently registrable. Review the Alpha-Agent console for the recommended next action.';
+      return setToast(guidance, 'warn');
+    }
     function missionAction(action){
       if(action === 'connect') return connectWallet();
       if(action === 'switch-mainnet') return requestMainnetSwitch();
@@ -4563,7 +4573,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(action === 'verify') return scrollToId('verifyEnsSection');
       if(action === 'mint-alpha') return scrollToId('alphaAgentMintSection');
       if(action === 'mint-alpha-identity') return scrollToId('alphaAgentMintSection');
-      if(action === 'register-alpha-identity') return openAlphaIdentityReview('register');
+      if(action === 'register-alpha-identity') return openAlphaRegisterPath();
       if(action === 'claim-alpha-identity') return openAlphaIdentityReview('claimIdentity');
       if(action === 'sync-alpha-identity') return openAlphaIdentityReview('syncIdentityByLabel');
       if(action === 'refresh-identity-preview') return refreshIdentityState();
@@ -8770,7 +8780,9 @@ function normalizeIpfsToHttp(uri){
             const cab=el("clubAlphaBadge"); if(cab) cab.style.display="none";
             updateAlphaMintPreview({skipIdentityRefresh:true}).catch(()=>{});
           }
-          updateWriteGate(); updateAlphaIdentityReadiness(); updateAlphaIdentityExperience(); persistUiContinuity();
+          updateWriteGate(); updateAlphaIdentityReadiness(); updateAlphaIdentityExperience();
+          if(sameAccount) persistUiContinuity();
+          else continuitySave({ lastWallet: previousAccount || continuityLoad().lastWallet || '', lastChainId: chainId || continuityLoad().lastChainId || null, verified:{...verified} });
           if(!userAccount){ resetRuntimeState('wallet disconnected'); el("refreshBtn").disabled=true; return; }
           await connectWallet({ preserveContinuity:true, preserveVerification:sameAccount });
         });
@@ -8875,6 +8887,7 @@ function normalizeIpfsToHttp(uri){
         if(action === 'verify') return v26ScrollTo('verifyEnsSection');
         if(action === 'mint-alpha') return v26ScrollTo('alphaAgentMintSection');
         if(action === 'mint-alpha-identity') return v26ScrollTo('alphaAgentMintSection');
+        if(action === 'register-alpha-identity' && typeof missionAction === 'function') return missionAction('register-alpha-identity');
         if(action === 'claim-alpha-identity' && typeof missionAction === 'function') return missionAction('claim-alpha-identity');
         if(action === 'sync-alpha-identity' && typeof missionAction === 'function') return missionAction('sync-alpha-identity');
         if(action === 'activity') return v26ScrollTo('activitySection');
@@ -8934,7 +8947,7 @@ function normalizeIpfsToHttp(uri){
                 <button type="button" class="v26-sheet-btn" id="v26MirrorSecondaryBtn">Secondary action</button>
                 <button type="button" class="v26-sheet-btn" data-v26-run="refresh">Refresh live data</button>
                 <button type="button" class="v26-sheet-btn" data-v26-run="command">Open command palette</button>
-                <button type="button" class="v26-sheet-btn primary" data-v26-run="mint-alpha-identity">Mint Alpha Agent Identity</button><button type="button" class="v26-sheet-btn" data-v26-run="claim-alpha-identity">Claim Alpha Agent Identity</button><button type="button" class="v26-sheet-btn" data-v26-run="sync-alpha-identity">Sync Alpha Agent Identity</button><button type="button" class="v26-sheet-btn" data-v26-run="mint-alpha">Open Alpha identity console</button>
+                <button type="button" class="v26-sheet-btn primary" data-v26-run="register-alpha-identity">Review register(label)</button><button type="button" class="v26-sheet-btn" data-v26-run="claim-alpha-identity">Claim Alpha Agent Identity</button><button type="button" class="v26-sheet-btn" data-v26-run="sync-alpha-identity">Sync Alpha Agent Identity</button><button type="button" class="v26-sheet-btn" data-v26-run="mint-alpha">Open Alpha identity console</button>
                 <button type="button" class="v26-sheet-btn" data-v26-run="expand-terms">Expand all terms</button>
                 <button type="button" class="v26-sheet-btn" data-v26-run="collapse-terms">Collapse terms</button>
                 <button type="button" class="v26-sheet-btn" data-v26-run="top">Back to top</button>
