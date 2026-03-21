@@ -4168,7 +4168,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       APP_STATE.jobsReadDegraded = false;
       APP_STATE.admin = {managerOwner:null, ensOwner:null, isModerator:false};
       APP_STATE.registrar = {wrapper:null,parentUsable:null,parentActive:false,managerAuthorized:false};
-      APP_STATE.identity = {preview:null,rootHealth:null,label:"",tokenData:null};
+      APP_STATE.identity = {preview:null,previewLabel:'',rootHealth:null,label:"",tokenData:null};
       resolvedEnsJobPagesAddress = '';
       resolvedEnsJobPagesSource = 'unavailable';
       const tbody = el('jobsBody');
@@ -4730,7 +4730,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       });
     }
     function announceContinuity(message, tone=''){ const note = el('sessionRestoreNote'); if(note) note.textContent = message; const banner = el('preflightRestoreBanner'); if(banner){ banner.textContent = message; banner.dataset.visible = 'true'; banner.dataset.tone = tone || 'restored'; } }
-    function restoreUiContinuity(){
+    function restoreUiContinuity(options={}){
+      const { restoreHash=false } = options || {};
       const stored = continuityLoad();
       const fields = stored.fields || {};
       let restored = [];
@@ -4751,7 +4752,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       if(stored.alphaMode === 'recommended') setAlphaIdentityMode('recommended', {silent:true}); else setAlphaIdentityMode('recommended', {silent:true});
       Object.entries(stored.openToggles || {}).forEach(([id, open])=>{ const node = el(id); if(node && 'open' in node) node.open = !!open; });
-      if(stored.activeHash){
+      if(restoreHash && stored.activeHash && !document.querySelector('.modalBackdrop.open')){
         const target = document.querySelector(stored.activeHash);
         if(target) requestAnimationFrame(()=>target.scrollIntoView({block:'start'}));
       }
@@ -5456,19 +5457,33 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     async function updateAlphaMintPreview(){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const full = local.ok ? `${local.label}.${ALPHA_AGENT_PARENT}` : '—';
+      const previewIsFresh = local.ok && alphaIdentityPreviewIsFresh(local.label);
       if(el('mintAlphaFullName')) el('mintAlphaFullName').textContent = full;
       if(el('mintAlphaEnsUri')) el('mintAlphaEnsUri').textContent = local.ok ? `https://app.ens.domains/name/${full}` : '—';
       if(el('mintAlphaNode')) el('mintAlphaNode').textContent = local.ok ? namehash(full) : '—';
       if(el('mintAlphaParentUsable')) el('mintAlphaParentUsable').textContent = APP_STATE.identity?.rootHealth?.rootUsable === true ? 'usable' : APP_STATE.identity?.rootHealth?.rootUsable === false ? 'blocked' : 'checking…';
-      if(el('mintAlphaAvailability')) el('mintAlphaAvailability').textContent = APP_STATE.identity?.preview ? (APP_STATE.identity.preview.registrable ? 'Registrable via combined route' : `${APP_STATE.identity.preview.statusLabel} (${APP_STATE.identity.preview.status})`) : 'Preview drives live availability';
-      if(el('mintAlphaExpectedExpiry')) el('mintAlphaExpectedExpiry').textContent = APP_STATE.identity?.preview ? formatTimestamp(APP_STATE.identity.preview.expectedNewExpiry || APP_STATE.identity.preview.currentWrappedExpiry) : '—';
+      if(!previewIsFresh){
+        APP_STATE.identity = APP_STATE.identity || {};
+        APP_STATE.identity.preview = null;
+        APP_STATE.identity.previewLabel = '';
+      }
+      if(el('mintAlphaAvailability')) el('mintAlphaAvailability').textContent = previewIsFresh && APP_STATE.identity?.preview ? (APP_STATE.identity.preview.registrable ? 'Registrable via combined route' : `${APP_STATE.identity.preview.statusLabel} (${APP_STATE.identity.preview.status})`) : (local.ok ? 'Refreshing live preview…' : 'Preview drives live availability');
+      if(el('mintAlphaExpectedExpiry')) el('mintAlphaExpectedExpiry').textContent = previewIsFresh && APP_STATE.identity?.preview ? formatTimestamp(APP_STATE.identity.preview.expectedNewExpiry || APP_STATE.identity.preview.currentWrappedExpiry) : '—';
+      if(!previewIsFresh){
+        ['alphaIdentityRegisterBtn','alphaIdentityClaimBtn','alphaIdentitySyncBtn'].forEach(id=>{ const node = el(id); if(node) node.disabled = true; });
+        if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = local.ok ? 'refreshing' : '—';
+        if(el('alphaIdentityActionStatus') && local.ok) el('alphaIdentityActionStatus').textContent = 'Refreshing live preview for this label. Wait for the updated recommendation before authorizing a write.';
+      }
       if(el('mintAlphaStatus')){
         if(!userAccount) el('mintAlphaStatus').textContent = 'Connect wallet to evaluate the combined Alpha-Agent route.';
         else if(!isMainnet) el('mintAlphaStatus').textContent = 'Switch to Ethereum Mainnet to evaluate combined Alpha-Agent issuance.';
         else if(!hasAcceptedTerms) el('mintAlphaStatus').textContent = 'Accept the shared Terms & Conditions to unlock combined Alpha-Agent writes.';
         else if(!local.ok) el('mintAlphaStatus').textContent = local.reason;
+        else if(!previewIsFresh) el('mintAlphaStatus').textContent = 'Refreshing live combined-route preview for this label before writes are re-enabled.';
         else el('mintAlphaStatus').textContent = 'Compatibility diagnostics only. Use the primary combined route above for register(label), claimIdentity(label), or syncIdentityByLabel(label).';
       }
+      updateAlphaIdentityReadiness();
+      updateAlphaIdentityExperience();
       refreshIdentityState().catch(()=>{});
     }
     async function openAlphaMintReview(){
@@ -5508,6 +5523,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!p.tokenId && p.node){ try{ p.tokenId = BigInt(p.node).toString(); }catch{} }
       p.statusLabel = IDENTITY_PREVIEW_STATUS[p.status] || `unknown-${p.status}`;
       return p;
+    }
+    function alphaIdentityPreviewIsFresh(label){
+      return !!label && String(APP_STATE.identity?.previewLabel || '') === String(label || '');
     }
     function identityWriteLockedReason(preview){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
@@ -5774,6 +5792,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const previewRaw = local.ok ? await freeTrialRegistrarIdentity.methods.preview(local.label).call().catch(()=>null) : null;
       const preview = parseIdentityPreviewResult(previewRaw);
       APP_STATE.identity.preview = preview;
+      APP_STATE.identity.previewLabel = local.label || '';
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : '—';
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
@@ -5858,7 +5877,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     function openAlphaIdentityReview(action){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity.preview;
-      const lockedReason = identityWriteLockedReason(preview);
+      const previewFresh = alphaIdentityPreviewIsFresh(local.label);
+      const lockedReason = previewFresh ? identityWriteLockedReason(preview) : 'Preview is refreshing for this label.';
       const actionMeta = {
         register:{title:'Register Alpha Agent Identity', helper:'register(label) mints the wrapped ENS name plus the soulbound identity to the connected wallet.', enabled:!lockedReason && !!preview?.registrable, cta:'Submit register(label)'},
         claimIdentity:{title:'Claim Alpha Agent Identity', helper:'claimIdentity(label) recovers identity for a wrapped name that is already owned by the connected wallet.', enabled:!lockedReason && !!preview?.claimable, cta:'Submit claimIdentity(label)'},
@@ -5894,6 +5914,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity?.preview;
       if(!local.ok) return setToast(local.reason,'warn');
+      if(!alphaIdentityPreviewIsFresh(local.label)) return setToast('Preview is still refreshing for this label. Wait for the updated recommendation before submitting.', 'warn');
       if(action==='register' && !preview?.registrable) return setToast('register(label) is not available for the current preview state.', 'warn');
       if(action==='claimIdentity' && !preview?.claimable) return setToast('claimIdentity(label) is not available for the current preview state.', 'warn');
       if(action==='syncIdentityByLabel' && !(preview?.identityExists && (preview?.status===3 || preview?.status===4))) return setToast('syncIdentityByLabel(label) is only available for expired or desynced identity posture.', 'warn');
@@ -9858,7 +9879,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       const gentleReturnRefresh = ()=>{
         updateViewportVars();
         syncModalState();
-        restoreUiContinuity();
+        restoreUiContinuity({ restoreHash:false });
         if(userAccount && isMainnet){ refreshIdentityState().catch(()=>{}); }
       };
       window.addEventListener('pageshow', gentleReturnRefresh);
@@ -9878,7 +9899,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       }
       function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims & participant actions'; }
       function syncInspectorIds(){ if($('premiumInspectorNextActionReadable') && $('premiumInspectorNextActionMeta')) $('premiumInspectorNextActionMeta').textContent = $('premiumInspectorNextActionMeta').textContent || 'Load a procurement to translate live state.'; }
-      function boot(){ relabelTabs(); updateCoach(); syncInspectorIds(); assemblePreflightBand(); restoreUiContinuity(); bindUiContinuity(); persistUiContinuity(); $('preflightOpenAlphaDiagnosticsBtn')?.addEventListener('click', ()=>{ $('alphaJumpDiagnosticsBtn')?.click(); document.getElementById('alphaAgentMintSection')?.scrollIntoView({behavior:'smooth', block:'start'}); }); document.querySelectorAll("[data-premium-role-action]").forEach(btn=>btn.addEventListener("click", ()=>{ const pid=$("premiumInspectorProcurementId")?.value||""; if($("premiumActionProcurementId")) $("premiumActionProcurementId").value=pid; const agent=$("premiumInspectorApplicationAgent")?.value||""; if(agent && $("premiumActionFinalist")) $("premiumActionFinalist").value=agent; const map={commit:"premiumActionCommitApplicationBtn",reveal:"premiumActionRevealApplicationBtn",accept:"premiumActionAcceptFinalistBtn",trial:"premiumActionSubmitTrialBtn","score-commit":"premiumActionCommitScoreBtn","score-reveal":"premiumActionRevealScoreBtn"}; const target=map[btn.dataset.premiumRoleAction]; if(target && $(target)) $(target).click(); })); ['input','change'].forEach(evt=>document.addEventListener(evt, e=>{ if(e.target && String(e.target.id||'').startsWith('premiumDiscovery')) updateCoach(); if(e.target && ['termsAccepted','preflightTermsAccepted','agentSub','clubSub','alphaTermsAcceptedTop','mintAlphaLabel'].includes(String(e.target.id||''))) updatePreflightSummary(); })); window.addEventListener('hashchange', persistUiContinuity); window.addEventListener('pagehide', persistUiContinuity); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') persistUiContinuity(); }); updatePreflightSummary(); setInterval(updateCoach, 1200); }
+      function boot(){ relabelTabs(); updateCoach(); syncInspectorIds(); assemblePreflightBand(); restoreUiContinuity({ restoreHash:true }); bindUiContinuity(); persistUiContinuity(); $('preflightOpenAlphaDiagnosticsBtn')?.addEventListener('click', ()=>{ $('alphaJumpDiagnosticsBtn')?.click(); document.getElementById('alphaAgentMintSection')?.scrollIntoView({behavior:'smooth', block:'start'}); }); document.querySelectorAll("[data-premium-role-action]").forEach(btn=>btn.addEventListener("click", ()=>{ const pid=$("premiumInspectorProcurementId")?.value||""; if($("premiumActionProcurementId")) $("premiumActionProcurementId").value=pid; const agent=$("premiumInspectorApplicationAgent")?.value||""; if(agent && $("premiumActionFinalist")) $("premiumActionFinalist").value=agent; const map={commit:"premiumActionCommitApplicationBtn",reveal:"premiumActionRevealApplicationBtn",accept:"premiumActionAcceptFinalistBtn",trial:"premiumActionSubmitTrialBtn","score-commit":"premiumActionCommitScoreBtn","score-reveal":"premiumActionRevealScoreBtn"}; const target=map[btn.dataset.premiumRoleAction]; if(target && $(target)) $(target).click(); })); ['input','change'].forEach(evt=>document.addEventListener(evt, e=>{ if(e.target && String(e.target.id||'').startsWith('premiumDiscovery')) updateCoach(); if(e.target && ['termsAccepted','preflightTermsAccepted','agentSub','clubSub','alphaTermsAcceptedTop','mintAlphaLabel'].includes(String(e.target.id||''))) updatePreflightSummary(); })); window.addEventListener('hashchange', persistUiContinuity); window.addEventListener('pagehide', persistUiContinuity); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') persistUiContinuity(); }); updatePreflightSummary(); setInterval(updateCoach, 1200); }
       if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true}); else boot();
     })();
 
