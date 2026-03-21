@@ -8694,13 +8694,17 @@ function normalizeIpfsToHttp(uri){
           const sameAccount = !!userAccount && previousAccount && previousAccount === String(userAccount).toLowerCase();
           if(!sameAccount){
             verified.agent = null; verified.club = null; verified.agentAlpha=false; verified.clubAlpha=false;
+            APP_STATE.identity = APP_STATE.identity || {};
+            APP_STATE.identity.preview = null;
+            APP_STATE.identity.previewLabel = '';
             el("agentPill").className="pill"; el("agentPill").textContent="Agent ENS: not verified";
             const aab=el("agentAlphaBadge"); if(aab) aab.style.display="none";
             el("clubPill").className="pill"; el("clubPill").textContent="Club ENS: not verified";
             const vb=el("validatorBadge"); if(vb) vb.style.display="none";
             const cab=el("clubAlphaBadge"); if(cab) cab.style.display="none";
+            updateAlphaMintPreview({skipIdentityRefresh:true}).catch(()=>{});
           }
-          updateWriteGate(); updateAlphaIdentityReadiness(); persistUiContinuity();
+          updateWriteGate(); updateAlphaIdentityReadiness(); updateAlphaIdentityExperience(); persistUiContinuity();
           if(!userAccount){ resetRuntimeState('wallet disconnected'); el("refreshBtn").disabled=true; return; }
           await connectWallet({ preserveContinuity:true, preserveVerification:sameAccount });
         });
