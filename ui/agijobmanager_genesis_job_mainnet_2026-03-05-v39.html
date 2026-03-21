@@ -4618,6 +4618,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       let secondary = {label:'Command Palette', action:'command'};
       const bridgedBal = parseDisplayedNumber(el('bridgeAcceptedBalance')?.textContent || '0');
       const p = APP_STATE.identity?.preview;
+      const alphaLocal = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
+      const alphaPreviewFresh = alphaLocal.ok && alphaIdentityPreviewIsFresh(alphaLocal.label);
+      const registerReady = !!p?.registrable && alphaPreviewFresh;
       const repairNeeded = !!p && (p.status===4 || (p.status===3 && p.identityExists));
       if(connected && !isMainnet){
         title = 'Switch to Ethereum Mainnet'; body = 'The UI is in read-only mode on the current network. Switch to chainId 1 to post jobs, apply, validate, finalize, and mint through the Ethereum vault.'; pill='Network action required'; primary={label:'Switch network',action:'switch-mainnet'};
@@ -4629,7 +4632,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         title='Claim your Alpha Agent Identity'; body='preview(label) indicates claimable posture: wrapped name exists and this wallet can claim the soulbound identity credential.'; pill='Identity claim available'; primary={label:'Claim Alpha Agent Identity',action:'claim-alpha-identity'}; secondary={label:'Refresh identity preview',action:'refresh-identity-preview'};
       }else if(connected && isMainnet && hasAcceptedTerms && repairNeeded){
         title='Repair Alpha Agent Identity state'; body='preview(label) shows desynced or expired identity posture. Run syncIdentityByLabel(label) to repair or clean up stale identity state.'; pill='Identity repair recommended'; primary={label:'Sync Alpha Agent Identity',action:'sync-alpha-identity'}; secondary={label:'Refresh identity preview',action:'refresh-identity-preview'};
-      }else if(connected && isMainnet && hasAcceptedTerms && p?.registrable){
+      }else if(connected && isMainnet && hasAcceptedTerms && registerReady){
         title='Register Alpha-Agent name + identity'; body='Use register(label) to issue the wrapped alpha-agent name plus the soulbound Alpha-Agent identity together to the connected wallet in one transaction.'; pill='Identity register ready'; primary={label:'Review register(label)',action:'register-alpha-identity'}; secondary={label:'Open Alpha identity console',action:'mint-alpha'};
       }else if(connected && isMainnet && hasAcceptedTerms && jobStats.completion > 0 && verified.club){
         title='Review jobs waiting for validator attention'; body=`${jobStats.completion} job${jobStats.completion === 1 ? '' : 's'} currently show a live completion-review surface. Open the board, inspect the details modal, and vote only after independent evidence review.`; pill='Validator attention available'; primary={label:'Open Jobs',action:'jobs'}; secondary={label:'Activity Concierge',action:'activity'};
@@ -4822,6 +4825,15 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const continuityScopedToChain = (stored.lastChainId == null || chainId == null) ? true : String(stored.lastChainId) === String(chainId);
       const sameSessionContext = continuityScopedToChain && (!userAccount || continuityScopedToWallet);
       const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
+      if(!sameSessionContext){
+        UI_CONTINUITY_FIELDS.forEach(id=>{
+          if(portableFieldIds.has(id)) return;
+          const node = el(id);
+          if(!node) return;
+          if(node.type === 'checkbox') node.checked = false;
+          else node.value = '';
+        });
+      }
       let restored = [];
       Object.entries(fields).forEach(([id, value])=>{
         if(!sameSessionContext && !portableFieldIds.has(id)) return;
