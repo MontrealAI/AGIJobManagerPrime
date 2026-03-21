@@ -276,7 +276,7 @@
     body.has-open-modal #v26MobileSheet{opacity:0;pointer-events:none;visibility:hidden}
     .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:1400;overflow:hidden;overscroll-behavior:contain;isolation:isolate}
     .modalBackdrop.open{display:flex}
-    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1401;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
+    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1401;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scroll-padding-bottom:calc(132px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(36px + env(safe-area-inset-bottom))}
     .modalHeader{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin:-18px -18px 14px;padding:18px;background:linear-gradient(180deg,rgba(27,10,52,.995),rgba(27,10,52,.94) 78%,rgba(27,10,52,.78));backdrop-filter:blur(8px);border-radius:22px 22px 0 0}
     .modalClose{min-width:42px;height:42px;border-radius:12px;border:1px solid hsl(var(--border));background:rgba(255,255,255,.05);color:hsl(var(--foreground));cursor:pointer;font-size:22px}
     .detailGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
@@ -441,7 +441,7 @@
     .reviewChecklist{display:grid;gap:8px;margin-top:14px}
     .reviewCheck{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)}
     .reviewMethodBox{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;line-height:1.5;padding:12px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid hsl(var(--border));margin-top:14px}
-    .reviewFooter{position:sticky;bottom:0;z-index:3;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:16px -18px -24px;padding:14px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(18,7,34,0),rgba(18,7,34,.92) 18%,rgba(18,7,34,.995));box-shadow:0 -18px 36px rgba(5,8,18,.34)}
+    .reviewFooter{position:sticky;bottom:max(0px,env(safe-area-inset-bottom));z-index:3;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:16px -18px 0;padding:14px 18px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(18,7,34,0),rgba(18,7,34,.92) 18%,rgba(18,7,34,.995));box-shadow:0 -18px 36px rgba(5,8,18,.34)}
     .reviewFooter .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
     .reviewFooter .actions .btn{min-width:140px}
     .reviewFooter .helper{margin:0}
@@ -481,6 +481,7 @@
     .alphaConsoleShell{display:grid;gap:18px}
     .alphaWorkbench{display:grid;gap:18px}
     .alphaQuickStartGrid{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(360px,.84fr);gap:18px;align-items:start}
+    .alphaPrimaryRail,.alphaSecondaryRail{display:grid;gap:16px;align-content:start}
     .alphaPrimaryWorkbench{display:grid;gap:16px}
     .alphaExpertDetails{border:1px solid rgba(121,96,150,.14);border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,244,252,.82));overflow:hidden;transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease,opacity .22s ease,transform .22s ease}
     .alphaExpertDetails summary{cursor:pointer;list-style:none;padding:0}
@@ -595,7 +596,7 @@
     #alphaIdentityReviewModal .reviewFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
     #alphaIdentityReviewModal .reviewFooter,#alphaMintReviewModal .reviewFooter{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
     #actionReviewModal .reviewFooter{justify-content:flex-end}
-    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier{grid-template-columns:1fr}}
+    @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier{grid-template-columns:1fr}.alphaSecondaryRail{order:2}.alphaQuickFacts{grid-template-columns:1fr}.alphaRecommendationBlock{order:1}.alphaLabelField{order:0}}
     @media (max-width:700px){
       .modalBackdrop{align-items:flex-end;padding:0}
       .modalCard,.commandModalCard,.reviewModalCard,#alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
@@ -672,6 +673,10 @@
       .row{align-items:stretch}
       .row > *{min-width:0}
       .actions,.builderActions,.heroActions,.packetActions,.modalTools,.bridgeSecondaryActions,.bridgeActionsRow,.syncControls,.draftTools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+      .alphaPrimaryActions,.alphaSecondaryActions{display:grid;grid-template-columns:1fr;gap:10px}
+      .alphaDecisionItem,.alphaMetric,.alphaQuickFact{align-items:flex-start}
+      .alphaDecisionItem span:last-child,.alphaMetric .v,.alphaQuickFact .v,#alphaAgentMintSection .pill,#alphaAgentMintSection code{overflow-wrap:anywhere;word-break:break-word}
+      .alphaPreviewHeader .pill{max-width:100%}
       .actions > *, .builderActions > *, .heroActions > *, .packetActions > *, .modalTools > *, .bridgeSecondaryActions > *, .bridgeActionsRow > *, .syncControls > *, .draftTools > *{width:100%;min-width:0}
       .toolbarRow{gap:10px}
       .toolbarCell,.toolbarCell.compact{min-width:0;flex:1 1 100%;width:100%}
@@ -690,14 +695,14 @@
       .preflightIntro,.preflightGrid,.preflightChecklist,.preflightStatusGrid{grid-template-columns:1fr}
       .preflightAnchorRow,.preflightActions,.preflightCompactActions{display:grid;grid-template-columns:1fr}
       .preflightInlineCheck{flex-direction:column}
-      .reviewFooter{position:static!important;bottom:auto!important;margin:18px 0 0!important;padding:14px 0 calc(18px + env(safe-area-inset-bottom))!important;gap:10px;box-shadow:none;background:none;border-top:1px solid rgba(121,96,150,.12)}
+      .reviewFooter{position:static!important;bottom:auto!important;margin:18px 0 0!important;padding:14px 0 calc(28px + env(safe-area-inset-bottom))!important;gap:10px;box-shadow:none;background:none;border-top:1px solid rgba(121,96,150,.12)}
       .reviewFooter,.reviewFooter .actions,.premiumRoleActionRow,.heroActions,.actions,.builderActions{grid-template-columns:1fr}
       .reviewFooter .actions{display:grid;width:100%}
       .reviewFooter .btn-primary,.reviewFooter .btn[data-primary="true"],.actions .btn-primary,.builderActions .btn-primary,.heroActions .btn-primary,.premiumRoleActionRow .btn-primary{order:-2}
       .reviewFooter .btn-danger,.actions .btn-danger,.builderActions .btn-danger,.premiumRoleActionRow .btn-danger{order:3}
       .premiumStickyBar{position:sticky;bottom:0;border-radius:20px 20px 0 0;padding:14px 16px calc(22px + env(safe-area-inset-bottom));margin:18px -4px 0;box-shadow:0 -18px 34px rgba(88,67,119,.12)}
-      .modalBackdrop{padding:0;align-items:flex-end}
-      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);border-radius:18px 18px 0 0;padding:14px 12px calc(32px + env(safe-area-inset-bottom));margin-top:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+      .modalBackdrop{padding:0;align-items:flex-end;overflow-y:auto}
+      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);border-radius:18px 18px 0 0;padding:14px 12px calc(40px + env(safe-area-inset-bottom));margin-top:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
       .modalHeader{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(27,10,52,.92));padding-bottom:10px}
       .modalClose{min-width:44px;height:44px}
       .codeBox,.exportBox,.packetBox,.reviewMethodBox,.bridgeRouteBox{font-size:.8rem;max-height:260px}
@@ -3318,10 +3323,13 @@ Evaluation methodology"></textarea>
         <div id="actionReviewChecklist" class="reviewChecklist"></div>
         <div class="reviewMethodBox" id="actionReviewMethod">method: —</div>
         <div class="reviewFooter">
-          <div class="helper" id="actionReviewFooterNote">You may still be asked for an approval transaction first if allowance is insufficient.</div>
+          <div>
+            <div class="helper" id="actionReviewFooterStepNote"><b>Step 1</b> Review or approve if required · <b>Step 2</b> continue to wallet confirmation.</div>
+            <div class="helper" id="actionReviewFooterNote">You may still be asked for an approval transaction first if allowance is insufficient.</div>
+          </div>
           <div class="actions">
-            <button class="btn" id="cancelActionReviewBtn">Cancel</button>
             <button class="btn btn-primary" id="confirmActionReviewBtn">Continue</button>
+            <button class="btn" id="cancelActionReviewBtn">Cancel</button>
           </div>
         </div>
       </div>
@@ -4378,6 +4386,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('actionReviewMethod')) el('actionReviewMethod').textContent = config.method || 'method: —';
       if(el('actionReviewFooterNote')) el('actionReviewFooterNote').textContent = config.footer || 'You may still be asked for an approval transaction first if allowance is insufficient.';
       if(el('confirmActionReviewBtn')) el('confirmActionReviewBtn').textContent = config.confirmLabel || 'Continue';
+      if(el('cancelActionReviewBtn')) el('cancelActionReviewBtn').textContent = config.cancelLabel || 'Cancel';
+      if(el('actionReviewModal')) el('actionReviewModal').dataset.requiresApproval = (config.footer || '').toLowerCase().includes('approval') || (config.checks || []).some(x=>String(x.state || '').toLowerCase().includes('allowance') || String(x.text || '').toLowerCase().includes('approval')) ? 'true' : 'false';
       el('actionReviewModal')?.classList.add('open');
       el('actionReviewModal')?.setAttribute('aria-hidden','false');
     }
@@ -4632,7 +4642,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return true;
     }
     const UI_CONTINUITY_KEY = 'agijobmanagerprime.v39.uiContinuity';
-    const UI_CONTINUITY_FIELDS = ['termsAccepted','agentSub','clubSub','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
+    const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','agentSub','clubSub','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails','mintAlphaLabel','mintAlphaRecipient'];
     function continuityLoad(){
       try{ return JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {}; }catch(_){ return {}; }
     }
@@ -4649,7 +4659,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       });
       const activePremiumTab = document.querySelector('[data-premium-surface].active')?.dataset.premiumSurface || '';
       const activeHash = location.hash || '';
-      continuitySave({fields, activePremiumTab, activeHash, lastWallet:userAccount || '', lastChainId: chainId || null});
+      const alphaMode = el('alphaAgentMintSection')?.dataset.alphaMode || 'recommended';
+      const alphaExpertOpen = !!document.getElementById('alphaEnsExpertDetails')?.open;
+      continuitySave({fields, activePremiumTab, activeHash, alphaMode, alphaExpertOpen, lastWallet:userAccount || '', lastChainId: chainId || null});
     }
     function announceContinuity(message, tone=''){ const note = el('sessionRestoreNote'); if(note) note.textContent = message; const banner = el('preflightRestoreBanner'); if(banner){ banner.textContent = message; banner.dataset.visible = 'true'; banner.dataset.tone = tone || 'restored'; } }
     function restoreUiContinuity(){
@@ -4677,6 +4689,16 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }
       const topTerms = el('alphaTermsAcceptedTop');
       const baseTerms = el('termsAccepted');
+      if(stored.alphaMode){
+        const section = el('alphaAgentMintSection');
+        if(section) section.dataset.alphaMode = stored.alphaMode === 'ens-only' ? 'ens-only' : 'recommended';
+        if(stored.alphaMode === 'ens-only') el('alphaIdentityModeEnsOnly')?.click();
+        else el('alphaIdentityModeRecommended')?.click();
+      }
+      if(typeof stored.alphaExpertOpen === 'boolean'){
+        const expert = document.getElementById('alphaEnsExpertDetails');
+        if(expert) expert.open = stored.alphaExpertOpen;
+      }
       if(topTerms && baseTerms && topTerms.checked !== baseTerms.checked) topTerms.checked = baseTerms.checked;
       if(baseTerms){ hasAcceptedTerms = !!baseTerms.checked; APP_STATE.wallet.termsAccepted = hasAcceptedTerms; }
       updateWriteGate();
