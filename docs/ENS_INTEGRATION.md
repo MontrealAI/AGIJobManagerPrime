@@ -14,7 +14,7 @@ From `AGIJobManager` constants:
 - `5`: lock permissions (`ENS_HOOK_LOCK`)
 - `6`: lock + burn child fuses (`ENS_HOOK_LOCK_BURN`)
 
-`AGIJobManager` calls `handleHook(uint8 hook, uint256 jobId)` on ENSJobPages with fixed gas and emits `EnsHookAttempted(..., success)`.
+`AGIJobManagerPrime` now uses a typed push interface (`onJobCreated`, `onJobAssigned`, `onJobCompletionRequested`, `onJobRevoked`, `onJobLocked`) and emits `EnsHookAttempted(..., success)` for every best-effort side effect.
 
 ## Best-effort behavior
 
@@ -79,7 +79,12 @@ sequenceDiagram
 | Symptom | Likely cause | Verify | Remediation |
 |---|---|---|---|
 | `EnsHookAttempted success=false` events | ENSJobPages address wrong or reverting | Check `ensJobPages` address and code size; inspect ENSJobPages logs | Set correct ENSJobPages or disable by setting zero address |
-| Job settles but ENS records missing | Best-effort resolver writes failed | Query resolver text/authorisation for job node | Replay via owner `ENSJobPages` admin functions if needed |
+| Job settles but ENS records missing | Best-effort resolver writes failed | Query resolver text/authorisation for job node | Replay via `AGIJobManagerPrime.syncEnsHook(...)` or the owner-only `ENSJobPages.sync*FromManager(...)` repair functions if needed |
 | Fuse burn not applied | Root not wrapped or authorization missing | Check ENS owner(root) and NameWrapper ownership/approval | Correct wrapper ownership/approval, then retry lock with burn |
 | `ENSNotAuthorized` in ENSJobPages direct calls | Contract lacks root authority | Verify root owner in ENS/NameWrapper | Transfer ownership or approve ENSJobPages operator |
 | NFT tokenURI is completion URI instead of `ens://` | `useEnsJobTokenURI` disabled or ENS URI empty/failing | Check manager `setUseEnsJobTokenURI` state and ENSJP `jobEnsURI` | Enable flag and ensure ENSJobPages reachable/configured |
+
+
+## Canonical naming
+
+Fresh deployments MUST issue `agijob-<jobId>.alpha.jobs.agi.eth` by default. `jobEnsPreview(jobId)` is only a deterministic preview; `jobEnsIssued(jobId)` is the authoritative proof that the subname exists.

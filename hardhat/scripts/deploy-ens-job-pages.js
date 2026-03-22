@@ -174,7 +174,9 @@ async function main() {
 
   console.log("\nManual next steps (not automated):");
   console.log("1) On NameWrapper, wrapped-root owner calls setApprovalForAll(newEnsJobPages, true).");
-  console.log("2) On AGIJobManager, owner calls setEnsJobPages(newEnsJobPages).");
+  console.log("2) Run hardhat/scripts/validate-ens-cutover.js before wiring to the manager.");
+  console.log("3) On AGIJobManagerPrime, owner calls setEnsJobPages(newEnsJobPages).");
+  console.log("4) Fresh issuance defaults to agijob-<jobId>.alpha.jobs.agi.eth.");
 }
 
 main().catch((err) => {
