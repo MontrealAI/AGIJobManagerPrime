@@ -276,7 +276,7 @@
     body.has-open-modal #v26MobileSheet{opacity:0;pointer-events:none;visibility:hidden}
     .modalBackdrop{position:fixed;inset:0;background:rgba(5,8,18,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:1400;overflow:hidden;overscroll-behavior:contain;isolation:isolate}
     .modalBackdrop.open{display:flex}
-    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1401;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(40px + env(safe-area-inset-bottom))}
+    .modalCard,.commandModalCard,.reviewModalCard{position:relative;z-index:1401;display:flex;flex-direction:column;width:min(1180px,96vw);max-width:100%;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);min-height:0;overflow:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(18,7,34,.98));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:18px 18px calc(40px + env(safe-area-inset-bottom))}
     .modalHeader{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin:-18px -18px 14px;padding:18px;background:linear-gradient(180deg,rgba(27,10,52,.995),rgba(27,10,52,.94) 78%,rgba(27,10,52,.78));backdrop-filter:blur(8px);border-radius:22px 22px 0 0}
     .modalClose{min-width:42px;height:42px;border-radius:12px;border:1px solid hsl(var(--border));background:rgba(255,255,255,.05);color:hsl(var(--foreground));cursor:pointer;font-size:22px}
     .detailGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
@@ -435,6 +435,7 @@
     .reviewBodyText{color:var(--text-soft);line-height:1.55}
     .reviewFacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
     .reviewFacts,.reviewChecklist,.reviewFooter,.actions{min-width:0}
+    .reviewFacts,.reviewChecklist,.reviewMethodBox,.reviewBodyText{scroll-margin-bottom:calc(170px + env(safe-area-inset-bottom))}
     .reviewFact{padding:12px;border:1px solid hsl(var(--border));border-radius:14px;background:rgba(255,255,255,.03);overflow:hidden}
     .reviewFact .k{display:block;font-size:.8rem;color:var(--text-soft);margin-bottom:4px}
     .reviewFact .v{display:block;font-size:.96rem;font-weight:700;overflow-wrap:anywhere;word-break:break-word}
@@ -452,10 +453,14 @@
     .modalBackdrop{overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:clamp(12px,2vw,24px) clamp(12px,2vw,24px) calc(12px + env(safe-area-inset-bottom))}
     .modalCard,.commandModalCard,.reviewModalCard{display:flex;flex-direction:column;max-height:min(calc(var(--app-vh,1vh) * 100 - 24px),96vh);min-height:0}
     .modalCard > :not(.modalHeader):not(.reviewFooter),.commandModalCard > :not(.modalHeader):not(.reviewFooter),.reviewModalCard > :not(.modalHeader):not(.reviewFooter){min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .reviewModalCard{overflow-y:auto;overflow-x:hidden}
+    .reviewModalCard > :not(.modalHeader):not(.reviewFooter){overflow:visible}
     #alphaMintReviewModal .modalCard,
     #alphaIdentityReviewModal .modalCard{width:min(820px,96vw);height:auto;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
     #alphaMintReviewModal .modalCard > :not(.modalHeader):not(.reviewFooter),
     #alphaIdentityReviewModal .modalCard > :not(.modalHeader):not(.reviewFooter){min-height:0;overflow:auto;padding-right:2px}
+    #alphaMintReviewModal .reviewModalCard > :not(.modalHeader):not(.reviewFooter),
+    #alphaIdentityReviewModal .reviewModalCard > :not(.modalHeader):not(.reviewFooter){overflow:visible}
     #alphaAgentMintSection .mintGrid,#alphaAgentMintSection .actions,#alphaAgentMintSection .reviewFacts{align-items:start}
     #alphaAgentMintSection .mintPreview,#alphaAgentMintSection #alphaIdentityRootHealthCard{height:auto;min-height:0;overflow:hidden}
     #alphaAgentMintSection .miniTable td:last-child,#alphaAgentMintSection .reviewFact .v{overflow-wrap:anywhere;word-break:break-word}
@@ -501,6 +506,9 @@
     .alphaCompactItem .v{font-weight:700;line-height:1.5;overflow-wrap:anywhere;word-break:break-word}
     .alphaActionCluster{display:grid;gap:12px}
     .alphaRecommendedRoute{display:grid;gap:10px;padding:14px 16px;border-radius:18px;border:1px solid rgba(121,96,150,.12);background:rgba(255,255,255,.76)}
+    .alphaQuickStartDock{display:grid;gap:10px;padding:14px 16px;border-radius:18px;border:1px solid rgba(111,75,195,.14);background:linear-gradient(180deg, rgba(252,250,255,.96), rgba(247,241,251,.88));box-shadow:0 14px 30px rgba(91,69,120,.08)}
+    .alphaQuickStartDockHeader{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+    .alphaQuickStartDockStatus{font-size:.92rem;line-height:1.55;color:#4e3b5c}
     .alphaActionAux{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .alphaExpertDetails{border:1px solid rgba(121,96,150,.14);border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,244,252,.82));overflow:hidden;transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease,opacity .22s ease,transform .22s ease}
     .alphaExpertDetails summary{cursor:pointer;list-style:none;padding:0}
@@ -727,12 +735,16 @@
       .preflightInlineCheck{flex-direction:column}
       .reviewFooter{position:sticky!important;bottom:0!important;margin:14px -12px calc(-14px - env(safe-area-inset-bottom))!important;padding:14px 12px calc(22px + env(safe-area-inset-bottom))!important;gap:10px;box-shadow:0 -18px 34px rgba(91,69,120,.18);background:linear-gradient(180deg,rgba(250,247,252,.08),rgba(250,247,252,.96) 20%,rgba(250,247,252,.995));border-top:1px solid rgba(121,96,150,.14)}
       .reviewFooter,.reviewFooter .actions,.premiumRoleActionRow,.heroActions,.actions,.builderActions{grid-template-columns:1fr}
+      .reviewModalCard > .assistantCallout,.reviewModalCard > .reviewFacts,.reviewModalCard > .reviewChecklist,.reviewModalCard > .reviewMethodBox{padding-bottom:calc(168px + env(safe-area-inset-bottom))}
+      .alphaRecommendationBlock{position:sticky;top:calc(10px + var(--vv-offset-top, 0px));z-index:4}
+      .alphaQuickStartDock{position:sticky;top:calc(10px + var(--vv-offset-top, 0px));z-index:5}
       .reviewFooter .actions{display:grid;width:100%}
       .reviewFooter .btn-primary,.reviewFooter .btn[data-primary="true"],.actions .btn-primary,.builderActions .btn-primary,.heroActions .btn-primary,.premiumRoleActionRow .btn-primary{order:-2}
       .reviewFooter .btn-danger,.actions .btn-danger,.builderActions .btn-danger,.premiumRoleActionRow .btn-danger{order:3}
       .premiumStickyBar{position:sticky;bottom:0;border-radius:20px 20px 0 0;padding:14px 16px calc(22px + env(safe-area-inset-bottom));margin:18px -4px 0;box-shadow:0 -18px 34px rgba(88,67,119,.12)}
-      .modalBackdrop{padding:0;align-items:flex-end}
-      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);border-radius:18px 18px 0 0;padding:14px 12px calc(44px + env(safe-area-inset-bottom));margin-top:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(180px + env(safe-area-inset-bottom))}
+      .modalBackdrop{padding:0;align-items:flex-end;overflow-y:auto;-webkit-overflow-scrolling:touch}
+      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);min-height:0;border-radius:18px 18px 0 0;padding:14px 12px calc(44px + env(safe-area-inset-bottom));margin-top:auto;overflow:hidden;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom))}
+      .reviewModalCard{overflow-y:auto;overflow-x:hidden}
       .modalHeader{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,rgba(27,10,52,.98),rgba(27,10,52,.92));padding-bottom:10px}
       .modalClose{min-width:44px;height:44px}
       .codeBox,.exportBox,.packetBox,.reviewMethodBox,.bridgeRouteBox{font-size:.8rem;max-height:260px}
@@ -1847,6 +1859,7 @@
           <div>
             <div class="eyebrow">Operational preflight</div>
             <div class="missionTitle" style="font-size:1.08rem;margin:0">Terms, Before You Transact, verification, and Alpha-Agent quick start stay connected before write review.</div>
+              <div class="helper" style="margin-top:8px">MetaMask mobile and IPFS return flows now restore the local posture for the same wallet + chain so users can reconnect, refresh live reads, and continue without re-entering setup.</div>
           </div>
           <div class="preflightCompactActions">
             <a class="btn" href="#alphaAgentMintSection">Open full Alpha console</a>
@@ -2530,6 +2543,16 @@
                   </div>
                 </div>
                 <div class="alphaRecommendationBlock alphaActionCluster">
+                  <div class="alphaQuickStartDock" id="alphaQuickStartDock">
+                    <div class="alphaQuickStartDockHeader">
+                      <div>
+                        <div class="alphaModeLabel">Mobile-ready action rail</div>
+                        <div class="subtleTitle" style="margin:4px 0 0">Primary write, refresh, and recovery controls stay grouped above the deeper diagnostics.</div>
+                      </div>
+                      <span class="alphaMethodPill" id="alphaQuickStartDockPill">Awaiting preview(label)</span>
+                    </div>
+                    <div class="alphaQuickStartDockStatus" id="alphaQuickStartDockStatus">Connect, accept, verify, and let preview(label) load. Final transaction review keeps the authorize control pinned within reach on mobile.</div>
+                  </div>
                   <div class="alphaActionGuide" style="margin:0">
                     <div class="alphaReadinessHeader" style="align-items:center">
                       <div>
@@ -4976,6 +4999,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       document.body.classList.toggle('has-open-modal', anyOpenModal);
       if(anyOpenModal){
         document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
         const sheet = document.getElementById('v26MobileSheet');
         if(sheet?.classList.contains('open')){
           sheet.classList.remove('open');
@@ -4983,6 +5007,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         }
       }else if(!document.getElementById('v26MobileSheet')?.classList.contains('open')){
         document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
       }
       persistUiContinuity();
     }
@@ -5679,9 +5704,13 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity?.preview || null;
       const health = APP_STATE.identity?.rootHealth || null;
+      const expectedRootNode = (()=>{ try{ return String(namehash(ALPHA_AGENT_PARENT) || '').toLowerCase(); }catch{ return ''; } })();
+      const observedRootNode = String(health?.rootNode || APP_STATE.identity?.rootNode || '').toLowerCase();
+      const rootMismatch = !!expectedRootNode && !!observedRootNode && expectedRootNode !== observedRootNode;
       const baseLockedReason = !userAccount ? 'Connect the wallet you want to issue to.' : !isMainnet ? 'Switch to Ethereum Mainnet.' : !hasAcceptedTerms ? 'Accept the shared Terms & Conditions near the top of the page.' : !local.ok ? local.reason : '';
+      const mismatchLockedReason = rootMismatch ? 'ROOT_NODE mismatch blocks identity writes.' : '';
       const previewLockedReason = preview ? identityWriteLockedReason(preview) : '';
-      const lockedReason = baseLockedReason || previewLockedReason;
+      const lockedReason = baseLockedReason || mismatchLockedReason || previewLockedReason;
       const registerEnabled = !lockedReason && !!preview?.registrable;
       const claimEnabled = !lockedReason && !!preview?.claimable;
       const syncEnabled = !lockedReason && !!preview?.identityExists && (preview?.status===3 || preview?.status===4);
@@ -5694,6 +5723,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         recommendation = 'Readiness incomplete';
         title = 'Complete the shared readiness steps first.';
         body = baseLockedReason;
+      }else if(rootMismatch){
+        tone = 'blocked';
+        recommendation = 'No write recommended';
+        title = 'Identity writes are blocked by a ROOT_NODE mismatch.';
+        body = mismatchLockedReason;
       }else if(!preview){
         recommendation = 'Await preview(label)';
       }else if(registerEnabled){
@@ -5707,7 +5741,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       }else{
         tone='blocked'; recommendation='No write recommended'; title='No public Alpha-Agent write is currently recommended.'; body=previewLockedReason || 'Review preview(label), rootHealth(), and the diagnostics below before trying another label or repair path.';
       }
-      return {local, preview, health, lockedReason, registerEnabled, claimEnabled, syncEnabled, recommendation, tone, title, body};
+      return {local, preview, health, rootMismatch, lockedReason, registerEnabled, claimEnabled, syncEnabled, recommendation, tone, title, body};
     }
 
     function setAlphaIdentityMode(mode){
@@ -5871,6 +5905,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(writePostureNode) writePostureNode.textContent = writePosture;
       const methodPill = el('alphaIdentitySuggestedMethod');
       if(methodPill) methodPill.textContent = suggestedMethod;
+      const dockPill = el('alphaQuickStartDockPill');
+      if(dockPill) dockPill.textContent = suggestedMethod;
+      const dockStatus = el('alphaQuickStartDockStatus');
+      if(dockStatus) dockStatus.textContent = lockedReason ? `${lockedReason} Final transaction review keeps the authorize control pinned within reach on mobile.` : `${body} Final review keeps Cancel and the primary authorize action visible in a sticky footer on mobile.`;
     }
     async function refreshIdentityState(){
       if(!web3) return;
@@ -5898,6 +5936,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         rootName:String(health[0]||''), rootNode:String(health[1]||''), active:!!health[2], pausedOut:!!health[3], wrapperAddress:String(health[4]||''), ensRegistryAddress:String(health[5]||''), contractOwner:String(health[6]||''), wrappedParentOwner:String(health[7]||''), parentWrapped:!!health[8], parentLocked:!!health[9], registrarAuthorised:!!health[10], effectiveParentExpiry:Number(health[11]||0), rootUsable:!!health[12]
       } : health) : null;
       APP_STATE.identity.rootHealth = h;
+      APP_STATE.identity.rootNode = String(h?.rootNode || rootNode || '');
       if(el('alphaIdentityRootName')) el('alphaIdentityRootName').textContent = h?.rootName || rootName || ALPHA_AGENT_PARENT;
       if(el('alphaIdentityRootNode')) el('alphaIdentityRootNode').textContent = h?.rootNode || rootNode || '—';
       if(el('alphaIdentityRootActive')) el('alphaIdentityRootActive').textContent = String(!!(h?.active ?? rootActive));
@@ -5942,10 +5981,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityClaimable')) el('alphaIdentityClaimable').textContent = preview ? String(!!preview.claimable) : '—';
       if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = preview ? String(!!preview.registrable) : '—';
       const ui = deriveAlphaIdentityUiState();
-      const lockedReason = rootMismatch ? 'ROOT_NODE mismatch blocks identity writes.' : ui.lockedReason;
-      const registerEnabled = !rootMismatch && ui.registerEnabled;
-      const claimEnabled = !rootMismatch && ui.claimEnabled;
-      const syncEnabled = !rootMismatch && ui.syncEnabled;
+      const lockedReason = ui.lockedReason;
+      const registerEnabled = ui.registerEnabled;
+      const claimEnabled = ui.claimEnabled;
+      const syncEnabled = ui.syncEnabled;
       if(el('alphaIdentityRegisterBtn')) el('alphaIdentityRegisterBtn').disabled = !registerEnabled;
       if(el('alphaIdentityClaimBtn')) el('alphaIdentityClaimBtn').disabled = !claimEnabled;
       if(el('alphaIdentitySyncBtn')) el('alphaIdentitySyncBtn').disabled = !syncEnabled;
