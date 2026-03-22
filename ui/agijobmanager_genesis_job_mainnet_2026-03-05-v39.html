@@ -1889,11 +1889,422 @@
       </div>
     </section>
 
+<div class="card" id="verifyEnsSection">
+      <h2 style="margin:0 0 12px">1) Verify ENS ownership posture</h2>
+      <div class="helper" style="margin-bottom:12px">Verify agent, validator / club, and Alpha posture here before opening approval, review, or write flows. This section now sits directly beneath wallet + terms readiness so mobile users can connect, accept, verify, and proceed in one pass before leaving for IPFS or MetaMask confirmations, then return without losing the local verification setup for the same wallet and chain.</div>
+      <div class="alphaQuickFacts" style="margin-bottom:14px">
+        <div class="alphaQuickFact"><span class="k">Agent posture</span><span class="v" id="verifyAgentSummary">Not verified</span></div>
+        <div class="alphaQuickFact"><span class="k">Validator / club posture</span><span class="v" id="verifyClubSummary">Not verified</span></div>
+        <div class="alphaQuickFact"><span class="k">Live continuity</span><span class="v" id="verifyContinuitySummary">Inputs restore on same wallet + chain return</span></div>
+      </div>
+      <div class="alphaVerificationDeck">
+        <div class="alphaVerificationPanel">
+          <div>
+            <div class="alphaModeLabel">Agent verification</div>
+            <div class="subtleTitle" style="margin:4px 0 0">Confirm the operating agent label before you create, apply, or claim.</div>
+          </div>
+          <div class="row" style="justify-content:flex-start">
+            <div style="flex:1 1 280px;min-width:0">
+              <label for="agentSub">Agent subdomain (agent.agi.eth)</label>
+              <input id="agentSub" type="text" placeholder="e.g. alice" style="max-width:none">
+            </div>
+            <button class="btn" id="verifyAgentBtn">Verify</button>
+            <button class="btn" id="verifyAgentAlphaBtn">Verify Alpha</button>
+          </div>
+          <div class="alphaVerificationSignals">
+            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyAgentLiveStatus">Not verified</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Connected wallet</span><span class="v" id="verifyWalletEcho">Reconnect restores same-wallet context</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Alpha posture</span><span class="v" id="verifyAgentAlphaSummary">Use Verify Alpha when needed</span></div>
+          </div>
+          <div class="muted" id="agentOut" style="margin-top:2px"></div>
+        </div>
+        <div class="alphaVerificationPanel">
+          <div>
+            <div class="alphaModeLabel">Validator / club verification</div>
+            <div class="subtleTitle" style="margin:4px 0 0">Complete validator readiness early so approvals and disputes stay one-pass on mobile.</div>
+          </div>
+          <div class="row" style="justify-content:flex-start">
+            <div style="flex:1 1 280px;min-width:0">
+              <label for="clubSub">Club subdomain (club.agi.eth)</label>
+              <input id="clubSub" type="text" placeholder="e.g. validator1" style="max-width:none">
+            </div>
+            <button class="btn" id="verifyClubBtn">Verify</button>
+            <button class="btn" id="verifyClubAlphaBtn">Verify Alpha</button>
+          </div>
+          <div class="alphaVerificationSignals">
+            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyClubLiveStatus">Not verified</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Validator mode</span><span class="v" id="verifyValidatorSummary">Club verification enables review posture</span></div>
+            <div class="alphaVerificationSignal"><span class="k">Return flow</span><span class="v">Same wallet + chain restores inputs and refreshes live reads</span></div>
+          </div>
+          <div class="muted" id="clubOut" style="margin-top:2px"></div>
+          <div style="margin-top:2px">
+            <button class="btn" id="buyClubBtn">Buy club subdomain</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="alphaAgentMintSection" data-surface="freeTrialRegistrarSection" data-alpha-mode="recommended">
+      <div class="alphaSectionIntro">
+        <div class="alphaIntroCopy">
+          <div class="alphaIntroCard">
+            <h2 style="margin:0 0 10px">1.5) Alpha-Agent Free Trial &amp; Identity Console</h2>
+            <div class="helper">This operational console is the canonical onboarding surface for <b>*.alpha.agent.agi.eth</b>. It uses only <b>FreeTrialSubdomainRegistrarIdentity</b> at <b>0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</b> to mint the wrapped ENS name and the soulbound Alpha-Agent identity together in one transaction. Issuance always goes to the connected wallet, costs gas only, and no separate name-only path is surfaced.</div>
+          </div>
+          <div class="alphaIntroStats">
+            <div class="alphaStat"><span class="k">Recommended route</span><span class="v">register(label) · wrapped name + identity together</span></div>
+            <div class="alphaStat"><span class="k">Identity posture</span><span class="v">Soulbound · approvals disabled · transfers disabled</span></div>
+            <div class="alphaStat"><span class="k">Commercial terms</span><span class="v">0 ETH value · gas only · connected wallet only</span></div>
+          </div>
+        </div>
+        <div class="alphaReadinessCard">
+          <div class="alphaReadinessHeader">
+            <div>
+              <div class="alphaModeLabel">Write access readiness</div>
+              <div class="subtleTitle" style="margin:4px 0 0">Confirm wallet, network, terms, route, and root posture before writing</div>
+            </div>
+            <div class="alphaReadinessActions">
+              <span class="pill">ROOT_NAME · alpha.agent.agi.eth</span>
+              <a class="btn" href="#termsSection">Review full terms</a>
+            </div>
+          </div>
+          <div class="alphaReadinessGrid">
+            <div class="alphaReadinessItem" id="alphaReadinessWallet"><span class="k">Wallet</span><span class="v" id="alphaReadinessWalletValue">Not connected</span></div>
+            <div class="alphaReadinessItem" id="alphaReadinessNetwork"><span class="k">Network</span><span class="v" id="alphaReadinessNetworkValue">Mainnet required</span></div>
+            <div class="alphaReadinessItem" id="alphaReadinessTerms"><span class="k">Terms</span><span class="v" id="alphaReadinessTermsValue">Pending</span></div>
+            <div class="alphaReadinessItem" id="alphaReadinessRoute"><span class="k">Route</span><span class="v" id="alphaReadinessRouteValue">Recommended identity path</span></div>
+            <div class="alphaReadinessItem" id="alphaReadinessRoot"><span class="k">Root usable</span><span class="v" id="alphaReadinessRootValue">Checking…</span></div>
+          </div>
+          <div class="alphaReadinessFoot">
+            <div class="alphaTermsInline">
+              <input type="checkbox" id="alphaTermsAcceptedTop">
+              <div>
+                <label for="alphaTermsAcceptedTop">I have read and accept the AGIJobManager Terms &amp; Conditions shown below.</label>
+                <div class="helper">Write access is surfaced here so wallet, network, and legal readiness are visible before any transaction review.</div>
+                <div class="alphaTermsInlineActions">
+                  <a class="btn" href="#termsSection">Review full terms</a>
+                  <button class="btn" type="button" id="alphaJumpDiagnosticsBtn">Inspect root diagnostics</button>
+                </div>
+              </div>
+            </div>
+            <div class="alphaReadinessMemo">
+              <div class="alphaReadinessMemoTitle">Current write posture</div>
+              <div class="alphaReadinessMemoBody" id="alphaReadinessNarrative">Connect a wallet, switch to Ethereum mainnet, accept the terms, and enter a valid label to let preview(label) determine the exact write path.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alphaModeSurface">
+        <div class="alphaModeHeader">
+          <div>
+            <div class="alphaModeLabel">Primary route selection</div>
+            <div class="subtleTitle" style="margin:4px 0 0">Combined name + identity is the only public registration route surfaced here.</div>
+          </div>
+          <span class="alphaRoutePill" id="alphaRoutePill">Recommended route active</span>
+        </div>
+        <div class="alphaModeGrid">
+          <div class="actions alphaModeTabs" id="alphaIdentityModeTabs" style="margin-top:0">
+            <button class="btn btn-primary" id="alphaIdentityModeRecommended" type="button" aria-pressed="true">Combined route: name + identity</button>
+            <button class="btn legacyInert" id="alphaIdentityModeEnsOnly" type="button" aria-pressed="false" hidden aria-hidden="true" tabindex="-1">Legacy route hidden</button>
+          </div>
+          <div class="alphaModePrimer" id="alphaModePrimer">
+            <div class="alphaModeSummary" id="alphaModeSummary">Recommended path: <b>register(label)</b> mints the wrapped subname and soulbound identity to the connected wallet in one transaction. Gas only, no separate name-only path.</div>
+            <div class="alphaModeNote" id="alphaModeNote">The combined route is the only public registration action in this console. Lower diagnostics remain available for expert verification and maintenance review.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alphaConsoleShell">
+      <div class="alphaWorkbench">
+        <div class="alphaQuickFacts">
+          <div class="alphaQuickFact"><span class="k">Identity contract</span><span class="v">0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</span></div>
+          <div class="alphaQuickFact"><span class="k">Canonical write path</span><span class="v">register(label) · claimIdentity(label) · syncIdentityByLabel(label)</span></div>
+          <div class="alphaQuickFact"><span class="k">Parent policy</span><span class="v">30 day trial · 90 day grace · lowercase a-z and digits only</span></div>
+        </div>
+        <div class="alphaQuickStartGrid">
+          <div class="alphaPrimaryRail">
+            <div class="alphaKickoff">
+              <div class="alphaQuickStartHeader">
+                <div>
+                  <div class="alphaModeLabel">Quick start</div>
+                  <div class="subtleTitle" style="margin:4px 0 0">Choose one label and let preview(label) and rootHealth() determine the next action</div>
+                </div>
+                <div class="alphaRulesRow">
+                  <span class="pill">8–63 characters</span>
+                  <span class="pill">lowercase a-z</span>
+                  <span class="pill">digits 0-9</span>
+                </div>
+              </div>
+              <div class="alphaStateBanner" id="alphaIdentityStateBanner" data-tone="active">
+                <div class="alphaStateEyebrow">Current recommendation</div>
+                <div class="alphaStateTitle" id="alphaIdentityBannerTitle">Enter a label to evaluate the recommended identity path.</div>
+                <div class="alphaStateText" id="alphaIdentityBannerText">preview(label) is the primary decision panel. It determines whether this label is available, active, claimable, expired, desynced, or unavailable.</div>
+              </div>
+              <div class="alphaFlowStack">
+                <div class="alphaLabelField">
+                  <div>
+                    <label for="mintAlphaLabel">Desired label</label>
+                    <input id="mintAlphaLabel" type="text" placeholder="e.g. eliteagent01" autocomplete="off" spellcheck="false">
+                    <div class="alphaFieldHint">The canonical identity route issues only to the connected wallet. Lowercase letters and digits only, with length between 8 and 63. Full issuance remains beneath <b>alpha.agent.agi.eth</b>.</div>
+                    <div class="inlineError" id="mintLabelValidation">Enter a label to begin.</div>
+                  </div>
+                  <div class="alphaCompactList alphaLabelDossier">
+                    <div class="alphaCompactItem"><span class="k">Full name</span><span class="v" id="mintAlphaFullName">—</span></div>
+                    <div class="alphaCompactItem"><span class="k">ENS URI</span><span class="v" id="mintAlphaEnsUri">—</span></div>
+                    <div class="alphaCompactItem"><span class="k">Child node</span><span class="v" id="mintAlphaNode">—</span></div>
+                    <div class="alphaCompactItem"><span class="k">Parent posture</span><span class="v" id="mintAlphaParentUsable">—</span></div>
+                  </div>
+                </div>
+                <div class="alphaRecommendationBlock alphaActionCluster">
+                  <div class="alphaQuickStartDock" id="alphaQuickStartDock">
+                    <div class="alphaQuickStartDockHeader">
+                      <div>
+                        <div class="alphaModeLabel">Mobile-ready action rail</div>
+                        <div class="subtleTitle" style="margin:4px 0 0">Primary write, refresh, and recovery controls stay grouped above the deeper diagnostics.</div>
+                      </div>
+                      <span class="alphaMethodPill" id="alphaQuickStartDockPill">Awaiting preview(label)</span>
+                    </div>
+                    <div class="alphaQuickStartDockStatus" id="alphaQuickStartDockStatus">Connect, accept, verify, and let preview(label) load. Final transaction review keeps the authorize control pinned within reach on mobile.</div>
+                  </div>
+                  <div class="alphaActionGuide" style="margin:0">
+                    <div class="alphaReadinessHeader" style="align-items:center">
+                      <div>
+                        <div class="subtleTitle" style="margin:0">Suggested next action</div>
+                        <div class="smallNote" id="alphaIdentityActionHelper">The recommendation banner above indicates whether register(label), claimIdentity(label), syncIdentityByLabel(label), or no write action is appropriate.</div>
+                      </div>
+                      <span class="alphaMethodPill" id="alphaIdentitySuggestedMethod">Awaiting preview(label)</span>
+                    </div>
+                  </div>
+                  <div class="alphaActionStatusNote" id="alphaIdentityBlockedNote"><b>Current write gate</b><span id="alphaIdentityBlockedReason">Identity flow locked until wallet + mainnet + terms + valid label.</span></div>
+                  <div class="alphaRecommendedRoute">
+                    <div class="subtleTitle" style="margin:0">Recommended route action cluster</div>
+                    <div class="smallNote">The canonical write path is <b>register(label)</b> for combined name + identity issuance to the connected wallet, with conditional recovery actions immediately below it.</div>
+                    <div class="alphaPrimaryActions">
+                      <button class="btn btn-primary" id="alphaIdentityRegisterBtn" type="button">Register name + identity</button>
+                      <button class="btn" id="refreshRegistrarStateBtn">Refresh contract state</button>
+                    </div>
+                    <div class="alphaSecondaryActions">
+                      <button class="btn" id="alphaIdentityClaimBtn" type="button">Claim existing identity</button>
+                      <button class="btn" id="alphaIdentitySyncBtn" type="button">Sync stale identity</button>
+                    </div>
+                    <div class="alphaActionAux">
+                      <button class="btn" type="button" onclick="document.getElementById('freeTrialRegistrarState')?.scrollIntoView({behavior:'smooth',block:'center'})">Review compatibility diagnostics</button>
+                    </div>
+                  </div>
+                  <div class="statusline" id="alphaIdentityActionStatus">Identity flow locked until wallet + mainnet + terms + valid label.</div>
+                </div>
+              </div>
+              <div class="alphaActionGuide" style="margin:0">
+                <div class="subtleTitle" style="margin:0">Recent labels on this device</div>
+                <div class="recentNames" id="recentAlphaAgentNames"></div>
+              </div>
+            </div>
+
+            <div class="alphaActionGuide">
+              <div class="subtleTitle" style="margin:0">Recommended path methods</div>
+              <div class="alphaActionGuideGrid">
+                <div class="alphaGuideItem"><b>Register</b><span class="smallNote">Mints the wrapped subname and the soulbound identity together with <b>register(label)</b>. Gas only. Connected wallet only.</span></div>
+                <div class="alphaGuideItem"><b>Claim</b><span class="smallNote">Use <b>claimIdentity(label)</b> when the wrapped name already belongs to the connected wallet and only the identity must still be issued.</span></div>
+                <div class="alphaGuideItem"><b>Sync</b><span class="smallNote">Repair path for stale, expired, or desynced local identity posture with <b>syncIdentityByLabel(label)</b>.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alphaSecondaryRail">
+            <details class="alphaExpertDetails" id="alphaEnsExpertDetails">
+              <summary>
+                <div class="alphaExpertCard">
+                  <div class="alphaExpertHeader">
+                    <div class="alphaExpertSummaryMeta">
+                      <div class="alphaModeLabel">Expert reference</div>
+                      <div class="subtleTitle" style="margin:0">Registrar diagnostics and protocol posture</div>
+                      <div class="smallNote">This disclosure is retained only for expert inspection of compatibility state, wrapper posture, and trial parameters. Public registration above remains the combined route only.</div>
+                    </div>
+                    <div class="alphaExpertSummaryPills">
+                      <span class="pill">Diagnostics only</span>
+                      <span class="pill">Combined route only</span>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <div class="alphaExpertDetailsBody">
+                <div class="alphaExpertBodyLead">Registration in this console is intentionally centered on <b>register(label)</b> through <b>FreeTrialSubdomainRegistrarIdentity</b>, which issues both the wrapped name and the Alpha-Agent identity to the connected wallet. Use the diagnostics below only to inspect compatibility posture and root readiness.</div>
+                <div class="statusline" id="mintAlphaStatus">Compatibility diagnostics only. Public registration is the combined register(label) route above.</div>
+                <div class="alphaDecisionList">
+                  <div class="alphaDecisionItem"><span>Availability</span><span id="mintAlphaAvailability">—</span></div>
+                  <div class="alphaDecisionItem"><span>Expected trial expiry</span><span id="mintAlphaExpectedExpiry">—</span></div>
+                  <div class="alphaDecisionItem"><span>Canonical write cost</span><span>0 ETH value · gas only</span></div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="alphaPreviewGrid">
+          <div class="alphaWorkbenchCard" id="alphaIdentityPreviewCard" data-emphasis="primary">
+            <div class="alphaPreviewHeader">
+              <div>
+                <div class="subtleTitle" style="margin:0">Authoritative identity preview <span class="alphaIdentityStatusPill" id="alphaIdentityStatusPill">—</span></div>
+                <div class="smallNote">Driven by <b>preview(label)</b> and <b>rootHealth()</b>. This is the primary state card for the recommended route.</div>
+              </div>
+              <span class="pill">Contract · <b id="alphaIdentityContractAddress">0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</b></span>
+            </div>
+            <div class="alphaPreviewMetrics" style="margin-top:4px">
+              <div class="alphaMetric"><span class="k">Full name</span><span class="v" id="alphaIdentityFullName">—</span></div>
+              <div class="alphaMetric"><span class="k">Token ID</span><span class="v" id="alphaIdentityTokenId">—</span></div>
+              <div class="alphaMetric"><span class="k">Identity exists</span><span class="v" id="alphaIdentityExists">—</span></div>
+              <div class="alphaMetric"><span class="k">Claimable</span><span class="v" id="alphaIdentityClaimable">—</span></div>
+              <div class="alphaMetric"><span class="k">Registrable</span><span class="v" id="alphaIdentityRegistrable">—</span></div>
+              <div class="alphaMetric"><span class="k">Root posture</span><span class="v" id="alphaIdentityRootPosture">—</span></div>
+              <div class="alphaMetric"><span class="k">Expected expiry</span><span class="v" id="alphaIdentityExpectedExpiry">—</span></div>
+              <div class="alphaMetric"><span class="k">Soulbound</span><span class="v">true · approvals disabled · transfers disabled</span></div>
+            </div>
+            <div class="alphaActionGuide" style="margin-top:2px">
+              <div class="subtleTitle" style="margin:0">Available identity actions</div>
+              <div class="alphaPreviewSupport" style="margin-top:2px">
+                <div class="alphaMetric"><span class="k">Suggested action</span><span class="v" id="alphaIdentitySuggestedAction">Awaiting preview(label)</span></div>
+                <div class="alphaMetric"><span class="k">Write posture</span><span class="v" id="alphaIdentityWritePosture">Wallet + mainnet + terms required</span></div>
+              </div>
+              <div class="alphaSecondaryActions" style="margin-top:2px">
+                <button class="btn" type="button" onclick="navigator.clipboard?.writeText((document.getElementById('alphaIdentityFullName')?.textContent||'').trim()).then(()=>window.setToast&&setToast('Identity full name copied.','ok')).catch(()=>{})">Copy full name</button>
+                <button class="btn" type="button" onclick="navigator.clipboard?.writeText((document.getElementById('alphaIdentityTokenId')?.textContent||'').trim()).then(()=>window.setToast&&setToast('Identity tokenId copied.','ok')).catch(()=>{})">Copy token ID</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="alphaWorkbenchCard" id="alphaIdentityTokenCard">
+            <div class="alphaCardHeader">
+              <div>
+                <div class="subtleTitle" style="margin:0">Selected-label identity asset dossier</div>
+                <div class="smallNote">Token owner, wrapped ownership, resolver, expiry, mint timestamp, and tokenURI-derived metadata for the selected label.</div>
+              </div>
+              <span class="pill">Asset state</span>
+            </div>
+            <div class="alphaDecisionList" style="margin-top:4px">
+              <div class="alphaDecisionItem"><span>Token owner</span><span id="alphaIdentityTokenOwner">—</span></div>
+              <div class="alphaDecisionItem"><span>Wrapped owner</span><span id="alphaIdentityWrappedOwner">—</span></div>
+              <div class="alphaDecisionItem"><span>Resolver</span><span id="alphaIdentityResolver">—</span></div>
+              <div class="alphaDecisionItem"><span>Wrapped expiry</span><span id="alphaIdentityWrappedExpiry">—</span></div>
+              <div class="alphaDecisionItem"><span>Minted at</span><span id="alphaIdentityMintedAt">—</span></div>
+            </div>
+            <div class="alphaTokenMeta">
+              <div class="smallNote">TokenURI name</div>
+              <div style="font-weight:700" id="alphaIdentityTokenMetaName">—</div>
+              <div class="smallNote" id="alphaIdentityTokenMetaDescription">—</div>
+            </div>
+            <div class="alphaTokenImageFrame">
+              <div class="smallNote" id="alphaIdentityTokenImageFallback">Token image will appear here when tokenURI metadata exposes one.</div>
+              <img id="alphaIdentityTokenImage" alt="Identity preview" style="display:none;max-width:100%;border-radius:16px;border:1px solid rgba(121,96,150,.18)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="alphaDiagnostics">
+        <details>
+          <summary><span>Operational diagnostics · root health</span><span class="pill">Secondary</span></summary>
+          <div class="alphaDiagnosticsBody">
+            <div class="alphaDiagnosticsNote">Use these fields to verify root readiness, wrapper posture, registry alignment, and parent expiry. They are informational and secondary to the quick-start preview above.</div>
+            <div class="alphaDiagnosticsCard" id="alphaIdentityRootHealthCard"><table class="miniTable">
+              <tr><td>ROOT_NAME</td><td><span id="alphaIdentityRootName">—</span></td></tr>
+              <tr><td>ROOT_NODE</td><td><span id="alphaIdentityRootNode">—</span></td></tr>
+              <tr><td>rootActive</td><td><span id="alphaIdentityRootActive">—</span></td></tr>
+              <tr><td>paused</td><td><span id="alphaIdentityPaused">—</span></td></tr>
+              <tr><td>wrapper</td><td><span id="alphaIdentityWrapper">—</span></td></tr>
+              <tr><td>ensRegistry</td><td><span id="alphaIdentityRegistry">—</span></td></tr>
+              <tr><td>owner / pendingOwner</td><td><span id="alphaIdentityOwnerLine">—</span></td></tr>
+              <tr><td>wrapped parent owner</td><td><span id="alphaIdentityParentOwner">—</span></td></tr>
+              <tr><td>parent wrapped / locked</td><td><span id="alphaIdentityParentFlags">—</span></td></tr>
+              <tr><td>registrar authorized</td><td><span id="alphaIdentityRegistrarAuth">—</span></td></tr>
+              <tr><td>effective parent expiry</td><td><span id="alphaIdentityParentExpiry">—</span></td></tr>
+              <tr><td>root usable</td><td><span id="alphaIdentityRootUsable">—</span></td></tr>
+              <tr><td>required child fuses</td><td><span id="alphaIdentityRequiredFuses">—</span></td></tr>
+              <tr><td>token name / symbol</td><td><span id="alphaIdentityNameSymbol">—</span></td></tr>
+            </table></div>
+          </div>
+        </details>
+
+        <details>
+          <summary><span>Expert diagnostics · compatibility reference</span><span class="pill">Diagnostics only</span></summary>
+          <div class="alphaDiagnosticsBody">
+            <div class="alphaDiagnosticsNote">Legacy compatibility reads remain internal and inert. Public registration in this console uses only the combined identity route on FreeTrialSubdomainRegistrarIdentity.</div>
+            <div class="alphaDiagnosticsCard" id="freeTrialRegistrarState"><table class="miniTable">
+              <tr class="legacyInert" hidden aria-hidden="true"><td>Registrar</td><td><span id="freeTrialRegistrarAddress">Compatibility shim hidden</span></td></tr>
+              <tr><td>NameWrapper</td><td><span id="freeTrialWrapperAddress">—</span></td></tr>
+              <tr><td>Target parent</td><td><span id="freeTrialParentName">alpha.agent.agi.eth</span></td></tr>
+              <tr><td>Target parent node</td><td><span id="freeTrialParentNode">0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e</span></td></tr>
+              <tr><td>Parent active</td><td><span id="freeTrialParentActive">—</span></td></tr>
+              <tr><td>Parent locked</td><td><span id="freeTrialParentLocked">—</span></td></tr>
+              <tr><td>Registrar authorised</td><td><span id="freeTrialRegistrarAuthorised">—</span></td></tr>
+              <tr><td>Parent usable</td><td><span id="freeTrialParentUsableState">—</span></td></tr>
+              <tr><td>Parent effective expiry</td><td><span id="freeTrialParentExpiry">—</span></td></tr>
+              <tr><td>Trial period</td><td><span id="freeTrialTrialPeriod">—</span></td></tr>
+              <tr><td>Label rules</td><td><span id="freeTrialLabelRules">lowercase a-z0-9, no dots, no hyphens, 8–63 chars</span></td></tr>
+            </table></div>
+          </div>
+        </details>
+
+        <details>
+          <summary><span>Administrative controls</span><span class="pill">Restricted</span></summary>
+          <div class="alphaDiagnosticsBody">
+            <div class="alphaDiagnosticsNote">Administrative methods remain available for authorized operators, but they are intentionally collapsed by default to keep the onboarding surface clear.</div>
+            <div class="alphaDiagnosticsCard">
+              <div class="subtleTitle" style="margin:0">FreeTrialSubdomainRegistrarIdentity Admin</div>
+              <div class="actions" id="alphaIdentityAdminControls" style="margin-top:10px"></div>
+            </div>
+            <div class="alphaDiagnosticsCard">
+              <div class="subtleTitle" style="margin:0">Expert registrar controls (authorized parent managers only)</div>
+              <div id="registrarAdminControls" class="actions" style="margin-top:10px"></div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <input id="mintAlphaRecipient" type="hidden" value="">
+    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Compatibility register alias</button>
+
+    <div id="alphaMintReviewModal" class="modalBackdrop legacyInert" aria-hidden="true" hidden>
+      <div class="modalCard reviewModalCard">
+        <div class="modalHeader">
+          <div>
+            <div class="eyebrow">Transaction Review</div>
+            <h2 style="margin:4px 0 6px">Legacy Alpha compatibility alias</h2>
+            <div class="helper">Legacy review surface retained for protocol compatibility only. Public onboarding routes registration through register(label) for combined name + identity issuance to the connected wallet.</div>
+          </div>
+          <button class="modalClose" id="closeAlphaMintReviewBtn" aria-label="Close">×</button>
+        </div>
+        <div id="alphaMintReviewFacts" class="reviewFacts"></div>
+        <div class="reviewFooter" style="margin-top:12px">
+          <div class="helper">Compatibility-only alias. Final authorize control remains sticky and reachable on mobile.</div>
+          <div class="actions">
+            <button class="btn" id="cancelAlphaMintReviewBtn">Cancel</button>
+            <button class="btn btn-primary" id="confirmAlphaMintReviewBtn">Submit mint</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
+      <div class="modalCard reviewModalCard">
+        <div class="modalHeader"><div><div class="eyebrow">Transaction Review</div><h2 style="margin:4px 0 6px" id="alphaIdentityReviewTitle">Alpha identity action</h2><div class="helper" id="alphaIdentityReviewHelper">Contract-faithful action preview.</div></div><button class="modalClose" id="closeAlphaIdentityReviewBtn" aria-label="Close">×</button></div>
+        <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
+        <div class="reviewFooter" style="margin-top:12px">
+          <div class="helper">The final authorize control remains pinned in view on mobile while the review facts scroll independently above it.</div>
+          <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn">Submit</button></div>
+        </div>
+      </div>
+    </div>
+
+    
     <div class="card">
       <div class="row" style="align-items:flex-start">
         <div style="flex:1;min-width:280px">
           <h2 style="margin:0 0 8px">Command Center</h2>
-          <div class="helper">This interface is optimized for three roles: <b>Employer</b>, <b>Agent</b>, and <b>Validator</b>. Use the guided sections below to understand what is live, what you can do right now, what your likely next action is, and what economic exposure you are taking before signing.</div>
+          <div class="helper">This interface is optimized for three roles: <b>Employer</b>, <b>Agent</b>, and <b>Validator</b>. The readiness deck above now keeps connect, terms, verification, and Alpha-Agent onboarding together before these deeper operational sections.</div>
           <div class="anchorNav">
             <a href="#workflowSection">Workflow</a>
             <a href="#readinessSection">Readiness</a>
@@ -2372,416 +2783,6 @@
           <li><b>Validator bond</b> is charged per vote (approve/disapprove). A portion may be slashed depending on final outcome.</li>
           <li><b>Dispute bond</b> may be required when starting a dispute (computed on-chain; constants aren’t exposed as public getters).</li>
         </ul>
-      </div>
-    </div>
-
-    <div class="card" id="verifyEnsSection">
-      <h2 style="margin:0 0 12px">1) Verify ENS ownership posture</h2>
-      <div class="helper" style="margin-bottom:12px">Verify agent, validator / club, and Alpha posture here before opening approval, review, or write flows. This section now sits directly beneath wallet + terms readiness so mobile users can connect, accept, verify, and proceed in one pass before leaving for IPFS or MetaMask confirmations, then return without losing the local verification setup for the same wallet and chain.</div>
-      <div class="alphaQuickFacts" style="margin-bottom:14px">
-        <div class="alphaQuickFact"><span class="k">Agent posture</span><span class="v" id="verifyAgentSummary">Not verified</span></div>
-        <div class="alphaQuickFact"><span class="k">Validator / club posture</span><span class="v" id="verifyClubSummary">Not verified</span></div>
-        <div class="alphaQuickFact"><span class="k">Live continuity</span><span class="v" id="verifyContinuitySummary">Inputs restore on same wallet + chain return</span></div>
-      </div>
-      <div class="alphaVerificationDeck">
-        <div class="alphaVerificationPanel">
-          <div>
-            <div class="alphaModeLabel">Agent verification</div>
-            <div class="subtleTitle" style="margin:4px 0 0">Confirm the operating agent label before you create, apply, or claim.</div>
-          </div>
-          <div class="row" style="justify-content:flex-start">
-            <div style="flex:1 1 280px;min-width:0">
-              <label for="agentSub">Agent subdomain (agent.agi.eth)</label>
-              <input id="agentSub" type="text" placeholder="e.g. alice" style="max-width:none">
-            </div>
-            <button class="btn" id="verifyAgentBtn">Verify</button>
-            <button class="btn" id="verifyAgentAlphaBtn">Verify Alpha</button>
-          </div>
-          <div class="alphaVerificationSignals">
-            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyAgentLiveStatus">Not verified</span></div>
-            <div class="alphaVerificationSignal"><span class="k">Connected wallet</span><span class="v" id="verifyWalletEcho">Reconnect restores same-wallet context</span></div>
-            <div class="alphaVerificationSignal"><span class="k">Alpha posture</span><span class="v" id="verifyAgentAlphaSummary">Use Verify Alpha when needed</span></div>
-          </div>
-          <div class="muted" id="agentOut" style="margin-top:2px"></div>
-        </div>
-        <div class="alphaVerificationPanel">
-          <div>
-            <div class="alphaModeLabel">Validator / club verification</div>
-            <div class="subtleTitle" style="margin:4px 0 0">Complete validator readiness early so approvals and disputes stay one-pass on mobile.</div>
-          </div>
-          <div class="row" style="justify-content:flex-start">
-            <div style="flex:1 1 280px;min-width:0">
-              <label for="clubSub">Club subdomain (club.agi.eth)</label>
-              <input id="clubSub" type="text" placeholder="e.g. validator1" style="max-width:none">
-            </div>
-            <button class="btn" id="verifyClubBtn">Verify</button>
-            <button class="btn" id="verifyClubAlphaBtn">Verify Alpha</button>
-          </div>
-          <div class="alphaVerificationSignals">
-            <div class="alphaVerificationSignal"><span class="k">Live posture</span><span class="v" id="verifyClubLiveStatus">Not verified</span></div>
-            <div class="alphaVerificationSignal"><span class="k">Validator mode</span><span class="v" id="verifyValidatorSummary">Club verification enables review posture</span></div>
-            <div class="alphaVerificationSignal"><span class="k">Return flow</span><span class="v">Same wallet + chain restores inputs and refreshes live reads</span></div>
-          </div>
-          <div class="muted" id="clubOut" style="margin-top:2px"></div>
-          <div style="margin-top:2px">
-            <button class="btn" id="buyClubBtn">Buy club subdomain</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="alphaAgentMintSection" data-surface="freeTrialRegistrarSection" data-alpha-mode="recommended">
-      <div class="alphaSectionIntro">
-        <div class="alphaIntroCopy">
-          <div class="alphaIntroCard">
-            <h2 style="margin:0 0 10px">1.5) Alpha-Agent Free Trial &amp; Identity Console</h2>
-            <div class="helper">This operational console is the canonical onboarding surface for <b>*.alpha.agent.agi.eth</b>. It uses only <b>FreeTrialSubdomainRegistrarIdentity</b> at <b>0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</b> to mint the wrapped ENS name and the soulbound Alpha-Agent identity together in one transaction. Issuance always goes to the connected wallet, costs gas only, and no separate name-only path is surfaced.</div>
-          </div>
-          <div class="alphaIntroStats">
-            <div class="alphaStat"><span class="k">Recommended route</span><span class="v">register(label) · wrapped name + identity together</span></div>
-            <div class="alphaStat"><span class="k">Identity posture</span><span class="v">Soulbound · approvals disabled · transfers disabled</span></div>
-            <div class="alphaStat"><span class="k">Commercial terms</span><span class="v">0 ETH value · gas only · connected wallet only</span></div>
-          </div>
-        </div>
-        <div class="alphaReadinessCard">
-          <div class="alphaReadinessHeader">
-            <div>
-              <div class="alphaModeLabel">Write access readiness</div>
-              <div class="subtleTitle" style="margin:4px 0 0">Confirm wallet, network, terms, route, and root posture before writing</div>
-            </div>
-            <div class="alphaReadinessActions">
-              <span class="pill">ROOT_NAME · alpha.agent.agi.eth</span>
-              <a class="btn" href="#termsSection">Review full terms</a>
-            </div>
-          </div>
-          <div class="alphaReadinessGrid">
-            <div class="alphaReadinessItem" id="alphaReadinessWallet"><span class="k">Wallet</span><span class="v" id="alphaReadinessWalletValue">Not connected</span></div>
-            <div class="alphaReadinessItem" id="alphaReadinessNetwork"><span class="k">Network</span><span class="v" id="alphaReadinessNetworkValue">Mainnet required</span></div>
-            <div class="alphaReadinessItem" id="alphaReadinessTerms"><span class="k">Terms</span><span class="v" id="alphaReadinessTermsValue">Pending</span></div>
-            <div class="alphaReadinessItem" id="alphaReadinessRoute"><span class="k">Route</span><span class="v" id="alphaReadinessRouteValue">Recommended identity path</span></div>
-            <div class="alphaReadinessItem" id="alphaReadinessRoot"><span class="k">Root usable</span><span class="v" id="alphaReadinessRootValue">Checking…</span></div>
-          </div>
-          <div class="alphaReadinessFoot">
-            <div class="alphaTermsInline">
-              <input type="checkbox" id="alphaTermsAcceptedTop">
-              <div>
-                <label for="alphaTermsAcceptedTop">I have read and accept the AGIJobManager Terms &amp; Conditions shown below.</label>
-                <div class="helper">Write access is surfaced here so wallet, network, and legal readiness are visible before any transaction review.</div>
-                <div class="alphaTermsInlineActions">
-                  <a class="btn" href="#termsSection">Review full terms</a>
-                  <button class="btn" type="button" id="alphaJumpDiagnosticsBtn">Inspect root diagnostics</button>
-                </div>
-              </div>
-            </div>
-            <div class="alphaReadinessMemo">
-              <div class="alphaReadinessMemoTitle">Current write posture</div>
-              <div class="alphaReadinessMemoBody" id="alphaReadinessNarrative">Connect a wallet, switch to Ethereum mainnet, accept the terms, and enter a valid label to let preview(label) determine the exact write path.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="alphaModeSurface">
-        <div class="alphaModeHeader">
-          <div>
-            <div class="alphaModeLabel">Primary route selection</div>
-            <div class="subtleTitle" style="margin:4px 0 0">Combined name + identity is the only public registration route surfaced here.</div>
-          </div>
-          <span class="alphaRoutePill" id="alphaRoutePill">Recommended route active</span>
-        </div>
-        <div class="alphaModeGrid">
-          <div class="actions alphaModeTabs" id="alphaIdentityModeTabs" style="margin-top:0">
-            <button class="btn btn-primary" id="alphaIdentityModeRecommended" type="button" aria-pressed="true">Combined route: name + identity</button>
-            <button class="btn legacyInert" id="alphaIdentityModeEnsOnly" type="button" aria-pressed="false" hidden aria-hidden="true" tabindex="-1">Legacy route hidden</button>
-          </div>
-          <div class="alphaModePrimer" id="alphaModePrimer">
-            <div class="alphaModeSummary" id="alphaModeSummary">Recommended path: <b>register(label)</b> mints the wrapped subname and soulbound identity to the connected wallet in one transaction. Gas only, no separate name-only path.</div>
-            <div class="alphaModeNote" id="alphaModeNote">The combined route is the only public registration action in this console. Lower diagnostics remain available for expert verification and maintenance review.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="alphaConsoleShell">
-      <div class="alphaWorkbench">
-        <div class="alphaQuickFacts">
-          <div class="alphaQuickFact"><span class="k">Identity contract</span><span class="v">0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</span></div>
-          <div class="alphaQuickFact"><span class="k">Canonical write path</span><span class="v">register(label) · claimIdentity(label) · syncIdentityByLabel(label)</span></div>
-          <div class="alphaQuickFact"><span class="k">Parent policy</span><span class="v">30 day trial · 90 day grace · lowercase a-z and digits only</span></div>
-        </div>
-        <div class="alphaQuickStartGrid">
-          <div class="alphaPrimaryRail">
-            <div class="alphaKickoff">
-              <div class="alphaQuickStartHeader">
-                <div>
-                  <div class="alphaModeLabel">Quick start</div>
-                  <div class="subtleTitle" style="margin:4px 0 0">Choose one label and let preview(label) and rootHealth() determine the next action</div>
-                </div>
-                <div class="alphaRulesRow">
-                  <span class="pill">8–63 characters</span>
-                  <span class="pill">lowercase a-z</span>
-                  <span class="pill">digits 0-9</span>
-                </div>
-              </div>
-              <div class="alphaStateBanner" id="alphaIdentityStateBanner" data-tone="active">
-                <div class="alphaStateEyebrow">Current recommendation</div>
-                <div class="alphaStateTitle" id="alphaIdentityBannerTitle">Enter a label to evaluate the recommended identity path.</div>
-                <div class="alphaStateText" id="alphaIdentityBannerText">preview(label) is the primary decision panel. It determines whether this label is available, active, claimable, expired, desynced, or unavailable.</div>
-              </div>
-              <div class="alphaFlowStack">
-                <div class="alphaLabelField">
-                  <div>
-                    <label for="mintAlphaLabel">Desired label</label>
-                    <input id="mintAlphaLabel" type="text" placeholder="e.g. eliteagent01" autocomplete="off" spellcheck="false">
-                    <div class="alphaFieldHint">The canonical identity route issues only to the connected wallet. Lowercase letters and digits only, with length between 8 and 63. Full issuance remains beneath <b>alpha.agent.agi.eth</b>.</div>
-                    <div class="inlineError" id="mintLabelValidation">Enter a label to begin.</div>
-                  </div>
-                  <div class="alphaCompactList alphaLabelDossier">
-                    <div class="alphaCompactItem"><span class="k">Full name</span><span class="v" id="mintAlphaFullName">—</span></div>
-                    <div class="alphaCompactItem"><span class="k">ENS URI</span><span class="v" id="mintAlphaEnsUri">—</span></div>
-                    <div class="alphaCompactItem"><span class="k">Child node</span><span class="v" id="mintAlphaNode">—</span></div>
-                    <div class="alphaCompactItem"><span class="k">Parent posture</span><span class="v" id="mintAlphaParentUsable">—</span></div>
-                  </div>
-                </div>
-                <div class="alphaRecommendationBlock alphaActionCluster">
-                  <div class="alphaQuickStartDock" id="alphaQuickStartDock">
-                    <div class="alphaQuickStartDockHeader">
-                      <div>
-                        <div class="alphaModeLabel">Mobile-ready action rail</div>
-                        <div class="subtleTitle" style="margin:4px 0 0">Primary write, refresh, and recovery controls stay grouped above the deeper diagnostics.</div>
-                      </div>
-                      <span class="alphaMethodPill" id="alphaQuickStartDockPill">Awaiting preview(label)</span>
-                    </div>
-                    <div class="alphaQuickStartDockStatus" id="alphaQuickStartDockStatus">Connect, accept, verify, and let preview(label) load. Final transaction review keeps the authorize control pinned within reach on mobile.</div>
-                  </div>
-                  <div class="alphaActionGuide" style="margin:0">
-                    <div class="alphaReadinessHeader" style="align-items:center">
-                      <div>
-                        <div class="subtleTitle" style="margin:0">Suggested next action</div>
-                        <div class="smallNote" id="alphaIdentityActionHelper">The recommendation banner above indicates whether register(label), claimIdentity(label), syncIdentityByLabel(label), or no write action is appropriate.</div>
-                      </div>
-                      <span class="alphaMethodPill" id="alphaIdentitySuggestedMethod">Awaiting preview(label)</span>
-                    </div>
-                  </div>
-                  <div class="alphaActionStatusNote" id="alphaIdentityBlockedNote"><b>Current write gate</b><span id="alphaIdentityBlockedReason">Identity flow locked until wallet + mainnet + terms + valid label.</span></div>
-                  <div class="alphaRecommendedRoute">
-                    <div class="subtleTitle" style="margin:0">Recommended route action cluster</div>
-                    <div class="smallNote">The canonical write path is <b>register(label)</b> for combined name + identity issuance to the connected wallet, with conditional recovery actions immediately below it.</div>
-                    <div class="alphaPrimaryActions">
-                      <button class="btn btn-primary" id="alphaIdentityRegisterBtn" type="button">Register name + identity</button>
-                      <button class="btn" id="refreshRegistrarStateBtn">Refresh contract state</button>
-                    </div>
-                    <div class="alphaSecondaryActions">
-                      <button class="btn" id="alphaIdentityClaimBtn" type="button">Claim existing identity</button>
-                      <button class="btn" id="alphaIdentitySyncBtn" type="button">Sync stale identity</button>
-                    </div>
-                    <div class="alphaActionAux">
-                      <button class="btn" type="button" onclick="document.getElementById('freeTrialRegistrarState')?.scrollIntoView({behavior:'smooth',block:'center'})">Review compatibility diagnostics</button>
-                    </div>
-                  </div>
-                  <div class="statusline" id="alphaIdentityActionStatus">Identity flow locked until wallet + mainnet + terms + valid label.</div>
-                </div>
-              </div>
-              <div class="alphaActionGuide" style="margin:0">
-                <div class="subtleTitle" style="margin:0">Recent labels on this device</div>
-                <div class="recentNames" id="recentAlphaAgentNames"></div>
-              </div>
-            </div>
-
-            <div class="alphaActionGuide">
-              <div class="subtleTitle" style="margin:0">Recommended path methods</div>
-              <div class="alphaActionGuideGrid">
-                <div class="alphaGuideItem"><b>Register</b><span class="smallNote">Mints the wrapped subname and the soulbound identity together with <b>register(label)</b>. Gas only. Connected wallet only.</span></div>
-                <div class="alphaGuideItem"><b>Claim</b><span class="smallNote">Use <b>claimIdentity(label)</b> when the wrapped name already belongs to the connected wallet and only the identity must still be issued.</span></div>
-                <div class="alphaGuideItem"><b>Sync</b><span class="smallNote">Repair path for stale, expired, or desynced local identity posture with <b>syncIdentityByLabel(label)</b>.</span></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="alphaSecondaryRail">
-            <details class="alphaExpertDetails" id="alphaEnsExpertDetails">
-              <summary>
-                <div class="alphaExpertCard">
-                  <div class="alphaExpertHeader">
-                    <div class="alphaExpertSummaryMeta">
-                      <div class="alphaModeLabel">Expert reference</div>
-                      <div class="subtleTitle" style="margin:0">Registrar diagnostics and protocol posture</div>
-                      <div class="smallNote">This disclosure is retained only for expert inspection of compatibility state, wrapper posture, and trial parameters. Public registration above remains the combined route only.</div>
-                    </div>
-                    <div class="alphaExpertSummaryPills">
-                      <span class="pill">Diagnostics only</span>
-                      <span class="pill">Combined route only</span>
-                    </div>
-                  </div>
-                </div>
-              </summary>
-              <div class="alphaExpertDetailsBody">
-                <div class="alphaExpertBodyLead">Registration in this console is intentionally centered on <b>register(label)</b> through <b>FreeTrialSubdomainRegistrarIdentity</b>, which issues both the wrapped name and the Alpha-Agent identity to the connected wallet. Use the diagnostics below only to inspect compatibility posture and root readiness.</div>
-                <div class="statusline" id="mintAlphaStatus">Compatibility diagnostics only. Public registration is the combined register(label) route above.</div>
-                <div class="alphaDecisionList">
-                  <div class="alphaDecisionItem"><span>Availability</span><span id="mintAlphaAvailability">—</span></div>
-                  <div class="alphaDecisionItem"><span>Expected trial expiry</span><span id="mintAlphaExpectedExpiry">—</span></div>
-                  <div class="alphaDecisionItem"><span>Canonical write cost</span><span>0 ETH value · gas only</span></div>
-                </div>
-              </div>
-            </details>
-          </div>
-        </div>
-
-        <div class="alphaPreviewGrid">
-          <div class="alphaWorkbenchCard" id="alphaIdentityPreviewCard" data-emphasis="primary">
-            <div class="alphaPreviewHeader">
-              <div>
-                <div class="subtleTitle" style="margin:0">Authoritative identity preview <span class="alphaIdentityStatusPill" id="alphaIdentityStatusPill">—</span></div>
-                <div class="smallNote">Driven by <b>preview(label)</b> and <b>rootHealth()</b>. This is the primary state card for the recommended route.</div>
-              </div>
-              <span class="pill">Contract · <b id="alphaIdentityContractAddress">0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</b></span>
-            </div>
-            <div class="alphaPreviewMetrics" style="margin-top:4px">
-              <div class="alphaMetric"><span class="k">Full name</span><span class="v" id="alphaIdentityFullName">—</span></div>
-              <div class="alphaMetric"><span class="k">Token ID</span><span class="v" id="alphaIdentityTokenId">—</span></div>
-              <div class="alphaMetric"><span class="k">Identity exists</span><span class="v" id="alphaIdentityExists">—</span></div>
-              <div class="alphaMetric"><span class="k">Claimable</span><span class="v" id="alphaIdentityClaimable">—</span></div>
-              <div class="alphaMetric"><span class="k">Registrable</span><span class="v" id="alphaIdentityRegistrable">—</span></div>
-              <div class="alphaMetric"><span class="k">Root posture</span><span class="v" id="alphaIdentityRootPosture">—</span></div>
-              <div class="alphaMetric"><span class="k">Expected expiry</span><span class="v" id="alphaIdentityExpectedExpiry">—</span></div>
-              <div class="alphaMetric"><span class="k">Soulbound</span><span class="v">true · approvals disabled · transfers disabled</span></div>
-            </div>
-            <div class="alphaActionGuide" style="margin-top:2px">
-              <div class="subtleTitle" style="margin:0">Available identity actions</div>
-              <div class="alphaPreviewSupport" style="margin-top:2px">
-                <div class="alphaMetric"><span class="k">Suggested action</span><span class="v" id="alphaIdentitySuggestedAction">Awaiting preview(label)</span></div>
-                <div class="alphaMetric"><span class="k">Write posture</span><span class="v" id="alphaIdentityWritePosture">Wallet + mainnet + terms required</span></div>
-              </div>
-              <div class="alphaSecondaryActions" style="margin-top:2px">
-                <button class="btn" type="button" onclick="navigator.clipboard?.writeText((document.getElementById('alphaIdentityFullName')?.textContent||'').trim()).then(()=>window.setToast&&setToast('Identity full name copied.','ok')).catch(()=>{})">Copy full name</button>
-                <button class="btn" type="button" onclick="navigator.clipboard?.writeText((document.getElementById('alphaIdentityTokenId')?.textContent||'').trim()).then(()=>window.setToast&&setToast('Identity tokenId copied.','ok')).catch(()=>{})">Copy token ID</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="alphaWorkbenchCard" id="alphaIdentityTokenCard">
-            <div class="alphaCardHeader">
-              <div>
-                <div class="subtleTitle" style="margin:0">Selected-label identity asset dossier</div>
-                <div class="smallNote">Token owner, wrapped ownership, resolver, expiry, mint timestamp, and tokenURI-derived metadata for the selected label.</div>
-              </div>
-              <span class="pill">Asset state</span>
-            </div>
-            <div class="alphaDecisionList" style="margin-top:4px">
-              <div class="alphaDecisionItem"><span>Token owner</span><span id="alphaIdentityTokenOwner">—</span></div>
-              <div class="alphaDecisionItem"><span>Wrapped owner</span><span id="alphaIdentityWrappedOwner">—</span></div>
-              <div class="alphaDecisionItem"><span>Resolver</span><span id="alphaIdentityResolver">—</span></div>
-              <div class="alphaDecisionItem"><span>Wrapped expiry</span><span id="alphaIdentityWrappedExpiry">—</span></div>
-              <div class="alphaDecisionItem"><span>Minted at</span><span id="alphaIdentityMintedAt">—</span></div>
-            </div>
-            <div class="alphaTokenMeta">
-              <div class="smallNote">TokenURI name</div>
-              <div style="font-weight:700" id="alphaIdentityTokenMetaName">—</div>
-              <div class="smallNote" id="alphaIdentityTokenMetaDescription">—</div>
-            </div>
-            <div class="alphaTokenImageFrame">
-              <div class="smallNote" id="alphaIdentityTokenImageFallback">Token image will appear here when tokenURI metadata exposes one.</div>
-              <img id="alphaIdentityTokenImage" alt="Identity preview" style="display:none;max-width:100%;border-radius:16px;border:1px solid rgba(121,96,150,.18)">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      </div>
-
-      <div class="alphaDiagnostics">
-        <details>
-          <summary><span>Operational diagnostics · root health</span><span class="pill">Secondary</span></summary>
-          <div class="alphaDiagnosticsBody">
-            <div class="alphaDiagnosticsNote">Use these fields to verify root readiness, wrapper posture, registry alignment, and parent expiry. They are informational and secondary to the quick-start preview above.</div>
-            <div class="alphaDiagnosticsCard" id="alphaIdentityRootHealthCard"><table class="miniTable">
-              <tr><td>ROOT_NAME</td><td><span id="alphaIdentityRootName">—</span></td></tr>
-              <tr><td>ROOT_NODE</td><td><span id="alphaIdentityRootNode">—</span></td></tr>
-              <tr><td>rootActive</td><td><span id="alphaIdentityRootActive">—</span></td></tr>
-              <tr><td>paused</td><td><span id="alphaIdentityPaused">—</span></td></tr>
-              <tr><td>wrapper</td><td><span id="alphaIdentityWrapper">—</span></td></tr>
-              <tr><td>ensRegistry</td><td><span id="alphaIdentityRegistry">—</span></td></tr>
-              <tr><td>owner / pendingOwner</td><td><span id="alphaIdentityOwnerLine">—</span></td></tr>
-              <tr><td>wrapped parent owner</td><td><span id="alphaIdentityParentOwner">—</span></td></tr>
-              <tr><td>parent wrapped / locked</td><td><span id="alphaIdentityParentFlags">—</span></td></tr>
-              <tr><td>registrar authorized</td><td><span id="alphaIdentityRegistrarAuth">—</span></td></tr>
-              <tr><td>effective parent expiry</td><td><span id="alphaIdentityParentExpiry">—</span></td></tr>
-              <tr><td>root usable</td><td><span id="alphaIdentityRootUsable">—</span></td></tr>
-              <tr><td>required child fuses</td><td><span id="alphaIdentityRequiredFuses">—</span></td></tr>
-              <tr><td>token name / symbol</td><td><span id="alphaIdentityNameSymbol">—</span></td></tr>
-            </table></div>
-          </div>
-        </details>
-
-        <details>
-          <summary><span>Expert diagnostics · compatibility reference</span><span class="pill">Diagnostics only</span></summary>
-          <div class="alphaDiagnosticsBody">
-            <div class="alphaDiagnosticsNote">Legacy compatibility reads remain internal and inert. Public registration in this console uses only the combined identity route on FreeTrialSubdomainRegistrarIdentity.</div>
-            <div class="alphaDiagnosticsCard" id="freeTrialRegistrarState"><table class="miniTable">
-              <tr class="legacyInert" hidden aria-hidden="true"><td>Registrar</td><td><span id="freeTrialRegistrarAddress">Compatibility shim hidden</span></td></tr>
-              <tr><td>NameWrapper</td><td><span id="freeTrialWrapperAddress">—</span></td></tr>
-              <tr><td>Target parent</td><td><span id="freeTrialParentName">alpha.agent.agi.eth</span></td></tr>
-              <tr><td>Target parent node</td><td><span id="freeTrialParentNode">0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e</span></td></tr>
-              <tr><td>Parent active</td><td><span id="freeTrialParentActive">—</span></td></tr>
-              <tr><td>Parent locked</td><td><span id="freeTrialParentLocked">—</span></td></tr>
-              <tr><td>Registrar authorised</td><td><span id="freeTrialRegistrarAuthorised">—</span></td></tr>
-              <tr><td>Parent usable</td><td><span id="freeTrialParentUsableState">—</span></td></tr>
-              <tr><td>Parent effective expiry</td><td><span id="freeTrialParentExpiry">—</span></td></tr>
-              <tr><td>Trial period</td><td><span id="freeTrialTrialPeriod">—</span></td></tr>
-              <tr><td>Label rules</td><td><span id="freeTrialLabelRules">lowercase a-z0-9, no dots, no hyphens, 8–63 chars</span></td></tr>
-            </table></div>
-          </div>
-        </details>
-
-        <details>
-          <summary><span>Administrative controls</span><span class="pill">Restricted</span></summary>
-          <div class="alphaDiagnosticsBody">
-            <div class="alphaDiagnosticsNote">Administrative methods remain available for authorized operators, but they are intentionally collapsed by default to keep the onboarding surface clear.</div>
-            <div class="alphaDiagnosticsCard">
-              <div class="subtleTitle" style="margin:0">FreeTrialSubdomainRegistrarIdentity Admin</div>
-              <div class="actions" id="alphaIdentityAdminControls" style="margin-top:10px"></div>
-            </div>
-            <div class="alphaDiagnosticsCard">
-              <div class="subtleTitle" style="margin:0">Expert registrar controls (authorized parent managers only)</div>
-              <div id="registrarAdminControls" class="actions" style="margin-top:10px"></div>
-            </div>
-          </div>
-        </details>
-      </div>
-    </div>
-
-    <input id="mintAlphaRecipient" type="hidden" value="">
-    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Compatibility register alias</button>
-
-    <div id="alphaMintReviewModal" class="modalBackdrop legacyInert" aria-hidden="true" hidden>
-      <div class="modalCard reviewModalCard">
-        <div class="modalHeader">
-          <div>
-            <div class="eyebrow">Transaction Review</div>
-            <h2 style="margin:4px 0 6px">Legacy Alpha compatibility alias</h2>
-            <div class="helper">Legacy review surface retained for protocol compatibility only. Public onboarding routes registration through register(label) for combined name + identity issuance to the connected wallet.</div>
-          </div>
-          <button class="modalClose" id="closeAlphaMintReviewBtn" aria-label="Close">×</button>
-        </div>
-        <div id="alphaMintReviewFacts" class="reviewFacts"></div>
-        <div class="reviewFooter" style="margin-top:12px">
-          <div class="helper">Compatibility-only alias. Final authorize control remains sticky and reachable on mobile.</div>
-          <div class="actions">
-            <button class="btn" id="cancelAlphaMintReviewBtn">Cancel</button>
-            <button class="btn btn-primary" id="confirmAlphaMintReviewBtn">Submit mint</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
-      <div class="modalCard reviewModalCard">
-        <div class="modalHeader"><div><div class="eyebrow">Transaction Review</div><h2 style="margin:4px 0 6px" id="alphaIdentityReviewTitle">Alpha identity action</h2><div class="helper" id="alphaIdentityReviewHelper">Contract-faithful action preview.</div></div><button class="modalClose" id="closeAlphaIdentityReviewBtn" aria-label="Close">×</button></div>
-        <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
-        <div class="reviewFooter" style="margin-top:12px">
-          <div class="helper">The final authorize control remains pinned in view on mobile while the review facts scroll independently above it.</div>
-          <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn">Submit</button></div>
-        </div>
       </div>
     </div>
 
@@ -4680,7 +4681,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         {title:'Open create job section', subtitle:'Jump directly to the employer workflow and metadata builder.', tags:'create employer job builder', action:'create'},
         {title:'Open bridge console', subtitle:'Bridge from Solana and mint the official Ethereum $AGIALPHA.', tags:'bridge vault agialpha solana ethereum', action:'bridge'},
         {title:'Open jobs table', subtitle:'Review, sort, filter, and open the live job board.', tags:'jobs board table review', action:'jobs'},
-        {title:'Open ENS verification', subtitle:'Verify agent or validator ENS ownership for this wallet.', tags:'ens verify agent validator', action:'verify'},
+        {title:'Open readiness verification', subtitle:'Verify agent or validator ENS ownership near the top of the page.', tags:'ens verify agent validator readiness', action:'verify'},
         {title:'Register Alpha-Agent name + identity', subtitle:'Open the combined register(label) review for wrapped ENS + soulbound identity.', tags:'alpha identity register combined recommended', action:'register-alpha-identity'},
         {title:'Claim Alpha Agent Identity', subtitle:'Use claimIdentity(label) when wrapped name already exists.', tags:'alpha identity claim', action:'claim-alpha-identity'},
         {title:'Sync Alpha Agent Identity', subtitle:'Repair desynced/expired identity state with syncIdentityByLabel(label).', tags:'alpha identity sync repair', action:'sync-alpha-identity'},
@@ -4934,11 +4935,15 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     }
     function assemblePreflightBand(){
       const grid = el('preflightFlowGrid');
-      if(!grid || grid.dataset.ready === 'true') return;
-      ['accessWalletCard'].forEach(id=>{ const node = el(id); if(node) grid.appendChild(node); });
-      const notice = document.querySelector('.heroNotice');
-      if(notice) grid.appendChild(notice);
-      ['verifyEnsSection','alphaAgentMintSection'].forEach(id=>{ const node = el(id); if(node) grid.appendChild(node); });
+      if(!grid) return;
+      const readinessOrder = [
+        el('accessWalletCard'),
+        document.querySelector('.heroNotice'),
+        el('verifyEnsSection'),
+        el('alphaAgentMintSection')
+      ].filter(Boolean);
+      if(!readinessOrder.length) return;
+      readinessOrder.forEach(node=>grid.appendChild(node));
       grid.dataset.ready = 'true';
     }
     function updateViewportVars(){
