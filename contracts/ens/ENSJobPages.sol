@@ -482,7 +482,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         label = jobEnsLabel(jobId);
         snapshotted = _jobAuthority[jobId].authorityEstablished;
         name = snapshotted ? effectiveJobEnsName(jobId) : previewJobEnsName(jobId);
-        uri = bytes(name).length == 0 ? "" : string(abi.encodePacked("ens://", name));
+        bool hasName = bytes(name).length != 0;
+        uri = !hasName ? "" : string(abi.encodePacked("ens://", name));
         if (_isRootConfigured()) {
             node = jobEnsNode(jobId);
             issued = jobEnsIssued(jobId);
@@ -519,7 +520,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (_nodeExists(node)) {
             if (!_nodeManagedBySelf(node)) {
                 if (!_isWrappedRoot()) revert ENSNotAuthorized();
-                _requireWrapperAuthorization();
+                _requireWrapperAuthorization(_jobAuthority[jobId].rootNode);
                 INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
                     _jobAuthority[jobId].rootNode,
                     label,
@@ -532,7 +533,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
                 adopted = true;
             }
         } else {
-            node = _createSubname(label);
+            node = _createSubname(_jobAuthority[jobId].rootNode, label);
             emit JobENSPageCreated(jobId, node);
             created = true;
         }
@@ -622,7 +623,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (_nodeExists(node)) {
             if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
         } else {
-            node = _createSubname(label);
+            node = _createSubname(_jobAuthority[jobId].rootNode, label);
             emit JobENSPageCreated(jobId, node);
         }
 
@@ -794,24 +795,24 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         emit JobENSLocked(jobId, node, fusesBurned);
     }
 
-    function _createSubname(string memory label) internal returns (bytes32 node) {
+    function _createSubname(bytes32 parentRootNode, string memory label) internal returns (bytes32 node) {
         bytes32 labelHash = keccak256(bytes(label));
 
-        if (_isWrappedRoot()) {
-            _requireWrapperAuthorization();
+        if (_isWrappedRootNode(parentRootNode)) {
+            _requireWrapperAuthorization(parentRootNode);
             INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
-                _jobAuthorityForCurrentRoot().rootNode,
+                parentRootNode,
                 label,
                 address(this),
                 0,
                 type(uint64).max
             );
         } else {
-            if (ens.owner(jobsRootNode) != address(this)) revert ENSNotAuthorized();
-            ens.setSubnodeRecord(jobsRootNode, labelHash, address(this), address(0), 0);
+            if (ens.owner(parentRootNode) != address(this)) revert ENSNotAuthorized();
+            ens.setSubnodeRecord(parentRootNode, labelHash, address(this), address(0), 0);
         }
 
-        node = keccak256(abi.encodePacked(jobsRootNode, labelHash));
+        node = keccak256(abi.encodePacked(parentRootNode, labelHash));
     }
 
     function _setResolverBestEffort(uint8 hook, uint256 jobId, bytes32 node, address resolver) internal {
@@ -880,8 +881,12 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _isWrappedRoot() internal view returns (bool) {
+        return _isWrappedRootNode(jobsRootNode);
+    }
+
+    function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool) {
         if (address(nameWrapper) == address(0)) return false;
-        (bool ok, address ownerAddress) = _tryRootOwner();
+        (bool ok, address ownerAddress) = _tryNodeOwner(rootNode);
         return ok && ownerAddress == address(nameWrapper);
     }
 
@@ -891,8 +896,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         return ok && ownerAddress == address(nameWrapper);
     }
 
-    function _requireWrapperAuthorization() internal view {
-        uint256 rootTokenId = uint256(jobsRootNode);
+    function _requireWrapperAuthorization(bytes32 rootNode) internal view {
+        uint256 rootTokenId = uint256(rootNode);
         (bool ok, address wrappedOwner) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, rootTokenId));
         if (!ok || wrappedOwner == address(0)) revert ENSNotAuthorized();
         if (wrappedOwner == address(this)) return;
@@ -1047,7 +1052,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _registerRootVersion(bytes32 rootNode, string memory rootName) internal {
         if (currentRootVersionId != 0) {
             RootVersion memory currentVersion = _rootVersions[currentRootVersionId];
-            if (currentVersion.rootNode == rootNode && keccak256(bytes(currentVersion.rootName)) == keccak256(bytes(rootName))) {
+            if (currentVersion.rootNode != rootNode || keccak256(bytes(currentVersion.rootName)) != keccak256(bytes(rootName))) {
+            } else {
                 return;
             }
         }
@@ -1077,10 +1083,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         authority.authorityEstablished = true;
         authority.legacyImported = legacyImported;
         emit JobAuthoritySnapshotted(jobId, authority.node, label, currentRootVersionId, snapshotSource, legacyImported);
-    }
-
-    function _jobAuthorityForCurrentRoot() internal view returns (JobAuthority memory authority) {
-        authority.rootNode = jobsRootNode;
     }
 
     function _tryRootOwner() internal view returns (bool ok, address ownerAddress) {
@@ -1120,7 +1122,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         uint256 decoded;
         (ok, decoded) = _staticcallWord(target, payload);
         if (!ok || decoded > 1) return (false, false);
-        result = decoded == 1;
+        result = decoded != 0;
     }
 
     function _staticcallWord(address target, bytes memory payload) internal view returns (bool ok, uint256 word) {
