@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MockENSJobPages {
+    function ensJobPagesInterfaceVersion() external pure returns (uint256) { return 1; }
     using Strings for uint256;
 
     uint8 public constant HOOK_CREATE = 1;
@@ -95,11 +96,36 @@ contract MockENSJobPages {
         }
     }
 
+    function onJobCreated(uint256 jobId, address employer, string calldata specURI) external {
+        createCalls += 1;
+        lastHook = HOOK_CREATE;
+        lastJobId = jobId;
+        lastEmployer = employer;
+        lastSpecURI = specURI;
+    }
+
+    function onJobAssigned(uint256 jobId, address employer, address agent) external {
+        employer;
+        if (revertHook[HOOK_ASSIGN]) revert("revert assign");
+        assignCalls += 1;
+        lastHook = HOOK_ASSIGN;
+        lastJobId = jobId;
+        lastAgent = agent;
+    }
+
     function onAgentAssigned(uint256 jobId, address agent) external {
         if (revertHook[HOOK_ASSIGN]) revert("revert assign");
         assignCalls += 1;
         lastJobId = jobId;
         lastAgent = agent;
+    }
+
+    function onJobCompletionRequested(uint256 jobId, string calldata completionURI) external {
+        if (revertHook[HOOK_COMPLETION]) revert("revert completion");
+        completionCalls += 1;
+        lastHook = HOOK_COMPLETION;
+        lastJobId = jobId;
+        lastCompletionURI = completionURI;
     }
 
     function onCompletionRequested(uint256 jobId, string calldata completionURI) external {
@@ -109,12 +135,31 @@ contract MockENSJobPages {
         lastCompletionURI = completionURI;
     }
 
+    function onJobRevoked(uint256 jobId, address employer, address agent) external {
+        if (revertHook[HOOK_REVOKE]) revert("revert revoke");
+        revokeCalls += 1;
+        lastHook = HOOK_REVOKE;
+        lastJobId = jobId;
+        lastEmployer = employer;
+        lastAgent = agent;
+    }
+
     function revokePermissions(uint256 jobId, address employer, address agent) external {
         if (revertHook[HOOK_REVOKE]) revert("revert revoke");
         revokeCalls += 1;
         lastJobId = jobId;
         lastEmployer = employer;
         lastAgent = agent;
+    }
+
+    function onJobLocked(uint256 jobId, address employer, address agent, bool burnFuses) external {
+        if (revertHook[burnFuses ? HOOK_LOCK_BURN : HOOK_LOCK]) revert("revert lock");
+        lockCalls += 1;
+        lastHook = burnFuses ? HOOK_LOCK_BURN : HOOK_LOCK;
+        lastJobId = jobId;
+        lastEmployer = employer;
+        lastAgent = agent;
+        lastBurnFuses = burnFuses;
     }
 
     function lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) external {
@@ -127,7 +172,7 @@ contract MockENSJobPages {
     }
 
     function jobEnsName(uint256 jobId) external pure returns (string memory) {
-        return string(abi.encodePacked("job-", jobId.toString(), ".alpha.jobs.agi.eth"));
+        return string(abi.encodePacked("agijob-", jobId.toString(), ".alpha.jobs.agi.eth"));
     }
 
     function jobEnsURI(uint256 jobId) external view returns (string memory) {
@@ -136,7 +181,7 @@ contract MockENSJobPages {
         if (useJobEnsUriOverride) {
             return jobEnsUriOverride;
         }
-        return string(abi.encodePacked("ens://job-", jobId.toString(), ".alpha.jobs.agi.eth"));
+        return string(abi.encodePacked("ens://agijob-", jobId.toString(), ".alpha.jobs.agi.eth"));
     }
 
     function setJobEnsUriOverride(string calldata uri) external {
@@ -148,6 +193,8 @@ contract MockENSJobPages {
         useJobEnsUriOverride = false;
         jobEnsUriOverride = "";
     }
+
+    function jobEnsIssued(uint256) external pure returns (bool) { return true; }
 
     function setUseEnsJobTokenURI(bool enabled) external {
         useEnsJobTokenURI = enabled;

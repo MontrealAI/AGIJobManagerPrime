@@ -8,9 +8,12 @@ const outDir = argOut ? path.resolve(root, argOut.split('=')[1]) : root;
 
 const sourceFiles = [
   'contracts/AGIJobManager.sol',
+  'contracts/AGIJobManagerPrime.sol',
   'contracts/utils/ENSOwnership.sol',
   'contracts/ens/ENSJobPages.sol',
-  'contracts/ens/IENSJobPages.sol'
+  'contracts/ens/IENSJobPages.sol',
+  'contracts/ens/IENSJobPagesHooksV1.sol',
+  'contracts/interfaces/IAGIJobManagerPrimeViewV1.sol'
 ].filter((rel) => fs.existsSync(path.join(root, rel)));
 
 const ENS_PATTERNS = /(\bens\b|ENS|nameWrapper|RootNode|rootNode|Merkle|Identity|lock|EnsJobPages|subdomain|tokenURI)/;
@@ -33,12 +36,14 @@ const variables = [
 
 const functions = [
   ...functionsFor('contracts/AGIJobManager.sol', (text) => ENS_PATTERNS.test(text)),
+  ...functionsFor('contracts/AGIJobManagerPrime.sol', (text) => ENS_PATTERNS.test(text)),
   ...functionsFor('contracts/utils/ENSOwnership.sol', (text) => ENS_PATTERNS.test(text) || text.includes('verifyENSOwnership')),
   ...functionsFor('contracts/ens/ENSJobPages.sol', (text) => ENS_PATTERNS.test(text) || text.includes('handleHook'))
 ];
 
 const eventsAndErrors = [
   ...matches('contracts/AGIJobManager.sol', /^(event|error)\s+.*(Ens|ENS|Root|Merkle|Identity|NotAuthorized|ConfigLocked|InvalidParameters)/),
+  ...matches('contracts/AGIJobManagerPrime.sol', /^(event|error)\s+.*(Ens|ENS|Root|Merkle|Identity|NotAuthorized|ConfigLocked|InvalidParameters)/),
   ...matches('contracts/ens/ENSJobPages.sol', /^(event|error)\s+.*(ENS|Ens|Configured|Authorized|InvalidParameters)/)
 ];
 

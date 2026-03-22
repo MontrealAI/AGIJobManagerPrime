@@ -57,12 +57,12 @@ Typical replacement/migration drivers from current contract behavior:
 
 
 With script defaults + contract defaults:
-- `jobLabelPrefix = "agijob"`
+- `jobLabelPrefix = "agijob-"`
 - `jobsRootName = "alpha.jobs.agi.eth"`
 
 So names are:
-- `agijob0.alpha.jobs.agi.eth`
-- `agijob1.alpha.jobs.agi.eth`
+- `agijob-0.alpha.jobs.agi.eth`
+- `agijob-1.alpha.jobs.agi.eth`
 - ...
 
 Prefix changes apply only to unsnapshotted/future jobs. Already snapshotted labels stay unchanged.
@@ -185,7 +185,7 @@ Expected result:
 
 ## 8.1) Future jobs vs legacy jobs after cutover (expected behavior)
 
-- **Future/unsnapshotted jobs:** new creates use `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`) and should proceed once wiring is complete.
+- **Future/unsnapshotted jobs:** new creates use `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`) and should proceed once wiring is complete.
 - **Legacy snapshotted jobs:** keep their historical label; they do not auto-rename on prefix changes.
 - **Legacy unsnapshotted jobs:** may need `migrateLegacyWrappedJobPage(jobId, exactLabel)` before deterministic write hooks succeed.
 

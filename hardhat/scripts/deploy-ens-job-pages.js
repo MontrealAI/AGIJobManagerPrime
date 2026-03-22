@@ -146,6 +146,12 @@ async function main() {
   const setJobManagerTx = await ensJobPages.setJobManager(jobManager);
   await setJobManagerTx.wait(confirmations);
 
+  const validationMask = await ensJobPages.validateConfiguration();
+  console.log("validateConfiguration mask:", validationMask.toString());
+  if (validationMask !== 0n) {
+    throw new Error(`ENSJobPages validateConfiguration failed with bitmask ${validationMask.toString()}`);
+  }
+
   if (lockConfig) {
     console.log("Locking configuration...");
     const lockTx = await ensJobPages.lockConfiguration();
@@ -173,8 +179,9 @@ async function main() {
   }
 
   console.log("\nManual next steps (not automated):");
-  console.log("1) On NameWrapper, wrapped-root owner calls setApprovalForAll(newEnsJobPages, true).");
-  console.log("2) On AGIJobManager, owner calls setEnsJobPages(newEnsJobPages).");
+  console.log("1) Wrapped-root owner must keep NameWrapper approvalForAll(newEnsJobPages)=true before cutover.");
+  console.log("2) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) only after validateConfiguration() == 0.");
+  console.log("3) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and replay syncEnsForJob on affected jobs.");
 }
 
 main().catch((err) => {

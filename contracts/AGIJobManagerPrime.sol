@@ -313,6 +313,8 @@ import "./utils/UriUtils.sol";
 import "./utils/BondMath.sol";
 import "./utils/ReputationMath.sol";
 import "./utils/ENSOwnership.sol";
+import "./ens/IENSJobPagesHooksV1.sol";
+import "./interfaces/IAGIJobManagerPrimeViewV1.sol";
 import "./periphery/AGIJobCompletionNFT.sol";
 
 interface ENSPrime {
@@ -323,7 +325,7 @@ interface NameWrapperPrime {
     function ownerOf(uint256 id) external view returns (address);
 }
 
-contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
+contract AGIJobManagerPrime is IAGIJobManagerPrimeViewV1, Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     enum IntakeMode {
@@ -360,6 +362,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     uint8 internal constant ENS_HOOK_REVOKE = 4;
     uint8 internal constant ENS_HOOK_LOCK = 5;
     uint256 internal constant ENS_HOOK_GAS_LIMIT = 500_000;
+    uint256 public constant ENS_JOB_MANAGER_VIEW_INTERFACE_VERSION = 1;
 
     IERC20 public agiToken;
     address public discoveryModule;
@@ -408,6 +411,13 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     ENSPrime public ens;
     NameWrapperPrime public nameWrapper;
     address public ensJobPages;
+    bool public useEnsJobTokenURI;
+
+    struct CancelledEnsReplay {
+        address employer;
+        address assignedAgent;
+        bool exists;
+    }
 
     struct Job {
         address employer;
@@ -487,6 +497,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     mapping(uint256 => Job) internal jobs;
     mapping(address => uint256) public reputation;
     mapping(address => AgentStats) public agentStats;
+    mapping(uint256 => CancelledEnsReplay) private cancelledEnsReplay;
 
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
@@ -524,6 +535,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     event ReputationUpdated(address indexed user, uint256 newReputation);
     event DiscoveryModuleUpdated(address indexed oldModule, address indexed newModule);
+    event EnsJobPagesUpdated(address indexed oldValue, address indexed newValue);
+    event UseEnsJobTokenURIUpdated(bool oldValue, bool newValue);
+    event EnsHookCallResult(uint8 indexed hook, uint256 indexed jobId, address indexed target, bytes4 selector, bool success);
     event SelectedAgentDesignated(
         uint256 indexed jobId,
         address indexed selectedAgent,
@@ -606,14 +620,22 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         emit SettlementPauseSet(msg.sender, paused_);
     }
 
+    function ensJobManagerViewInterfaceVersion() external pure returns (uint256) {
+        return ENS_JOB_MANAGER_VIEW_INTERFACE_VERSION;
+    }
+
     function setDiscoveryModule(address module) external onlyOwner {
         if (module == address(0) || module.code.length == 0) revert InvalidParameters();
+        address old = discoveryModule;
         discoveryModule = module;
+        emit DiscoveryModuleUpdated(old, module);
     }
 
     function setEnsJobPages(address target) external onlyOwner {
         if (target != address(0) && target.code.length == 0) revert InvalidParameters();
+        address old = ensJobPages;
         ensJobPages = target;
+        emit EnsJobPagesUpdated(old, target);
     }
 
     function renounceOwnership() public view override onlyOwner {
@@ -654,6 +676,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         agentRootNode = _agentRootNode;
         alphaClubRootNode = _alphaClubRootNode;
         alphaAgentRootNode = _alphaAgentRootNode;
+    }
+
+    function setUseEnsJobTokenURI(bool enabled) external onlyOwner {
+        bool old = useEnsJobTokenURI;
+        useEnsJobTokenURI = enabled;
+        emit UseEnsJobTokenURIUpdated(old, enabled);
     }
 
     function setVoteQuorum(uint256 q) external onlyOwner {
@@ -1061,6 +1089,11 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _releaseEscrow(job);
         agiToken.safeTransfer(job.employer, job.payout);
 
+        cancelledEnsReplay[jobId] = CancelledEnsReplay({
+            employer: job.employer,
+            assignedAgent: job.assignedAgent,
+            exists: true
+        });
         emit JobCancelled(jobId);
         _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
         _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
@@ -1401,21 +1434,132 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function _mintCompletionNFT(uint256, Job storage job) internal {
-        string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
+    function _mintCompletionNFT(uint256 jobId, Job storage job) internal {
+        string memory uri = job.jobCompletionURI;
+        if (useEnsJobTokenURI) {
+            string memory ensUri = _tryGetIssuedEnsURI(jobId);
+            if (bytes(ensUri).length != 0) {
+                uri = ensUri;
+            }
+        }
+        uri = UriUtils.applyBaseIpfs(uri, baseIpfsUrl);
         uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
         emit NFTIssued(tokenId, job.employer, uri);
     }
 
+    function getJobCore(uint256 jobId)
+        external
+        view
+        returns (
+            address employer,
+            address assignedAgent,
+            uint256 payout,
+            uint256 duration,
+            uint256 assignedAt,
+            bool completed,
+            bool disputed,
+            bool expired,
+            uint8 agentPayoutPct
+        )
+    {
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) revert InvalidState();
+        return (job.employer, job.assignedAgent, job.payout, job.duration, job.assignedAt, job.completed, job.disputed, job.expired, job.agentPayoutPct);
+    }
+
+    function getJobSpecURI(uint256 jobId) external view returns (string memory) {
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) revert InvalidState();
+        return job.jobSpecURI;
+    }
+
+    function getJobCompletionURI(uint256 jobId) external view returns (string memory) {
+        Job storage job = jobs[jobId];
+        if (job.employer == address(0)) revert InvalidState();
+        return job.jobCompletionURI;
+    }
+
+    function syncEnsForJob(uint256 jobId, uint8 hook) external onlyOwner {
+        _callEnsJobPagesHook(hook, jobId);
+    }
+
     function _callEnsJobPagesHook(uint8 hook, uint256 jobId) internal {
         address target = ensJobPages;
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, shl(224, 0x1f76f7a2))
-            mstore(add(ptr, 4), hook)
-            mstore(add(ptr, 36), jobId)
-            pop(call(ENS_HOOK_GAS_LIMIT, target, 0, ptr, 0x44, 0, 0))
+        if (target == address(0)) return;
+
+        (address employer, address assignedAgent, string memory specURI, string memory completionURI, bool exists) = _ensReplayStateFor(jobId);
+        if (!exists) return;
+
+        bytes memory payload;
+        bytes4 selector;
+        bool versioned = _isVersionedEnsJobPages(target);
+        if (versioned) {
+            if (hook == ENS_HOOK_CREATE) {
+                selector = IENSJobPagesHooksV1.onJobCreated.selector;
+                payload = abi.encodeCall(IENSJobPagesHooksV1.onJobCreated, (jobId, employer, specURI));
+            } else if (hook == ENS_HOOK_ASSIGN) {
+                selector = IENSJobPagesHooksV1.onJobAssigned.selector;
+                payload = abi.encodeCall(IENSJobPagesHooksV1.onJobAssigned, (jobId, employer, assignedAgent));
+            } else if (hook == ENS_HOOK_COMPLETION) {
+                selector = IENSJobPagesHooksV1.onJobCompletionRequested.selector;
+                payload = abi.encodeCall(IENSJobPagesHooksV1.onJobCompletionRequested, (jobId, completionURI));
+            } else if (hook == ENS_HOOK_REVOKE) {
+                selector = IENSJobPagesHooksV1.onJobRevoked.selector;
+                payload = abi.encodeCall(IENSJobPagesHooksV1.onJobRevoked, (jobId, employer, assignedAgent));
+            } else {
+                selector = IENSJobPagesHooksV1.onJobLocked.selector;
+                payload = abi.encodeCall(IENSJobPagesHooksV1.onJobLocked, (jobId, employer, assignedAgent, hook != ENS_HOOK_LOCK));
+            }
+        } else {
+            selector = bytes4(0x1f76f7a2);
+            payload = abi.encodeWithSelector(selector, hook, jobId);
         }
+
+        bool success;
+        assembly {
+            success := call(ENS_HOOK_GAS_LIMIT, target, 0, add(payload, 0x20), mload(payload), 0, 0)
+        }
+        emit EnsHookCallResult(hook, jobId, target, selector, success);
+    }
+
+    function _tryGetIssuedEnsURI(uint256 jobId) internal view returns (string memory) {
+        address target = ensJobPages;
+        if (target.code.length == 0) return "";
+        if (_isVersionedEnsJobPages(target)) {
+            try IENSJobPagesHooksV1(target).jobEnsIssued(jobId) returns (bool issued) {
+                if (!issued) return "";
+            } catch {
+                return "";
+            }
+            try IENSJobPagesHooksV1(target).jobEnsURI(jobId) returns (string memory ensUri) {
+                return ensUri;
+            } catch {
+                return "";
+            }
+        }
+        return "";
+    }
+
+    function _isVersionedEnsJobPages(address target) internal view returns (bool) {
+        if (target.code.length == 0) return false;
+        try IENSJobPagesHooksV1(target).ensJobPagesInterfaceVersion() returns (uint256 version_) {
+            return version_ == 1;
+        } catch {
+            return false;
+        }
+    }
+
+    function _ensReplayStateFor(uint256 jobId)
+        internal
+        view
+        returns (address employer, address assignedAgent, string memory specURI, string memory completionURI, bool exists)
+    {
+        Job storage job = jobs[jobId];
+        if (job.employer != address(0)) {
+            return (job.employer, job.assignedAgent, job.jobSpecURI, job.jobCompletionURI, true);
+        }
+        CancelledEnsReplay memory replay = cancelledEnsReplay[jobId];
+        return (replay.employer, replay.assignedAgent, "", "", replay.exists);
     }
 
     function _returnAgentBond(Job storage job, address to) internal {
