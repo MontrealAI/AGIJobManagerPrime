@@ -548,6 +548,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function repairAuthoritySnapshot(uint256 jobId, string calldata exactLabel) external onlyOwner {
+        if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
         } else if (!_jobLabelIsSet[jobId]) {
@@ -1062,6 +1063,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _establishAuthority(uint256 jobId, string memory label, uint8 snapshotSource, bool legacyImported) internal {
+        if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
         JobAuthority storage authority = _jobAuthority[jobId];
         if (authority.authorityEstablished) return;
         if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();

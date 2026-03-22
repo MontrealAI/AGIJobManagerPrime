@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 interface IENSJobPagesInspectorTarget {
     function ens() external view returns (address);
     function publicResolver() external view returns (address);
+    function nameWrapper() external view returns (address);
     function configLocked() external view returns (bool);
     function jobsRootNode() external view returns (bytes32);
     function jobsRootName() external view returns (string memory);
@@ -25,9 +26,8 @@ interface IENSRegistryLite {
     function resolver(bytes32 node) external view returns (address);
 }
 
-interface IResolverLite {
-    function text(bytes32 node, string calldata key) external view returns (string memory);
-    function isAuthorised(bytes32 node, address target) external view returns (bool);
+interface INameWrapperLite {
+    function ownerOf(uint256 tokenId) external view returns (address);
 }
 
 contract ENSJobPagesInspector {
@@ -132,20 +132,36 @@ contract ENSJobPagesInspector {
             address nodeOwner = ens.owner(authoritativeNode);
             address nodeResolver = ens.resolver(authoritativeNode);
             status.nodeExists = nodeOwner != address(0);
-            status.nodeManagedByContract = nodeOwner == target;
+            status.nodeManagedByContract = nodeOwner == target || _isWrappedNodeManagedByTarget(pages.nameWrapper(), nodeOwner, authoritativeNode, target);
             status.resolverSetToExpected = nodeResolver == pages.publicResolver();
 
             if (nodeResolver != address(0)) {
-                IResolverLite resolver = IResolverLite(nodeResolver);
-                status.schemaTextPresent = bytes(resolver.text(authoritativeNode, "schema")).length != 0;
-                status.specTextPresent = bytes(resolver.text(authoritativeNode, "agijobs.spec.public")).length != 0;
-                status.completionTextPresent = bytes(resolver.text(authoritativeNode, "agijobs.completion.public")).length != 0;
-                bool employerOk = employer == address(0) || resolver.isAuthorised(authoritativeNode, employer);
-                bool agentOk = agent == address(0) || resolver.isAuthorised(authoritativeNode, agent);
-                status.authorisationsAsExpected = employerOk || agentOk;
+                status.schemaTextPresent = _safeHasText(nodeResolver, authoritativeNode, "schema");
+                status.specTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.spec.public");
+                status.completionTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.completion.public");
+                bool employerOk = employer == address(0) || _safeIsAuthorised(nodeResolver, authoritativeNode, employer);
+                bool agentOk = agent == address(0) || _safeIsAuthorised(nodeResolver, authoritativeNode, agent);
+                status.authorisationsAsExpected = employerOk && agentOk;
             }
         }
 
         status.finalizable = status.authoritySnapshotted && status.nodeExists && status.resolverSetToExpected;
+    }
+
+    function _isWrappedNodeManagedByTarget(address nameWrapper, address nodeOwner, bytes32 node, address target) internal view returns (bool) {
+        if (nameWrapper == address(0) || nodeOwner != nameWrapper) return false;
+        (bool success, bytes memory data) = nameWrapper.staticcall(abi.encodeWithSelector(INameWrapperLite.ownerOf.selector, uint256(node)));
+        return success && data.length >= 32 && abi.decode(data, (address)) == target;
+    }
+
+    function _safeHasText(address resolver, bytes32 node, string memory key) internal view returns (bool) {
+        (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature("text(bytes32,string)", node, key));
+        if (!success || data.length == 0) return false;
+        return bytes(abi.decode(data, (string))).length != 0;
+    }
+
+    function _safeIsAuthorised(address resolver, bytes32 node, address target) internal view returns (bool) {
+        (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature("isAuthorised(bytes32,address)", node, target));
+        return success && data.length >= 32 && abi.decode(data, (bool));
     }
 }
