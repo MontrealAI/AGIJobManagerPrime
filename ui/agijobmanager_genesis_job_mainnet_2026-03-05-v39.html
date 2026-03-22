@@ -641,9 +641,9 @@
     @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier,.alphaVerificationSignals{grid-template-columns:1fr}}
     @media (max-width:700px){
       .modalBackdrop{align-items:flex-end;padding:0;overflow:auto}
-      .modalCard,.commandModalCard,.reviewModalCard,#alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(32px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom));min-height:calc(var(--app-vh,1vh) * 100)}
+      .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100);border-radius:22px 22px 0 0;padding-bottom:calc(32px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom));min-height:calc(var(--app-vh,1vh) * 100)}
       .modalHeader{border-radius:22px 22px 0 0}
-      #alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{max-height:calc(var(--app-vh,1vh) * 100 - env(safe-area-inset-top));padding-bottom:0}
+      #alphaMintReviewModal .modalCard,#alphaIdentityReviewModal .modalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100 - env(safe-area-inset-top));min-height:0;border-radius:22px 22px 0 0;padding-bottom:0;scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom))}
       #alphaMintReviewModal .reviewFacts,#alphaIdentityReviewModal .reviewFacts{grid-template-columns:1fr}
       #alphaMintReviewModal .reviewFooter,#alphaIdentityReviewModal .reviewFooter{margin-left:-16px;margin-right:-16px;margin-bottom:0;padding-left:16px;padding-right:16px}
       .reviewFooter{padding-bottom:calc(22px + env(safe-area-inset-bottom));scroll-margin-bottom:calc(188px + env(safe-area-inset-bottom))}
@@ -5029,16 +5029,20 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityBlockedReason')) el('alphaIdentityBlockedReason').textContent = blockedReason;
       updateVerificationSummary();
     }
-    function syncModalState(){
-      const anyOpenModal = !!document.querySelector('.modalBackdrop.open');
+    function refreshOpenModalViewportLock(){
+      if(!document.querySelector('.modalBackdrop.open')) return;
       const vv = window.visualViewport;
       const viewportHeight = vv ? vv.height : window.innerHeight;
+      document.documentElement.style.height = `${viewportHeight}px`;
+      document.body.style.maxHeight = `${viewportHeight}px`;
+    }
+    function syncModalState(){
+      const anyOpenModal = !!document.querySelector('.modalBackdrop.open');
       document.body.classList.toggle('has-open-modal', anyOpenModal);
       if(anyOpenModal){
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = `${viewportHeight}px`;
-        document.body.style.maxHeight = `${viewportHeight}px`;
+        refreshOpenModalViewportLock();
         const sheet = document.getElementById('v26MobileSheet');
         if(sheet?.classList.contains('open')){
           sheet.classList.remove('open');
@@ -10114,9 +10118,9 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       }
       updateViewportVars();
       syncModalState();
-      window.visualViewport?.addEventListener('resize', updateViewportVars);
-      window.visualViewport?.addEventListener('scroll', updateViewportVars);
-      window.addEventListener('resize', updateViewportVars);
+      window.visualViewport?.addEventListener('resize', ()=>{ updateViewportVars(); refreshOpenModalViewportLock(); });
+      window.visualViewport?.addEventListener('scroll', ()=>{ updateViewportVars(); refreshOpenModalViewportLock(); });
+      window.addEventListener('resize', ()=>{ updateViewportVars(); refreshOpenModalViewportLock(); });
       const gentleReturnRefresh = ()=>{
         updateViewportVars();
         syncModalState();
