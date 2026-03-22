@@ -6,10 +6,12 @@ This runbook is for replacing the `ENSJobPages` contract used by AGIJobManager o
 
 Canonical cutover flow:
 1. Deploy new `ENSJobPages` (Hardhat script).
-2. Wrapped-root owner manually calls `NameWrapper.setApprovalForAll(newEnsJobPages, true)`.
-3. AGIJobManager owner manually calls `AGIJobManager.setEnsJobPages(newEnsJobPages)`.
-4. Migrate legacy jobs with historical labels if needed (`migrateLegacyWrappedJobPage`).
-5. Lock configuration only after validation is complete.
+2. Capture a Phase 0 authority + inventory snapshot from mainnet RPC.
+3. Wrapped-root owner manually calls `NameWrapper.setApprovalForAll(newEnsJobPages, true)`.
+4. Re-run `validateConfiguration()` until it returns `0`.
+5. AGIJobManager owner manually calls `AGIJobManager.setEnsJobPages(newEnsJobPages)`.
+6. Migrate / repair legacy jobs with historical labels if needed.
+7. Lock configuration only after validation is complete.
 
 ---
 
@@ -18,10 +20,11 @@ Canonical cutover flow:
 | Action | Automated by script? | Required caller |
 | --- | --- | --- |
 | Deploy new `ENSJobPages` | Yes | deployer key |
+| Phase 0 authority + inventory snapshot | Yes (script) | read-only RPC |
 | `setJobManager(JOB_MANAGER)` on new ENSJobPages | Yes | deployer key |
 | NameWrapper `setApprovalForAll(newEnsJobPages, true)` | No (manual) | wrapped-root owner |
 | `AGIJobManager.setEnsJobPages(newEnsJobPages)` | No (manual) | AGIJobManager owner |
-| `migrateLegacyWrappedJobPage(jobId, exactLabel)` | No (manual, if needed) | ENSJobPages owner |
+| `migrateLegacyWrappedJobPage(jobId, exactLabel)` / `syncEnsForJob(jobId, hook)` | No (manual, if needed) | ENSJobPages / AGIJobManager owner |
 | `lockConfiguration()` | Optional/manual | ENSJobPages owner |
 
 ---
@@ -57,12 +60,12 @@ Typical replacement/migration drivers from current contract behavior:
 
 
 With script defaults + contract defaults:
-- `jobLabelPrefix = "agijob"`
+- `jobLabelPrefix = "agijob-"`
 - `jobsRootName = "alpha.jobs.agi.eth"`
 
 So names are:
-- `agijob0.alpha.jobs.agi.eth`
-- `agijob1.alpha.jobs.agi.eth`
+- `agijob-0.alpha.jobs.agi.eth`
+- `agijob-1.alpha.jobs.agi.eth`
 - ...
 
 Prefix changes apply only to unsnapshotted/future jobs. Already snapshotted labels stay unchanged.
@@ -84,6 +87,25 @@ Prefix changes apply only to unsnapshotted/future jobs. Already snapshotted labe
 - `hardhat/.env` is configured.
 - You know the intended AGIJobManager address for `JOB_MANAGER`.
 - You have identified whether your jobs root is wrapped or unwrapped.
+
+### 5.1) Phase 0: read-only authority / inventory artifact capture
+
+Before cutover, capture a chain-backed snapshot from a working mainnet RPC source:
+
+```bash
+npm run ens:phase0:mainnet
+```
+
+Default outputs:
+- `docs/DEPLOYMENT/artifacts/ens-phase0-mainnet-2026-03-22.json`
+- `docs/DEPLOYMENT/artifacts/ens-phase0-mainnet-2026-03-22.md`
+
+What this captures:
+- manager pointer (`ensJobPages`) and `nextJobId`,
+- root owner / NameWrapper authority state,
+- active ENSJobPages config (when available),
+- per-job inventory for the first scanned window,
+- repair candidate buckets (`needsLabelSnapshot`, `needsResolver`, `needsSpecRepair`, `needsCompletionRepair`).
 
 ---
 
@@ -112,6 +134,7 @@ Optional overrides (via `.env`):
 Expected result:
 - New ENSJobPages address deployed.
 - `setJobManager(JOB_MANAGER)` already executed by script.
+- Immediate `validateConfiguration()` output printed for operator review without aborting the normal wrapped-root rollout.
 - Optional verification submitted.
 
 
@@ -126,7 +149,7 @@ Expected result:
 ## 7) Required manual post-deploy wiring on mainnet
 
 What is automated vs manual:
-- Automated by deploy script: deploy contract, set `jobManager`, optional ownership transfer/verification.
+- Automated by deploy script: deploy contract, set `jobManager`, print immediate validation mask, optional ownership transfer/verification.
 - Manual on mainnet: NameWrapper approval + AGIJobManager `setEnsJobPages`.
 
 
@@ -138,6 +161,14 @@ On NameWrapper:
 
 Why this matters:
 - ENSJobPages checks wrapper authorization before wrapped-root create/adopt operations.
+
+### Step 1.5 — Re-run validation after approval
+
+On new ENSJobPages (`Read Contract` or script console):
+- `validateConfiguration()`
+
+Proceed only when:
+- the returned bitmask is `0`.
 
 ### Step 2 — Point AGIJobManager to the new ENSJobPages
 Caller: AGIJobManager owner account.
@@ -185,7 +216,7 @@ Expected result:
 
 ## 8.1) Future jobs vs legacy jobs after cutover (expected behavior)
 
-- **Future/unsnapshotted jobs:** new creates use `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`) and should proceed once wiring is complete.
+- **Future/unsnapshotted jobs:** new creates use `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`) and should proceed once wiring is complete.
 - **Legacy snapshotted jobs:** keep their historical label; they do not auto-rename on prefix changes.
 - **Legacy unsnapshotted jobs:** may need `migrateLegacyWrappedJobPage(jobId, exactLabel)` before deterministic write hooks succeed.
 
@@ -215,6 +246,7 @@ Event checks:
 - If AGIJobManager was wired to the wrong ENSJobPages, owner can call `setEnsJobPages(previousAddress)` (if identity config still configurable).
 - If NameWrapper approval is incorrect, correct with `setApprovalForAll(correctEnsJobPages, true)`.
 - If legacy writes fail for specific jobs, run `migrateLegacyWrappedJobPage(jobId, exactLabel)` per affected job.
+- If the page exists but metadata/auth lagged during cutover, use AGIJobManager owner repair with `syncEnsForJob(jobId, hook)` after the pointer is corrected.
 - If verification API fails, use deployment artifact `solc-input.json` for manual standard-json verify.
 
 ---

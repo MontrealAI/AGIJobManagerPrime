@@ -1,0 +1,8 @@
+{
+  "AGIJobManagerPrime": {
+    "runtimeBytes": 24472,
+    "initcodeBytes": 29972,
+    "runtimeSha256": "5b41edb637ba825f321f34763a1a7622d8def0a518656fb7664483d80eaa6301",
+    "initcodeSha256": "3f3c705a31335cc1e9ebb6a0586219669698a0056900ae9a8191fca3403fafae"
+  }
+}

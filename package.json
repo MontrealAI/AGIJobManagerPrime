@@ -12,6 +12,7 @@
     "docs:ens:gen": "node scripts/docs/generate-ens-reference.mjs",
     "docs:ens:check": "node scripts/docs/check-ens-docs.mjs",
     "docs:interface": "node scripts/generate-interface-doc.js",
+    "ens:phase0:mainnet": "node scripts/ens/phase0-mainnet-snapshot.mjs",
     "lint": "solhint \"contracts/**/*.sol\"",
     "test": "npx truffle compile --all && npx truffle test --network test && node test/AGIJobManager.test.js && node scripts/check-contract-sizes.js",
     "test:ui": "node scripts/ui/run_ui_smoke_test.js",

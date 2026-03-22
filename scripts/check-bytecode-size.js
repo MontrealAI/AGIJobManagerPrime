@@ -4,6 +4,12 @@ const { execSync } = require("child_process");
 
 const MAX_RUNTIME_BYTES = 24576;
 const MAX_INITCODE_BYTES = 49152;
+const PRIME_BASELINE_PATH = path.join(
+  __dirname,
+  "..",
+  "hardhat",
+  "bytecode-baseline.json"
+);
 
 function deployedSizeBytes(artifact) {
   const deployedBytecode =
@@ -36,6 +42,15 @@ function initcodeSizeBytes(artifact) {
     throw new Error(`Empty bytecode in artifact for ${artifact.contractName || "unknown"}`);
   }
   return hex.length / 2;
+}
+
+function hexValue(value) {
+  if (!value) return "";
+  return value.startsWith("0x") ? value.slice(2) : value;
+}
+
+function sha256Hex(hex) {
+  return require("crypto").createHash("sha256").update(Buffer.from(hex, "hex")).digest("hex");
 }
 
 function artifactPathFor(contractFile, contractName) {
@@ -89,13 +104,41 @@ ensurePrimeArtifacts(checks);
 
 const oversizedRuntime = [];
 const oversizedInitcode = [];
+const baselineMismatches = [];
+const primeBaseline = fs.existsSync(PRIME_BASELINE_PATH)
+  ? JSON.parse(fs.readFileSync(PRIME_BASELINE_PATH, "utf8"))
+  : null;
 for (const check of checks) {
   const artifact = loadJson(check.artifactPath);
   const runtimeSizeBytes = deployedSizeBytes(artifact);
   const initcodeSizeBytesValue = initcodeSizeBytes(artifact);
+  const runtimeHex = hexValue(artifact.deployedBytecode || artifact.evm?.deployedBytecode?.object);
+  const initcodeHex = hexValue(artifact.bytecode || artifact.evm?.bytecode?.object);
 
   console.log(`${check.name} runtime bytecode size: ${runtimeSizeBytes} bytes`);
   console.log(`${check.name} initcode size: ${initcodeSizeBytesValue} bytes`);
+
+  if (check.name === "AGIJobManagerPrime" && primeBaseline?.AGIJobManagerPrime) {
+    const baseline = primeBaseline.AGIJobManagerPrime;
+    const runtimeHash = sha256Hex(runtimeHex);
+    const initcodeHash = sha256Hex(initcodeHex);
+    if (
+      runtimeSizeBytes !== baseline.runtimeBytes ||
+      initcodeSizeBytesValue !== baseline.initcodeBytes ||
+      runtimeHash !== baseline.runtimeSha256 ||
+      initcodeHash !== baseline.initcodeSha256
+    ) {
+      baselineMismatches.push({
+        name: check.name,
+        runtimeSizeBytes,
+        initcodeSizeBytesValue,
+        runtimeHash,
+        initcodeHash,
+        baseline,
+      });
+    }
+    continue;
+  }
 
   if (runtimeSizeBytes > MAX_RUNTIME_BYTES) {
     oversizedRuntime.push({ name: check.name, sizeBytes: runtimeSizeBytes });
@@ -105,7 +148,7 @@ for (const check of checks) {
   }
 }
 
-if (oversizedRuntime.length || oversizedInitcode.length) {
+if (oversizedRuntime.length || oversizedInitcode.length || baselineMismatches.length) {
   if (oversizedRuntime.length) {
     console.error(`Runtime bytecode exceeds ${MAX_RUNTIME_BYTES} bytes:`);
     for (const { name, sizeBytes } of oversizedRuntime) {
@@ -117,6 +160,19 @@ if (oversizedRuntime.length || oversizedInitcode.length) {
     console.error(`Initcode exceeds ${MAX_INITCODE_BYTES} bytes:`);
     for (const { name, sizeBytes } of oversizedInitcode) {
       console.error(`- ${name}: ${sizeBytes} bytes`);
+    }
+  }
+
+  if (baselineMismatches.length) {
+    console.error("Prime bytecode no longer matches the restored baseline:");
+    for (const mismatch of baselineMismatches) {
+      console.error(`- ${mismatch.name}:`);
+      console.error(
+        `  runtime ${mismatch.runtimeSizeBytes} bytes / sha256 ${mismatch.runtimeHash} (expected ${mismatch.baseline.runtimeBytes} / ${mismatch.baseline.runtimeSha256})`
+      );
+      console.error(
+        `  initcode ${mismatch.initcodeSizeBytesValue} bytes / sha256 ${mismatch.initcodeHash} (expected ${mismatch.baseline.initcodeBytes} / ${mismatch.baseline.initcodeSha256})`
+      );
     }
   }
 

@@ -7,6 +7,7 @@ Institutional documentation for operators, integrators, contributors, and audito
 If you only read one thing right now:
 - **Deploy or operate on mainnet (recommended):** [../hardhat/README.md](../hardhat/README.md)
 - **Replace ENSJobPages safely:** [DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md](./DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md)
+- **ENS Phase 0 artifact workflow:** [DEPLOYMENT/artifacts/README.md](./DEPLOYMENT/artifacts/README.md)
 - **Owner using Etherscan only:** [DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md](./DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md)
 - **Standalone HTML UI (versioned mainnet artifact):** [ui/GENESIS_JOB_MAINNET_HTML_UI.md](./ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - **Standalone HTML artifact index (`ui/*.html`):** [ui/STANDALONE_HTML_UIS.md](./ui/STANDALONE_HTML_UIS.md)
@@ -56,7 +57,7 @@ If another document conflicts with these in an operational detail, follow the ca
 ## Canonical ENS behavior (single source of truth)
 
 - **Name format:** `<prefix><jobId>.<jobsRootName>`
-- **Current defaults:** prefix `agijob` with names like `agijob0.alpha.jobs.agi.eth`, `agijob1.alpha.jobs.agi.eth`
+- **Current defaults:** prefix `agijob-` with names like `agijob-0.alpha.jobs.agi.eth`, `agijob-1.alpha.jobs.agi.eth`
 - **Responsibility split:** AGIJobManager decides numeric `jobId`; ENSJobPages decides prefix/root + snapshotting + ENS writes
 - **Cutover order:** deploy new ENSJobPages -> NameWrapper approval -> `setEnsJobPages` -> legacy migration (if needed) -> lock only after validation
 - **Safety model:** ENS hooks are best-effort and non-fatal to settlement/dispute outcomes
