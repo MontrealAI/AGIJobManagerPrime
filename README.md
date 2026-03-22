@@ -54,7 +54,7 @@ Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.
 
 - **Canonical deployment path:** Hardhat (`hardhat/README.md`). Truffle is legacy/supported.
 - **Canonical ENS replacement flow:** deploy new ENSJobPages -> NameWrapper approval -> `setEnsJobPages` -> legacy migration if needed -> lock only after validation.
-- **Canonical ENS naming format:** `<prefix><jobId>.<jobsRootName>` with default prefix `agijob`.
+- **Canonical ENS naming format:** `<prefix><jobId>.<jobsRootName>` with default prefix `agijob-`.
 - **Canonical ownership split:**
   - `AGIJobManagerPrime owner` controls `setEnsJobPages(...)` and Prime settlement/discovery governance knobs.
   - `wrapped-root owner` controls NameWrapper approval needed for wrapped-root ENS writes.
@@ -152,11 +152,11 @@ Legacy docs:
 ## ENSJobPages in one minute
 
 - `AGIJobManager` provides the numeric `jobId`.
-- `ENSJobPages` provides the label prefix (`jobLabelPrefix`, default `agijob`) and root suffix (`jobsRootName`, e.g. `alpha.jobs.agi.eth`).
+- `ENSJobPages` provides the label prefix (`jobLabelPrefix`, default `agijob-`) and root suffix (`jobsRootName`, e.g. `alpha.jobs.agi.eth`).
 - Effective ENS name format is: `<prefix><jobId>.<jobsRootName>`.
 - With current defaults, names are:
-  - `agijob0.alpha.jobs.agi.eth`
-  - `agijob1.alpha.jobs.agi.eth`
+  - `agijob-0.alpha.jobs.agi.eth`
+  - `agijob-1.alpha.jobs.agi.eth`
 - Prefix updates only affect jobs whose labels are not yet snapshotted.
 - ENS hooks are best-effort and non-fatal to core settlement; protocol settlement can succeed even when ENS writes fail.
 

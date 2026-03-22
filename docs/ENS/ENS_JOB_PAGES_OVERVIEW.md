@@ -4,7 +4,7 @@ This document describes ENS naming and hook behavior from the current on-chain c
 
 ## In one minute
 - Canonical name shape is `<prefix><jobId>.<jobsRootName>`.
-- Defaults are `prefix=agijob`, `jobsRootName=alpha.jobs.agi.eth`, so names look like `agijob0.alpha.jobs.agi.eth`.
+- Defaults are `prefix=agijob-`, `jobsRootName=alpha.jobs.agi.eth`, so names look like `agijob-0.alpha.jobs.agi.eth`.
 - Settlement and dispute progression live in `AGIJobManager`; ENS writes in `ENSJobPages` are best-effort and non-fatal to settlement.
 - Legacy jobs may need explicit snapshot migration to avoid `JobLabelNotSnapshotted` write failures.
 
@@ -12,9 +12,9 @@ This document describes ENS naming and hook behavior from the current on-chain c
 
 
 ## Canonical defaults used in current operator docs
-- `jobLabelPrefix = agijob`
+- `jobLabelPrefix = agijob-`
 - `jobsRootName = alpha.jobs.agi.eth`
-- Example names: `agijob0.alpha.jobs.agi.eth`, `agijob1.alpha.jobs.agi.eth`
+- Example names: `agijob-0.alpha.jobs.agi.eth`, `agijob-1.alpha.jobs.agi.eth`
 
 If your deployment uses different values, update your runbooks so operators still reason using the same `<prefix><jobId>.<jobsRootName>` model.
 
@@ -35,8 +35,8 @@ Effective name format:
 ```
 
 Example with defaults:
-- `agijob0.alpha.jobs.agi.eth`
-- `agijob1.alpha.jobs.agi.eth`
+- `agijob-0.alpha.jobs.agi.eth`
+- `agijob-1.alpha.jobs.agi.eth`
 
 ---
 
