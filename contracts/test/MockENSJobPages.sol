@@ -195,6 +195,7 @@ contract MockENSJobPages {
     }
 
     function jobEnsIssued(uint256) external pure returns (bool) { return true; }
+    function jobEnsReady(uint256) external pure returns (bool) { return true; }
 
     function setUseEnsJobTokenURI(bool enabled) external {
         useEnsJobTokenURI = enabled;

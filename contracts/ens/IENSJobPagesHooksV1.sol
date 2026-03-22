@@ -10,4 +10,5 @@ interface IENSJobPagesHooksV1 {
     function onJobLocked(uint256 jobId, address employer, address assignedAgent, bool burnFuses) external;
     function jobEnsURI(uint256 jobId) external view returns (string memory);
     function jobEnsIssued(uint256 jobId) external view returns (bool);
+    function jobEnsReady(uint256 jobId) external view returns (bool);
 }
