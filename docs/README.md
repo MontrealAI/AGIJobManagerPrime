@@ -7,6 +7,7 @@ Institutional documentation for operators, integrators, contributors, and audito
 If you only read one thing right now:
 - **Deploy or operate on mainnet (recommended):** [../hardhat/README.md](../hardhat/README.md)
 - **Replace ENSJobPages safely:** [DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md](./DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md)
+- **ENS Phase 0 artifact workflow:** [DEPLOYMENT/artifacts/README.md](./DEPLOYMENT/artifacts/README.md)
 - **Owner using Etherscan only:** [DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md](./DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md)
 - **Standalone HTML UI (versioned mainnet artifact):** [ui/GENESIS_JOB_MAINNET_HTML_UI.md](./ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - **Standalone HTML artifact index (`ui/*.html`):** [ui/STANDALONE_HTML_UIS.md](./ui/STANDALONE_HTML_UIS.md)

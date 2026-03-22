@@ -147,12 +147,19 @@ async function main() {
   await setJobManagerTx.wait(confirmations);
 
   const validationMask = await ensJobPages.validateConfiguration();
-  console.log("validateConfiguration mask:", validationMask.toString());
+  console.log("validateConfiguration mask immediately after deploy:", validationMask.toString());
   if (validationMask !== 0n) {
-    throw new Error(`ENSJobPages validateConfiguration failed with bitmask ${validationMask.toString()}`);
+    console.log(
+      "Non-zero validation is expected before wrapped-root approval / final cutover when the root is owned by NameWrapper.",
+    );
   }
 
   if (lockConfig) {
+    if (validationMask !== 0n) {
+      throw new Error(
+        `LOCK_CONFIG requested before ENSJobPages validateConfiguration() reached zero. Current bitmask: ${validationMask.toString()}`,
+      );
+    }
     console.log("Locking configuration...");
     const lockTx = await ensJobPages.lockConfiguration();
     await lockTx.wait(confirmations);
@@ -180,8 +187,9 @@ async function main() {
 
   console.log("\nManual next steps (not automated):");
   console.log("1) Wrapped-root owner must keep NameWrapper approvalForAll(newEnsJobPages)=true before cutover.");
-  console.log("2) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) only after validateConfiguration() == 0.");
-  console.log("3) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and replay syncEnsForJob on affected jobs.");
+  console.log("2) Re-run ENSJobPages.validateConfiguration(); continue only once the bitmask is 0.");
+  console.log("3) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) after validation is green.");
+  console.log("4) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and replay syncEnsForJob on affected jobs.");
 }
 
 main().catch((err) => {
