@@ -305,6 +305,9 @@ pragma solidity ^0.8.23;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "./ens/IENSJobPagesHooksV1.sol";
+import "./ens/IAGIJobManagerENSViewV1.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -323,7 +326,7 @@ interface NameWrapperPrime {
     function ownerOf(uint256 id) external view returns (address);
 }
 
-contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
+contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable, ERC165, IAGIJobManagerENSViewV1 {
     using SafeERC20 for IERC20;
 
     enum IntakeMode {
@@ -346,6 +349,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     error InsolventEscrowBalance();
     error RenounceOwnershipDisabled();
     error DisputeAlreadyOpen();
+    error InterfaceUnsupported();
 
     uint256 public constant MAX_VALIDATORS_PER_JOB = 50;
     uint256 public constant MAX_AGI_TYPES = 32;
@@ -408,6 +412,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
     ENSPrime public ens;
     NameWrapperPrime public nameWrapper;
     address public ensJobPages;
+    bool public useEnsJobTokenURI;
 
     struct Job {
         address employer;
@@ -524,6 +529,9 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     event ReputationUpdated(address indexed user, uint256 newReputation);
     event DiscoveryModuleUpdated(address indexed oldModule, address indexed newModule);
+    event EnsJobPagesUpdated(address indexed oldValue, address indexed newValue);
+    event UseEnsJobTokenURIUpdated(bool oldValue, bool newValue);
+    event EnsHookAttempted(uint8 indexed hook, uint256 indexed jobId, address indexed target, bool success);
     event SelectedAgentDesignated(
         uint256 indexed jobId,
         address indexed selectedAgent,
@@ -608,12 +616,25 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function setDiscoveryModule(address module) external onlyOwner {
         if (module == address(0) || module.code.length == 0) revert InvalidParameters();
+        address old = discoveryModule;
         discoveryModule = module;
+        emit DiscoveryModuleUpdated(old, module);
     }
 
     function setEnsJobPages(address target) external onlyOwner {
-        if (target != address(0) && target.code.length == 0) revert InvalidParameters();
+        if (target != address(0)) {
+            if (target.code.length == 0) revert InvalidParameters();
+            if (!_supportsInterface(target, type(IENSJobPagesHooksV1).interfaceId)) revert InterfaceUnsupported();
+        }
+        address old = ensJobPages;
         ensJobPages = target;
+        emit EnsJobPagesUpdated(old, target);
+    }
+
+    function setUseEnsJobTokenURI(bool enabled) external onlyOwner {
+        bool old = useEnsJobTokenURI;
+        useEnsJobTokenURI = enabled;
+        emit UseEnsJobTokenURIUpdated(old, enabled);
     }
 
     function renounceOwnership() public view override onlyOwner {
@@ -848,7 +869,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         activeJobsByAgent[msg.sender] += 1;
         emit JobApplied(jobId, msg.sender);
-        _callEnsJobPagesHook(ENS_HOOK_ASSIGN, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_ASSIGN, jobId, false);
     }
 
     function submitCheckpoint(
@@ -898,7 +919,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         job.completionRequestedAt = uint64(effectiveNow);
 
         emit JobCompletionRequested(jobId, msg.sender, jobCompletionURI);
-        _callEnsJobPagesHook(ENS_HOOK_COMPLETION, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_COMPLETION, jobId, false);
     }
 
     function validateJob(
@@ -1049,8 +1070,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _recordFailure(job.assignedAgent, job.payout, false, true);
 
         emit JobExpired(jobId, job.employer, job.assignedAgent, job.payout);
-        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
-        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId, false);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId, false);
     }
 
     function cancelJob(uint256 jobId) external whenSettlementNotPaused nonReentrant {
@@ -1062,8 +1083,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         agiToken.safeTransfer(job.employer, job.payout);
 
         emit JobCancelled(jobId);
-        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
-        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId, false);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId, false);
         delete jobs[jobId];
     }
 
@@ -1098,6 +1119,56 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function jobAssignedAgentOf(uint256 jobId) external view returns (address) {
         return _job(jobId).assignedAgent;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IAGIJobManagerENSViewV1).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    function getJobCore(uint256 jobId)
+        external
+        view
+        override
+        returns (
+            address employer,
+            address assignedAgent,
+            uint256 payout,
+            uint256 duration,
+            uint256 assignedAt,
+            bool completed,
+            bool disputed,
+            bool expired,
+            uint8 agentPayoutPct
+        )
+    {
+        Job storage job = _job(jobId);
+        return (
+            job.employer,
+            job.assignedAgent,
+            job.payout,
+            job.duration,
+            job.assignedAt,
+            job.completed,
+            job.disputed,
+            job.expired,
+            job.agentPayoutPct
+        );
+    }
+
+    function getJobSpecURI(uint256 jobId) external view override returns (string memory) {
+        return _job(jobId).jobSpecURI;
+    }
+
+    function getJobCompletionURI(uint256 jobId) external view override returns (string memory) {
+        return _job(jobId).jobCompletionURI;
+    }
+
+    function syncEnsHook(uint256 jobId, uint8 hook, bool burnFuses) external onlyOwner {
+        if (hook == ENS_HOOK_LOCK) {
+            _callEnsJobPagesHook(hook, jobId, burnFuses);
+            return;
+        }
+        _callEnsJobPagesHook(hook, jobId, false);
     }
 
     function getJobSelectionInfo(uint256 jobId)
@@ -1223,7 +1294,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         lockedEscrow += payout;
 
         emit JobCreated(jobId, employer, payout, duration, jobSpecURI, intakeMode, perJobAgentRoot, details);
-        _callEnsJobPagesHook(ENS_HOOK_CREATE, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_CREATE, jobId, false);
     }
 
     function _recordValidatorVote(
@@ -1324,7 +1395,7 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         _mintCompletionNFT(jobId, job);
         _returnDisputeBond(job, job.assignedAgent);
 
-        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId, false);
         emit JobCompleted(jobId, job.assignedAgent, reputationPoints);
     }
 
@@ -1359,8 +1430,8 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
         _recordFailure(job.assignedAgent, job.payout, disputeLoss, false);
 
-        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId);
-        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId);
+        _callEnsJobPagesHook(ENS_HOOK_REVOKE, jobId, false);
+        _callEnsJobPagesHook(ENS_HOOK_LOCK, jobId, false);
         emit JobEmployerRefunded(jobId, job.employer, job.assignedAgent, employerRefund);
     }
 
@@ -1401,21 +1472,54 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function _mintCompletionNFT(uint256, Job storage job) internal {
+    function _mintCompletionNFT(uint256 jobId, Job storage job) internal {
         string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
+        if (useEnsJobTokenURI && ensJobPages != address(0)) {
+            try IENSJobPagesHooksV1(ensJobPages).jobEnsIssued(jobId) returns (bool issued) {
+                if (issued) {
+                    try IENSJobPagesHooksV1(ensJobPages).jobEnsURI(jobId) returns (string memory ensUri) {
+                        if (bytes(ensUri).length != 0) uri = ensUri;
+                    } catch {}
+                }
+            } catch {}
+        }
         uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
         emit NFTIssued(tokenId, job.employer, uri);
     }
 
-    function _callEnsJobPagesHook(uint8 hook, uint256 jobId) internal {
+    function _callEnsJobPagesHook(uint8 hook, uint256 jobId, bool burnFuses) internal {
         address target = ensJobPages;
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, shl(224, 0x1f76f7a2))
-            mstore(add(ptr, 4), hook)
-            mstore(add(ptr, 36), jobId)
-            pop(call(ENS_HOOK_GAS_LIMIT, target, 0, ptr, 0x44, 0, 0))
+        if (target == address(0)) {
+            emit EnsHookAttempted(hook, jobId, target, false);
+            return;
         }
+
+        Job storage job = jobs[jobId];
+        bool success;
+        try IENSJobPagesHooksV1(target).supportsInterface(type(IENSJobPagesHooksV1).interfaceId) returns (bool ok) {
+            if (!ok) revert InterfaceUnsupported();
+        } catch {
+            emit EnsHookAttempted(hook, jobId, target, false);
+            return;
+        }
+
+        if (hook == ENS_HOOK_CREATE) {
+            try IENSJobPagesHooksV1(target).onJobCreated(jobId, job.employer, job.jobSpecURI) { success = true; } catch {}
+        } else if (hook == ENS_HOOK_ASSIGN) {
+            try IENSJobPagesHooksV1(target).onJobAssigned(jobId, job.employer, job.assignedAgent) { success = true; } catch {}
+        } else if (hook == ENS_HOOK_COMPLETION) {
+            try IENSJobPagesHooksV1(target).onJobCompletionRequested(jobId, job.jobCompletionURI) { success = true; } catch {}
+        } else if (hook == ENS_HOOK_REVOKE) {
+            try IENSJobPagesHooksV1(target).onJobRevoked(jobId, job.employer, job.assignedAgent) { success = true; } catch {}
+        } else if (hook == ENS_HOOK_LOCK) {
+            try IENSJobPagesHooksV1(target).onJobLocked(jobId, job.employer, job.assignedAgent, burnFuses) { success = true; } catch {}
+        }
+        emit EnsHookAttempted(hook, jobId, target, success);
+    }
+
+    function _supportsInterface(address target, bytes4 interfaceId) internal view returns (bool) {
+        (bool ok, bytes memory data) = target.staticcall(abi.encodeWithSelector(0x01ffc9a7, interfaceId));
+        return ok && data.length >= 32 && abi.decode(data, (bool));
     }
 
     function _returnAgentBond(Job storage job, address to) internal {
