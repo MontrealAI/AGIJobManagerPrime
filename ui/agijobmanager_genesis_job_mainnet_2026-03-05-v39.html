@@ -5687,12 +5687,19 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     function alphaIdentityPreviewIsFresh(label){
       return !!label && String(APP_STATE.identity?.previewLabel || '') === String(label || '');
     }
+    function alphaIdentityRootMismatchReason(){
+      const expectedRootNode = (()=>{ try{ return String(namehash(ALPHA_AGENT_PARENT) || '').toLowerCase(); }catch{ return ''; } })();
+      const observedRootNode = String(APP_STATE.identity?.rootHealth?.rootNode || APP_STATE.identity?.rootNode || '').toLowerCase();
+      return (!!expectedRootNode && !!observedRootNode && expectedRootNode !== observedRootNode) ? 'ROOT_NODE mismatch blocks identity writes.' : '';
+    }
     function identityWriteLockedReason(preview){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       if(!userAccount) return 'Connect wallet to continue.';
       if(!isMainnet) return 'Switch to Ethereum mainnet.';
       if(!hasAcceptedTerms) return 'Accept terms to unlock writes.';
       if(!local.ok) return local.reason;
+      const rootMismatchReason = alphaIdentityRootMismatchReason();
+      if(rootMismatchReason) return rootMismatchReason;
       if(!preview) return 'Load preview(label) to evaluate the combined Alpha-Agent route.';
       if(!preview.validLabel) return 'Invalid label.';
       if(preview.status === 6 || preview.rootActiveOut === false) return 'Identity root is inactive.';
@@ -5704,11 +5711,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity?.preview || null;
       const health = APP_STATE.identity?.rootHealth || null;
-      const expectedRootNode = (()=>{ try{ return String(namehash(ALPHA_AGENT_PARENT) || '').toLowerCase(); }catch{ return ''; } })();
-      const observedRootNode = String(health?.rootNode || APP_STATE.identity?.rootNode || '').toLowerCase();
-      const rootMismatch = !!expectedRootNode && !!observedRootNode && expectedRootNode !== observedRootNode;
+      const mismatchLockedReason = alphaIdentityRootMismatchReason();
+      const rootMismatch = !!mismatchLockedReason;
       const baseLockedReason = !userAccount ? 'Connect the wallet you want to issue to.' : !isMainnet ? 'Switch to Ethereum Mainnet.' : !hasAcceptedTerms ? 'Accept the shared Terms & Conditions near the top of the page.' : !local.ok ? local.reason : '';
-      const mismatchLockedReason = rootMismatch ? 'ROOT_NODE mismatch blocks identity writes.' : '';
       const previewLockedReason = preview ? identityWriteLockedReason(preview) : '';
       const lockedReason = baseLockedReason || mismatchLockedReason || previewLockedReason;
       const registerEnabled = !lockedReason && !!preview?.registrable;
@@ -6089,6 +6094,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const preview = APP_STATE.identity?.preview;
       if(!local.ok) return setToast(local.reason,'warn');
       if(!alphaIdentityPreviewIsFresh(local.label)) return setToast('Preview is still refreshing for this label. Wait for the updated recommendation before submitting.', 'warn');
+      const lockedReason = identityWriteLockedReason(preview);
+      if(lockedReason) return setToast(lockedReason, 'warn');
       if(action==='register' && !preview?.registrable) return setToast('register(label) is not available for the current preview state.', 'warn');
       if(action==='claimIdentity' && !preview?.claimable) return setToast('claimIdentity(label) is not available for the current preview state.', 'warn');
       if(action==='syncIdentityByLabel' && !(preview?.identityExists && (preview?.status===3 || preview?.status===4))) return setToast('syncIdentityByLabel(label) is only available for expired or desynced identity posture.', 'warn');
