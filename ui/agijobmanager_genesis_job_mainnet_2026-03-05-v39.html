@@ -5705,7 +5705,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const preview = APP_STATE.identity?.preview || null;
       const health = APP_STATE.identity?.rootHealth || null;
       const expectedRootNode = (()=>{ try{ return String(namehash(ALPHA_AGENT_PARENT) || '').toLowerCase(); }catch{ return ''; } })();
-      const observedRootNode = String(health?.rootNode || '').toLowerCase();
+      const observedRootNode = String(health?.rootNode || APP_STATE.identity?.rootNode || '').toLowerCase();
       const rootMismatch = !!expectedRootNode && !!observedRootNode && expectedRootNode !== observedRootNode;
       const baseLockedReason = !userAccount ? 'Connect the wallet you want to issue to.' : !isMainnet ? 'Switch to Ethereum Mainnet.' : !hasAcceptedTerms ? 'Accept the shared Terms & Conditions near the top of the page.' : !local.ok ? local.reason : '';
       const mismatchLockedReason = rootMismatch ? 'ROOT_NODE mismatch blocks identity writes.' : '';
@@ -5936,6 +5936,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         rootName:String(health[0]||''), rootNode:String(health[1]||''), active:!!health[2], pausedOut:!!health[3], wrapperAddress:String(health[4]||''), ensRegistryAddress:String(health[5]||''), contractOwner:String(health[6]||''), wrappedParentOwner:String(health[7]||''), parentWrapped:!!health[8], parentLocked:!!health[9], registrarAuthorised:!!health[10], effectiveParentExpiry:Number(health[11]||0), rootUsable:!!health[12]
       } : health) : null;
       APP_STATE.identity.rootHealth = h;
+      APP_STATE.identity.rootNode = String(h?.rootNode || rootNode || '');
       if(el('alphaIdentityRootName')) el('alphaIdentityRootName').textContent = h?.rootName || rootName || ALPHA_AGENT_PARENT;
       if(el('alphaIdentityRootNode')) el('alphaIdentityRootNode').textContent = h?.rootNode || rootNode || '—';
       if(el('alphaIdentityRootActive')) el('alphaIdentityRootActive').textContent = String(!!(h?.active ?? rootActive));
