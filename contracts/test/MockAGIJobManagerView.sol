@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 contract MockAGIJobManagerView {
+    function ensJobManagerViewInterfaceVersion() external pure returns (uint256) { return 1; }
     struct JobCore {
         address employer;
         address assignedAgent;
