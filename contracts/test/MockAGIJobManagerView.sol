@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+
+interface IENSJobPagesHandleOnly {
+    function handleHook(uint8 hook, uint256 jobId) external;
+}
+
 contract MockAGIJobManagerView {
     function ensJobManagerViewInterfaceVersion() external pure returns (uint256) { return 1; }
     struct JobCore {
@@ -71,4 +76,9 @@ contract MockAGIJobManagerView {
     function getJobCompletionURI(uint256 jobId) external view returns (string memory) {
         return _completion[jobId];
     }
+
+    function callHandleHook(address pages, uint8 hook, uint256 jobId) external {
+        IENSJobPagesHandleOnly(pages).handleHook(hook, jobId);
+    }
 }
+

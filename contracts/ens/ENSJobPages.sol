@@ -33,17 +33,46 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     error InvalidParameters();
     error ConfigLocked();
     error JobLabelNotSnapshotted();
+    error AuthorityNotEstablished();
+    error EffectiveENSUnavailable(uint256 jobId);
+
+    struct RootVersion {
+        bytes32 rootNode;
+        string rootName;
+        uint64 activatedAt;
+        bool normalized;
+    }
+
+    struct JobAuthority {
+        bytes32 labelHash;
+        uint32 rootVersionId;
+        bytes32 rootNode;
+        bytes32 node;
+        uint64 authorityEstablishedAt;
+        uint32 snapshotVersion;
+        uint8 snapshotSource;
+        bool authorityEstablished;
+        bool legacyImported;
+        bool finalized;
+        bool fuseBurned;
+    }
 
     uint256 private constant MAX_ROOT_NAME_LENGTH = 240;
-    uint256 public constant ENS_JOB_PAGES_INTERFACE_VERSION = 1;
+    uint256 public constant ENS_JOB_PAGES_INTERFACE_VERSION = 2;
     uint256 private constant MAX_JOB_LABEL_PREFIX_LENGTH = 32;
     uint256 private constant MAX_ENS_LABEL_LENGTH = 63;
     uint256 private constant ENS_READ_GAS_LIMIT = 50_000;
 
     bytes4 private constant ENS_OWNER_SELECTOR = bytes4(keccak256("owner(bytes32)"));
+    bytes4 private constant ENS_RESOLVER_SELECTOR = bytes4(keccak256("resolver(bytes32)"));
     bytes4 private constant WRAPPER_OWNER_OF_SELECTOR = bytes4(keccak256("ownerOf(uint256)"));
     bytes4 private constant WRAPPER_GET_APPROVED_SELECTOR = bytes4(keccak256("getApproved(uint256)"));
     bytes4 private constant WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR = bytes4(keccak256("isApprovedForAll(address,address)"));
+    bytes4 private constant SUPPORTS_INTERFACE_SELECTOR = bytes4(keccak256("supportsInterface(bytes4)"));
+
+    bytes4 private constant RESOLVER_TEXT_INTERFACE_ID = 0x59d1d43c;
+    bytes4 private constant RESOLVER_SETTEXT_INTERFACE_ID = 0x10f13a8c;
+    bytes4 private constant RESOLVER_SETAUTH_INTERFACE_ID = 0x304e6ade;
 
     uint8 private constant HOOK_CREATE = 1;
     uint8 private constant HOOK_ASSIGN = 2;
@@ -51,6 +80,11 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     uint8 private constant HOOK_REVOKE = 4;
     uint8 private constant HOOK_LOCK = 5;
     uint8 private constant HOOK_LOCK_BURN = 6;
+
+    uint8 public constant SNAPSHOT_SOURCE_CREATE = 1;
+    uint8 public constant SNAPSHOT_SOURCE_LEGACY_IMPORT = 2;
+    uint8 public constant SNAPSHOT_SOURCE_LEGACY_ADOPT = 3;
+    uint8 public constant SNAPSHOT_SOURCE_REPAIR = 4;
 
     uint32 private constant CANNOT_UNWRAP = 1;
     uint32 private constant CANNOT_SET_RESOLVER = 1 << 3;
@@ -73,6 +107,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         bytes32 indexed newRootNode,
         string oldRootName,
         string newRootName
+    );
+    event RootVersionRegistered(uint256 indexed rootVersionId, bytes32 indexed rootNode, string rootName, bool normalized);
+    event JobAuthoritySnapshotted(
+        uint256 indexed jobId,
+        bytes32 indexed node,
+        string label,
+        uint256 rootVersionId,
+        uint8 snapshotSource,
+        bool legacyImported
     );
     event JobManagerUpdated(address indexed oldJobManager, address indexed newJobManager);
     event UseEnsJobTokenURIUpdated(bool oldValue, bool newValue);
@@ -97,14 +140,18 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     address public jobManager;
     bool public useEnsJobTokenURI;
     bool public configLocked;
-    /// @notice Prefix used when constructing ENS job labels as prefix + decimal(jobId).
     string public jobLabelPrefix;
+    uint32 public currentSnapshotVersion = 1;
+    uint256 public rootVersionCount;
+    uint256 public currentRootVersionId;
 
     mapping(uint256 => string) private _jobLabelById;
     mapping(uint256 => bool) private _jobLabelIsSet;
     mapping(bytes32 => uint256) private _jobIdPlusOneByLabelHash;
     mapping(uint256 => bool) private _jobResolverConfigured;
     mapping(uint256 => bool) private _jobCompletionTextConfigured;
+    mapping(uint256 => RootVersion) private _rootVersions;
+    mapping(uint256 => JobAuthority) private _jobAuthority;
 
     uint256 private constant CONFIG_OK = 0;
     uint256 private constant CONFIG_ERR_ENS = 1 << 0;
@@ -114,6 +161,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     uint256 private constant CONFIG_ERR_WRAPPER_APPROVAL = 1 << 4;
     uint256 private constant CONFIG_ERR_JOB_MANAGER = 1 << 5;
     uint256 private constant CONFIG_ERR_ROOT_NAMEHASH = 1 << 6;
+    uint256 private constant CONFIG_ERR_RESOLVER_TEXT = 1 << 7;
+    uint256 private constant CONFIG_ERR_RESOLVER_SETTEXT = 1 << 8;
+    uint256 private constant CONFIG_ERR_RESOLVER_SETAUTH = 1 << 9;
 
     constructor(
         address ensAddress,
@@ -137,11 +187,12 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         jobsRootNode = rootNode;
         jobsRootName = rootName;
         jobLabelPrefix = "agijob-";
+
+        if (hasRootName) {
+            _registerRootVersion(rootNode, rootName);
+        }
     }
 
-    /// @notice Updates the default prefix used for unsnapshotted/future job ENS labels.
-    /// @dev Existing jobs keep their snapshotted label and are unaffected by later prefix changes.
-    /// @dev The prefix is concatenated directly with decimal(jobId), so the final prefix character must be non-numeric.
     function setJobLabelPrefix(string calldata newPrefix) external onlyOwner {
         if (configLocked) revert ConfigLocked();
         if (!_isValidJobLabelPrefix(newPrefix)) revert InvalidParameters();
@@ -187,6 +238,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!_isValidRootName(rootName) || _namehash(rootName) != rootNode) revert InvalidParameters();
         jobsRootNode = rootNode;
         jobsRootName = rootName;
+        _registerRootVersion(rootNode, rootName);
         emit JobsRootUpdated(oldNode, rootNode, oldName, rootName);
     }
 
@@ -221,19 +273,119 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         _;
     }
 
-    /// @notice Returns the effective label for a job, or a preview for unsnapshotted/future jobs.
-    /// @dev Prefix changes only affect jobs whose label has not been snapshotted by first creation.
+    function previewJobEnsLabel(uint256 jobId) public view returns (string memory) {
+        return _buildPreviewJobLabel(jobId);
+    }
+
+    function previewJobEnsName(uint256 jobId) public view returns (string memory) {
+        if (!_isRootConfigured()) return "";
+        return string(abi.encodePacked(previewJobEnsLabel(jobId), ".", jobsRootName));
+    }
+
+    function previewJobEnsURI(uint256 jobId) public view returns (string memory) {
+        string memory ensName = previewJobEnsName(jobId);
+        if (bytes(ensName).length == 0) return "";
+        return string(abi.encodePacked("ens://", ensName));
+    }
+
+    function previewJobEnsNode(uint256 jobId) public view returns (bytes32) {
+        if (!_isRootConfigured()) revert ENSNotConfigured();
+        return keccak256(abi.encodePacked(jobsRootNode, keccak256(bytes(previewJobEnsLabel(jobId)))));
+    }
+
+    function effectiveJobEnsLabel(uint256 jobId) public view returns (string memory) {
+        if (!_jobAuthority[jobId].authorityEstablished) revert EffectiveENSUnavailable(jobId);
+        return _jobLabelById[jobId];
+    }
+
+    function effectiveJobEnsName(uint256 jobId) public view returns (string memory) {
+        JobAuthority memory authority = _jobAuthority[jobId];
+        if (!authority.authorityEstablished) revert EffectiveENSUnavailable(jobId);
+        return string(abi.encodePacked(_jobLabelById[jobId], ".", _rootVersions[authority.rootVersionId].rootName));
+    }
+
+    function effectiveJobEnsURI(uint256 jobId) public view returns (string memory) {
+        return string(abi.encodePacked("ens://", effectiveJobEnsName(jobId)));
+    }
+
+    function effectiveJobEnsNode(uint256 jobId) public view returns (bytes32) {
+        JobAuthority memory authority = _jobAuthority[jobId];
+        if (!authority.authorityEstablished) revert EffectiveENSUnavailable(jobId);
+        return authority.node;
+    }
+
+    /// @notice Compatibility getter. Returns authoritative values once established, otherwise the live preview projection.
     function jobEnsLabel(uint256 jobId) public view returns (string memory) {
-        return _resolvedJobLabel(jobId);
+        return _jobAuthority[jobId].authorityEstablished ? _jobLabelById[jobId] : previewJobEnsLabel(jobId);
     }
 
     function jobEnsName(uint256 jobId) public view returns (string memory) {
-        if (!_isRootConfigured()) return "";
-        return string(abi.encodePacked(_resolvedJobLabel(jobId), ".", jobsRootName));
+        if (_jobAuthority[jobId].authorityEstablished) {
+            return effectiveJobEnsName(jobId);
+        }
+        return previewJobEnsName(jobId);
+    }
+
+    function jobEnsURI(uint256 jobId) external view returns (string memory) {
+        if (_jobAuthority[jobId].authorityEstablished) {
+            return effectiveJobEnsURI(jobId);
+        }
+        return previewJobEnsURI(jobId);
+    }
+
+    function jobEnsNode(uint256 jobId) public view returns (bytes32) {
+        if (_jobAuthority[jobId].authorityEstablished) {
+            return effectiveJobEnsNode(jobId);
+        }
+        return previewJobEnsNode(jobId);
     }
 
     function jobLabelSnapshot(uint256 jobId) external view returns (bool isSet, string memory label) {
         return (_jobLabelIsSet[jobId], _jobLabelById[jobId]);
+    }
+
+    function rootVersionInfo(uint256 rootVersionId)
+        external
+        view
+        returns (bytes32 rootNode, string memory rootName, uint64 activatedAt, bool normalized)
+    {
+        RootVersion memory versionInfo = _rootVersions[rootVersionId];
+        return (versionInfo.rootNode, versionInfo.rootName, versionInfo.activatedAt, versionInfo.normalized);
+    }
+
+    function jobAuthorityInfo(uint256 jobId)
+        external
+        view
+        returns (
+            bool authorityEstablished,
+            string memory label,
+            bytes32 labelHash,
+            uint32 rootVersionId,
+            bytes32 authoritativeRootNode,
+            bytes32 authoritativeNode,
+            uint8 snapshotSource,
+            uint32 snapshotVersion,
+            uint64 authorityEstablishedAt,
+            bool legacyImported,
+            bool finalized,
+            bool fuseBurned
+        )
+    {
+        JobAuthority memory authority = _jobAuthority[jobId];
+        return (
+            authority.authorityEstablished,
+            _jobLabelById[jobId],
+            authority.labelHash,
+            authority.rootVersionId,
+            authority.rootNode,
+            authority.node,
+            authority.snapshotSource,
+            authority.snapshotVersion,
+            authority.authorityEstablishedAt,
+            authority.legacyImported,
+            authority.finalized,
+            authority.fuseBurned
+        );
     }
 
     function isFullyConfigured() external view returns (bool) {
@@ -242,6 +394,40 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function isWrappedRootReady() external view returns (bool) {
         return _isWrappedRoot() && _isWrapperAuthorizationReady();
+    }
+
+    function configurationStatus()
+        external
+        view
+        returns (
+            bool configured,
+            bool locked,
+            bool rootConfigured,
+            bool rootNodeMatchesRootName,
+            bool rootNormalized,
+            bool wrappedRoot,
+            bool wrapperAuthorizationReady,
+            bool resolverSupportsText,
+            bool resolverSupportsSetText,
+            bool resolverSupportsAuthorisation,
+            uint256 failureBitmap
+        )
+    {
+        bool supportsText;
+        bool supportsSetText;
+        bool supportsSetAuthorisation;
+        (supportsText, supportsSetText, supportsSetAuthorisation) = _resolverCapabilities();
+        failureBitmap = validateConfiguration();
+        configured = failureBitmap == CONFIG_OK;
+        locked = configLocked;
+        rootConfigured = _isRootConfigured();
+        rootNodeMatchesRootName = rootConfigured && _namehash(jobsRootName) == jobsRootNode;
+        rootNormalized = rootConfigured && _isValidRootName(jobsRootName);
+        wrappedRoot = _isWrappedRoot();
+        wrapperAuthorizationReady = wrappedRoot && _isWrapperAuthorizationReady();
+        resolverSupportsText = supportsText;
+        resolverSupportsSetText = supportsSetText;
+        resolverSupportsAuthorisation = supportsSetAuthorisation;
     }
 
     function validateConfiguration() public view returns (uint256 failures) {
@@ -254,14 +440,18 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!ok || rootOwner == address(0)) failures |= CONFIG_ERR_ROOT_OWNER;
         if (ok && rootOwner == address(nameWrapper) && !_isWrapperAuthorizationReady()) failures |= CONFIG_ERR_WRAPPER_APPROVAL;
         if (ok && rootOwner != address(0) && rootOwner != address(this) && rootOwner != address(nameWrapper)) failures |= CONFIG_ERR_ROOT_OWNER;
+        (bool supportsText, bool supportsSetText, bool supportsSetAuthorisation) = _resolverCapabilities();
+        if (!supportsText) failures |= CONFIG_ERR_RESOLVER_TEXT;
+        if (!supportsSetText) failures |= CONFIG_ERR_RESOLVER_SETTEXT;
+        if (!supportsSetAuthorisation) failures |= CONFIG_ERR_RESOLVER_SETAUTH;
     }
 
     function jobEnsPreview(uint256 jobId) external view returns (string memory) {
-        return jobEnsName(jobId);
+        return previewJobEnsName(jobId);
     }
 
     function jobEnsIssued(uint256 jobId) public view returns (bool) {
-        return jobEnsExists(jobId) && _jobResolverConfigured[jobId];
+        return _jobAuthority[jobId].authorityEstablished && jobEnsExists(jobId) && _jobResolverConfigured[jobId];
     }
 
     function jobEnsReady(uint256 jobId) public view returns (bool) {
@@ -269,36 +459,36 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function jobEnsExists(uint256 jobId) public view returns (bool) {
-        if (!_jobLabelIsSet[jobId] || !_isRootConfigured()) return false;
-        return _nodeExists(_resolvedJobNodeForWrite(jobId));
+        if (!_jobAuthority[jobId].authorityEstablished) return false;
+        return _nodeExists(_jobAuthority[jobId].node);
     }
 
-    function jobEnsStatus(uint256 jobId) external view returns (string memory label, string memory name, string memory uri, bytes32 node, bool snapshotted, bool issued, address resolverAddress, address ownerAddress, uint256 configFailures) {
+    function jobEnsStatus(uint256 jobId)
+        external
+        view
+        returns (
+            string memory label,
+            string memory name,
+            string memory uri,
+            bytes32 node,
+            bool snapshotted,
+            bool issued,
+            address resolverAddress,
+            address ownerAddress,
+            uint256 configFailures
+        )
+    {
         configFailures = validateConfiguration();
-        label = _resolvedJobLabel(jobId);
-        snapshotted = _jobLabelIsSet[jobId];
-        name = _isRootConfigured() ? string(abi.encodePacked(label, ".", jobsRootName)) : "";
+        label = jobEnsLabel(jobId);
+        snapshotted = _jobAuthority[jobId].authorityEstablished;
+        name = snapshotted ? effectiveJobEnsName(jobId) : previewJobEnsName(jobId);
         uri = bytes(name).length == 0 ? "" : string(abi.encodePacked("ens://", name));
         if (_isRootConfigured()) {
-            node = keccak256(abi.encodePacked(jobsRootNode, keccak256(bytes(label))));
+            node = jobEnsNode(jobId);
             issued = jobEnsIssued(jobId);
             (, ownerAddress) = _tryNodeOwner(node);
-            try ens.resolver(node) returns (address nodeResolver) {
-                resolverAddress = nodeResolver;
-            } catch {}
+            (, resolverAddress) = _tryResolver(node);
         }
-    }
-
-    function jobEnsURI(uint256 jobId) external view returns (string memory) {
-        string memory ensName = jobEnsName(jobId);
-        if (bytes(ensName).length == 0) return "";
-        return string(abi.encodePacked("ens://", ensName));
-    }
-
-    function jobEnsNode(uint256 jobId) public view returns (bytes32) {
-        if (!_isRootConfigured()) revert ENSNotConfigured();
-        bytes32 labelHash = keccak256(bytes(_resolvedJobLabel(jobId)));
-        return keccak256(abi.encodePacked(jobsRootNode, labelHash));
     }
 
     function createJobPage(uint256 jobId, address employer, string memory specURI) public onlyOwner {
@@ -310,22 +500,19 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         onlyOwner
         returns (bytes32 node)
     {
-        // Legacy migration path: import the historically exact label so post-create writes can resolve
-        // the correct node even when current prefix settings differ from historical naming.
         _requireConfigured();
         if (jobManager == address(0)) revert ENSNotConfigured();
 
         _importExactJobLabel(jobId, exactLabel);
         string memory label = _jobLabelById[jobId];
+        _establishAuthority(jobId, label, SNAPSHOT_SOURCE_LEGACY_IMPORT, true);
 
         string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
         (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
         if (employer == address(0)) revert InvalidParameters();
         string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
 
-        bytes32 labelHash = keccak256(bytes(label));
-        node = keccak256(abi.encodePacked(jobsRootNode, labelHash));
-
+        node = _jobAuthority[jobId].node;
         bool adopted;
         bool created;
 
@@ -334,14 +521,13 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
                 if (!_isWrappedRoot()) revert ENSNotAuthorized();
                 _requireWrapperAuthorization();
                 INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
-                    jobsRootNode,
+                    _jobAuthority[jobId].rootNode,
                     label,
                     address(this),
                     0,
                     type(uint64).max
                 );
 
-                node = keccak256(abi.encodePacked(jobsRootNode, keccak256(bytes(label))));
                 if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
                 adopted = true;
             }
@@ -361,6 +547,54 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         emit LegacyJobPageMigrated(jobId, node, label, adopted, created);
     }
 
+    function repairAuthoritySnapshot(uint256 jobId, string calldata exactLabel) external onlyOwner {
+        if (bytes(exactLabel).length != 0) {
+            _importExactJobLabel(jobId, exactLabel);
+        } else if (!_jobLabelIsSet[jobId]) {
+            _snapshotJobLabel(jobId, previewJobEnsLabel(jobId));
+        }
+        _establishAuthority(jobId, _jobLabelById[jobId], SNAPSHOT_SOURCE_REPAIR, false);
+    }
+
+    function replayCreate(uint256 jobId) external onlyOwner {
+        this._handleCreateHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+    }
+
+    function replayAssign(uint256 jobId) external onlyOwner {
+        this._handleAssignHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+    }
+
+    function replayCompletion(uint256 jobId) external onlyOwner {
+        this._handleCompletionHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+    }
+
+    function replayRevoke(uint256 jobId) external onlyOwner {
+        this._handleRevokeHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+    }
+
+    function replayLock(uint256 jobId, bool burnFuses) external onlyOwner {
+        this._handleLockHook(IAGIJobManagerPrimeViewV1(jobManager), jobId, burnFuses);
+    }
+
+    function repairResolver(uint256 jobId) external onlyOwner {
+        _setResolverBestEffort(HOOK_CREATE, jobId, _resolvedJobNodeForWrite(jobId), address(publicResolver));
+    }
+
+    function repairTexts(uint256 jobId) external onlyOwner {
+        string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
+        string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
+        _setTextBestEffort(HOOK_COMPLETION, jobId, node, "agijobs.completion.public", completionURI);
+    }
+
+    function repairAuthorisations(uint256 jobId) external onlyOwner {
+        (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
+    }
 
     function _jobAuthStateForMigration(uint256 jobId)
         internal
@@ -370,7 +604,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         bool completed;
         bool expired;
         (employer, assignedAgent, , , , completed, , expired, ) = IAGIJobManagerPrimeViewV1(jobManager).getJobCore(jobId);
-        // Preserve auth for unresolved disputes. Revoke only for terminal completion/expiry states.
         allowAuth = !(completed || expired);
     }
 
@@ -378,21 +611,16 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (employer == address(0)) revert InvalidParameters();
         _requireConfigured();
 
-        string memory label = _resolvedJobLabel(jobId);
-        bytes32 labelHash = keccak256(bytes(label));
-        bytes32 node = keccak256(abi.encodePacked(jobsRootNode, labelHash));
+        string memory label = _jobLabelIsSet[jobId] ? _jobLabelById[jobId] : previewJobEnsLabel(jobId);
+        if (!_jobLabelIsSet[jobId]) {
+            _snapshotJobLabel(jobId, label);
+        }
+        _establishAuthority(jobId, label, SNAPSHOT_SOURCE_CREATE, false);
+
+        bytes32 node = _jobAuthority[jobId].node;
         if (_nodeExists(node)) {
             if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
-            if (!_jobLabelIsSet[jobId]) {
-                _snapshotJobLabel(jobId, label);
-            }
         } else {
-            if (_jobLabelIsSet[jobId]) {
-                label = _jobLabelById[jobId];
-            } else {
-                label = _buildJobLabel(jobLabelPrefix, jobId);
-                _snapshotJobLabel(jobId, label);
-            }
             node = _createSubname(label);
             emit JobENSPageCreated(jobId, node);
         }
@@ -430,7 +658,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function handleHook(uint8 hook, uint256 jobId) external onlyJobManager {
-        // Hooks are operationally best-effort and must never become a hard dependency for settlement.
         if (!_isFullyConfigured()) {
             emit ENSHookSkipped(hook, jobId, "NOT_CONFIGURED");
             emit ENSHookProcessed(hook, jobId, false, false);
@@ -441,52 +668,28 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         IAGIJobManagerPrimeViewV1 jobManagerView = IAGIJobManagerPrimeViewV1(msg.sender);
 
         if (hook == HOOK_CREATE) {
-            try this._handleCreateHook(jobManagerView, jobId) {
-                success = true;
-            } catch {
-                emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED");
-            }
+            try this._handleCreateHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
-
         if (hook == HOOK_ASSIGN) {
-            try this._handleAssignHook(jobManagerView, jobId) {
-                success = true;
-            } catch {
-                emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED");
-            }
+            try this._handleAssignHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
-
         if (hook == HOOK_COMPLETION) {
-            try this._handleCompletionHook(jobManagerView, jobId) {
-                success = true;
-            } catch {
-                emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED");
-            }
+            try this._handleCompletionHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
-
         if (hook == HOOK_REVOKE) {
-            try this._handleRevokeHook(jobManagerView, jobId) {
-                success = true;
-            } catch {
-                emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED");
-            }
+            try this._handleRevokeHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
-
         if (hook == HOOK_LOCK || hook == HOOK_LOCK_BURN) {
             bool burnFuses = hook == HOOK_LOCK_BURN;
-            try this._handleLockHook(jobManagerView, jobId, burnFuses) {
-                success = true;
-            } catch {
-                emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED");
-            }
+            try this._handleLockHook(jobManagerView, jobId, burnFuses) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
@@ -512,17 +715,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _handleRevokeHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId) external onlySelf {
-        try managerView.getJobCore(jobId) returns (
-            address employer,
-            address agent,
-            uint256,
-            uint256,
-            uint256,
-            bool,
-            bool,
-            bool,
-            uint8
-        ) {
+        try managerView.getJobCore(jobId) returns (address employer, address agent, uint256, uint256, uint256, bool, bool, bool, uint8) {
             _revokePermissions(jobId, employer, agent);
         } catch {
             _revokePermissions(jobId, address(0), address(0));
@@ -530,17 +723,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _handleLockHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId, bool burnFuses) external onlySelf {
-        try managerView.getJobCore(jobId) returns (
-            address employer,
-            address agent,
-            uint256,
-            uint256,
-            uint256,
-            bool,
-            bool,
-            bool,
-            uint8
-        ) {
+        try managerView.getJobCore(jobId) returns (address employer, address agent, uint256, uint256, uint256, bool, bool, bool, uint8) {
             _lockJobENS(jobId, employer, agent, burnFuses);
         } catch {
             _lockJobENS(jobId, address(0), address(0), burnFuses);
@@ -583,7 +766,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         _lockJobENS(jobId, employer, agent, burnFuses);
     }
 
-    /* solhint-disable no-empty-blocks */
     function _lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) internal {
         _requireConfigured();
         bytes32 node = _resolvedJobNodeForWrite(jobId);
@@ -596,7 +778,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (burnFuses && _isWrappedNode(node)) {
             if (_nodeManagedBySelf(node)) {
                 bytes32 labelhash = keccak256(bytes(_jobLabelById[jobId]));
-                try nameWrapper.setChildFuses(jobsRootNode, labelhash, LOCK_FUSES, type(uint64).max) {
+                try nameWrapper.setChildFuses(_jobAuthority[jobId].rootNode, labelhash, LOCK_FUSES, type(uint64).max) {
                     fusesBurned = true;
                 } catch {
                     emit ENSHookBestEffortFailure(hook, jobId, "BURN_FUSES");
@@ -606,6 +788,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             }
         }
 
+        _jobAuthority[jobId].finalized = true;
+        _jobAuthority[jobId].fuseBurned = fusesBurned;
         emit JobENSLocked(jobId, node, fusesBurned);
     }
 
@@ -615,7 +799,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (_isWrappedRoot()) {
             _requireWrapperAuthorization();
             INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
-                jobsRootNode,
+                _jobAuthorityForCurrentRoot().rootNode,
                 label,
                 address(this),
                 0,
@@ -630,13 +814,14 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _setResolverBestEffort(uint8 hook, uint256 jobId, bytes32 node, address resolver) internal {
-        if (resolver == address(0)) {
-            return;
+        if (resolver == address(0)) return;
+        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID)) {
+            emit ENSHookBestEffortFailure(hook, jobId, "RESOLVER_SET_TEXT_UNSUPPORTED");
         }
 
         if (_isWrappedNode(node)) {
             try IResolverManager(address(nameWrapper)).setResolver(node, resolver) {
-            _jobResolverConfigured[jobId] = true;
+                _jobResolverConfigured[jobId] = true;
             } catch {
                 emit ENSHookBestEffortFailure(hook, jobId, "SET_RESOLVER");
             }
@@ -650,13 +835,12 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
     }
 
-    function _setTextBestEffort(uint8 hook, uint256 jobId, bytes32 node, string memory key, string memory value)
-        internal
-    {
-        if (bytes(value).length == 0) {
+    function _setTextBestEffort(uint8 hook, uint256 jobId, bytes32 node, string memory key, string memory value) internal {
+        if (bytes(value).length == 0) return;
+        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID)) {
+            emit ENSHookBestEffortFailure(hook, jobId, "SET_TEXT_UNSUPPORTED");
             return;
         }
-
         try publicResolver.setText(node, key, value) {
             if (keccak256(bytes(key)) == keccak256(bytes("agijobs.completion.public"))) {
                 _jobCompletionTextConfigured[jobId] = true;
@@ -666,14 +850,10 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
     }
 
-    function _setAuthorisationBestEffort(
-        uint8 hook,
-        uint256 jobId,
-        bytes32 node,
-        address account,
-        bool authorised
-    ) internal {
-        if (account == address(0)) {
+    function _setAuthorisationBestEffort(uint8 hook, uint256 jobId, bytes32 node, address account, bool authorised) internal {
+        if (account == address(0)) return;
+        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID)) {
+            emit ENSHookBestEffortFailure(hook, jobId, "SET_AUTH_UNSUPPORTED");
             return;
         }
 
@@ -683,7 +863,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             emit ENSHookBestEffortFailure(hook, jobId, "SET_AUTH");
         }
     }
-    /* solhint-enable no-empty-blocks */
 
     function _nodeExists(bytes32 node) internal view returns (bool) {
         (bool ok, address ownerAddress) = _tryNodeOwner(node);
@@ -692,21 +871,10 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _nodeManagedBySelf(bytes32 node) internal view returns (bool) {
         (bool ok, address ownerAddress) = _tryNodeOwner(node);
-        if (!ok || ownerAddress == address(0)) {
-            return false;
-        }
-
-        if (ownerAddress == address(this)) {
-            return true;
-        }
-
-        if (ownerAddress != address(nameWrapper)) {
-            return false;
-        }
-
-        (ok, ownerAddress) = _staticcallAddress(
-            address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, uint256(node))
-        );
+        if (!ok || ownerAddress == address(0)) return false;
+        if (ownerAddress == address(this)) return true;
+        if (ownerAddress != address(nameWrapper)) return false;
+        (ok, ownerAddress) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, uint256(node)));
         return ok && ownerAddress == address(this);
     }
 
@@ -723,35 +891,16 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _requireWrapperAuthorization() internal view {
-        // Wrapped-root operations require ENSJobPages to be owner, token-approved, or operator-approved
-        // for the wrapped root token ID (uint256(jobsRootNode)).
         uint256 rootTokenId = uint256(jobsRootNode);
-
-        (bool ok, address wrappedOwner) = _staticcallAddress(
-            address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, rootTokenId)
-        );
+        (bool ok, address wrappedOwner) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, rootTokenId));
         if (!ok || wrappedOwner == address(0)) revert ENSNotAuthorized();
-
-        if (wrappedOwner == address(this)) {
-            return;
-        }
-
+        if (wrappedOwner == address(this)) return;
         address approved;
-        (ok, approved) = _staticcallAddress(
-            address(nameWrapper), abi.encodeWithSelector(WRAPPER_GET_APPROVED_SELECTOR, rootTokenId)
-        );
-        if (ok && approved == address(this)) {
-            return;
-        }
-
+        (ok, approved) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_GET_APPROVED_SELECTOR, rootTokenId));
+        if (ok && approved == address(this)) return;
         bool approvedForAll;
-        (ok, approvedForAll) = _staticcallBool(
-            address(nameWrapper),
-            abi.encodeWithSelector(WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR, wrappedOwner, address(this))
-        );
-        if (!ok || !approvedForAll) {
-            revert ENSNotAuthorized();
-        }
+        (ok, approvedForAll) = _staticcallBool(address(nameWrapper), abi.encodeWithSelector(WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR, wrappedOwner, address(this)));
+        if (!ok || !approvedForAll) revert ENSNotAuthorized();
     }
 
     function _requireConfigured() internal view {
@@ -765,44 +914,24 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (address(publicResolver) == address(0)) return false;
         if (!_isRootConfigured()) return false;
         if (jobManager == address(0)) return false;
-
+        if (validateConfiguration() != CONFIG_OK) return false;
         (bool ok, address rootOwner) = _tryRootOwner();
         if (!ok) return false;
-
-        if (rootOwner == address(this)) {
-            return true;
-        }
-
-        if (address(nameWrapper) == address(0) || rootOwner != address(nameWrapper)) {
-            return false;
-        }
-
+        if (rootOwner == address(this)) return true;
+        if (address(nameWrapper) == address(0) || rootOwner != address(nameWrapper)) return false;
         return _isWrapperAuthorizationReady();
     }
 
     function _isWrapperAuthorizationReady() internal view returns (bool) {
         uint256 rootTokenId = uint256(jobsRootNode);
-
-        (bool ok, address wrappedOwner) = _staticcallAddress(
-            address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, rootTokenId)
-        );
-        if (!ok) return false;
-        if (wrappedOwner == address(0)) return false;
+        (bool ok, address wrappedOwner) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, rootTokenId));
+        if (!ok || wrappedOwner == address(0)) return false;
         if (wrappedOwner == address(this)) return true;
-
         address approved;
-        (ok, approved) = _staticcallAddress(
-            address(nameWrapper), abi.encodeWithSelector(WRAPPER_GET_APPROVED_SELECTOR, rootTokenId)
-        );
-        if (ok && approved == address(this)) {
-            return true;
-        }
-
+        (ok, approved) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_GET_APPROVED_SELECTOR, rootTokenId));
+        if (ok && approved == address(this)) return true;
         bool approvedForAll;
-        (ok, approvedForAll) = _staticcallBool(
-            address(nameWrapper),
-            abi.encodeWithSelector(WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR, wrappedOwner, address(this))
-        );
+        (ok, approvedForAll) = _staticcallBool(address(nameWrapper), abi.encodeWithSelector(WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR, wrappedOwner, address(this)));
         return ok && approvedForAll;
     }
 
@@ -838,9 +967,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         uint256 len = raw.length;
         if (len == 0 || len > MAX_JOB_LABEL_PREFIX_LENGTH) return false;
         if (raw[0] == bytes1("-")) return false;
-        // Prefix is followed immediately by decimal(jobId), so the suffix boundary must be non-numeric.
         if (raw[len - 1] >= bytes1("0") && raw[len - 1] <= bytes1("9")) return false;
-
         for (uint256 i = 0; i < len; i++) {
             bytes1 ch = raw[i];
             bool isDigit = ch >= bytes1("0") && ch <= bytes1("9");
@@ -848,7 +975,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             bool isHyphen = ch == bytes1("-");
             if (!isDigit && !isLower && !isHyphen) return false;
         }
-
         return true;
     }
 
@@ -863,11 +989,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         uint256 len = raw.length;
         if (len == 0 || len > MAX_ENS_LABEL_LENGTH) return false;
         if (raw[0] == bytes1("-")) return false;
-
         bytes memory idRaw = bytes(jobId.toString());
         uint256 idLen = idRaw.length;
         if (idLen == 0 || idLen > len) return false;
-
         for (uint256 i = 0; i < len; i++) {
             bytes1 ch = raw[i];
             bool isDigit = ch >= bytes1("0") && ch <= bytes1("9");
@@ -875,7 +999,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             bool isHyphen = ch == bytes1("-");
             if (!isDigit && !isLower && !isHyphen) return false;
         }
-
         uint256 suffixStart = len - idLen;
         for (uint256 i = 0; i < idLen; i++) {
             if (raw[suffixStart + i] != idRaw[i]) return false;
@@ -884,20 +1007,12 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             bytes1 prev = raw[suffixStart - 1];
             if (prev >= bytes1("0") && prev <= bytes1("9")) return false;
         }
-
         bytes memory prefixRaw = new bytes(suffixStart);
-        for (uint256 i = 0; i < suffixStart; i++) {
-            prefixRaw[i] = raw[i];
-        }
-
+        for (uint256 i = 0; i < suffixStart; i++) prefixRaw[i] = raw[i];
         return _isValidJobLabelPrefix(string(prefixRaw));
     }
 
-    function _resolvedJobLabel(uint256 jobId) internal view returns (string memory) {
-        if (_jobLabelIsSet[jobId]) {
-            return _jobLabelById[jobId];
-        }
-
+    function _buildPreviewJobLabel(uint256 jobId) internal view returns (string memory) {
         string memory label = _buildJobLabel(jobLabelPrefix, jobId);
         bytes32 labelHash = keccak256(bytes(label));
         uint256 existing = _jobIdPlusOneByLabelHash[labelHash];
@@ -905,18 +1020,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         return label;
     }
 
-    /// @dev Post-create write paths must use a snapshotted/imported label.
-    ///      Legacy jobs that predate this contract must be migrated before hooks can mutate ENS records.
     function _resolvedJobNodeForWrite(uint256 jobId) internal view returns (bytes32) {
-        if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();
-        return keccak256(abi.encodePacked(jobsRootNode, keccak256(bytes(_jobLabelById[jobId]))));
+        if (!_jobAuthority[jobId].authorityEstablished) revert AuthorityNotEstablished();
+        return _jobAuthority[jobId].node;
     }
 
     function _snapshotJobLabel(uint256 jobId, string memory label) internal {
         bytes32 labelHash = keccak256(bytes(label));
         uint256 existing = _jobIdPlusOneByLabelHash[labelHash];
         if (existing != 0 && existing != jobId + 1) revert InvalidParameters();
-
         _jobLabelById[jobId] = label;
         _jobLabelIsSet[jobId] = true;
         _jobIdPlusOneByLabelHash[labelHash] = jobId + 1;
@@ -924,15 +1036,49 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _importExactJobLabel(uint256 jobId, string memory label) internal {
         if (!_isValidExactJobLabelForJob(jobId, label)) revert InvalidParameters();
-
         if (_jobLabelIsSet[jobId]) {
-            if (keccak256(bytes(_jobLabelById[jobId])) != keccak256(bytes(label))) {
-                revert InvalidParameters();
-            }
+            if (keccak256(bytes(_jobLabelById[jobId])) != keccak256(bytes(label))) revert InvalidParameters();
             return;
         }
-
         _snapshotJobLabel(jobId, label);
+    }
+
+    function _registerRootVersion(bytes32 rootNode, string memory rootName) internal {
+        if (currentRootVersionId != 0) {
+            RootVersion memory currentVersion = _rootVersions[currentRootVersionId];
+            if (currentVersion.rootNode == rootNode && keccak256(bytes(currentVersion.rootName)) == keccak256(bytes(rootName))) {
+                return;
+            }
+        }
+        rootVersionCount += 1;
+        currentRootVersionId = rootVersionCount;
+        _rootVersions[currentRootVersionId] = RootVersion({
+            rootNode: rootNode,
+            rootName: rootName,
+            activatedAt: uint64(block.timestamp),
+            normalized: true
+        });
+        emit RootVersionRegistered(currentRootVersionId, rootNode, rootName, true);
+    }
+
+    function _establishAuthority(uint256 jobId, string memory label, uint8 snapshotSource, bool legacyImported) internal {
+        JobAuthority storage authority = _jobAuthority[jobId];
+        if (authority.authorityEstablished) return;
+        if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();
+        authority.labelHash = keccak256(bytes(label));
+        authority.rootVersionId = uint32(currentRootVersionId);
+        authority.rootNode = jobsRootNode;
+        authority.node = keccak256(abi.encodePacked(jobsRootNode, authority.labelHash));
+        authority.authorityEstablishedAt = uint64(block.timestamp);
+        authority.snapshotVersion = currentSnapshotVersion;
+        authority.snapshotSource = snapshotSource;
+        authority.authorityEstablished = true;
+        authority.legacyImported = legacyImported;
+        emit JobAuthoritySnapshotted(jobId, authority.node, label, currentRootVersionId, snapshotSource, legacyImported);
+    }
+
+    function _jobAuthorityForCurrentRoot() internal view returns (JobAuthority memory authority) {
+        authority.rootNode = jobsRootNode;
     }
 
     function _tryRootOwner() internal view returns (bool ok, address ownerAddress) {
@@ -941,6 +1087,24 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _tryNodeOwner(bytes32 node) internal view returns (bool ok, address ownerAddress) {
         return _staticcallAddress(address(ens), abi.encodeWithSelector(ENS_OWNER_SELECTOR, node));
+    }
+
+    function _tryResolver(bytes32 node) internal view returns (bool ok, address resolverAddress) {
+        return _staticcallAddress(address(ens), abi.encodeWithSelector(ENS_RESOLVER_SELECTOR, node));
+    }
+
+    function _resolverCapabilities() internal view returns (bool supportsText, bool supportsSetText, bool supportsSetAuthorisation) {
+        supportsText = _supportsResolverInterface(address(publicResolver), RESOLVER_TEXT_INTERFACE_ID);
+        supportsSetText = _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID);
+        supportsSetAuthorisation = _supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID);
+    }
+
+    function _supportsResolverInterface(address resolver, bytes4 interfaceId) internal view returns (bool ok) {
+        if (resolver == address(0) || resolver.code.length == 0) return false;
+        bytes memory payload = abi.encodeWithSelector(SUPPORTS_INTERFACE_SELECTOR, interfaceId);
+        (bool success, bytes memory data) = resolver.staticcall(payload);
+        if (!success || data.length < 32) return false;
+        ok = abi.decode(data, (bool));
     }
 
     function _staticcallAddress(address target, bytes memory payload) internal view returns (bool ok, address result) {
@@ -960,9 +1124,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _staticcallWord(address target, bytes memory payload) internal view returns (bool ok, uint256 word) {
         assembly {
             ok := staticcall(ENS_READ_GAS_LIMIT, target, add(payload, 0x20), mload(payload), 0x00, 0x20)
-            if lt(returndatasize(), 0x20) {
-                ok := 0
-            }
+            if lt(returndatasize(), 0x20) { ok := 0 }
             if ok {
                 returndatacopy(0x00, 0x00, 0x20)
                 word := mload(0x00)
@@ -976,13 +1138,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         uint256 end = raw.length;
         while (end > 0) {
             uint256 start = end;
-            while (start > 0 && raw[start - 1] != bytes1(".")) {
-                unchecked { --start; }
-            }
+            while (start > 0 && raw[start - 1] != bytes1(".")) { unchecked { --start; } }
             bytes memory label = new bytes(end - start);
-            for (uint256 i = start; i < end; i++) {
-                label[i - start] = raw[i];
-            }
+            for (uint256 i = start; i < end; i++) label[i - start] = raw[i];
             node = keccak256(abi.encodePacked(node, keccak256(label)));
             if (start == 0) break;
             end = start - 1;

@@ -16,6 +16,13 @@ contract MockPublicResolver {
         revertSetText = shouldRevert;
     }
 
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return
+            interfaceId == 0x59d1d43c ||
+            interfaceId == 0x10f13a8c ||
+            interfaceId == 0x304e6ade;
+    }
+
     function setAuthorisation(bytes32 node, address target, bool authorised) external {
         if (revertSetAuthorisation) revert();
         authorisations[node][target] = authorised;

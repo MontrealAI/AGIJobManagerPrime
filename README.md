@@ -268,3 +268,10 @@ Alias note: `check-no-binaries` is exposed as `npm run check:no-binaries`.
 [security-url]: ./SECURITY.md
 [license-badge]: https://img.shields.io/github/license/MontrealAI/AGIJobManager?style=flat-square
 [license-url]: ./LICENSE
+
+## ENS authority hardening
+
+- Preview ENS values are projections from the current prefix/root configuration.
+- Effective ENS values are authoritative per-job snapshots stored in `ENSJobPages`.
+- `AGIJobManagerPrime` remains on the existing `handleHook(uint8,uint256)` ABI; authority repair and metadata repair live on the ENS side.
+- Re-run `scripts/ens/audit-mainnet.ts` from a networked operator environment before mainnet cutover because chain state is the source of truth.

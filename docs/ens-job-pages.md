@@ -127,3 +127,8 @@ When `burnFuses` is true and the name is wrapped, `ENSJobPages` attempts to burn
 
 These minimal fuses prevent resolver/TTL changes without burning all fuses, reducing the risk of accidental lockouts.
 Fuse burning is optional and does **not** affect settlement or withdrawals if it fails.
+
+
+## 2026-03 authority model
+
+`previewJobEns*` getters now expose mutable projections, while `effectiveJobEns*` getters expose immutable per-job authority snapshots. Compatibility getters (`jobEnsName`, `jobEnsURI`, `jobEnsNode`) prefer authoritative values once established and only fall back to preview values before first issuance/import. Operational repairs are owner-only ENS-side actions: `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, `replayCreate`, `replayAssign`, `replayCompletion`, `replayRevoke`, and `replayLock`. Chain state wins over docs, so mainnet runbooks must be regenerated from `scripts/ens/output/` before cutover.
