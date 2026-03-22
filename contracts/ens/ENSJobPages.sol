@@ -519,7 +519,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
         if (_nodeExists(node)) {
             if (!_nodeManagedBySelf(node)) {
-                if (!_isWrappedRoot()) revert ENSNotAuthorized();
+                if (!_isWrappedRootNode(_jobAuthority[jobId].rootNode)) revert ENSNotAuthorized();
                 _requireWrapperAuthorization(_jobAuthority[jobId].rootNode);
                 INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
                     _jobAuthority[jobId].rootNode,
@@ -791,7 +791,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
 
         _jobAuthority[jobId].finalized = true;
-        _jobAuthority[jobId].fuseBurned = fusesBurned;
+        _jobAuthority[jobId].fuseBurned = _jobAuthority[jobId].fuseBurned || fusesBurned;
         emit JobENSLocked(jobId, node, fusesBurned);
     }
 
