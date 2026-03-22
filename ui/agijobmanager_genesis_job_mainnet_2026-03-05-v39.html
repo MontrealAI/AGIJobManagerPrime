@@ -5034,7 +5034,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const vv = window.visualViewport;
       const viewportHeight = vv ? vv.height : window.innerHeight;
       document.documentElement.style.height = `${viewportHeight}px`;
+      document.body.style.height = `${viewportHeight}px`;
       document.body.style.maxHeight = `${viewportHeight}px`;
+      document.body.style.minHeight = `${viewportHeight}px`;
     }
     function syncModalState(){
       const anyOpenModal = !!document.querySelector('.modalBackdrop.open');
@@ -5052,7 +5054,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         document.body.style.overflow = '';
         document.documentElement.style.overflow = '';
         document.documentElement.style.height = '';
+        document.body.style.height = '';
         document.body.style.maxHeight = '';
+        document.body.style.minHeight = '';
       }
       persistUiContinuity();
     }
