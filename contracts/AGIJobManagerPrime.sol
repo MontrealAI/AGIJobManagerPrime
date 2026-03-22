@@ -313,7 +313,6 @@ import "./utils/UriUtils.sol";
 import "./utils/BondMath.sol";
 import "./utils/ReputationMath.sol";
 import "./utils/ENSOwnership.sol";
-import "./ens/IENSJobPagesHooksV1.sol";
 import "./periphery/AGIJobCompletionNFT.sol";
 
 interface ENSPrime {
@@ -483,8 +482,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         uint64 lastOutcomeAt;
     }
 
-
-
     uint256 public nextJobId;
 
     mapping(uint256 => Job) internal jobs;
@@ -527,8 +524,6 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     event ReputationUpdated(address indexed user, uint256 newReputation);
     event DiscoveryModuleUpdated(address indexed oldModule, address indexed newModule);
-    event EnsJobPagesUpdated(address indexed oldValue, address indexed newValue);
-    event EnsHookCallResult(uint8 indexed hook, uint256 indexed jobId, address indexed target, bytes4 selector, bool success);
     event SelectedAgentDesignated(
         uint256 indexed jobId,
         address indexed selectedAgent,
@@ -613,16 +608,12 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
 
     function setDiscoveryModule(address module) external onlyOwner {
         if (module == address(0) || module.code.length == 0) revert InvalidParameters();
-        address old = discoveryModule;
         discoveryModule = module;
-        emit DiscoveryModuleUpdated(old, module);
     }
 
     function setEnsJobPages(address target) external onlyOwner {
         if (target != address(0) && target.code.length == 0) revert InvalidParameters();
-        address old = ensJobPages;
         ensJobPages = target;
-        emit EnsJobPagesUpdated(old, target);
     }
 
     function renounceOwnership() public view override onlyOwner {
@@ -1410,58 +1401,21 @@ contract AGIJobManagerPrime is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-    function _mintCompletionNFT(uint256 jobId, Job storage job) internal {
-        string memory uri = job.jobCompletionURI;
-        uri = UriUtils.applyBaseIpfs(uri, baseIpfsUrl);
+    function _mintCompletionNFT(uint256, Job storage job) internal {
+        string memory uri = UriUtils.applyBaseIpfs(job.jobCompletionURI, baseIpfsUrl);
         uint256 tokenId = completionNFT.mintCompletion(job.employer, uri);
         emit NFTIssued(tokenId, job.employer, uri);
     }
 
-    function getJobCore(uint256 jobId)
-        external
-        view
-        returns (
-            address employer,
-            address assignedAgent,
-            uint256 payout,
-            uint256 duration,
-            uint256 assignedAt,
-            bool completed,
-            bool disputed,
-            bool expired,
-            uint8 agentPayoutPct
-        )
-    {
-        Job storage job = jobs[jobId];
-        if (job.employer == address(0)) revert InvalidState();
-        return (job.employer, job.assignedAgent, job.payout, job.duration, job.assignedAt, job.completed, job.disputed, job.expired, job.agentPayoutPct);
-    }
-
-    function getJobSpecURI(uint256 jobId) external view returns (string memory) {
-        Job storage job = jobs[jobId];
-        if (job.employer == address(0)) revert InvalidState();
-        return job.jobSpecURI;
-    }
-
-    function getJobCompletionURI(uint256 jobId) external view returns (string memory) {
-        Job storage job = jobs[jobId];
-        if (job.employer == address(0)) revert InvalidState();
-        return job.jobCompletionURI;
-    }
-
     function _callEnsJobPagesHook(uint8 hook, uint256 jobId) internal {
         address target = ensJobPages;
-        if (target == address(0)) return;
-        Job storage job = jobs[jobId];
-        if (job.employer == address(0)) return;
-
-        bytes4 selector = bytes4(0x1f76f7a2);
-        bytes memory payload = abi.encodeWithSelector(selector, hook, jobId);
-        bool success;
         assembly {
-            success := call(ENS_HOOK_GAS_LIMIT, target, 0, add(payload, 0x20), mload(payload), 0, 0)
+            let ptr := mload(0x40)
+            mstore(ptr, shl(224, 0x1f76f7a2))
+            mstore(add(ptr, 4), hook)
+            mstore(add(ptr, 36), jobId)
+            pop(call(ENS_HOOK_GAS_LIMIT, target, 0, ptr, 0x44, 0, 0))
         }
-        emit EnsHookCallResult(hook, jobId, target, selector, success);
     }
 
     function _returnAgentBond(Job storage job, address to) internal {
