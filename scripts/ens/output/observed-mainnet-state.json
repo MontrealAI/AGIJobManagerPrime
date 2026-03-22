@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-03-22T00:00:00.000Z",
+  "network": "mainnet",
+  "rpcReachable": false,
+  "status": "unverified_in_this_environment",
+  "hypotheses": {
+    "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
+    "agiJobManagerPrime": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
+    "agiJobDiscoveryPrime": "0xd5ef1dde7ac60488f697ff2a7967a52172a78f29",
+    "jobsRootName": "alpha.jobs.agi.eth",
+    "jobLabelPrefix": "agijob-"
+  },
+  "proven": {
+    "primeHookAbi": "handleHook(uint8,uint256)",
+    "primeViewMethodsRequired": [
+      "getJobCore(uint256)",
+      "getJobSpecURI(uint256)",
+      "getJobCompletionURI(uint256)"
+    ]
+  },
+  "assumptions": [
+    "Live ownership, resolver, wrapper approval, and inventory state remain to be fetched by a networked operator run."
+  ]
+}
