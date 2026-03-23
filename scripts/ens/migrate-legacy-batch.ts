@@ -167,6 +167,10 @@ function loadInput(file) {
     const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
     for (const item of payload.items) {
+      const blockingManualSteps = item.steps.filter((entry) => entry.action.startsWith('manual'));
+      if (blockingManualSteps.length) {
+        throw new Error(`Refusing EXECUTE=1 for job ${item.jobId}: manual ownership action required first (${blockingManualSteps.map((entry) => entry.action).join(', ')})`);
+      }
       for (const step of item.steps.filter((entry) => !entry.action.startsWith('manual'))) {
         const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, PAGES_ABI, step.action, step.args);
         const sent = { jobId: item.jobId, exactLabel: item.exactLabel, action: step.action, txHash: hash, status: 'broadcast' };
