@@ -104,7 +104,7 @@ const checks = [
   {
     name: "ENSJobPages",
     artifactPath: artifactPathFor("ens/ENSJobPages.sol", "ENSJobPages"),
-    enforce: process.env.STRICT_ENS_SIZE === "1",
+    enforce: true,
   },
   {
     name: "ENSJobPagesInspector",
