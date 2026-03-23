@@ -1,43 +1,8 @@
 {
-  "generatedAt": "2026-03-23T01:38:36.334Z",
-  "jobId": 0,
+  "generatedAt": "2026-03-23T01:50:19.630Z",
+  "rpc": "https://ethereum-rpc.publicnode.com",
+  "jobId": "0",
   "exactLabel": "agijob-0",
-  "labelSnapshot": {
-    "isSet": false,
-    "label": ""
-  },
-  "authorityEstablished": false,
-  "exactLabelRequired": true,
-  "resolvedLabel": "agijob-0",
-  "resolvedNode": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "nodeOwner": "0x0000000000000000000000000000000000000000",
-  "wrappedTokenOwner": "0x0000000000000000000000000000000000000000",
-  "hasReadableCore": false,
-  "needsCreateReplay": true,
-  "requiresLegacyMigration": false,
   "execute": false,
-  "plan": [
-    {
-      "action": "repairAuthoritySnapshot",
-      "args": [
-        0,
-        "agijob-0"
-      ],
-      "calldata": "0xc0692af60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000086167696a6f622d30000000000000000000000000000000000000000000000000"
-    },
-    {
-      "action": "replayCreate",
-      "args": [
-        0
-      ],
-      "calldata": "0xa7c59a190000000000000000000000000000000000000000000000000000000000000000"
-    },
-    {
-      "action": "repairResolver",
-      "args": [
-        0
-      ],
-      "calldata": "0x1e930b9c0000000000000000000000000000000000000000000000000000000000000000"
-    }
-  ]
+  "error": "pages.jobAuthorityInfo read failed: AggregateError"
 }
