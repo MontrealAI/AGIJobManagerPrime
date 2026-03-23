@@ -38,7 +38,7 @@ Owner operators, reviewers, and incident responders.
 | `ensJobPages` | `setEnsJobPages` | **Immutable after lock** |
 | ENS root nodes | `updateRootNodes` | **Immutable after lock** |
 | Merkle roots | `updateMerkleRoots` | **Mutable after lock (owner-only)** |
-| `useEnsJobTokenURI` | `setUseEnsJobTokenURI` | Mutable after lock |
+| `useEnsJobTokenURI` | Legacy-manager-only `setUseEnsJobTokenURI` | Not part of the current Prime operating surface; treat as legacy-only metadata routing |
 
 ## Lists and role toggles
 - `addModerator` / `removeModerator`

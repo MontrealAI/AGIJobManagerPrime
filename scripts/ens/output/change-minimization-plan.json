@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-03-23T00:00:00Z",
+  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair",
+  "primeChangesRequired": false,
+  "preserveHandleHookAbi": true,
+  "preservePrimeRuntimeBaseline": true,
+  "ensSidePatchScope": [
+    "resolver capability detection",
+    "resolver-family-safe auth writes and reads",
+    "read-heavy inspector compatibility signaling",
+    "deploy script mainnet explicit JOB_MANAGER guard",
+    "runbook/docs honesty",
+    "ENS-side bytecode reporting"
+  ],
+  "rejectedAlternatives": [
+    "docs-only fix",
+    "inspector-only fix",
+    "Prime runtime change"
+  ]
+}

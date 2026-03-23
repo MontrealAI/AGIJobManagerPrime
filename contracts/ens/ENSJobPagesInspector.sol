@@ -18,7 +18,6 @@ interface IENSJobPagesInspectorTarget {
     function effectiveJobEnsURI(uint256 jobId) external view returns (string memory);
     function effectiveJobEnsNode(uint256 jobId) external view returns (bytes32);
     function validateConfiguration() external view returns (uint256);
-    function configurationStatus() external view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256);
     function jobAuthorityInfo(uint256 jobId) external view returns (bool,string memory,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool);
 }
 
@@ -87,42 +86,27 @@ contract ENSJobPagesInspector {
         returns (JobStatusView memory status)
     {
         IENSJobPagesInspectorTarget pages = IENSJobPagesInspectorTarget(target);
-        bool configured;
-        bool locked;
-        bool rootConfigured;
-        bool rootNodeMatchesRootName;
-        bool rootNormalized;
-        bool wrappedRoot;
-        bool wrapperAuthorizationReady;
-        bool resolverSupportsText;
-        bool resolverSupportsSetText;
-        bool resolverSupportsAuthorisation;
         uint256 failureBitmap;
-        try pages.configurationStatus() returns (
-            bool configured_,
-            bool locked_,
-            bool rootConfigured_,
-            bool rootNodeMatchesRootName_,
-            bool rootNormalized_,
-            bool wrappedRoot_,
-            bool wrapperAuthorizationReady_,
-            bool resolverSupportsText_,
-            bool resolverSupportsSetText_,
-            bool resolverSupportsAuthorisation_,
-            uint256 failureBitmap_
-        ) {
-            configured = configured_;
-            locked = locked_;
-            rootConfigured = rootConfigured_;
-            rootNodeMatchesRootName = rootNodeMatchesRootName_;
-            rootNormalized = rootNormalized_;
-            wrappedRoot = wrappedRoot_;
-            wrapperAuthorizationReady = wrapperAuthorizationReady_;
-            resolverSupportsText = resolverSupportsText_;
-            resolverSupportsSetText = resolverSupportsSetText_;
-            resolverSupportsAuthorisation = resolverSupportsAuthorisation_;
+        try pages.validateConfiguration() returns (uint256 failureBitmap_) {
             failureBitmap = failureBitmap_;
         } catch {}
+
+        bool locked = _safeBoolCall(target, abi.encodeWithSignature("configLocked()"));
+        bytes32 jobsRootNode = _safeBytes32Call(target, abi.encodeWithSignature("jobsRootNode()"));
+        string memory jobsRootName = _safeStringCall(target, abi.encodeWithSignature("jobsRootName()"));
+        bool rootConfigured = jobsRootNode != bytes32(0) && bytes(jobsRootName).length != 0;
+        bool rootNodeMatchesRootName = rootConfigured && _namehash(jobsRootName) == jobsRootNode;
+        bool rootNormalized = rootConfigured && _isValidRootName(jobsRootName);
+        address ensAddress = pages.ens();
+        address resolverAddressExpected = pages.publicResolver();
+        address nameWrapperAddress = pages.nameWrapper();
+        address rootOwner = jobsRootNode == bytes32(0) ? address(0) : IENSRegistryLite(ensAddress).owner(jobsRootNode);
+        bool wrappedRoot = rootOwner == nameWrapperAddress && nameWrapperAddress != address(0);
+        bool wrapperAuthorizationReady = wrappedRoot && _isWrapperAuthorizationReady(nameWrapperAddress, jobsRootNode, target);
+        bool resolverSupportsText = (failureBitmap & (1 << 7)) == 0;
+        bool resolverSupportsSetText = (failureBitmap & (1 << 8)) == 0;
+        bool resolverSupportsAuthorisation = (failureBitmap & (1 << 9)) == 0;
+        bool configured = failureBitmap == 0;
 
         bool authorityEstablished;
         string memory label;
@@ -185,13 +169,13 @@ contract ENSJobPagesInspector {
             status.effectiveNode = _safeBytes32Call(target, abi.encodeWithSignature("effectiveJobEnsNode(uint256)", jobId));
             status.effectiveReady = bytes(status.effectiveName).length != 0;
 
-            IENSRegistryLite ens = IENSRegistryLite(pages.ens());
-            address nameWrapper = pages.nameWrapper();
+            IENSRegistryLite ens = IENSRegistryLite(ensAddress);
+            address nameWrapper = nameWrapperAddress;
             address nodeOwner = ens.owner(authoritativeNode);
             address nodeResolver = ens.resolver(authoritativeNode);
             status.nodeExists = nodeOwner != address(0);
             status.nodeManagedByContract = nodeOwner == target || _isWrappedNodeManagedByTarget(nameWrapper, nodeOwner, authoritativeNode, target);
-            status.resolverSetToExpected = nodeResolver == pages.publicResolver();
+            status.resolverSetToExpected = nodeResolver == resolverAddressExpected;
 
             if (nodeResolver != address(0)) {
                 status.schemaTextPresent = _safeHasText(nodeResolver, authoritativeNode, "schema");
@@ -265,6 +249,67 @@ contract ENSJobPagesInspector {
         value = abi.decode(data, (bytes32));
     }
 
+
+
+    function _safeBoolCall(address target, bytes memory payload) internal view returns (bool value) {
+        if (target == address(0) || target.code.length == 0) return false;
+        (bool success, bytes memory data) = target.staticcall(payload);
+        if (!success || data.length < 32) return false;
+        uint256 decoded = abi.decode(data, (uint256));
+        if (decoded > 1) return false;
+        return decoded != 0;
+    }
+
+    function _isWrapperAuthorizationReady(address nameWrapper, bytes32 rootNode, address target) internal view returns (bool) {
+        if (nameWrapper == address(0) || rootNode == bytes32(0)) return false;
+        (bool success, bytes memory data) = nameWrapper.staticcall(abi.encodeWithSelector(INameWrapperLite.ownerOf.selector, uint256(rootNode)));
+        if (!success || data.length < 32) return false;
+        address wrappedOwner = abi.decode(data, (address));
+        if (wrappedOwner == address(0)) return false;
+        if (wrappedOwner == target) return true;
+        (success, data) = nameWrapper.staticcall(abi.encodeWithSignature("getApproved(uint256)", uint256(rootNode)));
+        if (success && data.length >= 32 && abi.decode(data, (address)) == target) return true;
+        (success, data) = nameWrapper.staticcall(abi.encodeWithSignature("isApprovedForAll(address,address)", wrappedOwner, target));
+        return success && data.length >= 32 && abi.decode(data, (bool));
+    }
+
+    function _isValidRootName(string memory rootName) internal pure returns (bool) {
+        bytes memory raw = bytes(rootName);
+        uint256 len = raw.length;
+        if (len == 0 || len > 240) return false;
+        if (raw[0] == bytes1(".") || raw[len - 1] == bytes1(".")) return false;
+        bool lastWasDot = true;
+        for (uint256 i = 0; i < len; i++) {
+            bytes1 ch = raw[i];
+            bool isDigit = ch >= bytes1("0") && ch <= bytes1("9");
+            bool isLower = ch >= bytes1("a") && ch <= bytes1("z");
+            bool isHyphen = ch == bytes1("-");
+            bool isDot = ch == bytes1(".");
+            if (!isDigit && !isLower && !isHyphen && !isDot) return false;
+            if (isDot) {
+                if (lastWasDot) return false;
+                lastWasDot = true;
+            } else {
+                lastWasDot = false;
+            }
+        }
+        return !lastWasDot;
+    }
+
+    function _namehash(string memory name) internal pure returns (bytes32 node) {
+        bytes memory raw = bytes(name);
+        if (raw.length == 0) return bytes32(0);
+        uint256 end = raw.length;
+        while (end > 0) {
+            uint256 start = end;
+            while (start > 0 && raw[start - 1] != bytes1(".")) { unchecked { --start; } }
+            bytes memory label = new bytes(end - start);
+            for (uint256 i = start; i < end; i++) label[i - start] = raw[i];
+            node = keccak256(abi.encodePacked(node, keccak256(label)));
+            if (start == 0) break;
+            end = start - 1;
+        }
+    }
 
     function _resolveAuthOwner(address nameWrapper, address nodeOwner, bytes32 node) internal view returns (address authOwner) {
         authOwner = nodeOwner;

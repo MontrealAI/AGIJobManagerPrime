@@ -38,9 +38,7 @@ const ENS_JOB_PAGES_ABI = [
   'function jobsRootName() view returns (string)',
   'function jobLabelPrefix() view returns (string)',
   'function configLocked() view returns (bool)',
-  'function useEnsJobTokenURI() view returns (bool)',
   'function validateConfiguration() view returns (uint256)',
-  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function jobLabelSnapshot(uint256) view returns (bool,string)',
   'function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)',
   'function previewJobEnsName(uint256) view returns (string)',
@@ -108,7 +106,6 @@ async function main() {
     jobsRootName: unwrap(await safe('pages.jobsRootName', () => provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'jobsRootName')[0]), ''),
     jobLabelPrefix: unwrap(await safe('pages.jobLabelPrefix', () => provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'jobLabelPrefix')[0]), ''),
     configLocked: unwrap(await safe('pages.configLocked', () => provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'configLocked')[0]), false),
-    useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'useEnsJobTokenURI')[0]), false),
     validateConfiguration: String(unwrap(await safe('pages.validateConfiguration', () => provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'validateConfiguration')[0]), 0n)),
     configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => Array.from(provider.readContract(livePages, ENS_JOB_PAGES_ABI, 'configurationStatus'))), null)),
   };

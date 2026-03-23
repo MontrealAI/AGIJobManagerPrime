@@ -10,7 +10,10 @@ const INPUT = process.env.INPUT || process.argv[2] || 'scripts/ens/output/legacy
 const OUTPUT = path.resolve('scripts/ens/output/migrate-legacy-batch.json');
 const execute = process.env.EXECUTE === '1';
 
-const ABI = ['function migrateLegacyWrappedJobPage(uint256,string)'];
+const ABI = [
+  'function repairAuthoritySnapshot(uint256,string)',
+  'function repairResolver(uint256)',
+];
 
 function loadInput(file) {
   const raw = fs.readFileSync(file, 'utf8').trim();
@@ -34,7 +37,10 @@ function loadInput(file) {
     input: INPUT,
     items: items.map((item) => ({
       ...item,
-      calldata: iface.encodeFunctionData('migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]),
+      steps: [
+        { action: 'repairAuthoritySnapshot', calldata: iface.encodeFunctionData('repairAuthoritySnapshot', [item.jobId, item.exactLabel]) },
+        { action: 'repairResolver', calldata: iface.encodeFunctionData('repairResolver', [item.jobId]) },
+      ],
     })),
   };
 
@@ -43,14 +49,14 @@ function loadInput(file) {
     const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
     for (const item of items) {
-      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, 'migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]);
-      const sent = { jobId: item.jobId, exactLabel: item.exactLabel, txHash: hash, status: 'broadcast' };
-      payload.sent.push(sent);
-      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce, to: tx.to, data: tx.data, value: tx.value });
-      sent.status = 'confirmed';
-      sent.blockNumber = receipt.blockNumber.toString();
-      if (receipt.replaced) {
-        sent.replacedBy = receipt.effectiveHash;
+      for (const step of payload.items.find((entry) => entry.jobId === item.jobId).steps) {
+        const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, step.action, step.action === 'repairResolver' ? [item.jobId] : [item.jobId, item.exactLabel]);
+        const sent = { jobId: item.jobId, exactLabel: item.exactLabel, action: step.action, txHash: hash, status: 'broadcast' };
+        payload.sent.push(sent);
+        const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce, to: tx.to, data: tx.data, value: tx.value });
+        sent.status = 'confirmed';
+        sent.blockNumber = receipt.blockNumber.toString();
+        if (receipt.replaced) sent.replacedBy = receipt.effectiveHash;
       }
     }
   }

@@ -91,8 +91,9 @@ contract('Prime keeper-assisted ENS authority path', (accounts) => {
     assert.equal(await resolver.text(expectedNode, 'agijobs.spec.public'), 'ipfs://spec-keeper');
     assert.equal(await resolver.text(expectedNode, 'agijobs.completion.public'), 'ipfs://completion-keeper');
 
-    // Non-blocking settlement invariant: Prime lifecycle works independently of ENS automation wiring.
-    const core = await manager.getJobCore(jobId);
-    assert.equal(core.completed, true, 'completion request should succeed even without ENS hook wiring');
+    // Non-blocking lifecycle invariant: Prime progression works independently of ENS automation wiring.
+    assert.equal(await manager.jobEmployerOf(jobId), employer);
+    assert.equal(await manager.jobAssignedAgentOf(jobId), agent);
+    assert.equal(completion.args.jobCompletionURI, 'ipfs://completion-keeper', 'completion request should succeed even without ENS hook wiring');
   });
 });

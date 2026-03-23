@@ -17,7 +17,7 @@ This runbook is optimized for autonomous, checklist-driven operations and Ethers
 ## ENS replacement responsibilities (owner split)
 - **wrapped-root owner**: `NameWrapper.setApprovalForAll(newEnsJobPages, true)`.
 - **AGIJobManager owner**: `setEnsJobPages(newEnsJobPages)` on AGIJobManager.
-- **ENSJobPages owner (if needed)**: `migrateLegacyWrappedJobPage(jobId, exactLabel)` for legacy jobs missing snapshots.
+- **ENSJobPages owner (if needed)**: `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls` for legacy jobs missing snapshots.
 
 Expected result:
 - Future preview names resolve using `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).

@@ -58,7 +58,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     uint256 private constant MAX_ROOT_NAME_LENGTH = 240;
-    uint256 public constant ENS_JOB_PAGES_INTERFACE_VERSION = 2;
     uint256 private constant MAX_JOB_LABEL_PREFIX_LENGTH = 32;
     uint256 private constant MAX_ENS_LABEL_LENGTH = 63;
     uint256 private constant ENS_READ_GAS_LIMIT = 50_000;
@@ -124,7 +123,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         bool legacyImported
     );
     event JobManagerUpdated(address indexed oldJobManager, address indexed newJobManager);
-    event UseEnsJobTokenURIUpdated(bool oldValue, bool newValue);
     event ENSHookProcessed(uint8 indexed hook, uint256 indexed jobId, bool configured, bool success);
     event ENSHookSkipped(uint8 indexed hook, uint256 indexed jobId, bytes32 indexed reason);
     event ENSHookBestEffortFailure(uint8 indexed hook, uint256 indexed jobId, bytes32 indexed operation);
@@ -144,18 +142,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     bytes32 public jobsRootNode;
     string public jobsRootName;
     address public jobManager;
-    bool public useEnsJobTokenURI;
     bool public configLocked;
     string public jobLabelPrefix;
-    uint32 public currentSnapshotVersion = 1;
-    uint256 public rootVersionCount;
-    uint256 public currentRootVersionId;
+    uint32 private currentSnapshotVersion = 1;
+    uint256 private rootVersionCount;
+    uint256 private currentRootVersionId;
 
     mapping(uint256 => string) private _jobLabelById;
     mapping(uint256 => bool) private _jobLabelIsSet;
     mapping(bytes32 => uint256) private _jobIdPlusOneByLabelHash;
-    mapping(uint256 => bool) private _jobResolverConfigured;
-    mapping(uint256 => bool) private _jobCompletionTextConfigured;
     mapping(uint256 => RootVersion) private _rootVersions;
     mapping(uint256 => JobAuthority) private _jobAuthority;
 
@@ -232,10 +227,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         emit PublicResolverUpdated(old, publicResolverAddress);
     }
 
-    function ensJobPagesInterfaceVersion() external pure returns (uint256) {
-        return ENS_JOB_PAGES_INTERFACE_VERSION;
-    }
-
     function setJobsRoot(bytes32 rootNode, string calldata rootName) external onlyOwner {
         if (configLocked) revert ConfigLocked();
         bytes32 oldNode = jobsRootNode;
@@ -254,13 +245,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (manager == address(0) || manager.code.length == 0) revert InvalidParameters();
         jobManager = manager;
         emit JobManagerUpdated(old, manager);
-    }
-
-    function setUseEnsJobTokenURI(bool enabled) external onlyOwner {
-        if (configLocked) revert ConfigLocked();
-        bool old = useEnsJobTokenURI;
-        useEnsJobTokenURI = enabled;
-        emit UseEnsJobTokenURIUpdated(old, enabled);
     }
 
     function lockConfiguration() external onlyOwner {
@@ -350,15 +334,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         return (_jobLabelIsSet[jobId], _jobLabelById[jobId]);
     }
 
-    function rootVersionInfo(uint256 rootVersionId)
-        external
-        view
-        returns (bytes32 rootNode, string memory rootName, uint64 activatedAt, bool normalized)
-    {
-        RootVersion memory versionInfo = _rootVersions[rootVersionId];
-        return (versionInfo.rootNode, versionInfo.rootName, versionInfo.activatedAt, versionInfo.normalized);
-    }
-
     function jobAuthorityInfo(uint256 jobId)
         external
         view
@@ -394,48 +369,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         );
     }
 
-    function isFullyConfigured() external view returns (bool) {
-        return validateConfiguration() == CONFIG_OK;
-    }
-
-    function isWrappedRootReady() external view returns (bool) {
-        return _isWrappedRoot() && _isWrapperAuthorizationReady();
-    }
-
-    function configurationStatus()
-        external
-        view
-        returns (
-            bool configured,
-            bool locked,
-            bool rootConfigured,
-            bool rootNodeMatchesRootName,
-            bool rootNormalized,
-            bool wrappedRoot,
-            bool wrapperAuthorizationReady,
-            bool resolverSupportsText,
-            bool resolverSupportsSetText,
-            bool resolverSupportsAuthorisation,
-            uint256 failureBitmap
-        )
-    {
-        bool supportsText;
-        bool supportsSetText;
-        bool supportsSetAuthorisation;
-        (supportsText, supportsSetText, supportsSetAuthorisation) = _resolverCapabilities();
-        failureBitmap = validateConfiguration();
-        configured = failureBitmap == CONFIG_OK;
-        locked = configLocked;
-        rootConfigured = _isRootConfigured();
-        rootNodeMatchesRootName = rootConfigured && _namehash(jobsRootName) == jobsRootNode;
-        rootNormalized = rootConfigured && _isValidRootName(jobsRootName);
-        wrappedRoot = _isWrappedRoot();
-        wrapperAuthorizationReady = wrappedRoot && _isWrapperAuthorizationReady();
-        resolverSupportsText = supportsText;
-        resolverSupportsSetText = supportsSetText;
-        resolverSupportsAuthorisation = supportsSetAuthorisation;
-    }
-
     function validateConfiguration() public view returns (uint256 failures) {
         if (address(ens) == address(0) || address(ens).code.length == 0) failures |= CONFIG_ERR_ENS;
         if (address(publicResolver) == address(0) || address(publicResolver).code.length == 0) failures |= CONFIG_ERR_RESOLVER;
@@ -450,10 +383,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!supportsText) failures |= CONFIG_ERR_RESOLVER_TEXT;
         if (!supportsSetText) failures |= CONFIG_ERR_RESOLVER_SETTEXT;
         if (!supportsSetAuthorisation) failures |= CONFIG_ERR_RESOLVER_SETAUTH;
-    }
-
-    function jobEnsPreview(uint256 jobId) external view returns (string memory) {
-        return previewJobEnsName(jobId);
     }
 
     function jobEnsIssued(uint256 jobId) public view returns (bool) {
@@ -477,91 +406,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         return _nodeExists(_jobAuthority[jobId].node);
     }
 
-    function jobEnsStatus(uint256 jobId)
-        external
-        view
-        returns (
-            string memory label,
-            string memory name,
-            string memory uri,
-            bytes32 node,
-            bool snapshotted,
-            bool issued,
-            address resolverAddress,
-            address ownerAddress,
-            uint256 configFailures
-        )
-    {
-        configFailures = validateConfiguration();
-        label = jobEnsLabel(jobId);
-        snapshotted = _jobAuthority[jobId].authorityEstablished;
-        name = snapshotted ? effectiveJobEnsName(jobId) : previewJobEnsName(jobId);
-        bool hasName = bytes(name).length != 0;
-        uri = !hasName ? "" : string(abi.encodePacked("ens://", name));
-        if (_isRootConfigured()) {
-            node = jobEnsNode(jobId);
-            issued = jobEnsIssued(jobId);
-            (, ownerAddress) = _tryNodeOwner(node);
-            (, resolverAddress) = _tryResolver(node);
-        }
-    }
-
     function createJobPage(uint256 jobId, address employer, string memory specURI) public onlyOwner {
         _createJobPage(jobId, employer, specURI);
-    }
-
-    function migrateLegacyWrappedJobPage(uint256 jobId, string calldata exactLabel)
-        external
-        onlyOwner
-        returns (bytes32 node)
-    {
-        if (!_managerSupportsViewV1(jobManager, jobId)) revert InvalidParameters();
-        if (rootVersionCount != 1) revert InvalidParameters();
-        _requireConfigured();
-        if (jobManager == address(0)) revert ENSNotConfigured();
-
-        _importExactJobLabel(jobId, exactLabel);
-        string memory label = _jobLabelById[jobId];
-        _establishAuthority(jobId, label, SNAPSHOT_SOURCE_LEGACY_IMPORT, true);
-
-        string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
-        (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
-        if (employer == address(0)) revert InvalidParameters();
-        string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
-
-        node = _jobAuthority[jobId].node;
-        bool adopted;
-        bool created;
-
-        if (_nodeExists(node)) {
-            if (!_nodeManagedBySelf(node)) {
-                if (!_isWrappedRootNode(_jobAuthority[jobId].rootNode)) revert ENSNotAuthorized();
-                _requireWrapperAuthorization(_jobAuthority[jobId].rootNode);
-                INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
-                    _jobAuthority[jobId].rootNode,
-                    label,
-                    address(this),
-                    0,
-                    type(uint64).max
-                );
-
-                if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
-                adopted = true;
-            }
-        } else {
-            node = _createSubname(_jobAuthority[jobId].rootNode, label);
-            emit JobENSPageCreated(jobId, node);
-            created = true;
-        }
-
-        _setResolverBestEffort(HOOK_CREATE, jobId, node, address(publicResolver));
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.completion.public", completionURI);
-
-        emit LegacyJobPageMigrated(jobId, node, label, adopted, created);
     }
 
     function repairAuthoritySnapshot(uint256 jobId, string calldata exactLabel) external onlyOwner {
@@ -589,66 +435,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         _establishAuthorityForRootVersion(jobId, _jobLabelById[jobId], rootVersionId, SNAPSHOT_SOURCE_REPAIR, false);
     }
 
-    function replayCreate(uint256 jobId) external onlyOwner {
-        if (_managerSupportsViewV1(jobManager, jobId)) {
-            this._handleCreateHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
-        } else {
-            this._handleCreateHookFallback(jobId);
-        }
-    }
-
-    function replayAssign(uint256 jobId) external onlyOwner {
-        if (_managerSupportsViewV1(jobManager, jobId)) {
-            this._handleAssignHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
-        } else {
-            this._handleAssignHookFallback(jobId);
-        }
-    }
-
-    function replayCompletion(uint256 jobId) external onlyOwner {
-        if (_managerSupportsViewV1(jobManager, jobId)) {
-            this._handleCompletionHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
-        } else {
-            this._handleCompletionHookFallback(jobId);
-        }
-    }
-
-    function replayRevoke(uint256 jobId) external onlyOwner {
-        if (_managerSupportsViewV1(jobManager, jobId)) {
-            this._handleRevokeHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
-        } else {
-            this._handleRevokeHookFallback(jobId);
-        }
-    }
-
-    function replayLock(uint256 jobId, bool burnFuses) external onlyOwner {
-        if (_managerSupportsViewV1(jobManager, jobId)) {
-            this._handleLockHook(IAGIJobManagerPrimeViewV1(jobManager), jobId, burnFuses);
-        } else {
-            this._handleLockHookFallback(jobId, burnFuses);
-        }
-    }
-
     function repairResolver(uint256 jobId) external onlyOwner {
         _setResolverBestEffort(HOOK_CREATE, jobId, _resolvedJobNodeForWrite(jobId), address(publicResolver));
-    }
-
-    function repairTexts(uint256 jobId) external onlyOwner {
-        if (!_managerSupportsViewV1(jobManager, jobId)) revert InvalidParameters();
-        string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
-        string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
-        bytes32 node = _resolvedJobNodeForWrite(jobId);
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
-        _setTextBestEffort(HOOK_COMPLETION, jobId, node, "agijobs.completion.public", completionURI);
-    }
-
-    function repairAuthorisations(uint256 jobId) external onlyOwner {
-        if (!_managerSupportsViewV1(jobManager, jobId)) revert InvalidParameters();
-        (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
-        bytes32 node = _resolvedJobNodeForWrite(jobId);
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
     }
 
     function repairSpecTextExplicit(uint256 jobId, string calldata specURI) external onlyOwner {
@@ -953,7 +741,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (resolver == address(0)) return;
         if (_isWrappedNode(node)) {
             try IResolverManager(address(nameWrapper)).setResolver(node, resolver) {
-                _jobResolverConfigured[jobId] = true;
             } catch {
                 emit ENSHookBestEffortFailure(hook, jobId, "SET_RESOLVER");
             }
@@ -961,7 +748,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
 
         try IResolverManager(address(ens)).setResolver(node, resolver) {
-            _jobResolverConfigured[jobId] = true;
         } catch {
             emit ENSHookBestEffortFailure(hook, jobId, "SET_RESOLVER");
         }
@@ -971,7 +757,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (bytes(value).length == 0) return;
         try publicResolver.setText(node, key, value) {
             if (keccak256(bytes(key)) == keccak256(bytes("agijobs.completion.public"))) {
-                _jobCompletionTextConfigured[jobId] = true;
             }
         } catch {
             emit ENSHookBestEffortFailure(hook, jobId, "SET_TEXT");

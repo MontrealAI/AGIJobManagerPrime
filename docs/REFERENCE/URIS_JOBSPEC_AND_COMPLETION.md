@@ -198,7 +198,7 @@ Recommended pattern for both fields: point to metadata JSON.
 
 At completion NFT mint time (`_mintCompletionNFT`):
 1. Start with `job.jobCompletionURI`.
-2. If `useEnsJobTokenURI` is enabled and ENS hook returns a valid non-empty URI string (within limits), replace value with that ENS-returned string.
+2. Legacy-manager path only: if `useEnsJobTokenURI` is enabled and ENS hook returns a valid non-empty URI string (within limits), replace value with that ENS-returned string. Current Prime deployments do not use this routing.
 3. Call `UriUtils.applyBaseIpfs(tokenUriValue, baseIpfsUrl)`.
 4. Store result in `_tokenURIs[tokenId]`.
 
@@ -223,7 +223,7 @@ Important implications:
 
 ## 7) ENS / `ensJobPages` / `useEnsJobTokenURI` interactions
 
-If `useEnsJobTokenURI == true`, minting attempts a best-effort static call to `ensJobPages`.
+Legacy-manager-only behavior: if `useEnsJobTokenURI == true`, minting attempts a best-effort static call to `ensJobPages`. Current Prime deployments keep completion NFTs on the completion-URI/IPFS path.
 
 Implementation details:
 - Selector called: `0x751809b4` with one `uint256 jobId` argument.
@@ -235,11 +235,11 @@ Implementation details:
 
 The NFT mint is still intended to proceed even if ENS URI retrieval fails.
 
-### What owners should do for ENS-based tokenURI routing
+### What owners should do for legacy ENS-based tokenURI routing
 
 1. Deploy/configure an ENS job pages contract (for example `AGIJobPages`).
 2. Set it with `setEnsJobPages(address)`.
-3. Enable routing with `setUseEnsJobTokenURI(true)`.
+3. Enable routing with `setUseEnsJobTokenURI(true)` only on legacy managers that actually expose and wire this flag; do not expect this on current Prime deployments.
 4. Ensure resolver returns ABI-encoded non-empty string <= 1024 bytes under 200k gas.
 5. Keep `jobCompletionURI` valid as fallback durability path.
 

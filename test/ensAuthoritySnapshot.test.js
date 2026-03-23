@@ -57,14 +57,14 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.setJob(42, employer, agent, 'ipfs://legacy-spec', { from: owner });
     await manager.setCompletionURI(42, 'ipfs://legacy-completion', { from: owner });
 
-    const receipt = await pages.migrateLegacyWrappedJobPage(42, legacyLabel, { from: owner });
+    const receipt = await pages.repairAuthoritySnapshot(42, legacyLabel, { from: owner });
     await expectEvent(receipt, 'JobAuthoritySnapshotted', { jobId: '42', label: legacyLabel });
+    await pages.replayCreateExplicit(42, employer, 'ipfs://legacy-spec', { from: owner });
+    await pages.repairCompletionTextExplicit(42, 'ipfs://legacy-completion', { from: owner });
+    await pages.repairAuthorisationsExplicit(42, employer, agent, true, { from: owner });
+
     assert.equal(await pages.effectiveJobEnsName(42), `${legacyLabel}.${ROOT_V1}`);
     assert.equal(await pages.effectiveJobEnsNode(42), legacyNode);
-
-    await pages.repairAuthoritySnapshot(42, legacyLabel, { from: owner });
-    await pages.repairTexts(42, { from: owner });
-    await pages.repairAuthorisations(42, { from: owner });
 
     assert.equal(await resolver.text(legacyNode, 'agijobs.spec.public'), 'ipfs://legacy-spec');
     assert.equal(await resolver.text(legacyNode, 'agijobs.completion.public'), 'ipfs://legacy-completion');
@@ -133,11 +133,11 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     const { manager, pages } = await deployPages(badResolver);
     await manager.setJob(3, employer, agent, 'ipfs://spec-3', { from: owner });
 
-    const status = await pages.configurationStatus();
-    assert.equal(status[0], false, 'configuration should not be ready when resolver lacks a readable text surface');
-    assert.equal(status[7], false, 'resolver text support should be explicit');
-    assert.equal(status[8], false, 'resolver setText support should be explicit');
-    assert.equal(status[9], false, 'resolver setAuthorisation support should be explicit');
+    const failureBitmap = await pages.validateConfiguration();
+    assert.notEqual(failureBitmap.toString(), '0', 'configuration should not be ready when resolver lacks a readable text surface');
+    assert.notEqual(failureBitmap.and(web3.utils.toBN(1 << 7)).toString(), '0', 'resolver text support should be explicit');
+    assert.notEqual(failureBitmap.and(web3.utils.toBN(1 << 8)).toString(), '0', 'resolver setText support should be explicit');
+    assert.notEqual(failureBitmap.and(web3.utils.toBN(1 << 9)).toString(), '0', 'resolver setAuthorisation support should be explicit');
 
     const receipt = await manager.callHandleHook(pages.address, 1, 3, { from: owner });
     await expectEvent.inTransaction(receipt.tx, pages, 'ENSHookSkipped', { hook: '1', jobId: '3' });
@@ -149,7 +149,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.setJob(9, employer, agent, 'ipfs://spec-9', { from: owner });
     await manager.callHandleHook(pages.address, 1, 9, { from: owner });
     await manager.callHandleHook(pages.address, 2, 9, { from: owner });
-    await pages.replayLock(9, false, { from: owner });
+    await pages.replayLockExplicit(9, employer, agent, false, { from: owner });
 
     const report = await inspector.inspectJob.call(pages.address, 9, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authoritySnapshotted, true);
@@ -166,7 +166,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     const { manager, pages } = await deployPages(await MockPublicResolverNoAuthRead.new({ from: owner }));
     const inspector = await ENSJobPagesInspector.new({ from: owner });
     await manager.setJob(12, employer, agent, 'ipfs://spec-12', { from: owner });
-    await manager.callHandleHook(pages.address, 1, 12, { from: owner });
+    await pages.createJobPage(12, employer, 'ipfs://spec-12', { from: owner });
 
     const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authReadSupported, false);

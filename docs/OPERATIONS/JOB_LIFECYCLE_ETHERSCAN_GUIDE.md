@@ -90,7 +90,7 @@ flowchart TD
 - `setEnsJobPages(newAddress)` is an **AGIJobManager owner** action.
 - `setApprovalForAll(newEnsJobPages, true)` is a **wrapped-root owner** action on NameWrapper.
 - These are separate transactions; do not assume either one happened automatically.
-- If legacy post-create ENS writes fail, evaluate `migrateLegacyWrappedJobPage(jobId, exactLabel)` on ENSJobPages.
+- If legacy post-create ENS writes fail, evaluate `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls` on ENSJobPages.
 
 ## Expected result after ENS cutover checks
 - `AGIJobManager.ensJobPages()` returns the new ENSJobPages address.
