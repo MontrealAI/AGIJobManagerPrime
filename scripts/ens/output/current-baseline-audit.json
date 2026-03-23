@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-03-23T00:00:00Z",
+  "branch": "main",
+  "primeChangesRequired": false,
+  "managerImplementsViewV1": false,
+  "managerUsesTypedPushHooks": false,
+  "authorityModelBroadlyCorrect": true,
+  "primaryBlocker": "Prime-ENS rich-view mismatch plus unsafe resolver/auth detection",
+  "alreadySolved": [
+    "preview-effective split",
+    "authority snapshotting",
+    "root versioning",
+    "root namehash enforcement",
+    "mixed-mode compatibility getters",
+    "owner-callable repair and replay flows",
+    "non-blocking generic handleHook path"
+  ],
+  "incomplete": [
+    "lean mode metadata hydration",
+    "machine-readable manager compatibility signaling",
+    "docs/runbook honesty"
+  ],
+  "dangerousMismatches": [
+    "0x304e6ade treated as resolver auth support",
+    "inspector guessed isAuthorised(bytes32,address) external read surface",
+    "mainnet deploy script stale implicit job manager default"
+  ],
+  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair"
+}

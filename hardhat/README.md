@@ -26,6 +26,7 @@ Prime architecture:
 - Dry-run mode:
   - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
+- `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
 - Plan summary printed before execution, including Prime bytecode/runtime headroom.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
 
@@ -56,6 +57,7 @@ Common deploy controls:
 - `VERIFY=1` (set `0` or unset to skip verification)
 - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
+- `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
 - `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
 - Pass `--network <mainnet|sepolia>` directly to `npm run verify:prime`
 
@@ -187,9 +189,9 @@ Prime settlement works without ENS wiring. If operators want ENS-backed public j
 Recommended wiring flow:
 
 1. Run `node ../scripts/ens/audit-mainnet.ts` and `node ../scripts/ens/phase0-mainnet-snapshot.mjs` first.
-2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js`.
+2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js` and an explicit `JOB_MANAGER=<prime-or-legacy-manager>` on mainnet.
 3. Confirm wrapped-root approvals and `validateConfiguration()==0`.
 4. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
 5. Validate one canary create flow plus one explicit repair flow from `node ../scripts/ens/repair-from-logs.ts`.
 
-Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail. Missing URIs under the unchanged Prime ABI must be repaired with explicit ENS-side repair functions, not with stale manager-side sync helpers.
+Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail. Under unchanged Prime wiring, authoritative ENS identity can still be issued automatically, but missing spec/completion metadata may require explicit ENS-side repair functions and log-driven scripts; do not rely on stale/nonexistent manager-side sync helpers.

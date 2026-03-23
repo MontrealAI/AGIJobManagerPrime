@@ -5,7 +5,7 @@ const { ethers, run, network } = hre;
 const MAINNET_ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 const MAINNET_NAME_WRAPPER = "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401";
 const MAINNET_PUBLIC_RESOLVER = "0xF29100983E058B709F3D539b0c765937B804AC15";
-const DEFAULT_JOB_MANAGER = "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e";
+const DEFAULT_JOB_MANAGER = "";
 const DEFAULT_ROOT_NAME = "alpha.jobs.agi.eth";
 const MAINNET_SAFETY_PHRASE = "I_UNDERSTAND_MAINNET_DEPLOYMENT";
 
@@ -61,6 +61,9 @@ async function main() {
         `Refusing chainId 1 deploy without DEPLOY_CONFIRM_MAINNET=${MAINNET_SAFETY_PHRASE}`,
       );
     }
+    if (!env("JOB_MANAGER")) {
+      throw new Error('Refusing mainnet ENSJobPages deploy without an explicit JOB_MANAGER environment variable.');
+    }
   }
 
   const ensRegistry = env("ENS_REGISTRY", MAINNET_ENS_REGISTRY);
@@ -70,7 +73,7 @@ async function main() {
   const jobsRootName = ethers.ensNormalize(jobsRootNameInput);
   const computedJobsRootNode = namehash(jobsRootName);
   const jobsRootNode = env("JOBS_ROOT_NODE", computedJobsRootNode);
-  const jobManager = env("JOB_MANAGER", DEFAULT_JOB_MANAGER);
+  const jobManager = chainId === 1 ? env("JOB_MANAGER", "") : env("JOB_MANAGER", DEFAULT_JOB_MANAGER);
 
   const verify = isTruthy(env("VERIFY"));
   const lockConfig = isTruthy(env("LOCK_CONFIG"));

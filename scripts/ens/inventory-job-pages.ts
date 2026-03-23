@@ -164,9 +164,22 @@ async function getLogs(provider, address, topic0) {
       schemaText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'schema'])[0], '');
       specText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
       completionText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
-      const authAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
-      const employerAuthRead = await safe(() => provider.readContract(resolver, authAbi, 'isAuthorised', [node, employer])[0], null);
-      const agentAuthRead = await safe(() => provider.readContract(resolver, authAbi, 'isAuthorised', [node, agent])[0], null);
+      const ownerForAuth = owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner !== ethers.ZeroAddress ? wrappedTokenOwner : owner;
+      const legacyAuthAbi = ['function authorisations(bytes32,address,address) view returns (bool)'];
+      const modernAuthAbi = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
+      const operatorAuthAbi = ['function isApprovedForAll(address,address) view returns (bool)'];
+      const legacySingleAuthAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
+      const readAuth = async (target) => {
+        let value = await safe(() => provider.readContract(resolver, legacyAuthAbi, 'authorisations', [node, ownerForAuth, target])[0], null);
+        if (value !== null) return value;
+        value = await safe(() => provider.readContract(resolver, modernAuthAbi, 'isApprovedFor', [ownerForAuth, node, target])[0], null);
+        if (value !== null) return value;
+        value = await safe(() => provider.readContract(resolver, operatorAuthAbi, 'isApprovedForAll', [ownerForAuth, target])[0], null);
+        if (value !== null) return value;
+        return await safe(() => provider.readContract(resolver, legacySingleAuthAbi, 'isAuthorised', [node, target])[0], null);
+      };
+      const employerAuthRead = employer === ethers.ZeroAddress ? true : await readAuth(employer);
+      const agentAuthRead = agent === ethers.ZeroAddress ? true : await readAuth(agent);
       authReadSupported = employerAuthRead !== null || agentAuthRead !== null;
       employerAuth = employerAuthRead;
       agentAuth = agentAuthRead;
@@ -200,6 +213,8 @@ async function getLogs(provider, address, topic0) {
         : false,
       compatibilityIssued: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsIssued', [jobId])[0], false),
       compatibilityReady: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsReady', [jobId])[0], false),
+      managerMode: 'lean-handleHook-compatible',
+      keeperRequired: true,
       repairable: Boolean(labelSnapshot[0]) || Boolean(authority[0]) || owner !== ethers.ZeroAddress || Boolean(created.specURI) || Boolean(completion.completionURI),
       hasCompletionURI: Boolean(completion.completionURI),
       manager: { employer, assignedAgent: agent, specURI: created.specURI, completionURI: completion.completionURI, terminalObserved: terminalSet.has(jobId) },

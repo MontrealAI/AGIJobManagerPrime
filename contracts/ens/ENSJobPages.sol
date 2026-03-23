@@ -78,7 +78,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     bytes4 private constant RESOLVER_TEXT_INTERFACE_ID = 0x59d1d43c;
     bytes4 private constant RESOLVER_SETTEXT_INTERFACE_ID = 0x10f13a8c;
-    bytes4 private constant RESOLVER_SETAUTH_INTERFACE_ID = 0x304e6ade;
+    bytes4 private constant RESOLVER_CONTENTHASH_INTERFACE_ID = 0xbc1c58d1;
 
     uint8 private constant HOOK_CREATE = 1;
     uint8 private constant HOOK_ASSIGN = 2;
@@ -976,11 +976,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _setAuthorisationBestEffort(uint8 hook, uint256 jobId, bytes32 node, address account, bool authorised) internal {
         if (account == address(0)) return;
-        try publicResolver.setAuthorisation(node, account, authorised) {
+        if (_callResolverBool(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, node, account, authorised))) {
             emit JobENSPermissionsUpdated(jobId, account, authorised);
-        } catch {
-            emit ENSHookBestEffortFailure(hook, jobId, "SET_AUTH");
+            return;
         }
+        if (_callResolverBool(address(publicResolver), abi.encodeWithSignature("approve(bytes32,address,bool)", node, account, authorised))) {
+            emit JobENSPermissionsUpdated(jobId, account, authorised);
+            return;
+        }
+        emit ENSHookBestEffortFailure(hook, jobId, "SET_AUTH");
     }
 
     function _nodeExists(bytes32 node) internal view returns (bool) {
@@ -1232,9 +1236,49 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         supportsSetText =
             _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID) ||
             _supportsResolverWriteSurface(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setText.selector, bytes32(0), "schema", "probe"));
-        supportsSetAuthorisation =
-            _supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID) ||
-            _supportsResolverWriteSurface(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, bytes32(0), address(this), true));
+        supportsSetAuthorisation = _supportsLegacyResolverAuthFamily(address(publicResolver)) || _supportsModernResolverAuthFamily(address(publicResolver));
+    }
+
+
+    function _supportsLegacyResolverAuthFamily(address resolver) internal view returns (bool) {
+        return
+            _supportsLegacyResolverAuthWrite(resolver) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this))) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isAuthorised(bytes32,address)", bytes32(0), address(this)));
+    }
+
+    function _supportsResolverReadSurface(address resolver, bytes memory payload) internal view returns (bool ok) {
+        if (resolver == address(0) || resolver.code.length == 0) return false;
+        bytes memory returndata;
+        (ok, returndata) = resolver.staticcall(payload);
+        return ok && returndata.length >= 32;
+    }
+
+    function _supportsLegacyResolverAuthWrite(address resolver) internal view returns (bool) {
+        return _supportsResolverWriteSurface(resolver, abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, bytes32(0), address(this), true));
+    }
+
+    function _supportsModernResolverAuthFamily(address resolver) internal view returns (bool) {
+        return
+            _supportsModernResolverAuthWrite(resolver) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedFor(address,bytes32,address)", address(this), bytes32(0), address(this))) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedForAll(address,address)", address(this), address(this)));
+    }
+
+    function _supportsModernResolverAuthWrite(address resolver) internal view returns (bool) {
+        return _supportsResolverWriteSurface(resolver, abi.encodeWithSignature("approve(bytes32,address,bool)", bytes32(0), address(this), true));
+    }
+
+    function _callResolverBool(address target, bytes memory payload) internal returns (bool ok) {
+        if (target == address(0) || target.code.length == 0) return false;
+        bytes memory returndata;
+        (ok, returndata) = target.call(payload);
+        if (!ok) return false;
+        if (returndata.length > 0) {
+            if (returndata.length < 32) return false;
+            return abi.decode(returndata, (bool));
+        }
+        return true;
     }
 
     function _supportsTextLookup(address resolver) internal view returns (bool ok) {
