@@ -440,8 +440,10 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!ok || rootOwner == address(0)) failures |= CONFIG_ERR_ROOT_OWNER;
         if (ok && rootOwner == address(nameWrapper) && !_isWrapperAuthorizationReady()) failures |= CONFIG_ERR_WRAPPER_APPROVAL;
         if (ok && rootOwner != address(0) && rootOwner != address(this) && rootOwner != address(nameWrapper)) failures |= CONFIG_ERR_ROOT_OWNER;
-        (bool supportsText,,) = _resolverCapabilities();
+        (bool supportsText, bool supportsSetText, bool supportsSetAuthorisation) = _resolverCapabilities();
         if (!supportsText) failures |= CONFIG_ERR_RESOLVER_TEXT;
+        if (!supportsSetText) failures |= CONFIG_ERR_RESOLVER_SETTEXT;
+        if (!supportsSetAuthorisation) failures |= CONFIG_ERR_RESOLVER_SETAUTH;
     }
 
     function jobEnsPreview(uint256 jobId) external view returns (string memory) {

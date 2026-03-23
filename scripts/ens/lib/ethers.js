@@ -29,6 +29,8 @@ function compat() {
     ...raw,
     ZeroAddress: raw.constants.AddressZero,
     ZeroHash: raw.constants.HashZero,
+    Contract: raw.Contract,
+    JsonRpcProvider: raw.providers.JsonRpcProvider,
     Interface: utils.Interface,
     Wallet: raw.Wallet,
     id: utils.id,
