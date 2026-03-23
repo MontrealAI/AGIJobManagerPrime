@@ -1,0 +1,8 @@
+{
+  "generatedAt": "2026-03-23T01:50:19.630Z",
+  "rpc": "https://ethereum-rpc.publicnode.com",
+  "jobId": "0",
+  "exactLabel": "agijob-0",
+  "execute": false,
+  "error": "pages.jobAuthorityInfo read failed: AggregateError"
+}
