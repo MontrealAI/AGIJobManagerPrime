@@ -50,7 +50,12 @@ contract ENSJobPagesInspector {
         bool schemaTextPresent;
         bool specTextPresent;
         bool completionTextPresent;
+        bool authReadSupported;
+        bool employerAuthorisedObserved;
+        bool agentAuthorisedObserved;
         bool authorisationsAsExpected;
+        bool authObservationIncomplete;
+        bool metadataComplete;
         bool previewReady;
         bool effectiveReady;
         bool finalizable;
@@ -139,9 +144,16 @@ contract ENSJobPagesInspector {
                 status.schemaTextPresent = _safeHasText(nodeResolver, authoritativeNode, "schema");
                 status.specTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.spec.public");
                 status.completionTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.completion.public");
-                bool employerOk = employer == address(0) || _safeIsAuthorised(nodeResolver, authoritativeNode, employer);
-                bool agentOk = agent == address(0) || _safeIsAuthorised(nodeResolver, authoritativeNode, agent);
-                status.authorisationsAsExpected = employerOk && agentOk;
+                status.metadataComplete = status.schemaTextPresent && status.specTextPresent;
+                (bool authReadSupported, bool employerKnown, bool employerOk) =
+                    employer == address(0) ? (true, true, true) : _safeReadAuthorisation(nodeResolver, authoritativeNode, employer);
+                (bool agentReadSupported, bool agentKnown, bool agentOk) =
+                    agent == address(0) ? (true, true, true) : _safeReadAuthorisation(nodeResolver, authoritativeNode, agent);
+                status.authReadSupported = authReadSupported && agentReadSupported;
+                status.employerAuthorisedObserved = employerKnown && employerOk;
+                status.agentAuthorisedObserved = agentKnown && agentOk;
+                status.authObservationIncomplete = (employer != address(0) && !employerKnown) || (agent != address(0) && !agentKnown);
+                status.authorisationsAsExpected = !status.authObservationIncomplete && employerOk && agentOk;
             }
         }
 
@@ -160,8 +172,13 @@ contract ENSJobPagesInspector {
         return bytes(abi.decode(data, (string))).length != 0;
     }
 
-    function _safeIsAuthorised(address resolver, bytes32 node, address target) internal view returns (bool) {
+    function _safeReadAuthorisation(address resolver, bytes32 node, address target)
+        internal
+        view
+        returns (bool readSupported, bool known, bool authorised)
+    {
         (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature("isAuthorised(bytes32,address)", node, target));
-        return success && data.length >= 32 && abi.decode(data, (bool));
+        if (!success || data.length < 32) return (false, false, false);
+        return (true, true, abi.decode(data, (bool)));
     }
 }

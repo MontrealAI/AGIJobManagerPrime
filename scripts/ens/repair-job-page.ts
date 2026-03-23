@@ -11,199 +11,148 @@ const OUTPUT = path.resolve('scripts/ens/output/repair-job-page.json');
 const rawJobId = process.env.JOB_ID || process.argv[2];
 const exactLabel = (process.env.EXACT_LABEL || process.argv[3] || '').trim();
 const execute = process.env.EXECUTE === '1';
+const rootVersionId = Number(process.env.ROOT_VERSION_ID || '0');
 
-const ABI = [
+const PAGES_ABI = [
   'function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)',
   'function jobLabelSnapshot(uint256) view returns (bool,string)',
   'function jobsRootNode() view returns (bytes32)',
-  'function repairAuthoritySnapshot(uint256,string)',
-  'function replayCreate(uint256)',
-  'function migrateLegacyWrappedJobPage(uint256,string)',
-  'function repairResolver(uint256)',
-  'function repairTexts(uint256)',
-  'function repairAuthorisations(uint256)',
-  'function replayAssign(uint256)',
-  'function replayCompletion(uint256)',
-  'function replayRevoke(uint256)',
-  'function replayLock(uint256,bool)',
+  'function rootVersionInfo(uint256) view returns (bytes32,string,uint64,bool)',
   'function nameWrapper() view returns (address)',
+  'function publicResolver() view returns (address)',
   'function jobManager() view returns (address)',
+  'function repairAuthoritySnapshot(uint256,string)',
+  'function repairAuthoritySnapshotExplicit(uint256,string,uint256)',
+  'function repairResolver(uint256)',
+  'function repairSpecTextExplicit(uint256,string)',
+  'function repairCompletionTextExplicit(uint256,string)',
+  'function repairTextsExplicit(uint256,string,string)',
+  'function repairAuthorisationsExplicit(uint256,address,address,bool)',
+  'function replayCreateExplicit(uint256,address,string)',
+  'function replayAssignExplicit(uint256,address)',
+  'function replayCompletionExplicit(uint256,string)',
+  'function replayRevokeExplicit(uint256,address,address)',
+  'function replayLockExplicit(uint256,address,address,bool)'
 ];
-
+const PRIME_ABI = [
+  'function jobEmployerOf(uint256) view returns (address)',
+  'function jobAssignedAgentOf(uint256) view returns (address)',
+  'event JobCreated(uint256 indexed jobId,address indexed employer,uint256 payout,uint256 duration,string jobSpecURI,uint8 intakeMode,bytes32 perJobAgentRoot,string details)',
+  'event JobCompletionRequested(uint256 indexed jobId,address indexed agent,string jobCompletionURI)',
+  'event JobCompleted(uint256 indexed jobId,address indexed agent,uint256 indexed reputationPoints)',
+  'event JobEmployerRefunded(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 refund)',
+  'event JobExpired(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 payout)'
+];
 const ENS_ABI = ['function owner(bytes32) view returns (address)'];
 const WRAPPER_ABI = ['function ownerOf(uint256) view returns (address)'];
-const PRIME_VIEW_ABI = [
-  'function getJobCore(uint256) view returns (address employer,address assignedAgent,uint256 payout,uint256 duration,uint256 assignedAt,bool completed,bool disputed,bool expired,uint8 agentPayoutPct)',
-  'function getJobSpecURI(uint256) view returns (string)',
-  'function getJobCompletionURI(uint256) view returns (string)',
-];
+
+const primeIface = new ethers.Interface(PRIME_ABI);
 
 async function mustRead(label, fn) {
-  try {
-    return await fn();
-  } catch (error) {
-    throw new Error(`${label} read failed: ${error?.shortMessage || error?.message || String(error)}`);
-  }
+  try { return await fn(); } catch (error) { throw new Error(`${label} read failed: ${error?.shortMessage || error?.message || String(error)}`); }
 }
-
-async function isConfirmedCompatibilityBlocker(provider, jobId) {
-  try {
-    provider.readContract(ENS_JOB_PAGES, ABI, 'nameWrapper');
-    provider.readContract(ENS_JOB_PAGES, ABI, 'jobManager');
-  } catch {
-    return false;
-  }
-
-  try {
-    provider.readContract(
-      ENS_JOB_PAGES,
-      ['function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)'],
-      'configurationStatus'
-    );
-    return false;
-  } catch {
-    // Treat the combination of stable config getters working while both new authority/status getters revert
-    // as a confirmed pre-authoritative deployment mismatch instead of a transient transport failure.
-  }
-
-  try {
-    provider.readContract(
-      ENS_JOB_PAGES,
-      ['function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)'],
-      'jobAuthorityInfo',
-      [jobId]
-    );
-    return false;
-  } catch {
-    return true;
-  }
+async function safe(fn, fallback = null) { try { return await fn(); } catch { return fallback; } }
+async function getLogs(provider, address, topic0) {
+  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
 }
 
 async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
-  if (typeof rawJobId === 'undefined') {
-    throw new Error('JOB_ID is required; refusing to default to job 0.');
-  }
+  if (typeof rawJobId === 'undefined') throw new Error('JOB_ID is required; refusing to default to job 0.');
   const jobId = Number(rawJobId);
-  if (!Number.isInteger(jobId) || jobId < 0) {
-    throw new Error(`Invalid JOB_ID: ${rawJobId}`);
-  }
+  if (!Number.isInteger(jobId) || jobId < 0) throw new Error(`Invalid JOB_ID: ${rawJobId}`);
 
   const provider = new CurlJsonRpcProvider(RPC);
-  let authority;
-  try {
-    authority = await mustRead('pages.jobAuthorityInfo', () => Array.from(provider.readContract(ENS_JOB_PAGES, ABI, 'jobAuthorityInfo', [jobId])));
-  } catch (error) {
-    if (!(await isConfirmedCompatibilityBlocker(provider, jobId))) {
-      throw error;
-    }
-    const payload = {
-      generatedAt: new Date().toISOString(),
-      rpc: RPC,
-      jobId,
-      exactLabel,
-      execute,
-      compatibilityBlocker: true,
-      error: error.message,
-      recommendation: 'Live ENSJobPages does not expose jobAuthorityInfo(uint256); deploy the authoritative ENSJobPages replacement before using repair tooling.',
-    };
-    fs.writeFileSync(OUTPUT, `${JSON.stringify(payload, null, 2)}\n`);
-    console.log(`Wrote ${OUTPUT}`);
-    return;
-  }
-  const labelSnapshot = await mustRead('pages.jobLabelSnapshot', () => Array.from(provider.readContract(ENS_JOB_PAGES, ABI, 'jobLabelSnapshot', [jobId])));
-  const jobsRootNode = await mustRead('pages.jobsRootNode', () => provider.readContract(ENS_JOB_PAGES, ABI, 'jobsRootNode')[0]);
-  const nameWrapperAddress = await mustRead('pages.nameWrapper', () => provider.readContract(ENS_JOB_PAGES, ABI, 'nameWrapper')[0]);
-  const jobManagerAddress = await mustRead('pages.jobManager', () => provider.readContract(ENS_JOB_PAGES, ABI, 'jobManager')[0]);
+  const authority = await mustRead('pages.jobAuthorityInfo', () => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobAuthorityInfo', [jobId])));
+  const labelSnapshot = await mustRead('pages.jobLabelSnapshot', () => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobLabelSnapshot', [jobId])));
+  const jobsRootNode = await mustRead('pages.jobsRootNode', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobsRootNode')[0]);
+  const nameWrapperAddress = await mustRead('pages.nameWrapper', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'nameWrapper')[0]);
+  const publicResolver = await mustRead('pages.publicResolver', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'publicResolver')[0]);
+  const jobManagerAddress = await mustRead('pages.jobManager', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobManager')[0]);
+  const selectedRootNode = rootVersionId > 0
+    ? await mustRead('pages.rootVersionInfo', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'rootVersionInfo', [rootVersionId])[0])
+    : jobsRootNode;
 
-  const plan = [];
+  const createdLogs = await getLogs(provider, jobManagerAddress, primeIface.getEvent('JobCreated').topicHash);
+  const completionLogs = await getLogs(provider, jobManagerAddress, primeIface.getEvent('JobCompletionRequested').topicHash);
+  const completedLogs = await getLogs(provider, jobManagerAddress, primeIface.getEvent('JobCompleted').topicHash);
+  const refundedLogs = await getLogs(provider, jobManagerAddress, primeIface.getEvent('JobEmployerRefunded').topicHash);
+  const expiredLogs = await getLogs(provider, jobManagerAddress, primeIface.getEvent('JobExpired').topicHash);
+
+  let specURI = '';
+  let completionURI = '';
+  for (const log of createdLogs) {
+    const parsed = primeIface.parseLog(log);
+    if (Number(parsed.args.jobId) === jobId) specURI = parsed.args.jobSpecURI;
+  }
+  for (const log of completionLogs) {
+    const parsed = primeIface.parseLog(log);
+    if (Number(parsed.args.jobId) === jobId) completionURI = parsed.args.jobCompletionURI;
+  }
+  const terminalObserved = [...completedLogs, ...refundedLogs, ...expiredLogs].some((log) => Number(ethers.getBigInt(log.topics[1])) === jobId);
+
+  const employer = await safe(() => provider.readContract(jobManagerAddress, PRIME_ABI, 'jobEmployerOf', [jobId])[0], ethers.ZeroAddress);
+  const agent = await safe(() => provider.readContract(jobManagerAddress, PRIME_ABI, 'jobAssignedAgentOf', [jobId])[0], ethers.ZeroAddress);
+  const allowAuth = !terminalObserved;
+
   const labelSnapshotSet = Boolean(labelSnapshot[0]);
-  const requiresAuthorityRepair = !authority[0];
-  const exactLabelRequired = requiresAuthorityRepair && !labelSnapshotSet;
-  if (exactLabelRequired && !exactLabel) {
-    throw new Error(
-      'EXACT_LABEL is required when planning authority repair for an unsnapshotted job; refusing to default to preview label.'
-    );
-  }
-  if (requiresAuthorityRepair) {
-    plan.push({ action: 'repairAuthoritySnapshot', args: [jobId, exactLabel] });
-  }
-
   const resolvedLabel = authority[0] ? authority[1] : (labelSnapshotSet ? labelSnapshot[1] : exactLabel);
   const resolvedNode = authority[0]
     ? authority[5]
-    : (resolvedLabel && jobsRootNode !== ethers.ZeroHash
-      ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [jobsRootNode, ethers.id(resolvedLabel)])
-      : ethers.ZeroHash);
+    : (resolvedLabel && selectedRootNode !== ethers.ZeroHash ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [selectedRootNode, ethers.id(resolvedLabel)]) : ethers.ZeroHash);
   const nodeOwner = resolvedNode !== ethers.ZeroHash ? await mustRead('ens.owner(resolvedNode)', () => provider.readContract(ENS_REGISTRY, ENS_ABI, 'owner', [resolvedNode])[0]) : ethers.ZeroAddress;
   const wrappedTokenOwner = resolvedNode !== ethers.ZeroHash && nodeOwner !== ethers.ZeroAddress && nodeOwner.toLowerCase() === nameWrapperAddress.toLowerCase()
     ? await mustRead('nameWrapper.ownerOf(resolvedNode)', () => provider.readContract(nameWrapperAddress, WRAPPER_ABI, 'ownerOf', [BigInt(resolvedNode)])[0])
     : ethers.ZeroAddress;
-  const requiresLegacyMigration = nodeOwner !== ethers.ZeroAddress
-    && nodeOwner.toLowerCase() === nameWrapperAddress.toLowerCase()
-    && wrappedTokenOwner !== ethers.ZeroAddress
-    && wrappedTokenOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase();
-  const requiresManualNodeTakeover = nodeOwner !== ethers.ZeroAddress
-    && nodeOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase()
-    && nodeOwner.toLowerCase() !== nameWrapperAddress.toLowerCase();
-  const needsCreateReplay = nodeOwner === ethers.ZeroAddress;
-  const hasReadableCore = Boolean(await mustRead('manager.getJobCore', () => provider.readContract(jobManagerAddress, PRIME_VIEW_ABI, 'getJobCore', [jobId])).catch(() => null));
 
-  if (requiresLegacyMigration) {
-    if (!resolvedLabel) {
-      throw new Error('Exact legacy label is required to route unmanaged wrapped pages to migrateLegacyWrappedJobPage.');
-    }
-    plan.push({ action: 'migrateLegacyWrappedJobPage', args: [jobId, resolvedLabel] });
-  } else if (requiresManualNodeTakeover) {
-    // Unwrapped externally-owned nodes need manual ownership takeover before ENSJobPages repair writes can succeed.
-  } else if (!needsCreateReplay) {
-    plan.push({ action: 'repairResolver', args: [jobId] });
-    if (hasReadableCore) {
-      plan.push({ action: 'repairTexts', args: [jobId] });
-      plan.push({ action: 'repairAuthorisations', args: [jobId] });
-    }
-  } else if (hasReadableCore) {
-    plan.push({ action: 'replayCreate', args: [jobId] });
-    plan.push({ action: 'repairResolver', args: [jobId] });
-    plan.push({ action: 'repairTexts', args: [jobId] });
-    plan.push({ action: 'repairAuthorisations', args: [jobId] });
+  const plan = [];
+  if (!authority[0]) {
+    if (!resolvedLabel) throw new Error('EXACT_LABEL is required when authority is absent and no snapshotted label exists.');
+    if (rootVersionId > 0) plan.push({ action: 'repairAuthoritySnapshotExplicit', args: [jobId, resolvedLabel, rootVersionId] });
+    else plan.push({ action: 'repairAuthoritySnapshot', args: [jobId, resolvedLabel] });
   }
 
-  const iface = new ethers.Interface(ABI);
+  const needsNodeCreate = nodeOwner === ethers.ZeroAddress;
+  if (needsNodeCreate && employer !== ethers.ZeroAddress) {
+    plan.push({ action: 'replayCreateExplicit', args: [jobId, employer, specURI] });
+  }
+  if (!needsNodeCreate && nodeOwner !== ethers.ZeroAddress && nodeOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase() && nodeOwner.toLowerCase() !== nameWrapperAddress.toLowerCase()) {
+    plan.push({ action: 'manualOwnershipIntervention', args: [resolvedNode, nodeOwner] });
+  }
+  if (nodeOwner !== ethers.ZeroAddress && nodeOwner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase()) {
+    plan.push({ action: 'manualWrapperTakeoverOrApproval', args: [resolvedNode, wrappedTokenOwner] });
+  }
+  plan.push({ action: 'repairResolver', args: [jobId] });
+  if (specURI || completionURI) {
+    plan.push({ action: 'repairTextsExplicit', args: [jobId, specURI, completionURI] });
+  }
+  if (employer !== ethers.ZeroAddress || agent !== ethers.ZeroAddress) {
+    plan.push({ action: 'repairAuthorisationsExplicit', args: [jobId, employer, agent, allowAuth] });
+  }
+  if (agent !== ethers.ZeroAddress && allowAuth) plan.push({ action: 'replayAssignExplicit', args: [jobId, agent] });
+  if (completionURI) plan.push({ action: 'replayCompletionExplicit', args: [jobId, completionURI] });
+  if (!allowAuth) {
+    plan.push({ action: 'replayRevokeExplicit', args: [jobId, employer, agent] });
+    plan.push({ action: 'replayLockExplicit', args: [jobId, employer, agent, false] });
+  }
+
+  const iface = new ethers.Interface(PAGES_ABI);
   const payload = {
-    generatedAt: new Date().toISOString(),
-    rpc: RPC,
-    jobId,
-    exactLabel,
-    labelSnapshot: { isSet: labelSnapshotSet, label: labelSnapshot[1] || '' },
-    authorityEstablished: Boolean(authority[0]),
-    exactLabelRequired,
-    resolvedLabel,
-    resolvedNode,
-    nodeOwner,
-    wrappedTokenOwner,
-    hasReadableCore,
-    needsCreateReplay,
-    requiresLegacyMigration,
-    requiresManualNodeTakeover,
-    execute,
-    plan: plan.map((step) => ({ ...step, calldata: iface.encodeFunctionData(step.action, step.args) })),
+    generatedAt: new Date().toISOString(), rpc: RPC, jobId, exactLabel, rootVersionId, execute,
+    authorityEstablished: Boolean(authority[0]), labelSnapshot: { isSet: labelSnapshotSet, label: labelSnapshot[1] || '' },
+    manager: { employer, assignedAgent: agent, specURI, completionURI, terminalObserved },
+    selectedRootNode, resolvedLabel, resolvedNode, nodeOwner, wrappedTokenOwner, publicResolver,
+    plan: plan.map((step) => ({ ...step, calldata: step.action.startsWith('manual') ? null : iface.encodeFunctionData(step.action, step.args) })),
   };
 
   if (execute) {
     if (!process.env.OWNER_PRIVATE_KEY) throw new Error('OWNER_PRIVATE_KEY is required when EXECUTE=1');
     const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
-    for (const step of plan) {
-      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, step.action, step.args);
-      const sent = { action: step.action, txHash: hash, status: 'broadcast' };
-      payload.sent.push(sent);
+    for (const step of plan.filter((step) => !step.action.startsWith('manual'))) {
+      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, PAGES_ABI, step.action, step.args);
       const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce, to: tx.to, data: tx.data, value: tx.value });
-      sent.status = 'confirmed';
-      sent.blockNumber = receipt.blockNumber.toString();
-      if (receipt.replaced) {
-        sent.replacedBy = receipt.effectiveHash;
-      }
+      payload.sent.push({ action: step.action, txHash: hash, blockNumber: receipt.blockNumber.toString() });
     }
   }
 
@@ -212,14 +161,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  const payload = {
-    generatedAt: new Date().toISOString(),
-    rpc: RPC,
-    jobId: typeof rawJobId === 'undefined' ? null : rawJobId,
-    exactLabel,
-    execute,
-    error: error?.message || String(error),
-  };
+  const payload = { generatedAt: new Date().toISOString(), rpc: RPC, jobId: typeof rawJobId === 'undefined' ? null : rawJobId, exactLabel, rootVersionId, execute, error: error?.message || String(error) };
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   fs.writeFileSync(OUTPUT, `${JSON.stringify(payload, null, 2)}\n`);
   console.error(error);
