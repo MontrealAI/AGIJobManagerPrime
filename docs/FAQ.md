@@ -2,7 +2,7 @@
 
 ## In one minute
 - Settlement and ENS metadata are intentionally decoupled: settlement can succeed even if ENS writes fail.
-- ENS name format is `<prefix><jobId>.<jobsRootName>` with default prefix `agijob`.
+- ENS preview name format is `<prefix><jobId>.<jobsRootName>` with default prefix `agijob-`.
 - Prefix changes do not rename already snapshotted legacy labels.
 - ENSJobPages replacement requires manual NameWrapper approval and manual `setEnsJobPages(...)` wiring.
 
@@ -37,8 +37,8 @@ A nested/best-effort ENS sub-operation can revert while AGIJobManager settlement
 ## Why can settlement succeed while ENS fails?
 ENS writes are best-effort side effects. Core escrow settlement is intentionally non-dependent on ENS metadata writes to avoid blocking protocol outcomes.
 
-## Why do some jobs use `agijob...` and others `job-...`?
-Old jobs may have snapshotted historical labels from previous ENSJobPages configuration. New prefix settings apply to unsnapshotted/future jobs only.
+## Why do some jobs use `agijob-...` and others `job-...`?
+Old jobs may have snapshotted historical labels from previous ENSJobPages configuration. New prefix settings apply to unsnapshotted/future jobs only, and preview values must not be treated as authoritative until `effectiveJobEns*` authority exists.
 
 ## Why do old jobs need migration after ENSJobPages replacement?
 A replacement ENSJobPages contract may not have legacy label snapshots. Without snapshots, some post-create writes can fail until owner imports exact labels via `migrateLegacyWrappedJobPage(jobId, exactLabel)`.

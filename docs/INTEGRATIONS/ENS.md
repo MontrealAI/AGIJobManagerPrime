@@ -66,7 +66,7 @@ flowchart TD
 | Root nodes | `clubRootNode`, `agentRootNode`, `alphaClubRootNode`, `alphaAgentRootNode` | `onlyOwner` via `updateRootNodes` | root getters + `RootNodesUpdated` | Blocked by lock; requires empty escrow | Misconfigured nodes can deny valid users or admit wrong namespace |
 | Merkle roots | `validatorMerkleRoot`, `agentMerkleRoot` | `onlyOwner` via `updateMerkleRoots` | getters + `MerkleRootsUpdated` | Always owner-updateable (not blocked by lock or escrow) | Primary long-lived allowlist governance lever; preserve prior authorized AI agents/validators unless intentionally removing access |
 | ENS hook target | `address public ensJobPages` | `onlyOwner` via `setEnsJobPages` | `ensJobPages()` + `EnsJobPagesUpdated` | Blocked by lock | Hook failures are intentionally non-fatal |
-| ENS URI toggle | `bool private useEnsJobTokenURI` | `onlyOwner` via `setUseEnsJobTokenURI` | Observe `NFTIssued` URI and `tokenURI(tokenId)` | Not blocked by identity lock | Enable only after hook target hardening |
+| ENS URI toggle | Legacy-manager-only surface | Not available on current Prime | On current Prime, observe `NFTIssued` URI and `tokenURI(tokenId)` staying completion-URI/IPFS based | N/A on current Prime | Do not document this as a live Prime control until a separately sized manager release wires it end-to-end |
 | Identity lock | `bool public lockIdentityConfig` | `onlyOwner` via `lockIdentityConfiguration` | `lockIdentityConfig()` + `IdentityConfigurationLocked` | Irreversible | Freezes token/ENS/wrapper/root/hook wiring |
 
 > **Safety warning**

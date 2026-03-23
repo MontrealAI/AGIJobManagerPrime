@@ -53,7 +53,7 @@ async function mustRead(label, fn) {
 }
 async function safe(fn, fallback = null) { try { return await fn(); } catch { return fallback; } }
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  return provider.getLogs({ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] });
 }
 
 async function main() {

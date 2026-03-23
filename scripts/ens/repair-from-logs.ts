@@ -23,7 +23,7 @@ const PRIME_ABI = [
 const iface = new ethers.Interface(PRIME_ABI);
 
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  return provider.getLogs({ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] });
 }
 async function safe(fn, fallback = null) { try { return await fn(); } catch { return fallback; } }
 

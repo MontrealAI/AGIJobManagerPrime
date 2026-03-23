@@ -34,11 +34,11 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    A[Finalize or resolve] --> B{useEnsJobTokenURI enabled?}
-    B -->|No| C[jobCompletionURI]
-    B -->|Yes| D[staticcall selector 0x751809b4 to ensJobPages]
+    A[Finalize or resolve] --> B{Current Prime deployment?}
+    B -->|Yes| C[jobCompletionURI]
+    B -->|No, future ENS-aware manager only| D[staticcall selector 0x751809b4 to ensJobPages]
     D -->|Valid ABI string| E[Router URI]
-    D -->|Revert/invalid/empty| C[jobCompletionURI]
+    D -->|Revert/invalid/empty| C
     C --> F[Apply baseIpfsUrl normalization]
     E --> F
     F --> G[Store tokenURI and mint NFT]

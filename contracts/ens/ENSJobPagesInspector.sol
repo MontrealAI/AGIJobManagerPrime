@@ -87,34 +87,72 @@ contract ENSJobPagesInspector {
         returns (JobStatusView memory status)
     {
         IENSJobPagesInspectorTarget pages = IENSJobPagesInspectorTarget(target);
-        (
-            bool configured,
-            bool locked,
-            bool rootConfigured,
-            bool rootNodeMatchesRootName,
-            bool rootNormalized,
-            bool wrappedRoot,
-            bool wrapperAuthorizationReady,
-            bool resolverSupportsText,
-            bool resolverSupportsSetText,
-            bool resolverSupportsAuthorisation,
-            uint256 failureBitmap
-        ) = pages.configurationStatus();
+        bool configured;
+        bool locked;
+        bool rootConfigured;
+        bool rootNodeMatchesRootName;
+        bool rootNormalized;
+        bool wrappedRoot;
+        bool wrapperAuthorizationReady;
+        bool resolverSupportsText;
+        bool resolverSupportsSetText;
+        bool resolverSupportsAuthorisation;
+        uint256 failureBitmap;
+        try pages.configurationStatus() returns (
+            bool configured_,
+            bool locked_,
+            bool rootConfigured_,
+            bool rootNodeMatchesRootName_,
+            bool rootNormalized_,
+            bool wrappedRoot_,
+            bool wrapperAuthorizationReady_,
+            bool resolverSupportsText_,
+            bool resolverSupportsSetText_,
+            bool resolverSupportsAuthorisation_,
+            uint256 failureBitmap_
+        ) {
+            configured = configured_;
+            locked = locked_;
+            rootConfigured = rootConfigured_;
+            rootNodeMatchesRootName = rootNodeMatchesRootName_;
+            rootNormalized = rootNormalized_;
+            wrappedRoot = wrappedRoot_;
+            wrapperAuthorizationReady = wrapperAuthorizationReady_;
+            resolverSupportsText = resolverSupportsText_;
+            resolverSupportsSetText = resolverSupportsSetText_;
+            resolverSupportsAuthorisation = resolverSupportsAuthorisation_;
+            failureBitmap = failureBitmap_;
+        } catch {}
 
-        (
-            bool authorityEstablished,
-            string memory label,
-            ,
-            ,
-            bytes32 authoritativeRootNode,
-            bytes32 authoritativeNode,
-            ,
-            ,
-            ,
-            bool legacyImported,
-            bool finalized,
-            bool fuseBurned
-        ) = pages.jobAuthorityInfo(jobId);
+        bool authorityEstablished;
+        string memory label;
+        bytes32 authoritativeRootNode;
+        bytes32 authoritativeNode;
+        bool legacyImported;
+        bool finalized;
+        bool fuseBurned;
+        try pages.jobAuthorityInfo(jobId) returns (
+            bool authorityEstablished_,
+            string memory label_,
+            bytes32,
+            uint32,
+            bytes32 authoritativeRootNode_,
+            bytes32 authoritativeNode_,
+            uint8,
+            uint32,
+            uint64,
+            bool legacyImported_,
+            bool finalized_,
+            bool fuseBurned_
+        ) {
+            authorityEstablished = authorityEstablished_;
+            label = label_;
+            authoritativeRootNode = authoritativeRootNode_;
+            authoritativeNode = authoritativeNode_;
+            legacyImported = legacyImported_;
+            finalized = finalized_;
+            fuseBurned = fuseBurned_;
+        } catch {}
 
         address manager = pages.jobManager();
         (status.managerSupportsV1Views, status.managerMode, status.metadataAutoWriteSupported, status.keeperRequired) =
@@ -134,17 +172,17 @@ contract ENSJobPagesInspector {
         status.legacyImported = legacyImported;
         status.finalized = finalized;
         status.fuseBurned = fuseBurned;
-        status.previewLabel = pages.previewJobEnsLabel(jobId);
-        status.previewName = pages.previewJobEnsName(jobId);
-        status.previewURI = pages.previewJobEnsURI(jobId);
+        status.previewLabel = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsLabel(uint256)", jobId));
+        status.previewName = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsName(uint256)", jobId));
+        status.previewURI = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsURI(uint256)", jobId));
         status.previewReady = bytes(status.previewName).length != 0;
         status.failureCode = failureBitmap;
 
         if (authorityEstablished) {
-            status.effectiveLabel = pages.effectiveJobEnsLabel(jobId);
-            status.effectiveName = pages.effectiveJobEnsName(jobId);
-            status.effectiveURI = pages.effectiveJobEnsURI(jobId);
-            status.effectiveNode = pages.effectiveJobEnsNode(jobId);
+            status.effectiveLabel = _safeStringCall(target, abi.encodeWithSignature("effectiveJobEnsLabel(uint256)", jobId));
+            status.effectiveName = _safeStringCall(target, abi.encodeWithSignature("effectiveJobEnsName(uint256)", jobId));
+            status.effectiveURI = _safeStringCall(target, abi.encodeWithSignature("effectiveJobEnsURI(uint256)", jobId));
+            status.effectiveNode = _safeBytes32Call(target, abi.encodeWithSignature("effectiveJobEnsNode(uint256)", jobId));
             status.effectiveReady = bytes(status.effectiveName).length != 0;
 
             IENSRegistryLite ens = IENSRegistryLite(pages.ens());
@@ -213,6 +251,20 @@ contract ENSJobPagesInspector {
         return success || data.length != 0;
     }
 
+    function _safeStringCall(address target, bytes memory payload) internal view returns (string memory value) {
+        if (target == address(0) || target.code.length == 0) return "";
+        (bool success, bytes memory data) = target.staticcall(payload);
+        if (!success || data.length == 0) return "";
+        value = abi.decode(data, (string));
+    }
+
+    function _safeBytes32Call(address target, bytes memory payload) internal view returns (bytes32 value) {
+        if (target == address(0) || target.code.length == 0) return bytes32(0);
+        (bool success, bytes memory data) = target.staticcall(payload);
+        if (!success || data.length < 32) return bytes32(0);
+        value = abi.decode(data, (bytes32));
+    }
+
 
     function _resolveAuthOwner(address nameWrapper, address nodeOwner, bytes32 node) internal view returns (address authOwner) {
         authOwner = nodeOwner;
@@ -248,13 +300,10 @@ contract ENSJobPagesInspector {
         (success, data) = resolver.staticcall(abi.encodeWithSignature('authorisations(bytes32,address,address)', node, authOwner, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
-        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedFor(address,bytes32,address)', authOwner, node, target));
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedFor(bytes32,address)', node, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
         (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedForAll(address,address)', authOwner, target));
-        if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
-
-        (success, data) = resolver.staticcall(abi.encodeWithSignature('isAuthorised(bytes32,address)', node, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
         return (false, false, false);

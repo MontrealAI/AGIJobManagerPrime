@@ -37,7 +37,7 @@ DRY_RUN=1 DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT npm run deploy:
 DEPLOY_CONFIRM_MAINNET=I_UNDERSTAND_MAINNET_DEPLOYMENT VERIFY=1 JOB_MANAGER=0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e npm run deploy:ens-job-pages:mainnet
 ```
 
-The deploy script now defaults `JOB_MANAGER` to the current Prime manager address and refuses root-name / namehash mismatches.
+The deploy script now **requires** an explicit `JOB_MANAGER` on mainnet and refuses root-name / namehash mismatches.
 
 ## Manual post-deploy steps
 

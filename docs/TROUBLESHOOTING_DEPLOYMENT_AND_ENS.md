@@ -194,8 +194,9 @@ ENS updates are implemented as best-effort; hook and resolver operations can fai
 ### AGIJobManager (`Read Contract`)
 - `owner`
 - `ensJobPages`
-- `useEnsJobTokenURI`
 - ENS root-related fields and identity lock status as applicable
+
+> On the current Prime deployment, do **not** expect a live `useEnsJobTokenURI` manager getter/setter. Treat completion NFTs as completion-URI/IPFS based unless a future Prime release explicitly wires ENS-backed NFT URIs.
 
 ### ENSJobPages (`Read Contract`)
 - `owner`
@@ -229,7 +230,7 @@ ENS hook operations are designed as best-effort side effects. AGIJobManager can 
 ### Why can settlement succeed while ENS fails?
 Protocol escrow settlement is intentionally decoupled from ENS writes so metadata outages do not block payouts/dispute outcomes.
 
-### Why do some jobs use `agijob...` and others `job-...`?
+### Why do some jobs use `agijob-...` and others `job-...`?
 Legacy jobs may carry previously snapshotted historical labels. Prefix changes only affect unsnapshotted/future jobs in the current ENSJobPages context.
 
 ### What should I check before calling `lockConfiguration()`?
