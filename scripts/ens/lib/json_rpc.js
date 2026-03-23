@@ -22,7 +22,9 @@ class CurlJsonRpcProvider {
     ], { encoding: 'utf8' });
     const parsed = JSON.parse(raw);
     if (parsed.error) {
-      throw new Error(`${method} failed: ${parsed.error.message || JSON.stringify(parsed.error)}`);
+      const detail = parsed.error.message || JSON.stringify(parsed.error);
+      const data = parsed.error.data ? ` data=${typeof parsed.error.data === 'string' ? parsed.error.data : JSON.stringify(parsed.error.data)}` : '';
+      throw new Error(`${method} failed: ${detail}${data}`);
     }
     return parsed.result;
   }

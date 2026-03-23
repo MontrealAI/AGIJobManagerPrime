@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T13:09:22.362Z",
+  "generatedAt": "2026-03-23T13:59:24.396Z",
   "network": "ethereum-mainnet",
   "rpc": "https://ethereum-rpc.publicnode.com",
   "inputs": {
@@ -11,9 +11,9 @@
   },
   "proven": {
     "latestBlock": {
-      "number": "0x1793426",
-      "hash": "0xe868b948e75f6eae7d510b2232a4bee0659e71f7b56260eed10f2da211e32193",
-      "timestamp": "0x69c13b77"
+      "number": "0x179351c",
+      "hash": "0x73a25ec7c0f496cc6507d1d7ac87ebaf9d2855bc1ff5cd302d88955949409261",
+      "timestamp": "0x69c1472f"
     },
     "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
     "handleHook": {
@@ -32,7 +32,7 @@
       "configLocked": false,
       "useEnsJobTokenURI": false,
       "validateConfiguration": {
-        "error": "eth_call failed: execution reverted",
+        "error": "eth_call failed: execution reverted data=0x",
         "label": "pages.validateConfiguration",
         "fallback": null
       },
@@ -41,11 +41,11 @@
     "ensJobPagesMethodAvailability": {
       "validateConfiguration": {
         "available": false,
-        "error": "eth_call failed: execution reverted"
+        "error": "eth_call failed: execution reverted data=0x"
       },
       "configurationStatus": {
         "available": false,
-        "error": "eth_call failed: execution reverted"
+        "error": "eth_call failed: execution reverted data=0x"
       }
     },
     "agiJobManagerPrime": {
@@ -71,8 +71,8 @@
     "resolverCompatibility": {
       "address": "0xF29100983E058B709F3D539b0c765937B804AC15",
       "supportsText": true,
-      "supportsSetText": true,
-      "supportsSetAuthorisation": true
+      "supportsSetText": false,
+      "supportsSetAuthorisation": false
     },
     "pointerChecks": {
       "primePointsToIntendedPages": true,

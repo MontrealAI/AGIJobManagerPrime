@@ -21,7 +21,15 @@ function loadEthers() {
 
 const raw = loadEthers();
 const isV6 = typeof raw.ZeroAddress === 'string';
-const v5Hash = isV6 ? null : requireFromHere('@ethersproject/hash');
+const v5Hash = isV6 ? null : (() => {
+  try { return requireFromHere('@ethersproject/hash'); } catch { return null; }
+})();
+
+function v5EnsNormalize(value) {
+  if (v5Hash && typeof v5Hash.ensNormalize === 'function') return v5Hash.ensNormalize(value);
+  if (raw.utils && typeof raw.utils.nameprep === 'function') return raw.utils.nameprep(value);
+  throw new Error('No ENS normalization helper available in ethers v5 environment');
+}
 
 function normalize(value) {
   if (value == null) return value;
@@ -82,7 +90,7 @@ function compat() {
     toBeHex: (value) => utils.hexValue(value),
     id: utils.id,
     namehash: utils.namehash,
-    ensNormalize: (value) => v5Hash.ensNormalize(value),
+    ensNormalize: (value) => v5EnsNormalize(value),
     solidityPackedKeccak256: (types, values) => utils.solidityKeccak256(types, values),
   };
 }
