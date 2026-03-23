@@ -274,4 +274,6 @@ Alias note: `check-no-binaries` is exposed as `npm run check:no-binaries`.
 - Preview ENS values are projections from the current prefix/root configuration.
 - Effective ENS values are authoritative per-job snapshots stored in `ENSJobPages`.
 - `AGIJobManagerPrime` remains on the existing `handleHook(uint8,uint256)` ABI; authority repair and metadata repair live on the ENS side.
-- Re-run `scripts/ens/audit-mainnet.ts` from a networked operator environment before mainnet cutover because chain state is the source of truth.
+- Re-run `scripts/ens/audit-mainnet.ts` and `scripts/ens/inventory-job-pages.ts` from a networked operator environment before mainnet cutover because chain state is the source of truth.
+- Treat `previewJobEns*` as projected values only; treat `effectiveJobEns*` as authoritative only after the inventory/status scripts confirm authority snapshot readiness for that job.
+- The production-safe Prime path is **keeper-assisted authoritative ENS**, not fully automated on-chain ENS hydration: operators may need to call `createJobPage`, `onAgentAssigned`, `onCompletionRequested`, `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, and `lockJobENS` using event-driven runbooks.

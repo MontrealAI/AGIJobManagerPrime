@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-03-22T23:58:40.193Z",
+  "network": "ethereum-mainnet",
+  "rpc": "https://ethereum-rpc.publicnode.com",
+  "inputs": {
+    "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
+    "agiJobManagerPrime": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
+    "agiJobDiscoveryPrime": "0xd5ef1dde7ac60488f697ff2a7967a52172a78f29",
+    "jobsRootName": "alpha.jobs.agi.eth",
+    "ensRegistry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+  },
+  "proven": {},
+  "assumed": [
+    "RPC was unreachable from this environment; re-run from an operator-connected workstation before production actions."
+  ],
+  "rpcReachable": false,
+  "error": "AggregateError"
+}

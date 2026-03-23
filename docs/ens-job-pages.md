@@ -132,3 +132,5 @@ Fuse burning is optional and does **not** affect settlement or withdrawals if it
 ## 2026-03 authority model
 
 `previewJobEns*` getters now expose mutable projections, while `effectiveJobEns*` getters expose immutable per-job authority snapshots. Compatibility getters (`jobEnsName`, `jobEnsURI`, `jobEnsNode`) prefer authoritative values once established and only fall back to preview values before first issuance/import. Operational repairs are owner-only ENS-side actions: `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, `replayCreate`, `replayAssign`, `replayCompletion`, `replayRevoke`, and `replayLock`. Chain state wins over docs, so mainnet runbooks must be regenerated from `scripts/ens/output/` before cutover.
+
+Production wording matters: the current recommended path is **keeper-assisted authoritative** ENS. Prime settlement stays authoritative and non-blocking even if ENS hydration is delayed or temporarily broken, while operators use `scripts/ens/audit-mainnet.ts`, `scripts/ens/inventory-job-pages.ts`, `scripts/ens/migrate-legacy-batch.ts`, and `scripts/ens/repair-job-page.ts` to classify and repair per-job ENS state.

@@ -1,10 +1,22 @@
 # Docs vs Chain Diff
 
-## Current delta status
-- **Blocked by environment networking:** this sandbox could not complete Ethereum mainnet RPC reads on 2026-03-22 UTC.
-- **Result:** repo docs were updated to explicitly label the supplied live addresses/root/prefix as hypotheses until `scripts/ens/audit-mainnet.ts` succeeds from an operator-connected environment.
+## Chain beats prose
 
-## Repo corrections made in this patch
-- Preview terminology is now explicitly separated from authoritative/effective terminology in the ENS contract surface.
-- The ENS docs now instruct operators to prefer chain-backed JSON artifacts over stale prose.
-- The historical default example has been aligned around the current preview prefix format `agijob-<jobId>`.
+Any mismatch between documentation and a fresh chain-backed audit must be resolved in favor of chain state. This repository now ships dedicated audit and inventory scripts so operators can regenerate the truth set before production actions.
+
+## Known stale-doc risk areas
+
+- Historical docs often describe `agijob<id>.alpha.jobs.agi.eth` as if it were universally authoritative.
+- Current live operational assumptions mention the hyphenated prefix `agijob-<id>`.
+- Some older prose blurred **preview** values and **effective** values.
+- Older runbooks assumed ENS replacement steps but did not require explicit machine-readable inventory or repair classification.
+
+## Corrections made by this patch
+
+- The docs now describe the live-facing name shape as a **preview** format unless a per-job authority snapshot exists.
+- The docs explicitly distinguish keeper-assisted authoritative operation from fully automated on-chain operation.
+- Runbooks now require chain-backed JSON under `scripts/ens/output/` before cutover, migration, or finalization.
+
+## Still requires explicit chain confirmation
+
+Because this sandbox could not read mainnet directly, the exact current values for owner, resolver, approvals, `configLocked`, and historical inventory are not asserted here as proven facts. They must come from the generated audit artifacts.
