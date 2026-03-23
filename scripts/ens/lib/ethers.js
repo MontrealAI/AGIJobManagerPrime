@@ -22,16 +22,61 @@ function loadEthers() {
 const raw = loadEthers();
 const isV6 = typeof raw.ZeroAddress === 'string';
 
+function normalize(value) {
+  if (value == null) return value;
+  if (!isV6 && raw.BigNumber && raw.BigNumber.isBigNumber && raw.BigNumber.isBigNumber(value)) {
+    return BigInt(value.toString());
+  }
+  if (Array.isArray(value)) {
+    const out = value.map((item) => normalize(item));
+    for (const key of Object.keys(value)) {
+      if (!/^\d+$/.test(key)) out[key] = normalize(value[key]);
+    }
+    return out;
+  }
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [key, item] of Object.entries(value)) out[key] = normalize(item);
+    return out;
+  }
+  return value;
+}
+
+function wrapContract(contract) {
+  return new Proxy(contract, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value !== 'function') return value;
+      return (...args) => {
+        const result = value.apply(target, args);
+        if (!result || typeof result.then !== 'function') return result;
+        return result.then((resolved) => normalize(resolved));
+      };
+    },
+  });
+}
+
 function compat() {
   if (isV6) return raw;
   const utils = raw.utils;
+
+  class CompatInterface extends utils.Interface {
+    decodeFunctionResult(fragment, data) {
+      return normalize(super.decodeFunctionResult(fragment, data));
+    }
+  }
+
+  function CompatContract(...args) {
+    return wrapContract(new raw.Contract(...args));
+  }
+
   return {
     ...raw,
     ZeroAddress: raw.constants.AddressZero,
     ZeroHash: raw.constants.HashZero,
-    Contract: raw.Contract,
+    Contract: CompatContract,
     JsonRpcProvider: raw.providers.JsonRpcProvider,
-    Interface: utils.Interface,
+    Interface: CompatInterface,
     Wallet: raw.Wallet,
     toBeHex: (value) => utils.hexValue(value),
     id: utils.id,
@@ -41,4 +86,4 @@ function compat() {
   };
 }
 
-module.exports = { ethers: compat() };
+module.exports = { ethers: compat(), normalizeEthersValue: normalize };

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T12:36:30.170Z",
+  "generatedAt": "2026-03-23T12:51:40.270Z",
   "network": "ethereum-mainnet",
   "rpc": "https://ethereum-rpc.publicnode.com",
   "inputs": {
@@ -11,9 +11,9 @@
   },
   "proven": {
     "latestBlock": {
-      "number": "0x1793383",
-      "hash": "0xf0af4e25dee4ef754e769855a9619554b50d01bc27689d3002f541e368c4724f",
-      "timestamp": "0x69c133c7"
+      "number": "0x17933cf",
+      "hash": "0x5e3367955fd38a7e682a09a2b7a5fade7558a12846629cbc79cf0626627aeacb",
+      "timestamp": "0x69c13757"
     },
     "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
     "handleHook": {
