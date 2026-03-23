@@ -49,7 +49,7 @@ function loadInput(file) {
       const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, 'migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]);
       const sent = { jobId: item.jobId, exactLabel: item.exactLabel, txHash: hash, status: 'broadcast' };
       payload.sent.push(sent);
-      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce });
+      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce, to: tx.to, data: tx.data, value: tx.value });
       sent.status = 'confirmed';
       sent.blockNumber = receipt.blockNumber.toString();
       if (receipt.replaced) {

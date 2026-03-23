@@ -66,6 +66,9 @@ class CurlJsonRpcProvider {
   }
 
   getBlockWithTransactions(tag = 'latest') {
+    if (typeof tag === 'string' && tag.startsWith('0x') && tag.length === 66) {
+      return this.request('eth_getBlockByHash', [tag, true]);
+    }
     return this.request('eth_getBlockByNumber', [tag === 'latest' ? 'latest' : toQuantity(tag), true]);
   }
 
@@ -132,6 +135,11 @@ class CurlJsonRpcProvider {
       if (!receipt && replacementContext && replacementContext.from !== undefined && replacementContext.nonce !== undefined) {
         const replacement = this.findReplacementReceipt(replacementContext.from, replacementContext.nonce);
         if (replacement) {
+          if (!this.isSameTransactionIntent(replacement.tx, replacementContext)) {
+            throw new Error(
+              `Transaction nonce was replaced by a different transaction: ${replacement.hash} replaced ${hash}`
+            );
+          }
           receipt = replacement.receipt;
           effectiveHash = replacement.hash;
         }
@@ -171,12 +179,23 @@ class CurlJsonRpcProvider {
         if (tx.from.toLowerCase() !== from.toLowerCase()) continue;
         if (BigInt(tx.nonce) !== BigInt(nonce)) continue;
         const receipt = this.getTransactionReceipt(tx.hash);
-        if (receipt) return { hash: tx.hash, receipt };
+        if (receipt) return { hash: tx.hash, tx, receipt };
       }
       if (!block.parentHash || block.parentHash === '0x0000000000000000000000000000000000000000000000000000000000000000') break;
       blockTag = block.parentHash;
     }
     return null;
+  }
+
+  isSameTransactionIntent(replacementTx, originalTx) {
+    if (!replacementTx || !originalTx) return false;
+    const replacementTo = (replacementTx.to || '').toLowerCase();
+    const originalTo = (originalTx.to || '').toLowerCase();
+    if (replacementTo !== originalTo) return false;
+    if ((replacementTx.input || replacementTx.data || '0x') !== (originalTx.data || originalTx.input || '0x')) return false;
+    const replacementValue = BigInt(replacementTx.value || '0x0');
+    const originalValue = BigInt(originalTx.value || 0);
+    return replacementValue === originalValue;
   }
 }
 
