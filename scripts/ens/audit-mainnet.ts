@@ -215,7 +215,7 @@ async function probeResolverTextSurface(provider, resolver) {
   out.proven.wrappedRootReadiness = wrapperState;
   out.proven.resolverCompatibility = resolverState;
   out.proven.managerCompatibility = {
-    managerSupportsV1Views: Boolean(await safe(() => provider.readContract(PRIME, ['function ensJobManagerViewInterfaceVersion() view returns (uint256)'], 'ensJobManagerViewInterfaceVersion')[0], null)),
+    managerSupportsV1Views: Boolean(unwrap(await safe('prime.ensJobManagerViewInterfaceVersion', () => provider.readContract(PRIME, ['function ensJobManagerViewInterfaceVersion() view returns (uint256)'], 'ensJobManagerViewInterfaceVersion')[0]), null)),
     managerMode: 'lean-handleHook-compatible',
     metadataAutoWriteSupported: false,
     keeperRequired: true,

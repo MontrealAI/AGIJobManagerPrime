@@ -1236,9 +1236,23 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         supportsSetText =
             _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID) ||
             _supportsResolverWriteSurface(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setText.selector, bytes32(0), "schema", "probe"));
-        supportsSetAuthorisation = _supportsLegacyResolverAuthWrite(address(publicResolver)) || _supportsModernResolverAuthWrite(address(publicResolver));
+        supportsSetAuthorisation = _supportsLegacyResolverAuthFamily(address(publicResolver)) || _supportsModernResolverAuthWrite(address(publicResolver));
     }
 
+
+    function _supportsLegacyResolverAuthFamily(address resolver) internal view returns (bool) {
+        return
+            _supportsLegacyResolverAuthWrite(resolver) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this))) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isAuthorised(bytes32,address)", bytes32(0), address(this)));
+    }
+
+    function _supportsResolverReadSurface(address resolver, bytes memory payload) internal view returns (bool ok) {
+        if (resolver == address(0) || resolver.code.length == 0) return false;
+        bytes memory returndata;
+        (ok, returndata) = resolver.staticcall(payload);
+        return ok && returndata.length >= 32;
+    }
 
     function _supportsLegacyResolverAuthWrite(address resolver) internal view returns (bool) {
         return _supportsResolverWriteSurface(resolver, abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, bytes32(0), address(this), true));
