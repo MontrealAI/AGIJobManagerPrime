@@ -5,6 +5,7 @@ const { createRequire } = require('node:module');
 
 const requireFromHere = createRequire(__filename);
 const { ethers } = requireFromHere('../../hardhat/node_modules/ethers');
+const { CurlJsonRpcProvider } = require('./lib/json_rpc');
 
 const OUTPUT = path.resolve('scripts/ens/output/inventory-job-pages.json');
 const RPC = (process.env.MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com').trim();
@@ -76,7 +77,7 @@ function classify(job) {
 
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
-  const provider = new ethers.JsonRpcProvider(RPC, 1, { staticNetwork: true });
+  const provider = new CurlJsonRpcProvider(RPC);
   const out = {
     generatedAt: new Date().toISOString(),
     rpc: RPC,
@@ -89,7 +90,7 @@ function classify(job) {
   let truncated = false;
 
   try {
-    out.proven.latestBlock = await provider.getBlockNumber();
+    out.proven.latestBlock = provider.getBlockNumber().toString();
   } catch (error) {
     out.assumed.push('RPC unreachable from this environment; no live inventory could be generated.');
     out.error = error?.message || String(error);
@@ -98,33 +99,40 @@ function classify(job) {
     return;
   }
 
-  const prime = new ethers.Contract(PRIME, PRIME_ABI, provider);
-  const pages = new ethers.Contract(ENS_JOB_PAGES, PAGES_ABI, provider);
-  const ens = new ethers.Contract(ENS_REGISTRY, ENS_ABI, provider);
-  const nameWrapperAddress = await safe(() => pages.nameWrapper(), ethers.ZeroAddress);
-  const wrapper = new ethers.Contract(nameWrapperAddress, WRAPPER_ABI, provider);
-  const jobsRootNode = await safe(() => pages.jobsRootNode(), ethers.ZeroHash);
-  const nextJobIdRead = await safe(() => prime.nextJobId(), null);
+  const nameWrapperAddress = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'nameWrapper')[0], ethers.ZeroAddress);
+  const jobsRootNode = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobsRootNode')[0], ethers.ZeroHash);
+  const nextJobIdRead = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'nextJobId')[0], null);
   if (nextJobIdRead === null) {
     throw new Error('Failed to read prime.nextJobId(); refusing to emit a misleading empty inventory.');
   }
   const nextJobId = Number(nextJobIdRead);
   const total = Math.min(nextJobId, MAX_JOBS);
   truncated = nextJobId > MAX_JOBS;
-  const config = await safe(() => pages.configurationStatus(), null);
+  const config = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configurationStatus')), null);
   out.proven.configurationStatus = config ? config.map((value) => typeof value === 'bigint' ? value.toString() : value) : null;
 
   for (let jobId = 0; jobId < total; jobId += 1) {
-    const core = await safe(() => prime.getJobCore(jobId), null);
-    const specURI = core ? await safe(() => prime.getJobSpecURI(jobId), '') : '';
-    const completionURI = core ? await safe(() => prime.getJobCompletionURI(jobId), '') : '';
-    const labelSnapshot = await safe(() => pages.jobLabelSnapshot(jobId), [false, '']);
-    const authority = await safe(() => pages.jobAuthorityInfo(jobId), [false, '', ethers.ZeroHash, 0, ethers.ZeroHash, ethers.ZeroHash, 0, 0, 0, false, false, false]);
+    const coreRaw = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobCore', [jobId]), null);
+    const core = coreRaw ? {
+      employer: coreRaw[0],
+      assignedAgent: coreRaw[1],
+      payout: coreRaw[2],
+      duration: coreRaw[3],
+      assignedAt: coreRaw[4],
+      completed: coreRaw[5],
+      disputed: coreRaw[6],
+      expired: coreRaw[7],
+      agentPayoutPct: coreRaw[8],
+    } : null;
+    const specURI = core ? await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobSpecURI', [jobId])[0], '') : '';
+    const completionURI = core ? await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobCompletionURI', [jobId])[0], '') : '';
+    const labelSnapshot = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobLabelSnapshot', [jobId])), [false, '']);
+    const authority = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobAuthorityInfo', [jobId])), [false, '', ethers.ZeroHash, 0, ethers.ZeroHash, ethers.ZeroHash, 0, 0, 0, false, false, false]);
     const preview = {
-      label: await safe(() => pages.previewJobEnsLabel(jobId), ''),
-      name: await safe(() => pages.previewJobEnsName(jobId), ''),
-      uri: await safe(() => pages.previewJobEnsURI(jobId), ''),
-      node: await safe(() => pages.previewJobEnsNode(jobId), ethers.ZeroHash),
+      label: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsLabel', [jobId])[0], ''),
+      name: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsName', [jobId])[0], ''),
+      uri: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsURI', [jobId])[0], ''),
+      node: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsNode', [jobId])[0], ethers.ZeroHash),
     };
 
     const authorityReady = Boolean(authority[0]);
@@ -135,18 +143,18 @@ function classify(job) {
       : ethers.ZeroHash;
 
     const effective = authorityReady ? {
-      label: await safe(() => pages.effectiveJobEnsLabel(jobId), ''),
-      name: await safe(() => pages.effectiveJobEnsName(jobId), ''),
-      uri: await safe(() => pages.effectiveJobEnsURI(jobId), ''),
-      node: await safe(() => pages.effectiveJobEnsNode(jobId), ethers.ZeroHash),
+      label: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsLabel', [jobId])[0], ''),
+      name: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsName', [jobId])[0], ''),
+      uri: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsURI', [jobId])[0], ''),
+      node: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsNode', [jobId])[0], ethers.ZeroHash),
     } : { label: '', name: '', uri: '', node: ethers.ZeroHash };
 
     const node = authorityReady ? effective.node : (labelProbeNode !== ethers.ZeroHash ? labelProbeNode : preview.node);
-    const owner = node && node !== ethers.ZeroHash ? await safe(() => ens.owner(node), ethers.ZeroAddress) : ethers.ZeroAddress;
-    const resolver = node && node !== ethers.ZeroHash ? await safe(() => ens.resolver(node), ethers.ZeroAddress) : ethers.ZeroAddress;
-    const expectedResolver = await safe(() => pages.publicResolver(), ethers.ZeroAddress);
+    const owner = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'owner', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
+    const resolver = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'resolver', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
+    const expectedResolver = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'publicResolver')[0], ethers.ZeroAddress);
     const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
-      ? await safe(() => wrapper.ownerOf(BigInt(node)), ethers.ZeroAddress)
+      ? await safe(() => provider.readContract(nameWrapperAddress, WRAPPER_ABI, 'ownerOf', [BigInt(node)])[0], ethers.ZeroAddress)
       : ethers.ZeroAddress;
     const wrappedUnmanaged = owner !== ethers.ZeroAddress
       && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
@@ -158,11 +166,10 @@ function classify(job) {
     let employerAuth = false;
     let agentAuth = false;
     if (resolver && resolver !== ethers.ZeroAddress) {
-      const liveResolver = new ethers.Contract(resolver, RESOLVER_ABI, provider);
-      specText = await safe(() => liveResolver.text(node, 'agijobs.spec.public'), '');
-      completionText = await safe(() => liveResolver.text(node, 'agijobs.completion.public'), '');
-      employerAuth = !core || core.employer === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.employer), false);
-      agentAuth = !core || core.assignedAgent === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.assignedAgent), false);
+      specText = await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
+      completionText = await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
+      employerAuth = !core || core.employer === ethers.ZeroAddress ? false : await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'isAuthorised', [node, core.employer])[0], false);
+      agentAuth = !core || core.assignedAgent === ethers.ZeroAddress ? false : await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'isAuthorised', [node, core.assignedAgent])[0], false);
     }
 
     const nodeManagedByContract = owner !== ethers.ZeroAddress && (

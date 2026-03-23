@@ -1,8 +1,10 @@
 {
-  "generatedAt": "2026-03-23T01:50:19.630Z",
-  "rpc": "https://ethereum-rpc.publicnode.com",
-  "jobId": "0",
-  "exactLabel": "agijob-0",
+  "generatedAt": "2026-03-23T02:55:38.508Z",
+  "rpc": "https://ethereum.publicnode.com",
+  "jobId": 0,
+  "exactLabel": "",
   "execute": false,
-  "error": "pages.jobAuthorityInfo read failed: AggregateError"
+  "compatibilityBlocker": true,
+  "error": "pages.jobAuthorityInfo read failed: eth_call failed: execution reverted",
+  "recommendation": "Live ENSJobPages does not expose jobAuthorityInfo(uint256); deploy the authoritative ENSJobPages replacement before using repair tooling."
 }

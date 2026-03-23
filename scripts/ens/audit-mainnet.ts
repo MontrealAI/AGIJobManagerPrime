@@ -5,6 +5,7 @@ const { createRequire } = require('node:module');
 
 const requireFromHere = createRequire(__filename);
 const { ethers } = requireFromHere('../../hardhat/node_modules/ethers');
+const { CurlJsonRpcProvider } = require('./lib/json_rpc');
 
 const OUTPUT = path.resolve('scripts/ens/output/audit-mainnet.json');
 const ENS_JOB_PAGES = (process.env.ENS_JOB_PAGES || '0x97E03F7BFAC116E558A25C8f09aEf09108a2779d').trim();
@@ -77,6 +78,10 @@ function serialize(value) {
   return value;
 }
 
+function methodState(value) {
+  return value && value.error ? { available: false, error: value.error } : { available: true };
+}
+
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
 
@@ -95,60 +100,59 @@ function serialize(value) {
     assumed: [],
   };
 
-  const provider = new ethers.JsonRpcProvider(RPC, 1, { staticNetwork: true });
+  const provider = new CurlJsonRpcProvider(RPC);
   try {
-    const block = await provider.getBlock('latest');
+    const block = provider.getBlock('latest');
     out.proven.latestBlock = { number: block.number, hash: block.hash, timestamp: block.timestamp };
   } catch (error) {
     out.rpcReachable = false;
     out.assumed.push('RPC was unreachable from this environment; re-run from an operator-connected workstation before production actions.');
     out.error = error?.message || String(error);
-    fs.writeFileSync(OUTPUT, `${JSON.stringify(out, null, 2)}\n`);
+    fs.writeFileSync(OUTPUT, `${JSON.stringify(serialize(out), null, 2)}\n`);
     console.log(`Wrote ${OUTPUT}`);
     return;
   }
   out.rpcReachable = true;
 
-  const pages = new ethers.Contract(ENS_JOB_PAGES, PAGES_ABI, provider);
-  const prime = new ethers.Contract(PRIME, PRIME_ABI, provider);
-  const ens = new ethers.Contract(ENS_REGISTRY, ENS_ABI, provider);
-
   const expectedRootNode = ethers.namehash(ROOT_NAME);
   const pagesState = {
-    owner: unwrap(await safe('pages.owner', () => pages.owner())),
-    ens: unwrap(await safe('pages.ens', () => pages.ens())),
-    nameWrapper: unwrap(await safe('pages.nameWrapper', () => pages.nameWrapper())),
-    publicResolver: unwrap(await safe('pages.publicResolver', () => pages.publicResolver())),
-    jobsRootNode: unwrap(await safe('pages.jobsRootNode', () => pages.jobsRootNode())),
-    jobsRootName: unwrap(await safe('pages.jobsRootName', () => pages.jobsRootName())),
-    jobManager: unwrap(await safe('pages.jobManager', () => pages.jobManager())),
-    jobLabelPrefix: unwrap(await safe('pages.jobLabelPrefix', () => pages.jobLabelPrefix())),
-    configLocked: unwrap(await safe('pages.configLocked', () => pages.configLocked())),
-    useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => pages.useEnsJobTokenURI())),
-    validateConfiguration: serialize(await safe('pages.validateConfiguration', () => pages.validateConfiguration())),
-    configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => pages.configurationStatus()), null)),
+    owner: unwrap(await safe('pages.owner', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'owner')[0])),
+    ens: unwrap(await safe('pages.ens', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'ens')[0])),
+    nameWrapper: unwrap(await safe('pages.nameWrapper', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'nameWrapper')[0])),
+    publicResolver: unwrap(await safe('pages.publicResolver', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'publicResolver')[0])),
+    jobsRootNode: unwrap(await safe('pages.jobsRootNode', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobsRootNode')[0])),
+    jobsRootName: unwrap(await safe('pages.jobsRootName', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobsRootName')[0])),
+    jobManager: unwrap(await safe('pages.jobManager', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobManager')[0])),
+    jobLabelPrefix: unwrap(await safe('pages.jobLabelPrefix', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobLabelPrefix')[0])),
+    configLocked: unwrap(await safe('pages.configLocked', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configLocked')[0])),
+    useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'useEnsJobTokenURI')[0])),
+    validateConfiguration: serialize(await safe('pages.validateConfiguration', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'validateConfiguration')[0])),
+    configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configurationStatus'))), null)),
+  };
+  const pagesMethodAvailability = {
+    validateConfiguration: methodState(await safe('pages.validateConfiguration', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'validateConfiguration')[0])),
+    configurationStatus: methodState(await safe('pages.configurationStatus', () => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configurationStatus')))),
   };
 
   const primeState = {
-    owner: unwrap(await safe('prime.owner', () => prime.owner())),
-    discoveryModule: unwrap(await safe('prime.discoveryModule', () => prime.discoveryModule())),
-    ensJobPages: unwrap(await safe('prime.ensJobPages', () => prime.ensJobPages())),
-    nextJobId: toStringValue(unwrap(await safe('prime.nextJobId', () => prime.nextJobId()), 0n)),
+    owner: unwrap(await safe('prime.owner', () => provider.readContract(PRIME, PRIME_ABI, 'owner')[0])),
+    discoveryModule: unwrap(await safe('prime.discoveryModule', () => provider.readContract(PRIME, PRIME_ABI, 'discoveryModule')[0])),
+    ensJobPages: unwrap(await safe('prime.ensJobPages', () => provider.readContract(PRIME, PRIME_ABI, 'ensJobPages')[0])),
+    nextJobId: toStringValue(unwrap(await safe('prime.nextJobId', () => provider.readContract(PRIME, PRIME_ABI, 'nextJobId')[0]), 0n)),
   };
 
-  const rootOwner = unwrap(await safe('ens.owner(root)', () => ens.owner(expectedRootNode)), ethers.ZeroAddress);
-  const rootResolver = unwrap(await safe('ens.resolver(root)', () => ens.resolver(expectedRootNode)), ethers.ZeroAddress);
+  const rootOwner = unwrap(await safe('ens.owner(root)', () => provider.readContract(ENS_REGISTRY, ENS_ABI, 'owner', [expectedRootNode])[0]), ethers.ZeroAddress);
+  const rootResolver = unwrap(await safe('ens.resolver(root)', () => provider.readContract(ENS_REGISTRY, ENS_ABI, 'resolver', [expectedRootNode])[0]), ethers.ZeroAddress);
   const rootMatches = pagesState.jobsRootNode === expectedRootNode && pagesState.jobsRootName === ROOT_NAME;
 
   let wrapperState = null;
   if (pagesState.nameWrapper && pagesState.nameWrapper !== ethers.ZeroAddress) {
-    const wrapper = new ethers.Contract(pagesState.nameWrapper, WRAPPER_ABI, provider);
     const tokenId = BigInt(pagesState.jobsRootNode || expectedRootNode);
-    const wrappedOwner = unwrap(await safe('wrapper.ownerOf(root)', () => wrapper.ownerOf(tokenId)), ethers.ZeroAddress);
-    const approved = unwrap(await safe('wrapper.getApproved(root)', () => wrapper.getApproved(tokenId)), ethers.ZeroAddress);
+    const wrappedOwner = unwrap(await safe('wrapper.ownerOf(root)', () => provider.readContract(pagesState.nameWrapper, WRAPPER_ABI, 'ownerOf', [tokenId])[0]), ethers.ZeroAddress);
+    const approved = unwrap(await safe('wrapper.getApproved(root)', () => provider.readContract(pagesState.nameWrapper, WRAPPER_ABI, 'getApproved', [tokenId])[0]), ethers.ZeroAddress);
     const approvedForAll = wrappedOwner === ethers.ZeroAddress
       ? false
-      : unwrap(await safe('wrapper.isApprovedForAll(rootOwner, pages)', () => wrapper.isApprovedForAll(wrappedOwner, ENS_JOB_PAGES)), false);
+      : unwrap(await safe('wrapper.isApprovedForAll(rootOwner, pages)', () => provider.readContract(pagesState.nameWrapper, WRAPPER_ABI, 'isApprovedForAll', [wrappedOwner, ENS_JOB_PAGES])[0]), false);
 
     wrapperState = {
       wrappedRoot: rootOwner && rootOwner.toLowerCase() === pagesState.nameWrapper.toLowerCase(),
@@ -161,7 +165,6 @@ function serialize(value) {
 
   let resolverState = null;
   if (pagesState.publicResolver && pagesState.publicResolver !== ethers.ZeroAddress) {
-    const resolver165 = new ethers.Contract(pagesState.publicResolver, ERC165_ABI, provider);
     const ids = {
       text: '0x59d1d43c',
       setText: '0x10f13a8c',
@@ -169,15 +172,16 @@ function serialize(value) {
     };
     resolverState = {
       address: pagesState.publicResolver,
-      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => resolver165.supportsInterface(ids.text)), false),
-      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => resolver165.supportsInterface(ids.setText)), false),
-      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => resolver165.supportsInterface(ids.setAuthorisation)), false),
+      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false),
+      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false),
+      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false),
     };
   }
 
   out.proven.expectedRootNode = expectedRootNode;
   out.proven.handleHook = { abi: 'handleHook(uint8,uint256)', selector: EXPECTED_HOOK_SELECTOR };
   out.proven.ensJobPages = pagesState;
+  out.proven.ensJobPagesMethodAvailability = pagesMethodAvailability;
   out.proven.agiJobManagerPrime = primeState;
   out.proven.rootIntegrity = {
     normalizedRootName: ROOT_NAME,
@@ -194,6 +198,6 @@ function serialize(value) {
     primeDiscoveryMatchesInput: primeState.discoveryModule && primeState.discoveryModule.toLowerCase() === DISCOVERY.toLowerCase(),
   };
 
-  fs.writeFileSync(OUTPUT, `${JSON.stringify(out, null, 2)}\n`);
+  fs.writeFileSync(OUTPUT, `${JSON.stringify(serialize(out), null, 2)}\n`);
   console.log(`Wrote ${OUTPUT}`);
 })();

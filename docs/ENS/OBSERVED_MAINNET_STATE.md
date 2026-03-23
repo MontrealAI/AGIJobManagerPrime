@@ -1,79 +1,68 @@
 # Observed Mainnet State
 
-_As of 2026-03-22 UTC this sandbox could not reach Ethereum mainnet RPC (`ENETUNREACH`). This file therefore distinguishes proven local facts from chain facts that must be re-read using the included audit scripts from a networked operator workstation._
+_Observed on Ethereum mainnet on 2026-03-23 UTC using `scripts/ens/audit-mainnet.ts` and `scripts/ens/inventory-job-pages.ts` against `https://ethereum.publicnode.com`. Chain state wins over repo prose._
 
-## Proven locally
+## Proven live state
 
-- The preferred production architecture is Prime unchanged, ENS-side authority snapshotting, and keeper/operator replay/repair tooling.
-- The active ENS contract surface exposes a preview/effective split: `previewJobEns*`, `effectiveJobEns*`, compatibility getters (`jobEnsName`, `jobEnsURI`, `jobEnsNode`), `jobAuthorityInfo`, `jobEnsStatus`, and `configurationStatus`.
-- `ENSJobPages` stores immutable per-job authority data once established: label hash, root version, authoritative root node, authoritative node, source, version, timestamp, legacy-import flag, and finalization flags.
-- Prime keeps the hook ABI `handleHook(uint8,uint256)` and already emits `JobCreated` plus `JobCompletionRequested`, enabling a manager-unchanged keeper path.
+### ENSJobPages at `0x97E03F7BFAC116E558A25C8f09aEf09108a2779d`
 
-## Requires explicit chain read (`scripts/ens/audit-mainnet.ts`)
+- owner: `0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201`
+- ENS registry: `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`
+- NameWrapper: `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`
+- configured public resolver: `0xF29100983E058B709F3D539b0c765937B804AC15`
+- jobs root name: `alpha.jobs.agi.eth`
+- jobs root node: `0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690`
+- wired job manager: `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e`
+- job label prefix: `agijob-`
+- `configLocked = false`
+- `useEnsJobTokenURI = false`
 
-### ENSJobPages live state
-- owner
-- ens
-- nameWrapper
-- publicResolver
-- jobsRootNode
-- jobsRootName
-- jobManager
-- jobLabelPrefix
-- configLocked
-- useEnsJobTokenURI
+### AGIJobManagerPrime at `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e`
 
-### Prime live state
-- owner
-- discoveryModule
-- ensJobPages
-- whether Prime currently points to the intended ENSJobPages deployment
+- owner: `0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201`
+- discovery module: `0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29`
+- ENS hook target: `0x97E03F7BFAC116E558A25C8f09aEf09108a2779d`
+- `nextJobId = 0`
 
-### Wrapped-root readiness
-- whether `jobsRootNode` is wrapped
-- wrapped owner
-- `getApproved`
-- `isApprovedForAll`
-- whether ENSJobPages is presently authorized to operate the wrapped root
+### Root integrity and wrapped-root readiness
 
-### Root integrity
-- ENSIP-15 normalized root name
-- computed namehash
-- equality between computed namehash and `jobsRootNode`
+- ENSIP-15-normalized root input `alpha.jobs.agi.eth` namehashes to `0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690`.
+- Live ENS root owner is the NameWrapper, so the root is wrapped.
+- Wrapped root owner is `0xd57243B80FBc5CFB2560E5a644651FEcd7Dc2512`.
+- `getApproved(rootTokenId) = 0x0000000000000000000000000000000000000000`
+- `isApprovedForAll(wrappedOwner, ENSJobPages) = true`
+- Operationally, wrapper authorization is ready for the currently wired ENSJobPages address.
 
 ### Resolver compatibility
-- `supportsInterface(0x59d1d43c)` text
-- `supportsInterface(0x10f13a8c)` setText
-- `supportsInterface(0x304e6ade)` setAuthorisation
 
-### Historical inventory
-- preview-only jobs
-- label-snapshotted-only jobs
-- authority-snapshotted jobs
-- legacy import candidates
-- unmanaged nodes
-- resolver mismatch jobs
-- metadata-incomplete jobs
-- repairable jobs
-- authoritative-ready jobs
-- finalized jobs
+- The configured resolver supports text reads: `supportsInterface(0x59d1d43c) = true`.
+- The configured resolver does **not** report support for text writes: `supportsInterface(0x10f13a8c) = false`.
+- The configured resolver does **not** report support for resolver authorisations: `supportsInterface(0x304e6ade) = false`.
 
-## Proven vs assumed
+## First-class blockers proven from chain
 
-### Proven in this repository
-- Preview values are projections, not authoritative identity.
-- Effective values are read from immutable per-job authority snapshots.
-- Root mutation no longer changes historical effective identity once authority is established.
-- Settlement is architected to stay non-blocking even if ENS calls fail.
+1. The live ENSJobPages deployment does **not** expose the new authoritative read/status surface. Calls to:
+   - `validateConfiguration()`
+   - `configurationStatus()`
+   - `jobAuthorityInfo(uint256)`
+   currently revert on mainnet.
+2. The live public resolver configuration is not sufficient for the intended production-grade metadata and authorisation workflow because `setText` and `setAuthorisation` support is not advertised.
+3. There are currently no Prime jobs on the observed manager deployment (`nextJobId = 0`), so there is no historical inventory to migrate yet on this address pair.
 
-### Assumed until chain replay succeeds
-- The exact live owner/resolver/approval values at the supplied mainnet addresses.
-- Whether `configLocked` has been called on the live deployment.
-- The current historical inventory across all live jobs/pages.
+## Compatibility conclusion
 
-## Required operator action
+- The **manager wiring** is correct: Prime points to the intended ENSJobPages and ENSJobPages points back to Prime.
+- The **current live ENSJobPages implementation** is not yet the authoritative snapshotting/status implementation shipped in this repository.
+- Cutover therefore requires an ENSJobPages replacement deployment and owner-side rewiring, while keeping `AGIJobManagerPrime` runtime bytecode unchanged.
 
-Run both scripts below from a networked environment and commit the generated JSON artifacts before mainnet cutover decisions:
+## Machine-readable artifacts
 
-- `node scripts/ens/audit-mainnet.ts`
-- `node scripts/ens/inventory-job-pages.ts`
+- `scripts/ens/output/audit-mainnet.json`
+- `scripts/ens/output/inventory-job-pages.json`
+- `scripts/ens/output/repair-job-page.json`
+
+## Re-run commands
+
+- `MAINNET_RPC_URL=https://ethereum.publicnode.com node scripts/ens/audit-mainnet.ts`
+- `MAINNET_RPC_URL=https://ethereum.publicnode.com MAX_JOBS=64 node scripts/ens/inventory-job-pages.ts`
+- `MAINNET_RPC_URL=https://ethereum.publicnode.com JOB_ID=0 node scripts/ens/repair-job-page.ts`
