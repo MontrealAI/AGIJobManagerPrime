@@ -1,11 +1,13 @@
-const { expectEvent } = require('@openzeppelin/test-helpers');
+const { expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
 const ENSJobPages = artifacts.require('ENSJobPages');
 const ENSJobPagesInspector = artifacts.require('ENSJobPagesInspector');
 const MockENSRegistry = artifacts.require('MockENSRegistry');
 const MockNameWrapper = artifacts.require('MockNameWrapper');
 const MockPublicResolver = artifacts.require('MockPublicResolver');
+const MockPublicResolverNoAuthRead = artifacts.require('MockPublicResolverNoAuthRead');
 const MockAGIJobManagerView = artifacts.require('MockAGIJobManagerView');
+const MockAGIJobManagerPrimeFallback = artifacts.require('MockAGIJobManagerPrimeFallback');
 const MockNoSupportsInterface = artifacts.require('MockNoSupportsInterface');
 
 const { namehash, subnode } = require('./helpers/ens');
@@ -69,6 +71,42 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     assert.equal(await resolver.isAuthorised(legacyNode, agent), true);
   });
 
+  it('requires explicit rootVersion repair once multiple root versions exist', async () => {
+    const { ens, manager, pages } = await deployPages();
+    await manager.setJob(11, employer, agent, 'ipfs://spec-11', { from: owner });
+    await pages.setJobsRoot(namehash(ROOT_V2), ROOT_V2, { from: owner });
+
+    await expectRevert.unspecified(pages.repairAuthoritySnapshot(11, 'agijob-11', { from: owner }));
+    await pages.repairAuthoritySnapshotExplicit(11, 'agijob-11', 1, { from: owner });
+    assert.equal(await pages.effectiveJobEnsName(11), 'agijob-11.alpha.jobs.agi.eth');
+
+    await ens.setOwner(namehash(ROOT_V2), pages.address, { from: owner });
+  });
+
+  it('keeps handleHook usable for unchanged Prime-style managers without V1 getters', async () => {
+    const ens = await MockENSRegistry.new({ from: owner });
+    const wrapper = await MockNameWrapper.new({ from: owner });
+    const resolver = await MockPublicResolver.new({ from: owner });
+    const fallbackManager = await MockAGIJobManagerPrimeFallback.new({ from: owner });
+    const pages = await ENSJobPages.new(ens.address, wrapper.address, resolver.address, namehash(ROOT_V1), ROOT_V1, { from: owner });
+    await pages.setJobManager(fallbackManager.address, { from: owner });
+    await ens.setOwner(namehash(ROOT_V1), pages.address, { from: owner });
+    await fallbackManager.setJob(5, employer, agent, { from: owner });
+
+    const createReceipt = await fallbackManager.callHandleHook(pages.address, 1, 5, { from: owner });
+    await expectEvent.inTransaction(createReceipt.tx, pages, 'ENSHookBestEffortFailure', { hook: '1', jobId: '5', operation: 'SPEC_URI_UNAVAILABLE' });
+    assert.equal(await pages.jobEnsIssued(5), true, 'authority + node issuance should not depend on spec getter availability');
+    assert.equal(await pages.jobEnsReady(5), false, 'ready must not overclaim without observed spec text');
+
+    await fallbackManager.callHandleHook(pages.address, 2, 5, { from: owner });
+    const node = await pages.effectiveJobEnsNode(5);
+    assert.equal(await resolver.isAuthorised(node, employer), true, 'create should still authorise employer');
+    assert.equal(await resolver.isAuthorised(node, agent), true, 'fallback assign should still authorise assigned agent');
+
+    await pages.repairSpecTextExplicit(5, 'ipfs://spec-5', { from: owner });
+    assert.equal(await pages.jobEnsReady(5), true, 'ready becomes true only after observed base metadata is present');
+  });
+
   it('keeps Prime-compatible hook ABI while making resolver incompatibility explicit', async () => {
     const badResolver = await MockNoSupportsInterface.new({ from: owner });
     const { manager, pages } = await deployPages(badResolver);
@@ -98,5 +136,17 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     assert.equal(report.previewName, 'agijob-9.alpha.jobs.agi.eth');
     assert.equal(report.effectiveName, 'agijob-9.alpha.jobs.agi.eth');
     assert.equal(report.finalized, true);
+  });
+
+  it('inspector keeps auth-read absence separate from explicit false', async () => {
+    const { ens, wrapper, manager, pages } = await deployPages(await MockPublicResolverNoAuthRead.new({ from: owner }));
+    const inspector = await ENSJobPagesInspector.new({ from: owner });
+    await manager.setJob(12, employer, agent, 'ipfs://spec-12', { from: owner });
+    await manager.callHandleHook(pages.address, 1, 12, { from: owner });
+
+    const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner });
+    assert.equal(report.authReadSupported, false);
+    assert.equal(report.authObservationIncomplete, true);
+    assert.equal(report.authorisationsAsExpected, false, 'unknown auth state must not be reported as healthy');
   });
 });

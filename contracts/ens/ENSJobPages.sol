@@ -69,6 +69,12 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     bytes4 private constant WRAPPER_GET_APPROVED_SELECTOR = bytes4(keccak256("getApproved(uint256)"));
     bytes4 private constant WRAPPER_IS_APPROVED_FOR_ALL_SELECTOR = bytes4(keccak256("isApprovedForAll(address,address)"));
     bytes4 private constant SUPPORTS_INTERFACE_SELECTOR = bytes4(keccak256("supportsInterface(bytes4)"));
+    bytes4 private constant PRIME_VIEW_VERSION_SELECTOR = bytes4(keccak256("ensJobManagerViewInterfaceVersion()"));
+    bytes4 private constant PRIME_JOB_EMPLOYER_OF_SELECTOR = bytes4(keccak256("jobEmployerOf(uint256)"));
+    bytes4 private constant PRIME_JOB_ASSIGNED_AGENT_OF_SELECTOR = bytes4(keccak256("jobAssignedAgentOf(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_CORE_SELECTOR = bytes4(keccak256("getJobCore(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_SPEC_URI_SELECTOR = bytes4(keccak256("getJobSpecURI(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_COMPLETION_URI_SELECTOR = bytes4(keccak256("getJobCompletionURI(uint256)"));
 
     bytes4 private constant RESOLVER_TEXT_INTERFACE_ID = 0x59d1d43c;
     bytes4 private constant RESOLVER_SETTEXT_INTERFACE_ID = 0x10f13a8c;
@@ -451,11 +457,19 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function jobEnsIssued(uint256 jobId) public view returns (bool) {
-        return _jobAuthority[jobId].authorityEstablished && jobEnsExists(jobId) && _jobResolverConfigured[jobId];
+        if (!_jobAuthority[jobId].authorityEstablished) return false;
+        return _nodeExists(_jobAuthority[jobId].node);
     }
 
     function jobEnsReady(uint256 jobId) public view returns (bool) {
-        return jobEnsIssued(jobId) && _jobCompletionTextConfigured[jobId];
+        if (!_jobAuthority[jobId].authorityEstablished) return false;
+        bytes32 node = _jobAuthority[jobId].node;
+        (bool resolverOk, address resolverAddress) = _tryResolver(node);
+        if (!resolverOk || resolverAddress != address(publicResolver)) return false;
+        return
+            _nodeExists(node) &&
+            _textRecordPresent(node, "schema") &&
+            _textRecordPresent(node, "agijobs.spec.public");
     }
 
     function jobEnsExists(uint256 jobId) public view returns (bool) {
@@ -501,6 +515,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         onlyOwner
         returns (bytes32 node)
     {
+        if (!_managerSupportsViewV1(jobManager)) revert InvalidParameters();
+        if (rootVersionCount != 1) revert InvalidParameters();
         _requireConfigured();
         if (jobManager == address(0)) revert ENSNotConfigured();
 
@@ -550,32 +566,63 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function repairAuthoritySnapshot(uint256 jobId, string calldata exactLabel) external onlyOwner {
         if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
+        if (rootVersionCount != 1) revert InvalidParameters();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
         } else if (!_jobLabelIsSet[jobId]) {
-            _snapshotJobLabel(jobId, previewJobEnsLabel(jobId));
+            revert InvalidParameters();
         }
-        _establishAuthority(jobId, _jobLabelById[jobId], SNAPSHOT_SOURCE_REPAIR, false);
+        _establishAuthorityForRootVersion(jobId, _jobLabelById[jobId], currentRootVersionId, SNAPSHOT_SOURCE_REPAIR, false);
+    }
+
+    function repairAuthoritySnapshotExplicit(uint256 jobId, string calldata exactLabel, uint256 rootVersionId) external onlyOwner {
+        if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
+        if (bytes(exactLabel).length != 0) {
+            _importExactJobLabel(jobId, exactLabel);
+        } else if (!_jobLabelIsSet[jobId]) {
+            revert InvalidParameters();
+        }
+        _establishAuthorityForRootVersion(jobId, _jobLabelById[jobId], rootVersionId, SNAPSHOT_SOURCE_REPAIR, false);
     }
 
     function replayCreate(uint256 jobId) external onlyOwner {
-        this._handleCreateHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        if (_managerSupportsViewV1(jobManager)) {
+            this._handleCreateHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        } else {
+            this._handleCreateHookFallback(jobId);
+        }
     }
 
     function replayAssign(uint256 jobId) external onlyOwner {
-        this._handleAssignHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        if (_managerSupportsViewV1(jobManager)) {
+            this._handleAssignHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        } else {
+            this._handleAssignHookFallback(jobId);
+        }
     }
 
     function replayCompletion(uint256 jobId) external onlyOwner {
-        this._handleCompletionHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        if (_managerSupportsViewV1(jobManager)) {
+            this._handleCompletionHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        } else {
+            this._handleCompletionHookFallback(jobId);
+        }
     }
 
     function replayRevoke(uint256 jobId) external onlyOwner {
-        this._handleRevokeHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        if (_managerSupportsViewV1(jobManager)) {
+            this._handleRevokeHook(IAGIJobManagerPrimeViewV1(jobManager), jobId);
+        } else {
+            this._handleRevokeHookFallback(jobId);
+        }
     }
 
     function replayLock(uint256 jobId, bool burnFuses) external onlyOwner {
-        this._handleLockHook(IAGIJobManagerPrimeViewV1(jobManager), jobId, burnFuses);
+        if (_managerSupportsViewV1(jobManager)) {
+            this._handleLockHook(IAGIJobManagerPrimeViewV1(jobManager), jobId, burnFuses);
+        } else {
+            this._handleLockHookFallback(jobId, burnFuses);
+        }
     }
 
     function repairResolver(uint256 jobId) external onlyOwner {
@@ -583,6 +630,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function repairTexts(uint256 jobId) external onlyOwner {
+        if (!_managerSupportsViewV1(jobManager)) revert InvalidParameters();
         string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
         string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
         bytes32 node = _resolvedJobNodeForWrite(jobId);
@@ -592,10 +640,55 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function repairAuthorisations(uint256 jobId) external onlyOwner {
+        if (!_managerSupportsViewV1(jobManager)) revert InvalidParameters();
         (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
         bytes32 node = _resolvedJobNodeForWrite(jobId);
         _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
         _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
+    }
+
+    function repairSpecTextExplicit(uint256 jobId, string calldata specURI) external onlyOwner {
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
+    }
+
+    function repairCompletionTextExplicit(uint256 jobId, string calldata completionURI) external onlyOwner {
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setTextBestEffort(HOOK_COMPLETION, jobId, node, "agijobs.completion.public", completionURI);
+    }
+
+    function repairTextsExplicit(uint256 jobId, string calldata specURI, string calldata completionURI) external onlyOwner {
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
+        _setTextBestEffort(HOOK_COMPLETION, jobId, node, "agijobs.completion.public", completionURI);
+    }
+
+    function repairAuthorisationsExplicit(uint256 jobId, address employer, address agent, bool allowAuth) external onlyOwner {
+        bytes32 node = _resolvedJobNodeForWrite(jobId);
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, agent, allowAuth);
+    }
+
+    function replayCreateExplicit(uint256 jobId, address employer, string calldata specURI) external onlyOwner {
+        _createJobPage(jobId, employer, specURI);
+    }
+
+    function replayAssignExplicit(uint256 jobId, address agent) external onlyOwner {
+        _onAgentAssigned(jobId, agent);
+    }
+
+    function replayCompletionExplicit(uint256 jobId, string calldata completionURI) external onlyOwner {
+        _onCompletionRequested(jobId, completionURI);
+    }
+
+    function replayRevokeExplicit(uint256 jobId, address employer, address agent) external onlyOwner {
+        _revokePermissions(jobId, employer, agent);
+    }
+
+    function replayLockExplicit(uint256 jobId, address employer, address agent, bool burnFuses) external onlyOwner {
+        _lockJobENS(jobId, employer, agent, burnFuses);
     }
 
     function _jobAuthStateForMigration(uint256 jobId)
@@ -667,31 +760,52 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
 
         bool success;
+        bool richManager = _managerSupportsViewV1(msg.sender);
         IAGIJobManagerPrimeViewV1 jobManagerView = IAGIJobManagerPrimeViewV1(msg.sender);
 
         if (hook == HOOK_CREATE) {
-            try this._handleCreateHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            if (richManager) {
+                try this._handleCreateHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            } else {
+                try this._handleCreateHookFallback(jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
         if (hook == HOOK_ASSIGN) {
-            try this._handleAssignHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            if (richManager) {
+                try this._handleAssignHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            } else {
+                try this._handleAssignHookFallback(jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
         if (hook == HOOK_COMPLETION) {
-            try this._handleCompletionHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            if (richManager) {
+                try this._handleCompletionHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            } else {
+                try this._handleCompletionHookFallback(jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
         if (hook == HOOK_REVOKE) {
-            try this._handleRevokeHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            if (richManager) {
+                try this._handleRevokeHook(jobManagerView, jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            } else {
+                try this._handleRevokeHookFallback(jobId) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
         if (hook == HOOK_LOCK || hook == HOOK_LOCK_BURN) {
             bool burnFuses = hook == HOOK_LOCK_BURN;
-            try this._handleLockHook(jobManagerView, jobId, burnFuses) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            if (richManager) {
+                try this._handleLockHook(jobManagerView, jobId, burnFuses) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            } else {
+                try this._handleLockHookFallback(jobId, burnFuses) { success = true; } catch { emit ENSHookSkipped(hook, jobId, "HOOK_REVERTED"); }
+            }
             emit ENSHookProcessed(hook, jobId, true, success);
             return;
         }
@@ -706,14 +820,35 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         _createJobPage(jobId, employer, specURI);
     }
 
+    function _handleCreateHookFallback(uint256 jobId) external onlySelf {
+        (bool ok, address employer) = _tryJobManagerAddress(jobManager, PRIME_JOB_EMPLOYER_OF_SELECTOR, jobId);
+        if (!ok || employer == address(0)) revert InvalidParameters();
+        _createJobPage(jobId, employer, "");
+        emit ENSHookBestEffortFailure(HOOK_CREATE, jobId, "SPEC_URI_UNAVAILABLE");
+    }
+
     function _handleAssignHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId) external onlySelf {
         (, address agent, , , , , , , ) = managerView.getJobCore(jobId);
+        _onAgentAssigned(jobId, agent);
+    }
+
+    function _handleAssignHookFallback(uint256 jobId) external onlySelf {
+        (bool ok, address agent) = _tryJobManagerAddress(jobManager, PRIME_JOB_ASSIGNED_AGENT_OF_SELECTOR, jobId);
+        if (!ok || agent == address(0)) {
+            emit ENSHookBestEffortFailure(HOOK_ASSIGN, jobId, "ASSIGNED_AGENT_UNAVAILABLE");
+            return;
+        }
         _onAgentAssigned(jobId, agent);
     }
 
     function _handleCompletionHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId) external onlySelf {
         string memory completionURI = managerView.getJobCompletionURI(jobId);
         _onCompletionRequested(jobId, completionURI);
+    }
+
+    function _handleCompletionHookFallback(uint256 jobId) external onlySelf {
+        jobId;
+        emit ENSHookBestEffortFailure(HOOK_COMPLETION, jobId, "COMPLETION_URI_UNAVAILABLE");
     }
 
     function _handleRevokeHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId) external onlySelf {
@@ -724,12 +859,28 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         }
     }
 
+    function _handleRevokeHookFallback(uint256 jobId) external onlySelf {
+        (bool employerOk, address employer) = _tryJobManagerAddress(jobManager, PRIME_JOB_EMPLOYER_OF_SELECTOR, jobId);
+        (bool agentOk, address agent) = _tryJobManagerAddress(jobManager, PRIME_JOB_ASSIGNED_AGENT_OF_SELECTOR, jobId);
+        if (!employerOk) emit ENSHookBestEffortFailure(HOOK_REVOKE, jobId, "EMPLOYER_UNAVAILABLE");
+        if (!agentOk) emit ENSHookBestEffortFailure(HOOK_REVOKE, jobId, "ASSIGNED_AGENT_UNAVAILABLE");
+        _revokePermissions(jobId, employerOk ? employer : address(0), agentOk ? agent : address(0));
+    }
+
     function _handleLockHook(IAGIJobManagerPrimeViewV1 managerView, uint256 jobId, bool burnFuses) external onlySelf {
         try managerView.getJobCore(jobId) returns (address employer, address agent, uint256, uint256, uint256, bool, bool, bool, uint8) {
             _lockJobENS(jobId, employer, agent, burnFuses);
         } catch {
             _lockJobENS(jobId, address(0), address(0), burnFuses);
         }
+    }
+
+    function _handleLockHookFallback(uint256 jobId, bool burnFuses) external onlySelf {
+        (bool employerOk, address employer) = _tryJobManagerAddress(jobManager, PRIME_JOB_EMPLOYER_OF_SELECTOR, jobId);
+        (bool agentOk, address agent) = _tryJobManagerAddress(jobManager, PRIME_JOB_ASSIGNED_AGENT_OF_SELECTOR, jobId);
+        if (!employerOk) emit ENSHookBestEffortFailure(burnFuses ? HOOK_LOCK_BURN : HOOK_LOCK, jobId, "EMPLOYER_UNAVAILABLE");
+        if (!agentOk) emit ENSHookBestEffortFailure(burnFuses ? HOOK_LOCK_BURN : HOOK_LOCK, jobId, "ASSIGNED_AGENT_UNAVAILABLE");
+        _lockJobENS(jobId, employerOk ? employer : address(0), agentOk ? agent : address(0), burnFuses);
     }
 
     function onAgentAssigned(uint256 jobId, address agent) public onlyOwner {
@@ -1056,20 +1207,33 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _establishAuthority(uint256 jobId, string memory label, uint8 snapshotSource, bool legacyImported) internal {
+        _establishAuthorityForRootVersion(jobId, label, currentRootVersionId, snapshotSource, legacyImported);
+    }
+
+    function _establishAuthorityForRootVersion(
+        uint256 jobId,
+        string memory label,
+        uint256 rootVersionId,
+        uint8 snapshotSource,
+        bool legacyImported
+    ) internal {
         if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
+        if (rootVersionId == 0 || rootVersionId > rootVersionCount) revert InvalidParameters();
+        RootVersion memory versionInfo = _rootVersions[rootVersionId];
+        if (versionInfo.rootNode == bytes32(0) || bytes(versionInfo.rootName).length == 0) revert InvalidParameters();
         JobAuthority storage authority = _jobAuthority[jobId];
         if (authority.authorityEstablished) return;
         if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();
         authority.labelHash = keccak256(bytes(label));
-        authority.rootVersionId = uint32(currentRootVersionId);
-        authority.rootNode = jobsRootNode;
-        authority.node = keccak256(abi.encodePacked(jobsRootNode, authority.labelHash));
+        authority.rootVersionId = uint32(rootVersionId);
+        authority.rootNode = versionInfo.rootNode;
+        authority.node = keccak256(abi.encodePacked(versionInfo.rootNode, authority.labelHash));
         authority.authorityEstablishedAt = uint64(block.timestamp);
         authority.snapshotVersion = currentSnapshotVersion;
         authority.snapshotSource = snapshotSource;
         authority.authorityEstablished = true;
         authority.legacyImported = legacyImported;
-        emit JobAuthoritySnapshotted(jobId, authority.node, label, currentRootVersionId, snapshotSource, legacyImported);
+        emit JobAuthoritySnapshotted(jobId, authority.node, label, rootVersionId, snapshotSource, legacyImported);
     }
 
     function _tryRootOwner() internal view returns (bool ok, address ownerAddress) {
@@ -1153,5 +1317,31 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
             if (start == 0) break;
             end = start - 1;
         }
+    }
+
+    function _managerSupportsViewV1(address manager) internal view returns (bool ok) {
+        uint256 version;
+        (ok, version) = _staticcallWord(manager, abi.encodeWithSelector(PRIME_VIEW_VERSION_SELECTOR));
+        if (ok && version > 0) return true;
+
+        bool coreOk;
+        bool specOk;
+        bool completionOk;
+        (coreOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_CORE_SELECTOR, uint256(0)));
+        (specOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_SPEC_URI_SELECTOR, uint256(0)));
+        (completionOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_COMPLETION_URI_SELECTOR, uint256(0)));
+        return coreOk && specOk && completionOk;
+    }
+
+    function _tryJobManagerAddress(address manager, bytes4 selector, uint256 jobId) internal view returns (bool ok, address result) {
+        return _staticcallAddress(manager, abi.encodeWithSelector(selector, jobId));
+    }
+
+    function _textRecordPresent(bytes32 node, string memory key) internal view returns (bool) {
+        (bool resolverOk, address resolverAddress) = _tryResolver(node);
+        if (!resolverOk || resolverAddress == address(0)) return false;
+        (bool success, bytes memory data) = resolverAddress.staticcall(abi.encodeWithSignature("text(bytes32,string)", node, key));
+        if (!success || data.length < 32) return false;
+        return bytes(abi.decode(data, (string))).length != 0;
     }
 }

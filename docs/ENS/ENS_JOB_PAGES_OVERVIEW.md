@@ -1,167 +1,95 @@
 # ENS Job Pages Behavior Overview
 
-This document describes ENS naming and hook behavior from the current on-chain contracts (`AGIJobManager` + `ENSJobPages`).
+This document describes the current Prime-compatible ENS job-page model implemented in `contracts/ens/ENSJobPages.sol` and `contracts/ens/ENSJobPagesInspector.sol`.
 
-## In one minute
-- Canonical name shape is `<prefix><jobId>.<jobsRootName>`.
-- Defaults are `prefix=agijob-`, `jobsRootName=alpha.jobs.agi.eth`, so names look like `agijob-0.alpha.jobs.agi.eth`.
-- Settlement and dispute progression live in `AGIJobManager`; ENS writes in `ENSJobPages` are best-effort and non-fatal to settlement.
-- Legacy jobs may need explicit snapshot migration to avoid `JobLabelNotSnapshotted` write failures.
+## Canonical semantics
 
----
+- **Preview / projected** values come from the currently configured prefix + root and are exposed by:
+  - `previewJobEnsLabel(jobId)`
+  - `previewJobEnsName(jobId)`
+  - `previewJobEnsURI(jobId)`
+  - `previewJobEnsNode(jobId)`
+- **Effective / authoritative** values exist only after authority is snapshotted and are exposed by:
+  - `effectiveJobEnsLabel(jobId)`
+  - `effectiveJobEnsName(jobId)`
+  - `effectiveJobEnsURI(jobId)`
+  - `effectiveJobEnsNode(jobId)`
+- **Compatibility getters** (`jobEnsLabel`, `jobEnsName`, `jobEnsURI`, `jobEnsNode`) return effective values once authority exists; otherwise they fall back to preview values. They are compatibility surfaces only and must not be treated as authoritative before authority is established.
 
+## Canonical default shape
 
-## Canonical defaults used in current operator docs
 - `jobLabelPrefix = agijob-`
 - `jobsRootName = alpha.jobs.agi.eth`
-- Example names: `agijob-0.alpha.jobs.agi.eth`, `agijob-1.alpha.jobs.agi.eth`
+- Preview names therefore look like `agijob-<jobId>.alpha.jobs.agi.eth`.
 
-If your deployment uses different values, update your runbooks so operators still reason using the same `<prefix><jobId>.<jobsRootName>` model.
+## Authority and root-versioning
 
----
+`ENSJobPages` snapshots both:
 
-## 1) Name composition: who controls what
+1. the exact job label; and
+2. the exact root version used when authority is established.
 
-For a given job ENS name, each component comes from a different source:
+That means root or prefix changes do **not** retroactively rename historical jobs once authority exists.
 
-- **Prefix source:** `ENSJobPages.jobLabelPrefix` (default set in constructor: `"agijob"`).
-- **Numeric id source:** `AGIJobManager` job id (`jobId`).
-- **Root suffix source:** `ENSJobPages.jobsRootName`.
+### Repair safety rule
 
-Effective name format:
+`repairAuthoritySnapshot(jobId, exactLabel)` is intentionally limited to single-root deployments. In multi-root deployments operators must use `repairAuthoritySnapshotExplicit(jobId, exactLabel, rootVersionId)` so a historical job cannot be silently bound to the wrong root version.
 
-```text
-<jobLabelPrefix><jobId>.<jobsRootName>
-```
+## Prime compatibility model
 
-Example with defaults:
-- `agijob-0.alpha.jobs.agi.eth`
-- `agijob-1.alpha.jobs.agi.eth`
+`AGIJobManagerPrime` remains ABI-compatible through `handleHook(uint8,uint256)`.
 
----
+`ENSJobPages.handleHook(...)` now performs runtime capability detection:
 
-## 2) Snapshot behavior and prefix changes
+- **Rich manager path:** if the manager exposes `IAGIJobManagerPrimeViewV1`, ENS reads full job views directly.
+- **Prime fallback path:** if the manager does not expose V1 views, ENS still auto-issues identity on create using `jobEmployerOf(jobId)` and still repairs/revokes/locks authorisations using the available public employer/agent getters. Missing URIs are treated as explicit repair requirements, never as success.
 
-`ENSJobPages` snapshots the exact label when a job page is first created/imported.
+Settlement remains non-blocking in both paths.
 
-Implications:
-- Changing `jobLabelPrefix` only affects **unsnapshotted** jobs (future/preview labels).
-- Already snapshotted jobs keep their historical exact label permanently.
+## Repair and replay model
 
-Operationally:
-- `jobEnsLabel(jobId)` returns snapshotted label if present; otherwise preview label from current prefix.
-- Post-create write paths require a snapshotted label for deterministic node resolution.
+The contract now exposes explicit owner repair entrypoints that do **not** rely on unavailable Prime V1 getters:
 
----
+- `repairAuthoritySnapshotExplicit(jobId, exactLabel, rootVersionId)`
+- `repairResolver(jobId)`
+- `repairSpecTextExplicit(jobId, specURI)`
+- `repairCompletionTextExplicit(jobId, completionURI)`
+- `repairTextsExplicit(jobId, specURI, completionURI)`
+- `repairAuthorisationsExplicit(jobId, employer, agent, allowAuth)`
+- `replayCreateExplicit(jobId, employer, specURI)`
+- `replayAssignExplicit(jobId, agent)`
+- `replayCompletionExplicit(jobId, completionURI)`
+- `replayRevokeExplicit(jobId, employer, agent)`
+- `replayLockExplicit(jobId, employer, agent, burnFuses)`
 
-## 3) Why some legacy jobs need migration
+The older convenience functions remain useful only when the manager exposes the richer V1 view surface.
 
-Write paths (`onAgentAssigned`, `onCompletionRequested`, `revokePermissions`, `lockJobENS`) resolve nodes via the snapshotted label map.
+## Compatibility truth model
 
-If a job predates the current ENSJobPages deployment and label was never imported/snapshotted, writes can fail with `JobLabelNotSnapshotted`.
+- `jobEnsIssued(jobId)` now means: authoritative node exists onchain.
+- `jobEnsReady(jobId)` now means: authoritative node exists, expected resolver is set, and base metadata (`schema` + spec text) is present.
 
-Recovery path:
-- Owner calls `migrateLegacyWrappedJobPage(jobId, exactLabel)`.
+These compatibility booleans do **not** claim completion metadata, auth state, or finalization truth.
 
-What this migration is for:
-- snapshots the exact historical label for deterministic node resolution,
-- adopts existing wrapped child if parent-controllable, or creates when needed,
-- applies resolver/auth/text updates on a best-effort basis.
+## Resolver and auth observations
 
-If a wrapped child is no longer parent-controllable (for example, emancipated), migration adoption can fail and revert (`ENSNotAuthorized`) rather than partially succeeding.
+The inspector does not assume every resolver exposes `isAuthorised(bytes32,address)`. Instead it reports whether auth observation is supported and keeps “unknown” separate from “false”.
 
----
+## Wrapped-name operations
 
-## 3.1) Why old create hooks failed in some deployments
+- Wrapped roots require either direct wrapper ownership, token approval, or operator approval.
+- Wrapped child creation/adoption stays best-effort and non-blocking for settlement.
+- Fuse burning remains explicit/manual-or-helper driven unless an operator intentionally calls lock/burn repair paths.
 
-In replacement scenarios, historical jobs can fail post-create ENS writes because the new ENSJobPages does not automatically know old exact labels.
+## Operator scripts
 
-Typical root causes:
-- missing label snapshot for a legacy job in the new contract,
-- missing wrapped-root approval for the active ENSJobPages operator,
-- AGIJobManager still pointing to an old ENSJobPages address.
+Use the ENS scripts under `scripts/ens/` before cutover:
 
-The replacement flow addresses this by cutover wiring plus per-job legacy migration when needed.
+- `audit-mainnet.ts`
+- `phase0-mainnet-snapshot.mjs`
+- `inventory-job-pages.ts`
+- `repair-from-logs.ts`
+- `repair-job-page.ts`
+- `migrate-legacy-batch.ts`
 
-## 4) Wrapped root vs unwrapped root behavior
-
-### Unwrapped root
-- ENSJobPages expects direct ENS ownership of `jobsRootNode`.
-- Subname creation uses ENS registry `setSubnodeRecord`.
-
-### Wrapped root
-- Root owner appears as NameWrapper.
-- ENSJobPages requires wrapper authorization (`ownerOf`, `getApproved`, or `isApprovedForAll`) before wrapped operations.
-- Subname create/adopt uses NameWrapper `setSubnodeOwner`.
-
-Operational term consistency:
-- **wrapped root** = root node owned by NameWrapper.
-- **NameWrapper approval** = approvals needed so ENSJobPages can manage wrapped root/subnames.
-
----
-
-## 5) Authorization model for job pages
-
-ENSJobPages tries to set resolver authorizations for employer/agent at lifecycle points:
-- create: authorize employer,
-- assign: authorize assigned agent,
-- revoke/lock: de-authorize employer/agent.
-
-For migration it computes `allowAuth` from AGIJobManager core state:
-- keeps auth if unresolved,
-- revokes only for terminal completion/expiry conditions.
-
----
-
-## 6) Hook model and best-effort semantics
-
-AGIJobManager calls ENS hooks through `ensJobPages.handleHook(hook, jobId)` with bounded gas.
-
-Important semantics:
-- Hook invocation is non-blocking for AGIJobManager settlement flow.
-- ENSJobPages itself uses `try/catch` and emits:
-  - `ENSHookProcessed`
-  - `ENSHookSkipped`
-  - `ENSHookBestEffortFailure`
-- Resolver/text/authorization updates are best-effort and may fail without reverting protocol-critical AGIJobManager flow.
-
-Why this matters:
-- ENS metadata should not halt escrow settlement.
-- Operators must monitor ENS events and correct configuration issues separately.
-
-### Why best-effort is intentional
-AGIJobManager is the source of truth for escrow, dispute, and payout outcomes. ENS is an auxiliary metadata/indexing layer. Keeping ENS hook failures non-fatal prevents resolver/wrapper outages from blocking protocol settlement.
-
----
-
-
-## 6.1) Expected behavior after cutover
-
-- **Future/unsnapshotted jobs:** use the active prefix and root (`<prefix><jobId>.<jobsRootName>`), then snapshot on create/import.
-- **Legacy snapshotted jobs:** keep historical exact labels; they do not auto-rename when prefix changes.
-- **Legacy unsnapshotted jobs in replacement contract:** may require `migrateLegacyWrappedJobPage(jobId, exactLabel)` before deterministic post-create writes succeed.
-
-## 7) Practical operator checks on Etherscan
-
-On ENSJobPages `Read Contract`:
-- `jobLabelPrefix`
-- `jobsRootName`
-- `jobsRootNode`
-- `jobManager`
-- `configLocked`
-
-For a given job:
-- `jobLabelSnapshot(jobId)` to confirm whether label exists.
-- `jobEnsName(jobId)` for effective name string.
-
-On AGIJobManager `Read Contract`:
-- `ensJobPages`
-- `useEnsJobTokenURI`
-
----
-
-## 8) Related runbooks
-
-- ENS replacement and wiring: `../DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`
-- Deployment troubleshooting: `../TROUBLESHOOTING_DEPLOYMENT_AND_ENS.md`
-- Official deploy guide: `../../hardhat/README.md`
+Each script emits machine-readable JSON under `scripts/ens/output/` for auditability.

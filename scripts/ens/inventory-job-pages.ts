@@ -13,13 +13,14 @@ const MAX_JOBS = Number(process.env.MAX_JOBS || '128');
 
 const PRIME_ABI = [
   'function nextJobId() view returns (uint256)',
-  'function getJobCore(uint256) view returns (address employer,address assignedAgent,uint256 payout,uint256 duration,uint256 assignedAt,bool completed,bool disputed,bool expired,uint8 agentPayoutPct)',
-  'function getJobSpecURI(uint256) view returns (string)',
-  'function getJobCompletionURI(uint256) view returns (string)',
+  'function jobEmployerOf(uint256) view returns (address)',
+  'function jobAssignedAgentOf(uint256) view returns (address)',
   'event JobCreated(uint256 indexed jobId,address indexed employer,uint256 payout,uint256 duration,string jobSpecURI,uint8 intakeMode,bytes32 perJobAgentRoot,string details)',
   'event JobCompletionRequested(uint256 indexed jobId,address indexed agent,string jobCompletionURI)',
+  'event JobCompleted(uint256 indexed jobId,address indexed agent,uint256 indexed reputationPoints)',
+  'event JobEmployerRefunded(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 refund)',
+  'event JobExpired(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 payout)'
 ];
-
 const PAGES_ABI = [
   'function previewJobEnsLabel(uint256) view returns (string)',
   'function previewJobEnsName(uint256) view returns (string)',
@@ -35,57 +36,49 @@ const PAGES_ABI = [
   'function publicResolver() view returns (address)',
   'function nameWrapper() view returns (address)',
   'function jobsRootNode() view returns (bytes32)',
+  'function jobEnsIssued(uint256) view returns (bool)',
+  'function jobEnsReady(uint256) view returns (bool)'
 ];
+const ENS_ABI = ['function owner(bytes32) view returns (address)', 'function resolver(bytes32) view returns (address)'];
+const WRAPPER_ABI = ['function ownerOf(uint256) view returns (address)'];
+const RESOLVER_TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
 
-const ENS_ABI = [
-  'function owner(bytes32) view returns (address)',
-  'function resolver(bytes32) view returns (address)',
-];
+const primeIface = new ethers.Interface(PRIME_ABI);
 
-const WRAPPER_ABI = [
-  'function ownerOf(uint256) view returns (address)',
-];
+async function safe(fn, fallback = null) { try { return await fn(); } catch { return fallback; } }
 
-const RESOLVER_ABI = [
-  'function text(bytes32,string) view returns (string)',
-  'function isAuthorised(bytes32,address) view returns (bool)',
-];
-
-async function safe(fn, fallback = null) {
-  try { return await fn(); } catch { return fallback; }
+function serialize(value) {
+  if (typeof value === 'bigint') return value.toString();
+  if (Array.isArray(value)) return value.map(serialize);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, serialize(v)]));
+  return value;
 }
 
 function classify(job) {
   const tags = [];
   if (!job.labelSnapshotted && !job.authoritySnapshotted) tags.push('preview-only');
   if (job.labelSnapshotted && !job.authoritySnapshotted) tags.push('label-snapshotted-only');
-  if (job.authoritySnapshotted) tags.push('authority-snapshotted');
-  if (job.legacyImportCandidate) tags.push('legacy-import-required');
+  if (job.authoritySnapshotted) tags.push('authority-established');
   if (job.nodeExists && !job.nodeManagedByContract) tags.push('node-exists-but-unmanaged');
   if (job.nodeExists && !job.resolverSetToExpected) tags.push('resolver-mismatch');
-  if (job.authoritySnapshotted && (!job.specTextMatchesManager || (job.hasCompletionURI && !job.completionTextMatchesManager))) tags.push('metadata-incomplete');
-  if (job.nodeExists && !job.authorisationsAsExpected) tags.push('permissions-drift');
+  if (!job.specTextPresent) tags.push('metadata-incomplete');
+  if (job.hasCompletionURI && !job.completionTextPresent) tags.push('completion-repairable');
+  if (job.authReadSupported && !job.authorisationsAsExpected) tags.push('permissions-drift');
+  if (!job.authReadSupported) tags.push('authorisation-observation-unavailable');
+  if (job.finalizedFlag) tags.push('finalization-flag-set');
+  if (job.fuseBurnedFlag) tags.push('fuse-burn-flag-set');
   if (job.repairable) tags.push('repairable');
-  if (job.effectiveReady) tags.push('authoritative-ready');
-  if (job.finalized) tags.push('finalized');
-  if (job.missingCore) tags.push('missing-core');
   return tags;
+}
+
+async function getLogs(provider, address, topic0) {
+  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
 }
 
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   const provider = new CurlJsonRpcProvider(RPC);
-  const out = {
-    generatedAt: new Date().toISOString(),
-    rpc: RPC,
-    prime: PRIME,
-    ensJobPages: ENS_JOB_PAGES,
-    proven: {},
-    assumed: [],
-    jobs: [],
-  };
-  let truncated = false;
-
+  const out = { generatedAt: new Date().toISOString(), rpc: RPC, prime: PRIME, ensJobPages: ENS_JOB_PAGES, proven: {}, assumed: [], jobs: [] };
   try {
     out.proven.latestBlock = provider.getBlockNumber().toString();
   } catch (error) {
@@ -96,33 +89,36 @@ function classify(job) {
     return;
   }
 
+  const nextJobId = Number(await safe(() => provider.readContract(PRIME, PRIME_ABI, 'nextJobId')[0], 0n));
+  const total = Math.min(nextJobId, MAX_JOBS);
+  if (nextJobId > MAX_JOBS) out.assumed.push(`Inventory truncated at MAX_JOBS=${MAX_JOBS}; re-run with a higher MAX_JOBS to cover full history.`);
+
   const nameWrapperAddress = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'nameWrapper')[0], ethers.ZeroAddress);
   const jobsRootNode = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobsRootNode')[0], ethers.ZeroHash);
-  const nextJobIdRead = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'nextJobId')[0], null);
-  if (nextJobIdRead === null) {
-    throw new Error('Failed to read prime.nextJobId(); refusing to emit a misleading empty inventory.');
-  }
-  const nextJobId = Number(nextJobIdRead);
-  const total = Math.min(nextJobId, MAX_JOBS);
-  truncated = nextJobId > MAX_JOBS;
+  const expectedResolver = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'publicResolver')[0], ethers.ZeroAddress);
   const config = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configurationStatus')), null);
-  out.proven.configurationStatus = config ? config.map((value) => typeof value === 'bigint' ? value.toString() : value) : null;
+  out.proven.configurationStatus = serialize(config);
+
+  const createdLogs = await getLogs(provider, PRIME, primeIface.getEvent('JobCreated').topicHash);
+  const completionLogs = await getLogs(provider, PRIME, primeIface.getEvent('JobCompletionRequested').topicHash);
+  const completedLogs = await getLogs(provider, PRIME, primeIface.getEvent('JobCompleted').topicHash);
+  const refundedLogs = await getLogs(provider, PRIME, primeIface.getEvent('JobEmployerRefunded').topicHash);
+  const expiredLogs = await getLogs(provider, PRIME, primeIface.getEvent('JobExpired').topicHash);
+
+  const createdById = new Map();
+  for (const log of createdLogs) {
+    const parsed = primeIface.parseLog(log);
+    createdById.set(Number(parsed.args.jobId), { employer: parsed.args.employer, specURI: parsed.args.jobSpecURI, blockNumber: Number(log.blockNumber) });
+  }
+  const completionById = new Map();
+  for (const log of completionLogs) {
+    const parsed = primeIface.parseLog(log);
+    completionById.set(Number(parsed.args.jobId), { agent: parsed.args.agent, completionURI: parsed.args.jobCompletionURI, blockNumber: Number(log.blockNumber) });
+  }
+  const terminalSet = new Set();
+  for (const log of [...completedLogs, ...refundedLogs, ...expiredLogs]) terminalSet.add(Number(ethers.getBigInt(log.topics[1])));
 
   for (let jobId = 0; jobId < total; jobId += 1) {
-    const coreRaw = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobCore', [jobId]), null);
-    const core = coreRaw ? {
-      employer: coreRaw[0],
-      assignedAgent: coreRaw[1],
-      payout: coreRaw[2],
-      duration: coreRaw[3],
-      assignedAt: coreRaw[4],
-      completed: coreRaw[5],
-      disputed: coreRaw[6],
-      expired: coreRaw[7],
-      agentPayoutPct: coreRaw[8],
-    } : null;
-    const specURI = core ? await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobSpecURI', [jobId])[0], '') : '';
-    const completionURI = core ? await safe(() => provider.readContract(PRIME, PRIME_ABI, 'getJobCompletionURI', [jobId])[0], '') : '';
     const labelSnapshot = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobLabelSnapshot', [jobId])), [false, '']);
     const authority = await safe(() => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobAuthorityInfo', [jobId])), [false, '', ethers.ZeroHash, 0, ethers.ZeroHash, ethers.ZeroHash, 0, 0, 0, false, false, false]);
     const preview = {
@@ -131,97 +127,88 @@ function classify(job) {
       uri: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsURI', [jobId])[0], ''),
       node: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'previewJobEnsNode', [jobId])[0], ethers.ZeroHash),
     };
-
-    const authorityReady = Boolean(authority[0]);
-    const snapshottedLabel = labelSnapshot[0] ? labelSnapshot[1] : '';
-    const labelProbe = authorityReady ? authority[1] : (snapshottedLabel || preview.label);
-    const labelProbeNode = labelProbe && jobsRootNode !== ethers.ZeroHash
-      ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [jobsRootNode, ethers.id(labelProbe)])
-      : ethers.ZeroHash;
-
-    const effective = authorityReady ? {
+    const effective = authority[0] ? {
       label: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsLabel', [jobId])[0], ''),
       name: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsName', [jobId])[0], ''),
       uri: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsURI', [jobId])[0], ''),
       node: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsNode', [jobId])[0], ethers.ZeroHash),
     } : { label: '', name: '', uri: '', node: ethers.ZeroHash };
 
-    const node = authorityReady ? effective.node : (labelProbeNode !== ethers.ZeroHash ? labelProbeNode : preview.node);
+    const snapshottedLabel = labelSnapshot[0] ? labelSnapshot[1] : '';
+    const preAuthorityLabel = snapshottedLabel || preview.label;
+    const node = authority[0]
+      ? effective.node
+      : (preAuthorityLabel && jobsRootNode !== ethers.ZeroHash
+        ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [jobsRootNode, ethers.id(preAuthorityLabel)])
+        : preview.node);
     const owner = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'owner', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
     const resolver = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'resolver', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
-    const expectedResolver = await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'publicResolver')[0], ethers.ZeroAddress);
-    const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
+    const wrappedTokenOwner = owner !== ethers.ZeroAddress && nameWrapperAddress !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
       ? await safe(() => provider.readContract(nameWrapperAddress, WRAPPER_ABI, 'ownerOf', [BigInt(node)])[0], ethers.ZeroAddress)
       : ethers.ZeroAddress;
-    const wrappedUnmanaged = owner !== ethers.ZeroAddress
-      && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
-      && wrappedTokenOwner !== ethers.ZeroAddress
-      && wrappedTokenOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase();
-
-    let specText = '';
-    let completionText = '';
-    let employerAuth = false;
-    let agentAuth = false;
-    if (resolver && resolver !== ethers.ZeroAddress) {
-      specText = await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
-      completionText = await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
-      employerAuth = !core || core.employer === ethers.ZeroAddress ? false : await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'isAuthorised', [node, core.employer])[0], false);
-      agentAuth = !core || core.assignedAgent === ethers.ZeroAddress ? false : await safe(() => provider.readContract(resolver, RESOLVER_ABI, 'isAuthorised', [node, core.assignedAgent])[0], false);
-    }
-
     const nodeManagedByContract = owner !== ethers.ZeroAddress && (
       owner.toLowerCase() === ENS_JOB_PAGES.toLowerCase() ||
-      (owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
+      (nameWrapperAddress !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
     );
 
-    const specTextMatchesManager = !specURI || specText === specURI;
-    const completionTextMatchesManager = !completionURI || completionText === completionURI;
-    const effectiveReady = authorityReady
-      && owner !== ethers.ZeroAddress
-      && resolver.toLowerCase() === expectedResolver.toLowerCase()
-      && specTextMatchesManager
-      && completionTextMatchesManager
-      && (!core || (core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth));
-    const finalized = Boolean(authority[10]);
-    const legacyImportCandidate = !Boolean(authority[9]) && (
-      (Boolean(labelSnapshot[0]) && labelSnapshot[1] !== preview.label) || wrappedUnmanaged
-    );
-    const repairable = authorityReady || Boolean(labelSnapshot[0]) || Boolean(specURI) || Boolean(completionURI) || owner !== ethers.ZeroAddress;
+    const created = createdById.get(jobId) || { employer: ethers.ZeroAddress, specURI: '' };
+    const completion = completionById.get(jobId) || { agent: ethers.ZeroAddress, completionURI: '' };
+    const employer = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'jobEmployerOf', [jobId])[0], created.employer);
+    const agent = await safe(() => provider.readContract(PRIME, PRIME_ABI, 'jobAssignedAgentOf', [jobId])[0], completion.agent);
+
+    let schemaText = '';
+    let specText = '';
+    let completionText = '';
+    let authReadSupported = false;
+    let employerAuth = null;
+    let agentAuth = null;
+    if (resolver && resolver !== ethers.ZeroAddress) {
+      schemaText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'schema'])[0], '');
+      specText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
+      completionText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
+      const authAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
+      const employerAuthRead = await safe(() => provider.readContract(resolver, authAbi, 'isAuthorised', [node, employer])[0], null);
+      const agentAuthRead = await safe(() => provider.readContract(resolver, authAbi, 'isAuthorised', [node, agent])[0], null);
+      authReadSupported = employerAuthRead !== null || agentAuthRead !== null;
+      employerAuth = employerAuthRead;
+      agentAuth = agentAuthRead;
+    }
 
     const job = {
       jobId,
       preview,
       effective,
-      labelProbe,
-      labelProbeNode,
       labelSnapshotted: Boolean(labelSnapshot[0]),
-      authoritySnapshotted: authorityReady,
+      authoritySnapshotted: Boolean(authority[0]),
+      authorityRootVersion: Number(authority[3] || 0),
       legacyImported: Boolean(authority[9]),
-      legacyImportCandidate,
-      missingCore: !core,
-      finalized,
-      fuseBurned: Boolean(authority[11]),
+      finalizedFlag: Boolean(authority[10]),
+      fuseBurnedFlag: Boolean(authority[11]),
       nodeExists: owner !== ethers.ZeroAddress,
       nodeManagedByContract,
-      wrappedTokenOwner,
-      resolverSetToExpected: resolver.toLowerCase() === expectedResolver.toLowerCase(),
+      resolverSetToExpected: resolver !== ethers.ZeroAddress && resolver.toLowerCase() === expectedResolver.toLowerCase(),
+      schemaTextPresent: Boolean(schemaText),
       specTextPresent: Boolean(specText),
       completionTextPresent: Boolean(completionText),
-      specTextMatchesManager,
-      completionTextMatchesManager,
-      authorisationsAsExpected: !core ? false : (core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth),
-      effectiveReady,
-      finalizable: authorityReady && owner !== ethers.ZeroAddress,
-      repairable,
-      hasCompletionURI: Boolean(completionURI),
-      core: core ? {
-        employer: core.employer,
-        assignedAgent: core.assignedAgent,
-        completed: core.completed,
-        disputed: core.disputed,
-        expired: core.expired,
-      } : null,
-      uris: { specURI, completionURI, specText, completionText },
+      authReadSupported,
+      employerAuthorisedObserved: employerAuth,
+      agentAuthorisedObserved: agentAuth,
+      authorisationsAsExpected: authReadSupported
+        ? (
+          terminalSet.has(jobId)
+            ? ((employer === ethers.ZeroAddress || employerAuth === false) && (agent === ethers.ZeroAddress || agentAuth === false))
+            : ((employer === ethers.ZeroAddress || employerAuth === true) && (agent === ethers.ZeroAddress || agentAuth === true))
+        )
+        : false,
+      compatibilityIssued: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsIssued', [jobId])[0], false),
+      compatibilityReady: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsReady', [jobId])[0], false),
+      repairable: Boolean(labelSnapshot[0]) || Boolean(authority[0]) || owner !== ethers.ZeroAddress || Boolean(created.specURI) || Boolean(completion.completionURI),
+      hasCompletionURI: Boolean(completion.completionURI),
+      manager: { employer, assignedAgent: agent, specURI: created.specURI, completionURI: completion.completionURI, terminalObserved: terminalSet.has(jobId) },
+      nodeOwner: owner,
+      resolver,
+      wrappedTokenOwner,
+      texts: { schema: schemaText, spec: specText, completion: completionText },
     };
     job.classification = classify(job);
     out.jobs.push(job);
@@ -230,19 +217,11 @@ function classify(job) {
   out.summary = {
     nextJobId,
     scannedJobs: out.jobs.length,
-    maxJobs: MAX_JOBS,
-    truncated,
     previewOnly: out.jobs.filter((job) => job.classification.includes('preview-only')).map((job) => job.jobId),
-    authoritySnapshotted: out.jobs.filter((job) => job.classification.includes('authority-snapshotted')).map((job) => job.jobId),
+    authorityEstablished: out.jobs.filter((job) => job.classification.includes('authority-established')).map((job) => job.jobId),
     repairable: out.jobs.filter((job) => job.classification.includes('repairable')).map((job) => job.jobId),
-    finalized: out.jobs.filter((job) => job.classification.includes('finalized')).map((job) => job.jobId),
-    missingCore: out.jobs.filter((job) => job.classification.includes('missing-core')).map((job) => job.jobId),
   };
 
-  if (truncated) {
-    out.assumed.push(`Inventory truncated at MAX_JOBS=${MAX_JOBS}; re-run with a higher MAX_JOBS to cover full history.`);
-  }
-
-  fs.writeFileSync(OUTPUT, `${JSON.stringify(out, null, 2)}\n`);
+  fs.writeFileSync(OUTPUT, `${JSON.stringify(serialize(out), null, 2)}\n`);
   console.log(`Wrote ${OUTPUT}`);
 })();

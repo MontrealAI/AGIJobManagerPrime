@@ -182,10 +182,14 @@ npm run deploy:prime:smoke
 
 ## Prime ENS wiring (optional, post-deploy)
 
-Prime settlement works without ENS wiring. If operators want ENS-backed public job pages, wire an ENSJobPages-compatible target manually after deployment:
+Prime settlement works without ENS wiring. If operators want ENS-backed public job pages, the current verified mainnet manager target is `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e` and the observed legacy ENS helper target is `0x97E03F7BFAC116E558A25C8f09aEf09108a2779d`.
 
-1. Deploy/prepare ENSJobPages target contract.
-2. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
-3. Validate hooks by creating/applying/completing a small canary job.
+Recommended wiring flow:
 
-Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail.
+1. Run `node ../scripts/ens/audit-mainnet.ts` and `node ../scripts/ens/phase0-mainnet-snapshot.mjs` first.
+2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js`.
+3. Confirm wrapped-root approvals and `validateConfiguration()==0`.
+4. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
+5. Validate one canary create flow plus one explicit repair flow from `node ../scripts/ens/repair-from-logs.ts`.
+
+Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail. Missing URIs under the unchanged Prime ABI must be repaired with explicit ENS-side repair functions, not with stale manager-side sync helpers.
