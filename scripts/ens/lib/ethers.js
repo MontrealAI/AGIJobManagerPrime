@@ -21,6 +21,7 @@ function loadEthers() {
 
 const raw = loadEthers();
 const isV6 = typeof raw.ZeroAddress === 'string';
+const v5Hash = isV6 ? null : requireFromHere('@ethersproject/hash');
 
 function normalize(value) {
   if (value == null) return value;
@@ -81,7 +82,7 @@ function compat() {
     toBeHex: (value) => utils.hexValue(value),
     id: utils.id,
     namehash: utils.namehash,
-    ensNormalize: (value) => value.trim().toLowerCase(),
+    ensNormalize: (value) => v5Hash.ensNormalize(value),
     solidityPackedKeccak256: (types, values) => utils.solidityKeccak256(types, values),
   };
 }
