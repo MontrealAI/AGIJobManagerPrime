@@ -49,6 +49,39 @@ async function mustRead(label, fn) {
   }
 }
 
+async function isConfirmedCompatibilityBlocker(provider, jobId) {
+  try {
+    provider.readContract(ENS_JOB_PAGES, ABI, 'nameWrapper');
+    provider.readContract(ENS_JOB_PAGES, ABI, 'jobManager');
+  } catch {
+    return false;
+  }
+
+  try {
+    provider.readContract(
+      ENS_JOB_PAGES,
+      ['function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)'],
+      'configurationStatus'
+    );
+    return false;
+  } catch {
+    // Treat the combination of stable config getters working while both new authority/status getters revert
+    // as a confirmed pre-authoritative deployment mismatch instead of a transient transport failure.
+  }
+
+  try {
+    provider.readContract(
+      ENS_JOB_PAGES,
+      ['function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)'],
+      'jobAuthorityInfo',
+      [jobId]
+    );
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   if (typeof rawJobId === 'undefined') {
@@ -64,6 +97,9 @@ async function main() {
   try {
     authority = await mustRead('pages.jobAuthorityInfo', () => Array.from(provider.readContract(ENS_JOB_PAGES, ABI, 'jobAuthorityInfo', [jobId])));
   } catch (error) {
+    if (!(await isConfirmedCompatibilityBlocker(provider, jobId))) {
+      throw error;
+    }
     const payload = {
       generatedAt: new Date().toISOString(),
       rpc: RPC,
@@ -163,8 +199,11 @@ async function main() {
     payload.sent = [];
     for (const step of plan) {
       const { hash } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, step.action, step.args);
+      const sent = { action: step.action, txHash: hash, status: 'broadcast' };
+      payload.sent.push(sent);
       const receipt = await provider.waitForTransaction(hash);
-      payload.sent.push({ action: step.action, txHash: hash, blockNumber: receipt.blockNumber.toString() });
+      sent.status = 'confirmed';
+      sent.blockNumber = receipt.blockNumber.toString();
     }
   }
 

@@ -119,7 +119,7 @@ class CurlJsonRpcProvider {
     return { hash, tx };
   }
 
-  async waitForTransaction(hash, confirmations = 1, timeoutMs = 120000) {
+  async waitForTransaction(hash, confirmations = 1, timeoutMs = 0) {
     const start = Date.now();
     for (;;) {
       const receipt = this.getTransactionReceipt(hash);
@@ -128,7 +128,7 @@ class CurlJsonRpcProvider {
         const blockNumber = this.getBlockNumber();
         if (BigInt(blockNumber) - BigInt(receipt.blockNumber) + 1n >= BigInt(confirmations)) return receipt;
       }
-      if (Date.now() - start > timeoutMs) {
+      if (timeoutMs > 0 && Date.now() - start > timeoutMs) {
         throw new Error(`Timed out waiting for receipt: ${hash}`);
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));
