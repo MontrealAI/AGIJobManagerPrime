@@ -79,6 +79,18 @@ function methodState(value) {
   return value && value.error ? { available: false, error: value.error } : { available: true };
 }
 
+
+async function probeResolverTextSurface(provider, resolver) {
+  if (!resolver || resolver === ethers.ZeroAddress) return false;
+  const TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
+  try {
+    provider.readContract(resolver, TEXT_ABI, 'text', [ethers.ZeroHash, 'schema']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
 
@@ -169,7 +181,7 @@ function methodState(value) {
     };
     resolverState = {
       address: pagesState.publicResolver,
-      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false),
+      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false) || await probeResolverTextSurface(provider, pagesState.publicResolver),
       supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false),
       supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false),
     };

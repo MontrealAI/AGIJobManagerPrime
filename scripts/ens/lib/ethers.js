@@ -33,6 +33,7 @@ function compat() {
     JsonRpcProvider: raw.providers.JsonRpcProvider,
     Interface: utils.Interface,
     Wallet: raw.Wallet,
+    toBeHex: (value) => utils.hexValue(value),
     id: utils.id,
     namehash: utils.namehash,
     ensNormalize: (value) => value.trim().toLowerCase(),
