@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-23T01:21:30.822Z",
+  "generatedAt": "2026-03-23T02:55:31.945Z",
   "network": "ethereum-mainnet",
-  "rpc": "https://ethereum-rpc.publicnode.com",
+  "rpc": "https://ethereum.publicnode.com",
   "inputs": {
     "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
     "agiJobManagerPrime": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
@@ -9,10 +9,77 @@
     "jobsRootName": "alpha.jobs.agi.eth",
     "ensRegistry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
   },
-  "proven": {},
-  "assumed": [
-    "RPC was unreachable from this environment; re-run from an operator-connected workstation before production actions."
-  ],
-  "rpcReachable": false,
-  "error": "AggregateError"
+  "proven": {
+    "latestBlock": {
+      "number": "0x1792838",
+      "hash": "0x1f1fdb2e55121b17bffae167a8f4a18ddbf87a0e59b810852df20c97b115b80f",
+      "timestamp": "0x69c0ab9b"
+    },
+    "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
+    "handleHook": {
+      "abi": "handleHook(uint8,uint256)",
+      "selector": "0x1f76f7a2"
+    },
+    "ensJobPages": {
+      "owner": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+      "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+      "publicResolver": "0xF29100983E058B709F3D539b0c765937B804AC15",
+      "jobsRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
+      "jobsRootName": "alpha.jobs.agi.eth",
+      "jobManager": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
+      "jobLabelPrefix": "agijob-",
+      "configLocked": false,
+      "useEnsJobTokenURI": false,
+      "validateConfiguration": {
+        "error": "eth_call failed: execution reverted",
+        "label": "pages.validateConfiguration",
+        "fallback": null
+      },
+      "configurationStatus": null
+    },
+    "ensJobPagesMethodAvailability": {
+      "validateConfiguration": {
+        "available": false,
+        "error": "eth_call failed: execution reverted"
+      },
+      "configurationStatus": {
+        "available": false,
+        "error": "eth_call failed: execution reverted"
+      }
+    },
+    "agiJobManagerPrime": {
+      "owner": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+      "discoveryModule": "0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29",
+      "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
+      "nextJobId": "0"
+    },
+    "rootIntegrity": {
+      "normalizedRootName": "alpha.jobs.agi.eth",
+      "computedNamehash": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
+      "liveRootOwner": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+      "liveRootResolver": "0xF29100983E058B709F3D539b0c765937B804AC15",
+      "ensJobPagesRootMatchesInput": true
+    },
+    "wrappedRootReadiness": {
+      "wrappedRoot": true,
+      "wrappedOwner": "0xd57243B80FBc5CFB2560E5a644651FEcd7Dc2512",
+      "getApproved": "0x0000000000000000000000000000000000000000",
+      "isApprovedForAll": true,
+      "authorizationReady": true
+    },
+    "resolverCompatibility": {
+      "address": "0xF29100983E058B709F3D539b0c765937B804AC15",
+      "supportsText": true,
+      "supportsSetText": false,
+      "supportsSetAuthorisation": false
+    },
+    "pointerChecks": {
+      "primePointsToIntendedPages": true,
+      "pagesPointsBackToPrime": true,
+      "primeDiscoveryMatchesInput": true
+    }
+  },
+  "assumed": [],
+  "rpcReachable": true
 }

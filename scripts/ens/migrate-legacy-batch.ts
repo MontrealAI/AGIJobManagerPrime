@@ -5,6 +5,7 @@ const { createRequire } = require('node:module');
 
 const requireFromHere = createRequire(__filename);
 const { ethers } = requireFromHere('../../hardhat/node_modules/ethers');
+const { CurlJsonRpcProvider } = require('./lib/json_rpc');
 
 const RPC = (process.env.MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com').trim();
 const ENS_JOB_PAGES = (process.env.ENS_JOB_PAGES || '0x97E03F7BFAC116E558A25C8f09aEf09108a2779d').trim();
@@ -26,8 +27,7 @@ function loadInput(file) {
 
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
-  const provider = new ethers.JsonRpcProvider(RPC, 1, { staticNetwork: true });
-  const pages = new ethers.Contract(ENS_JOB_PAGES, ABI, provider);
+  const provider = new CurlJsonRpcProvider(RPC);
   const iface = new ethers.Interface(ABI);
   const items = loadInput(INPUT).map((item) => ({ jobId: Number(item.jobId), exactLabel: item.exactLabel }));
 
@@ -43,13 +43,18 @@ function loadInput(file) {
 
   if (execute) {
     if (!process.env.OWNER_PRIVATE_KEY) throw new Error('OWNER_PRIVATE_KEY is required when EXECUTE=1');
-    const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY, provider);
-    const writePages = pages.connect(signer);
+    const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
     for (const item of items) {
-      const tx = await writePages.migrateLegacyWrappedJobPage(item.jobId, item.exactLabel);
-      const receipt = await tx.wait();
-      payload.sent.push({ jobId: item.jobId, exactLabel: item.exactLabel, txHash: receipt.hash, blockNumber: receipt.blockNumber });
+      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, 'migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]);
+      const sent = { jobId: item.jobId, exactLabel: item.exactLabel, txHash: hash, status: 'broadcast' };
+      payload.sent.push(sent);
+      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce, to: tx.to, data: tx.data, value: tx.value });
+      sent.status = 'confirmed';
+      sent.blockNumber = receipt.blockNumber.toString();
+      if (receipt.replaced) {
+        sent.replacedBy = receipt.effectiveHash;
+      }
     }
   }
 
