@@ -173,7 +173,7 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 Expected result after Prime deployment:
 - Premium jobs use procurement-first winner discovery before assignment (not first-touch lock capture).
 - Settlement retains conservative escrow/bond/dispute/finalization behavior.
-- Optional ENSJobPages lifecycle hooks can be configured on Prime via `setEnsJobPages(...)` and remain best-effort/non-fatal.
+- Optional ENSJobPages lifecycle hooks can be configured on Prime via `setEnsJobPages(...)` and remain best-effort/non-fatal. Prime does not expose a `useEnsJobTokenURI` flag; completion NFT metadata remains IPFS/completion-URI based unless a future, separately sized manager release changes that.
 
 Prime exposes keeper/bot-friendly autonomy surfaces for deterministic procurement progression in discovery (`AGIJobDiscoveryPrime`): `isShortlistFinalizable`, `isWinnerFinalizable`, `isFallbackPromotable`, `nextActionForProcurement`, `getAutonomyStatus`, and permissionless `advanceProcurement` for timeout-driven stage advancement.
 
@@ -273,7 +273,7 @@ Alias note: `check-no-binaries` is exposed as `npm run check:no-binaries`.
 
 - Preview ENS values are projections from the current prefix/root configuration.
 - Effective ENS values are authoritative per-job snapshots stored in `ENSJobPages`.
-- `AGIJobManagerPrime` remains on the existing `handleHook(uint8,uint256)` ABI; authority repair and metadata repair live on the ENS side.
+- `AGIJobManagerPrime` remains on the existing `handleHook(uint8,uint256)` ABI; authority repair, migration, resolver repair, and finalization live on the ENS side. Preview getters are projections only; authoritative values come from ENSJobPages per-job snapshots.
 - Re-run `scripts/ens/audit-mainnet.ts` and `scripts/ens/inventory-job-pages.ts` from a networked operator environment before mainnet cutover because chain state is the source of truth.
 - Treat `previewJobEns*` as projected values only; treat `effectiveJobEns*` as authoritative only after the inventory/status scripts confirm authority snapshot readiness for that job.
 - The production-safe Prime path is **keeper-assisted authoritative ENS**, not fully automated on-chain ENS hydration: operators may need to call `createJobPage`, `onAgentAssigned`, `onCompletionRequested`, `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, and `lockJobENS` using event-driven runbooks.

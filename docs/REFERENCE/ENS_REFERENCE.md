@@ -1,7 +1,7 @@
 # ENS Reference (Generated)
 
 Generated at (UTC): 1970-01-01T00:00:00Z
-Source fingerprint: eb08b0407b10d626
+Source fingerprint: 0feefa00d61b4b12
 
 Source files used:
 - `contracts/AGIJobManager.sol`
@@ -55,9 +55,9 @@ Source files used:
 - `function lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) public onlyOwner` ([contracts/ens/ENSJobPages.sol#L767](../../contracts/ens/ENSJobPages.sol#L767))
 - `function _lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) internal` ([contracts/ens/ENSJobPages.sol#L771](../../contracts/ens/ENSJobPages.sol#L771))
 - `function _createSubname(bytes32 parentRootNode, string memory label) internal returns (bytes32 node)` ([contracts/ens/ENSJobPages.sol#L798](../../contracts/ens/ENSJobPages.sol#L798))
-- `function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool)` ([contracts/ens/ENSJobPages.sol#L887](../../contracts/ens/ENSJobPages.sol#L887))
-- `function _requireWrapperAuthorization(bytes32 rootNode) internal view` ([contracts/ens/ENSJobPages.sol#L899](../../contracts/ens/ENSJobPages.sol#L899))
-- `function _registerRootVersion(bytes32 rootNode, string memory rootName) internal` ([contracts/ens/ENSJobPages.sol#L1052](../../contracts/ens/ENSJobPages.sol#L1052))
+- `function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool)` ([contracts/ens/ENSJobPages.sol#L874](../../contracts/ens/ENSJobPages.sol#L874))
+- `function _requireWrapperAuthorization(bytes32 rootNode) internal view` ([contracts/ens/ENSJobPages.sol#L886](../../contracts/ens/ENSJobPages.sol#L886))
+- `function _registerRootVersion(bytes32 rootNode, string memory rootName) internal` ([contracts/ens/ENSJobPages.sol#L1039](../../contracts/ens/ENSJobPages.sol#L1039))
 - `function verifyENSOwnership(` ([contracts/utils/ENSOwnership.sol#L32](../../contracts/utils/ENSOwnership.sol#L32))
 - `function verifyENSOwnership(` ([contracts/utils/ENSOwnership.sol#L48](../../contracts/utils/ENSOwnership.sol#L48))
 - `function verifyMerkleOwnership(address claimant, bytes32[] calldata proof, bytes32 merkleRoot)` ([contracts/utils/ENSOwnership.sol#L61](../../contracts/utils/ENSOwnership.sol#L61))

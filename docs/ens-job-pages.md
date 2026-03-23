@@ -7,12 +7,12 @@ This document defines the **official ENS naming scheme** and **record layout** f
 One ENS name per job:
 
 ```
-job-<jobId>.alpha.jobs.agi.eth
+agijob-<jobId>.alpha.jobs.agi.eth
 ```
 
 Example:
 ```
-job-42.alpha.jobs.agi.eth
+agijob-42.alpha.jobs.agi.eth
 ```
 
 `jobId` is the on‑chain AGIJobManager job ID.
@@ -100,7 +100,7 @@ When using the `ENSJobPages` helper contract, complete these wiring steps:
 1. Deploy `ENSJobPages` with the ENS registry, NameWrapper (if any), PublicResolver, root node, and root name.
 2. Ensure `alpha.jobs.agi.eth` is owned by the helper (or wrapped and approved for it).
 3. Call `ENSJobPages.setJobManager(AGIJobManager)` so hooks are accepted.
-4. Call `AGIJobManager.setEnsJobPages(ENSJobPages)` to enable hook callbacks.
+4. Call `AGIJobManagerPrime.setEnsJobPages(ENSJobPages)` to enable hook callbacks.
 
 These steps keep ENS integration **opt-in** and ensure lifecycle hooks remain best-effort.
 
@@ -112,11 +112,7 @@ These steps keep ENS integration **opt-in** and ensure lifecycle hooks remain be
 - Revoke resolver authorizations after terminal settlement.
 
 ## ENS job NFT tokenURI (optional)
-When `AGIJobManager.setUseEnsJobTokenURI(true)` is enabled (and an ENS helper is configured), completion NFTs point to:
-```
-ens://job-<jobId>.alpha.jobs.agi.eth
-```
-When disabled (default), the tokenURI behavior is unchanged and continues to use the completion metadata pointer.
+The deployed Prime manager does not expose `setUseEnsJobTokenURI` or `useEnsJobTokenURI`. On the current Prime path, completion NFTs continue to use the completion metadata pointer/IPFS flow. `useEnsJobTokenURI` remains an ENSJobPages compatibility flag only and should be treated as quarantined documentation-wise until a separately sized manager release explicitly wires it end-to-end.
 
 ## Post‑terminal lock (optional)
 `AGIJobManager.lockJobENS(jobId, burnFuses)` can be called after a terminal state to re‑revoke resolver authorizations and optionally attempt fuse burning (best‑effort).
@@ -131,6 +127,6 @@ Fuse burning is optional and does **not** affect settlement or withdrawals if it
 
 ## 2026-03 authority model
 
-`previewJobEns*` getters now expose mutable projections, while `effectiveJobEns*` getters expose immutable per-job authority snapshots. Compatibility getters (`jobEnsName`, `jobEnsURI`, `jobEnsNode`) prefer authoritative values once established and only fall back to preview values before first issuance/import. Operational repairs are owner-only ENS-side actions: `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, `replayCreate`, `replayAssign`, `replayCompletion`, `replayRevoke`, and `replayLock`. Chain state wins over docs, so mainnet runbooks must be regenerated from `scripts/ens/output/` before cutover.
+`previewJobEns*` getters expose mutable projections built from the current prefix/root only. `effectiveJobEns*` getters expose immutable per-job authority snapshots tied to the stored root version and historical label. Compatibility getters (`jobEnsName`, `jobEnsURI`, `jobEnsNode`) prefer authoritative values once established and only fall back to preview values before first issuance/import. Operational repairs are owner-only ENS-side actions: `repairAuthoritySnapshot`, `repairResolver`, `repairTexts`, `repairAuthorisations`, `replayCreate`, `replayAssign`, `replayCompletion`, `replayRevoke`, and `replayLock`. Chain state wins over docs, so mainnet runbooks must be regenerated from `scripts/ens/output/` before cutover.
 
 Production wording matters: the current recommended path is **keeper-assisted authoritative** ENS. Prime settlement stays authoritative and non-blocking even if ENS hydration is delayed or temporarily broken, while operators use `scripts/ens/audit-mainnet.ts`, `scripts/ens/inventory-job-pages.ts`, `scripts/ens/migrate-legacy-batch.ts`, and `scripts/ens/repair-job-page.ts` to classify and repair per-job ENS state.

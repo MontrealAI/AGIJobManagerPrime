@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { createRequire } = require('node:module');
-
-const requireFromHere = createRequire(__filename);
-const { ethers } = requireFromHere('../../hardhat/node_modules/ethers');
+const { ethers } = require('./lib/ethers');
 const { CurlJsonRpcProvider } = require('./lib/json_rpc');
 
 const OUTPUT = path.resolve('scripts/ens/output/audit-mainnet.json');
@@ -80,6 +77,31 @@ function serialize(value) {
 
 function methodState(value) {
   return value && value.error ? { available: false, error: value.error } : { available: true };
+}
+
+
+
+async function probeResolverWriteSurface(provider, resolver, payload) {
+  if (!resolver || resolver === ethers.ZeroAddress) return false;
+  try {
+    provider.request('eth_call', [{ to: resolver, data: payload }, 'latest']);
+    return true;
+  } catch (error) {
+    const message = error?.message || String(error);
+    const match = message.match(/data=(0x[0-9a-fA-F]*)/);
+    return Boolean(match && match[1] && match[1] !== '0x');
+  }
+}
+
+async function probeResolverTextSurface(provider, resolver) {
+  if (!resolver || resolver === ethers.ZeroAddress) return false;
+  const TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
+  try {
+    provider.readContract(resolver, TEXT_ABI, 'text', [ethers.ZeroHash, 'schema']);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 (async function main() {
@@ -172,9 +194,9 @@ function methodState(value) {
     };
     resolverState = {
       address: pagesState.publicResolver,
-      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false),
-      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false),
-      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false),
+      supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false) || await probeResolverTextSurface(provider, pagesState.publicResolver),
+      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false) || await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function setText(bytes32,string,string)']).encodeFunctionData('setText', [ethers.ZeroHash, 'schema', 'probe'])),
+      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false) || await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function setAuthorisation(bytes32,address,bool)']).encodeFunctionData('setAuthorisation', [ethers.ZeroHash, ethers.ZeroAddress, true])),
     };
   }
 
