@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-03-23T00:00:00Z",
+  "managerMode": "lean-handleHook-compatible",
+  "managerSupportsV1Views": false,
+  "metadataAutoWriteSupported": false,
+  "keeperRequired": true,
+  "automaticAuthorityIssuanceSupported": true,
+  "explicitMetadataRepairRequired": true,
+  "settlementBlockingRisk": false,
+  "primeRedeployAvoidable": true
+}

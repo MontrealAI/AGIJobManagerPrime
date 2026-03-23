@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T13:59:24.396Z",
+  "generatedAt": "2026-03-23T16:50:04.508Z",
   "network": "ethereum-mainnet",
   "rpc": "https://ethereum-rpc.publicnode.com",
   "inputs": {
@@ -11,9 +11,9 @@
   },
   "proven": {
     "latestBlock": {
-      "number": "0x179351c",
-      "hash": "0x73a25ec7c0f496cc6507d1d7ac87ebaf9d2855bc1ff5cd302d88955949409261",
-      "timestamp": "0x69c1472f"
+      "number": "0x179386e",
+      "hash": "0x27cbef9f0585384ad1744973ab2224d420a353374cf347c90b9df70f91143e52",
+      "timestamp": "0x69c16f37"
     },
     "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
     "handleHook": {
@@ -72,7 +72,13 @@
       "address": "0xF29100983E058B709F3D539b0c765937B804AC15",
       "supportsText": true,
       "supportsSetText": false,
-      "supportsSetAuthorisation": false
+      "supportsSetAuthorisation": true
+    },
+    "managerCompatibility": {
+      "managerSupportsV1Views": true,
+      "managerMode": "lean-handleHook-compatible",
+      "metadataAutoWriteSupported": false,
+      "keeperRequired": true
     },
     "pointerChecks": {
       "primePointsToIntendedPages": true,

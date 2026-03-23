@@ -190,13 +190,13 @@ async function probeResolverTextSurface(provider, resolver) {
     const ids = {
       text: '0x59d1d43c',
       setText: '0x10f13a8c',
-      setAuthorisation: '0x304e6ade',
+      setAuthorisation: 'legacy-write-surface',
     };
     resolverState = {
       address: pagesState.publicResolver,
       supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false) || await probeResolverTextSurface(provider, pagesState.publicResolver),
       supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false) || await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function setText(bytes32,string,string)']).encodeFunctionData('setText', [ethers.ZeroHash, 'schema', 'probe'])),
-      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false) || await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function setAuthorisation(bytes32,address,bool)']).encodeFunctionData('setAuthorisation', [ethers.ZeroHash, ethers.ZeroAddress, true])),
+      supportsSetAuthorisation: await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function setAuthorisation(bytes32,address,bool)']).encodeFunctionData('setAuthorisation', [ethers.ZeroHash, ethers.ZeroAddress, true])) || await probeResolverWriteSurface(provider, pagesState.publicResolver, new ethers.Interface(['function approve(bytes32,address,bool)']).encodeFunctionData('approve', [ethers.ZeroHash, ethers.ZeroAddress, true])),
     };
   }
 
@@ -214,6 +214,13 @@ async function probeResolverTextSurface(provider, resolver) {
   };
   out.proven.wrappedRootReadiness = wrapperState;
   out.proven.resolverCompatibility = resolverState;
+  out.proven.managerCompatibility = {
+    managerSupportsV1Views: Boolean(await safe(() => provider.readContract(PRIME, ['function ensJobManagerViewInterfaceVersion() view returns (uint256)'], 'ensJobManagerViewInterfaceVersion')[0], null)),
+    managerMode: 'lean-handleHook-compatible',
+    metadataAutoWriteSupported: false,
+    keeperRequired: true,
+  };
+
   out.proven.pointerChecks = {
     primePointsToIntendedPages: primeState.ensJobPages && primeState.ensJobPages.toLowerCase() === ENS_JOB_PAGES.toLowerCase(),
     pagesPointsBackToPrime: pagesState.jobManager && pagesState.jobManager.toLowerCase() === PRIME.toLowerCase(),

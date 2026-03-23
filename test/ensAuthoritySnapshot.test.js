@@ -6,6 +6,7 @@ const MockENSRegistry = artifacts.require('MockENSRegistry');
 const MockNameWrapper = artifacts.require('MockNameWrapper');
 const MockPublicResolver = artifacts.require('MockPublicResolver');
 const MockPublicResolverNoAuthRead = artifacts.require('MockPublicResolverNoAuthRead');
+const MockPublicResolverApprove = artifacts.require('MockPublicResolverApprove');
 const MockAGIJobManagerView = artifacts.require('MockAGIJobManagerView');
 const MockAGIJobManagerPrimeFallback = artifacts.require('MockAGIJobManagerPrimeFallback');
 const MockNoSupportsInterface = artifacts.require('MockNoSupportsInterface');
@@ -94,7 +95,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await fallbackManager.setJob(5, employer, agent, { from: owner });
 
     const createReceipt = await fallbackManager.callHandleHook(pages.address, 1, 5, { from: owner });
-    await expectEvent.inTransaction(createReceipt.tx, pages, 'ENSHookBestEffortFailure', { hook: '1', jobId: '5', operation: 'SPEC_URI_UNAVAILABLE' });
+    await expectEvent.inTransaction(createReceipt.tx, pages, 'ENSHookBestEffortFailure', { hook: '1', jobId: '5', operation: web3.utils.padRight(web3.utils.asciiToHex('SPEC_URI_UNAVAILABLE'), 64) });
     assert.equal(await pages.jobEnsIssued(5), true, 'authority + node issuance should not depend on spec getter availability');
     assert.equal(await pages.jobEnsReady(5), false, 'ready must not overclaim without observed spec text');
 
@@ -122,7 +123,6 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await expectEvent.inTransaction(receipt.tx, pages, 'ENSHookSkipped', { hook: '1', jobId: '3' });
   });
 
-
   it('exposes machine-readable inspector status for preview/effective/finalization surfaces', async () => {
     const { manager, pages } = await deployPages();
     const inspector = await ENSJobPagesInspector.new({ from: owner });
@@ -131,22 +131,50 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.callHandleHook(pages.address, 2, 9, { from: owner });
     await pages.replayLock(9, false, { from: owner });
 
-    const report = await inspector.inspectJob.call(pages.address, 9, employer, agent, { from: owner });
+    const report = await inspector.inspectJob.call(pages.address, 9, employer, agent, { from: owner, gas: 8000000 });
     assert.equal(report.authoritySnapshotted, true);
     assert.equal(report.previewName, 'agijob-9.alpha.jobs.agi.eth');
     assert.equal(report.effectiveName, 'agijob-9.alpha.jobs.agi.eth');
     assert.equal(report.finalized, true);
+    assert.equal(report.managerSupportsV1Views, true);
+    assert.equal(report.metadataAutoWriteSupported, true);
+    assert.equal(report.keeperRequired, false);
+    assert.equal(report.managerMode.toString(), '2');
   });
 
   it('inspector keeps auth-read absence separate from explicit false', async () => {
-    const { ens, wrapper, manager, pages } = await deployPages(await MockPublicResolverNoAuthRead.new({ from: owner }));
+    const { manager, pages } = await deployPages(await MockPublicResolverNoAuthRead.new({ from: owner }));
     const inspector = await ENSJobPagesInspector.new({ from: owner });
     await manager.setJob(12, employer, agent, 'ipfs://spec-12', { from: owner });
     await manager.callHandleHook(pages.address, 1, 12, { from: owner });
 
-    const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner });
+    const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner, gas: 8000000 });
     assert.equal(report.authReadSupported, false);
     assert.equal(report.authObservationIncomplete, true);
     assert.equal(report.authorisationsAsExpected, false, 'unknown auth state must not be reported as healthy');
+  });
+
+  it('inspector observes modern approve/isApprovedFor resolver family without legacy isAuthorised guesses', async () => {
+    const modernResolver = await MockPublicResolverApprove.new({ from: owner });
+    const { manager, pages } = await deployPages(modernResolver);
+    const inspector = await ENSJobPagesInspector.new({ from: owner });
+
+    await manager.setJob(13, employer, agent, 'ipfs://spec-13', { from: owner });
+    await manager.callHandleHook(pages.address, 1, 13, { from: owner });
+    await manager.callHandleHook(pages.address, 2, 13, { from: owner });
+
+    const node = await pages.effectiveJobEnsNode(13);
+    assert.equal(await modernResolver.isApprovedFor(node, employer), true);
+    assert.equal(await modernResolver.isApprovedFor(node, agent), true);
+
+    const report = await inspector.inspectJob.call(pages.address, 13, employer, agent, { from: owner, gas: 8000000 });
+    assert.equal(report.authReadSupported, true);
+    assert.equal(report.employerAuthorisedObserved, true);
+    assert.equal(report.agentAuthorisedObserved, true);
+    assert.equal(report.authorisationsAsExpected, true);
+    assert.equal(report.managerSupportsV1Views, true);
+    assert.equal(report.metadataAutoWriteSupported, true);
+    assert.equal(report.keeperRequired, false);
+    assert.equal(report.managerMode.toString(), '2');
   });
 });

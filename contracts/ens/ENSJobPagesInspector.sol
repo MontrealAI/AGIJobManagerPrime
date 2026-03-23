@@ -7,6 +7,7 @@ interface IENSJobPagesInspectorTarget {
     function nameWrapper() external view returns (address);
     function configLocked() external view returns (bool);
     function jobsRootNode() external view returns (bytes32);
+    function jobManager() external view returns (address);
     function jobsRootName() external view returns (string memory);
     function previewJobEnsLabel(uint256 jobId) external view returns (string memory);
     function previewJobEnsName(uint256 jobId) external view returns (string memory);
@@ -31,9 +32,16 @@ interface INameWrapperLite {
 }
 
 contract ENSJobPagesInspector {
+    uint8 private constant MANAGER_MODE_NONE = 0;
+    uint8 private constant MANAGER_MODE_LEAN = 1;
+    uint8 private constant MANAGER_MODE_RICH = 2;
+
     struct JobStatusView {
         bool configured;
         bool configLocked;
+        bool managerSupportsV1Views;
+        bool metadataAutoWriteSupported;
+        bool keeperRequired;
         bool rootConfigured;
         bool rootNodeMatchesRootName;
         bool rootNormalized;
@@ -61,6 +69,7 @@ contract ENSJobPagesInspector {
         bool finalizable;
         bool finalized;
         bool fuseBurned;
+        uint8 managerMode;
         string previewLabel;
         string previewName;
         string previewURI;
@@ -69,6 +78,7 @@ contract ENSJobPagesInspector {
         string effectiveURI;
         bytes32 effectiveNode;
         uint256 failureCode;
+        uint256 metadataFailureCode;
     }
 
     function inspectJob(address target, uint256 jobId, address employer, address agent)
@@ -105,6 +115,10 @@ contract ENSJobPagesInspector {
             bool finalized,
             bool fuseBurned
         ) = pages.jobAuthorityInfo(jobId);
+
+        address manager = pages.jobManager();
+        (status.managerSupportsV1Views, status.managerMode, status.metadataAutoWriteSupported, status.keeperRequired) =
+            _managerCompatibility(manager, jobId);
 
         status.configured = configured;
         status.configLocked = locked;
@@ -146,9 +160,9 @@ contract ENSJobPagesInspector {
                 status.completionTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.completion.public");
                 status.metadataComplete = status.schemaTextPresent && status.specTextPresent;
                 (bool authReadSupported, bool employerKnown, bool employerOk) =
-                    employer == address(0) ? (true, true, true) : _safeReadAuthorisation(nodeResolver, authoritativeNode, employer);
+                    employer == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nodeResolver, authoritativeNode, employer);
                 (bool agentReadSupported, bool agentKnown, bool agentOk) =
-                    agent == address(0) ? (true, true, true) : _safeReadAuthorisation(nodeResolver, authoritativeNode, agent);
+                    agent == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nodeResolver, authoritativeNode, agent);
                 status.authReadSupported = authReadSupported && agentReadSupported;
                 status.employerAuthorisedObserved = employerKnown && employerOk;
                 status.agentAuthorisedObserved = agentKnown && agentOk;
@@ -158,6 +172,36 @@ contract ENSJobPagesInspector {
         }
 
         status.finalizable = status.authoritySnapshotted && status.nodeExists && status.resolverSetToExpected;
+    }
+
+
+    function _managerCompatibility(address manager, uint256 jobId)
+        internal
+        view
+        returns (bool managerSupportsV1Views, uint8 managerMode, bool metadataAutoWriteSupported, bool keeperRequired)
+    {
+        if (manager == address(0) || manager.code.length == 0) {
+            return (false, MANAGER_MODE_NONE, false, true);
+        }
+
+        (bool ok, bytes memory data) = manager.staticcall(abi.encodeWithSignature('ensJobManagerViewInterfaceVersion()'));
+        if (ok && data.length >= 32 && abi.decode(data, (uint256)) == 1) {
+            return (true, MANAGER_MODE_RICH, true, false);
+        }
+
+        bool coreReadable = _surfaceReadable(manager, abi.encodeWithSignature('getJobCore(uint256)', jobId));
+        bool specReadable = _surfaceReadable(manager, abi.encodeWithSignature('getJobSpecURI(uint256)', jobId));
+        bool completionReadable = _surfaceReadable(manager, abi.encodeWithSignature('getJobCompletionURI(uint256)', jobId));
+        managerSupportsV1Views = coreReadable && specReadable && completionReadable;
+        managerMode = managerSupportsV1Views ? MANAGER_MODE_RICH : MANAGER_MODE_LEAN;
+        metadataAutoWriteSupported = managerSupportsV1Views;
+        keeperRequired = !managerSupportsV1Views;
+    }
+
+    function _surfaceReadable(address target, bytes memory payload) internal view returns (bool) {
+        if (target == address(0) || target.code.length == 0) return false;
+        (bool success, bytes memory data) = target.staticcall(payload);
+        return success || data.length != 0;
     }
 
     function _isWrappedNodeManagedByTarget(address nameWrapper, address nodeOwner, bytes32 node, address target) internal view returns (bool) {
@@ -172,13 +216,21 @@ contract ENSJobPagesInspector {
         return bytes(abi.decode(data, (string))).length != 0;
     }
 
-    function _safeReadAuthorisation(address resolver, bytes32 node, address target)
+    function _safeReadAuthorisation(IENSRegistryLite ens, address resolver, bytes32 node, address target)
         internal
         view
         returns (bool readSupported, bool known, bool authorised)
     {
-        (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature("isAuthorised(bytes32,address)", node, target));
-        if (!success || data.length < 32) return (false, false, false);
-        return (true, true, abi.decode(data, (bool)));
+        address nodeOwner = ens.owner(node);
+        (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature('authorisations(bytes32,address,address)', node, nodeOwner, target));
+        if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
+
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedFor(bytes32,address)', node, target));
+        if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
+
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedForAll(address,address)', nodeOwner, target));
+        if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
+
+        return (false, false, false);
     }
 }
