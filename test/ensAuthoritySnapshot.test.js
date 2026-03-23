@@ -75,10 +75,28 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.setJob(3, employer, agent, 'ipfs://spec-3', { from: owner });
 
     const status = await pages.configurationStatus();
-    assert.equal(status[0], false, 'configuration should not be ready when resolver lacks required interfaces');
+    assert.equal(status[0], false, 'configuration should not be ready when resolver lacks a readable text surface');
+    assert.equal(status[7], false, 'resolver text support should be explicit');
+    assert.equal(status[8], false, 'resolver setText support should be explicit');
+    assert.equal(status[9], false, 'resolver setAuthorisation support should be explicit');
 
     const receipt = await manager.callHandleHook(pages.address, 1, 3, { from: owner });
     await expectEvent.inTransaction(receipt.tx, pages, 'ENSHookSkipped', { hook: '1', jobId: '3' });
+  });
+
+  it('accepts live-style resolvers that answer text() but do not advertise write interfaces', async () => {
+    const { manager, pages } = await deployPages();
+    await manager.setJob(11, employer, agent, 'ipfs://spec-11', { from: owner });
+
+    const status = await pages.configurationStatus();
+    assert.equal(status[0], true, 'configuration should remain green when resolver can be used operationally');
+    assert.equal(status[7], true, 'text lookup is supported');
+    assert.equal(status[8], false, 'setText ERC-165 advertisement is absent on the live resolver shape');
+    assert.equal(status[9], false, 'setAuthorisation ERC-165 advertisement is absent on the live resolver shape');
+
+    const receipt = await manager.callHandleHook(pages.address, 1, 11, { from: owner });
+    await expectEvent.inTransaction(receipt.tx, pages, 'ENSHookProcessed', { hook: '1', jobId: '11', configured: true, success: true });
+    assert.equal(await pages.effectiveJobEnsName(11), 'agijob-11.alpha.jobs.agi.eth');
   });
 
   it('exposes machine-readable inspector status for preview/effective/finalization surfaces', async () => {

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-23T02:55:31.945Z",
+  "generatedAt": "2026-03-23T04:25:10.398Z",
   "network": "ethereum-mainnet",
-  "rpc": "https://ethereum.publicnode.com",
+  "rpc": "https://ethereum-rpc.publicnode.com",
   "inputs": {
     "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
     "agiJobManagerPrime": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
@@ -11,9 +11,9 @@
   },
   "proven": {
     "latestBlock": {
-      "number": "0x1792838",
-      "hash": "0x1f1fdb2e55121b17bffae167a8f4a18ddbf87a0e59b810852df20c97b115b80f",
-      "timestamp": "0x69c0ab9b"
+      "number": "0x17929f5",
+      "hash": "0x6957bb47b98ac53bc63e079523e16bb4e42589cce22e509da5c6b402caf9115b",
+      "timestamp": "0x69c0c09b"
     },
     "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
     "handleHook": {

@@ -39,7 +39,7 @@ It **does not** freeze operational controls like pause, settlement pause, thresh
 | `ens` | `updateEnsRegistry` | Yes | identity-configurable + **empty locked balances** + nonzero | Identity gating dependency |
 | `nameWrapper` | `updateNameWrapper` | Yes | identity-configurable + **empty locked balances** + nonzero | Wrapped-root checks dependency |
 | `ensJobPages` | `setEnsJobPages` | Yes | identity-configurable; contract code required if nonzero | Enables lifecycle hooks |
-| `useEnsJobTokenURI` | `setUseEnsJobTokenURI` | Yes | none | Pulls NFT tokenURI from ENSJobPages when available |
+| `useEnsJobTokenURI` | Legacy manager only | No on Prime | Prime does not expose this flag | Treat as quarantined/deprecated for Prime docs; completion NFTs stay completion-URI based on current Prime deployments |
 | Root nodes | `updateRootNodes` | Yes | identity-configurable + **empty locked balances** | club/agent + alpha variants |
 | Merkle roots | `updateMerkleRoots` | Yes | not identity-locked (callable after `lockIdentityConfiguration()`) | validator/agent allowlist roots; owner can update post-lock |
 | Moderators | `addModerator/removeModerator` | Yes | nonzero address helper check | Dispute resolution role |

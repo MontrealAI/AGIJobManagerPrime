@@ -46,7 +46,7 @@ _Observed on Ethereum mainnet on 2026-03-23 UTC using `scripts/ens/audit-mainnet
    - `configurationStatus()`
    - `jobAuthorityInfo(uint256)`
    currently revert on mainnet.
-2. The live public resolver configuration is not sufficient for the intended production-grade metadata and authorisation workflow because `setText` and `setAuthorisation` support is not advertised.
+2. The live public resolver does not advertise `setText` or `setAuthorisation` support over ERC-165. The replacement ENSJobPages in this repo therefore treats those interface bits as diagnostic signals rather than hard configuration blockers and uses guarded best-effort writes instead.
 3. There are currently no Prime jobs on the observed manager deployment (`nextJobId = 0`), so there is no historical inventory to migrate yet on this address pair.
 
 ## Compatibility conclusion
