@@ -62,7 +62,7 @@ function classify(job) {
   if (!job.labelSnapshotted && !job.authoritySnapshotted) tags.push('preview-only');
   if (job.labelSnapshotted && !job.authoritySnapshotted) tags.push('label-snapshotted-only');
   if (job.authoritySnapshotted) tags.push('authority-snapshotted');
-  if (job.legacyImported) tags.push('legacy-import-required');
+  if (job.legacyImportCandidate) tags.push('legacy-import-required');
   if (job.nodeExists && !job.nodeManagedByContract) tags.push('node-exists-but-unmanaged');
   if (job.nodeExists && !job.resolverSetToExpected) tags.push('resolver-mismatch');
   if (job.authoritySnapshotted && (!job.specTextPresent || (job.hasCompletionURI && !job.completionTextPresent))) tags.push('metadata-incomplete');
@@ -147,6 +147,10 @@ function classify(job) {
     const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
       ? await safe(() => wrapper.ownerOf(BigInt(node)), ethers.ZeroAddress)
       : ethers.ZeroAddress;
+    const wrappedUnmanaged = owner !== ethers.ZeroAddress
+      && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
+      && wrappedTokenOwner !== ethers.ZeroAddress
+      && wrappedTokenOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase();
 
     let specText = '';
     let completionText = '';
@@ -167,6 +171,9 @@ function classify(job) {
 
     const effectiveReady = authorityReady && owner !== ethers.ZeroAddress && resolver.toLowerCase() === expectedResolver.toLowerCase();
     const finalized = Boolean(authority[10]);
+    const legacyImportCandidate = !Boolean(authority[9]) && (
+      (Boolean(labelSnapshot[0]) && labelSnapshot[1] !== preview.label) || wrappedUnmanaged
+    );
     const repairable = authorityReady || Boolean(labelSnapshot[0]) || Boolean(specURI) || Boolean(completionURI) || owner !== ethers.ZeroAddress;
 
     const job = {
@@ -178,6 +185,7 @@ function classify(job) {
       labelSnapshotted: Boolean(labelSnapshot[0]),
       authoritySnapshotted: authorityReady,
       legacyImported: Boolean(authority[9]),
+      legacyImportCandidate,
       missingCore: !core,
       finalized,
       fuseBurned: Boolean(authority[11]),

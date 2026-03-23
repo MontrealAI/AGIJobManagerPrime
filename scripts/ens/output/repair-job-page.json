@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T01:21:30.915Z",
+  "generatedAt": "2026-03-23T01:38:36.334Z",
   "jobId": 0,
   "exactLabel": "agijob-0",
   "labelSnapshot": {
@@ -11,8 +11,10 @@
   "resolvedLabel": "agijob-0",
   "resolvedNode": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "nodeOwner": "0x0000000000000000000000000000000000000000",
+  "wrappedTokenOwner": "0x0000000000000000000000000000000000000000",
   "hasReadableCore": false,
   "needsCreateReplay": true,
+  "requiresLegacyMigration": false,
   "execute": false,
   "plan": [
     {
