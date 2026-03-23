@@ -134,7 +134,13 @@ async function getLogs(provider, address, topic0) {
       node: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'effectiveJobEnsNode', [jobId])[0], ethers.ZeroHash),
     } : { label: '', name: '', uri: '', node: ethers.ZeroHash };
 
-    const node = authority[0] ? effective.node : preview.node;
+    const snapshottedLabel = labelSnapshot[0] ? labelSnapshot[1] : '';
+    const preAuthorityLabel = snapshottedLabel || preview.label;
+    const node = authority[0]
+      ? effective.node
+      : (preAuthorityLabel && jobsRootNode !== ethers.ZeroHash
+        ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [jobsRootNode, ethers.id(preAuthorityLabel)])
+        : preview.node);
     const owner = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'owner', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
     const resolver = node && node !== ethers.ZeroHash ? await safe(() => provider.readContract(ENS_REGISTRY, ENS_ABI, 'resolver', [node])[0], ethers.ZeroAddress) : ethers.ZeroAddress;
     const wrappedTokenOwner = owner !== ethers.ZeroAddress && nameWrapperAddress !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
@@ -187,7 +193,13 @@ async function getLogs(provider, address, topic0) {
       authReadSupported,
       employerAuthorisedObserved: employerAuth,
       agentAuthorisedObserved: agentAuth,
-      authorisationsAsExpected: authReadSupported ? ((employer === ethers.ZeroAddress || employerAuth === true) && (agent === ethers.ZeroAddress || agentAuth === true || terminalSet.has(jobId))) : false,
+      authorisationsAsExpected: authReadSupported
+        ? (
+          terminalSet.has(jobId)
+            ? ((employer === ethers.ZeroAddress || employerAuth === false) && (agent === ethers.ZeroAddress || agentAuth === false))
+            : ((employer === ethers.ZeroAddress || employerAuth === true) && (agent === ethers.ZeroAddress || agentAuth === true))
+        )
+        : false,
       compatibilityIssued: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsIssued', [jobId])[0], false),
       compatibilityReady: await safe(() => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobEnsReady', [jobId])[0], false),
       repairable: Boolean(labelSnapshot[0]) || Boolean(authority[0]) || owner !== ethers.ZeroAddress || Boolean(created.specURI) || Boolean(completion.completionURI),

@@ -72,6 +72,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     bytes4 private constant PRIME_VIEW_VERSION_SELECTOR = bytes4(keccak256("ensJobManagerViewInterfaceVersion()"));
     bytes4 private constant PRIME_JOB_EMPLOYER_OF_SELECTOR = bytes4(keccak256("jobEmployerOf(uint256)"));
     bytes4 private constant PRIME_JOB_ASSIGNED_AGENT_OF_SELECTOR = bytes4(keccak256("jobAssignedAgentOf(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_CORE_SELECTOR = bytes4(keccak256("getJobCore(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_SPEC_URI_SELECTOR = bytes4(keccak256("getJobSpecURI(uint256)"));
+    bytes4 private constant PRIME_GET_JOB_COMPLETION_URI_SELECTOR = bytes4(keccak256("getJobCompletionURI(uint256)"));
 
     bytes4 private constant RESOLVER_TEXT_INTERFACE_ID = 0x59d1d43c;
     bytes4 private constant RESOLVER_SETTEXT_INTERFACE_ID = 0x10f13a8c;
@@ -1319,7 +1322,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _managerSupportsViewV1(address manager) internal view returns (bool ok) {
         uint256 version;
         (ok, version) = _staticcallWord(manager, abi.encodeWithSelector(PRIME_VIEW_VERSION_SELECTOR));
-        ok = ok && version == 1;
+        if (ok && version > 0) return true;
+
+        bool coreOk;
+        bool specOk;
+        bool completionOk;
+        (coreOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_CORE_SELECTOR, uint256(0)));
+        (specOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_SPEC_URI_SELECTOR, uint256(0)));
+        (completionOk, ) = manager.staticcall(abi.encodeWithSelector(PRIME_GET_JOB_COMPLETION_URI_SELECTOR, uint256(0)));
+        return coreOk && specOk && completionOk;
     }
 
     function _tryJobManagerAddress(address manager, bytes4 selector, uint256 jobId) internal view returns (bool ok, address result) {
@@ -1330,7 +1341,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         (bool resolverOk, address resolverAddress) = _tryResolver(node);
         if (!resolverOk || resolverAddress == address(0)) return false;
         (bool success, bytes memory data) = resolverAddress.staticcall(abi.encodeWithSignature("text(bytes32,string)", node, key));
-        if (!success || data.length == 0) return false;
+        if (!success || data.length < 32) return false;
         return bytes(abi.decode(data, (string))).length != 0;
     }
 }
