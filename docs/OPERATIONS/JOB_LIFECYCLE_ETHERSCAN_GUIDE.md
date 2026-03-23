@@ -7,7 +7,7 @@
 ## In one minute
 - Use this doc for web-only role operations after contracts are already deployed and verified.
 - ENS replacement requires two manual owner transactions in order: wrapper approval -> `setEnsJobPages`.
-- ENS name format is `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`).
+- ENS name format is `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).
 - Settlement/dispute outcomes are authoritative even if ENS writes fail (best-effort ENS hooks).
 
 ## Defaults used in examples
@@ -99,7 +99,7 @@ flowchart TD
 - Legacy jobs that need historical labels are migrated or explicitly tracked.
 
 ## ENS naming and legacy-job note
-- Canonical ENS format is `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`).
+- Canonical ENS format is `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).
 - Future/unsnapshotted jobs follow current prefix.
 - Legacy jobs may use previously snapshotted labels and may need explicit migration after ENSJobPages replacement.
 

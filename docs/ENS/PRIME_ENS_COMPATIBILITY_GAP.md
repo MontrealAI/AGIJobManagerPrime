@@ -1,37 +1,43 @@
-# PRIME ↔ ENS COMPATIBILITY GAP
+# Prime ↔ ENS compatibility gap
 
-## Current truthful operating mode
+## Truthful compatibility summary
 
-- **Authoritative identity:** can be established automatically under the unchanged Prime manager via `handleHook(uint8,uint256)` using lean manager views already exposed on `IAGIJobManagerPrime`.
-- **Metadata completeness:** not always automatic, because unchanged Prime does not provide `getJobSpecURI` / `getJobCompletionURI` onchain.
-- **Completion text hydration:** may require explicit repair from manager event logs.
-- **Settlement safety:** preserved, because ENS writes remain best-effort and non-blocking.
+- **Prime manager mode today:** lean numeric-hook mode.
+- **Prime automatic authority issuance:** supported.
+- **Prime automatic spec/completion metadata hydration:** not fully supported without keeper/operator assistance because Prime does not expose V1 metadata getters onchain.
+- **Typed push hooks (`onJobCreated`, etc.):** forward-compatible only; not used by current Prime.
+- **Production-safe answer:** unchanged Prime + ENS-side compatibility mode + explicit repair tooling.
 
-## Gap classification
+## What Prime already exposes without runtime growth
 
-### Already solved
-- Historical identity snapshotting.
-- Root isolation across later mutable config changes.
-- Mixed-mode compatibility getters for legacy consumers.
-- Owner-callable explicit repair/replay surfaces.
+- `jobEmployerOf(jobId)`
+- `jobAssignedAgentOf(jobId)`
+- `getJobSelectionInfo(jobId)`
+- `getJobSelectionRuntimeState(jobId)`
+- `previewHistoricalScore(agent)`
+- `setEnsJobPages(address)`
+- `ensJobPages()`
 
-### Incomplete before this patch
-- Resolver capability detection and auth verification were not production-safe.
-- Inspector did not expose resolver-family-safe authorisation truth.
-- Operator tooling/docs did not clearly label lean manager mode as keeper-assisted for metadata.
-- Mainnet deploy script still allowed ambiguous manager defaults.
+These are enough to:
+- establish authoritative ENS identity on create,
+- authorise the employer automatically on create,
+- authorise/revoke the assigned agent when available,
+- keep settlement non-blocking,
+- classify jobs into automatic vs repair-needed states.
 
-### Not required
-- Prime runtime changes.
-- Typed push-hook migration.
-- New Prime storage or public surfaces.
+## What unchanged Prime does *not* expose
 
-## Production-grade conclusion
+- `ensJobManagerViewInterfaceVersion()`
+- `getJobCore(jobId)`
+- `getJobSpecURI(jobId)`
+- `getJobCompletionURI(jobId)`
 
-A truthful production path is **keeper-assisted / partially automatic without Prime redeploy**:
-- automatic authoritative label/name/URI/node issuance where possible;
-- explicit metadata completeness state when URIs are unavailable onchain;
-- log-driven repair for spec/completion text;
-- resolver-family-safe auth observation;
-- explicit deploy/runbook cutover checks.
+Because those views are absent, unchanged Prime cannot fully auto-write ENS text metadata from inside `handleHook(uint8,uint256)`.
 
+## Patch decision
+
+Use **Option B**:
+- keep Prime unchanged,
+- preserve `handleHook(uint8,uint256)` compatibility,
+- automatically establish authoritative identity where lean-mode data is enough,
+- require explicit ENS-side repair or log-driven recovery for spec/completion metadata and some legacy migrations.

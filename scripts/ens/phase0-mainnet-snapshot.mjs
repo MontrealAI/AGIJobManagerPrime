@@ -51,7 +51,9 @@ const ENS_JOB_PAGES_ABI = [
 const ENS_REGISTRY_ABI = ['function owner(bytes32) view returns (address)', 'function resolver(bytes32) view returns (address)'];
 const NAME_WRAPPER_ABI = ['function ownerOf(uint256) view returns (address)', 'function getApproved(uint256) view returns (address)', 'function isApprovedForAll(address,address) view returns (bool)'];
 const TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
-const AUTH_ABI = ['function isAuthorised(bytes32,address) view returns (bool)'];
+const LEGACY_AUTH_ABI = ['function authorisations(bytes32,address,address) view returns (bool)'];
+const MODERN_AUTH_ABI = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
+const OPERATOR_AUTH_ABI = ['function isApprovedForAll(address,address) view returns (bool)'];
 const managerIface = new ethers.Interface(MANAGER_ABI);
 
 function arg(name, fallback = '') {
@@ -63,8 +65,17 @@ const safe = async (label, fn, fallback = null) => { try { return await fn(); } 
 const unwrap = (value, fallback = null) => value && value.__error ? (value.fallback ?? fallback) : value;
 const serialize = (value) => typeof value === 'bigint' ? value.toString() : Array.isArray(value) ? value.map(serialize) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, serialize(v)])) : value;
 
+const MAX_LOG_BLOCK_RANGE = Number(process.env.MAX_LOG_BLOCK_RANGE || '45000');
+
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  const latestBlock = Number(provider.getBlockNumber ? await provider.getBlockNumber() : provider.getBlock('latest').number);
+  const logs = [];
+  for (let fromBlock = 0; fromBlock <= latestBlock; fromBlock += MAX_LOG_BLOCK_RANGE + 1) {
+    const toBlock = Math.min(latestBlock, fromBlock + MAX_LOG_BLOCK_RANGE);
+    const chunk = await provider.request('eth_getLogs', [{ address, fromBlock: ethers.toQuantity(fromBlock), toBlock: ethers.toQuantity(toBlock), topics: [topic0] }]);
+    logs.push(...chunk);
+  }
+  return logs;
 }
 
 async function main() {
@@ -131,8 +142,16 @@ async function main() {
     const schemaText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.schema(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'schema'])[0]), '') : '';
     const specText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.spec(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0]), '') : '';
     const completionText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.completion(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0]), '') : '';
-    const employerAuth = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.employerAuth(${jobId})`, () => provider.readContract(nodeResolver, AUTH_ABI, 'isAuthorised', [node, employer])[0]), null) : null;
-    const agentAuth = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.agentAuth(${jobId})`, () => provider.readContract(nodeResolver, AUTH_ABI, 'isAuthorised', [node, agent])[0]), null) : null;
+    const readAuth = async (target) => {
+      if (nodeResolver === ethers.ZeroAddress || target === ethers.ZeroAddress) return null;
+      let value = unwrap(await safe(`resolver.authorisations(${jobId})`, () => provider.readContract(nodeResolver, LEGACY_AUTH_ABI, 'authorisations', [node, nodeOwner, target])[0]), null);
+      if (value !== null) return value;
+      value = unwrap(await safe(`resolver.isApprovedFor(${jobId})`, () => provider.readContract(nodeResolver, MODERN_AUTH_ABI, 'isApprovedFor', [nodeOwner, node, target])[0]), null);
+      if (value !== null) return value;
+      return unwrap(await safe(`resolver.isApprovedForAll(${jobId})`, () => provider.readContract(nodeResolver, OPERATOR_AUTH_ABI, 'isApprovedForAll', [nodeOwner, target])[0]), null);
+    };
+    const employerAuth = await readAuth(employer);
+    const agentAuth = await readAuth(agent);
     jobs.push({
       jobId,
       previewName,

@@ -1,45 +1,45 @@
-# CURRENT BASELINE AUDIT
+# Current ENS / Prime baseline audit
 
 Date: 2026-03-23
-Branch audited: current `main` working tree before final patch validation.
+Branch audited: current working branch starting from `main` baseline assumptions.
 
-## Executive answers
+## Mandatory current-state questions
 
-1. **Is the current ENSJobPages authority model itself already broadly correct?** Yes. Preview/effective separation, snapshotted authority, root versioning, and root-namehash enforcement were already present and directionally correct.
-2. **Is the current blocker primarily the Prime↔ENS interface mismatch?** Mostly yes. The unchanged Prime manager still uses only `handleHook(uint8,uint256)` and does not expose the rich V1 view surface, so automatic metadata hydration was incomplete even though authority issuance could still succeed.
-3. **Does current Prime implement `IAGIJobManagerPrimeViewV1`?** No.
-4. **Does current Prime call the typed push hooks in `IENSJobPagesHooksV1`?** No. It still uses the generic numeric hook path.
+1. **Is the current ENSJobPages authority model itself already broadly correct?** Yes. The existing design already separates preview vs effective identity, snapshots label/root authority, preserves historical names across later root changes, and enforces `namehash(rootName) == rootNode` on constructor + `setJobsRoot(...)`.
+2. **Is the current blocker primarily the Prime↔ENS interface mismatch?** Yes. Prime still emits only `handleHook(uint8,uint256)` and does not implement the richer V1 getter interface, so automatic authority issuance works in lean mode but metadata hydration is only partially automatic.
+3. **Does current Prime implement `IAGIJobManagerPrimeViewV1`?** No. `AGIJobManagerPrime` exposes lean getters such as `jobEmployerOf`, `jobAssignedAgentOf`, `getJobSelectionInfo`, and `getJobSelectionRuntimeState`, but not `ensJobManagerViewInterfaceVersion`, `getJobCore`, `getJobSpecURI`, or `getJobCompletionURI`.
+4. **Does current Prime call the typed push hooks in `IENSJobPagesHooksV1`?** No. Prime still calls only the generic numeric hook selector for `handleHook(uint8,uint256)`.
 5. **Can a truthful keeper-assisted or partially automatic production path be achieved without any Prime runtime change?** Yes.
-6. **What remained to patch?** Resolver capability/auth detection, inspector auth reads, explicit compatibility signaling, deploy-script honesty, docs/runbooks, and audit/operator artifacts.
-7. **Was a Prime change required?** No.
+6. **If yes, what remained to patch?** ENS-side conflict safety, explicit legacy migration under lean-manager mode, removal of unsafe resolver auth guessing, no-label repair hardening, inventory/audit script alignment, and docs/runbook cleanup.
+7. **If no, what Prime change is needed?** Not applicable; Prime change was not necessary.
 
 ## Already merged and correct
 
-- Preview/effective ENS identity split exists.
-- Effective getters read immutable snapshotted authority once established.
-- Root versioning exists and preserves historical names across later root changes.
-- Constructor and `setJobsRoot(...)` already enforce `namehash(rootName) == rootNode`.
-- Compatibility getters remain mixed-mode for old integrations.
-- Explicit repair/replay endpoints already exist for manual/keeper paths.
-- Prime hook ABI compatibility is already preserved through `handleHook(uint8,uint256)`.
-- Prime ENS hook path is already non-blocking and gas-bounded.
+- Preview/effective getters already exist: `previewJobEns*` and `effectiveJobEns*`.
+- Compatibility getters are already mixed-mode and must be treated as such.
+- Root versioning + authority snapshotting are already present.
+- Root consistency checks already enforce `namehash(rootName) == rootNode`.
+- Prime hook path remains non-blocking and size-safe because Prime only does a bounded best-effort call to `handleHook(uint8,uint256)`.
+- Zero-bytecode-growth lean manager getters already exist in Prime and are sufficient for automatic authority issuance plus partial auth repair.
 
 ## Already merged but incomplete
 
-- Lean-manager fallback could create authoritative nodes automatically, but metadata hydration remained partial when V1 getters were unavailable.
-- `jobEnsIssued` / `jobEnsReady` were already observed-chain checks, but docs still needed to stop overclaiming mixed-mode getters as authoritative.
-- Scripts already existed for audit/inventory/repair, but auth probing and compatibility labeling still assumed the wrong resolver ABI family.
+- Lean-mode fallback hooks already existed, but only partially covered metadata completeness.
+- Explicit repair entrypoints for texts/auth already existed, but explicit legacy adoption/migration without V1 manager views was missing.
+- Inspector already exposed rich status, but its auth observation still guessed a non-canonical `isAuthorised(bytes32,address)` read surface.
+- `jobEnsIssued` / `jobEnsReady` were already observed-state checks, but docs still needed to stop describing mixed-mode getters as always-authoritative.
 
-## Dangerous regressions / mismatches found
+## Still missing before this patch
 
-- Resolver capability detection treated `0x304e6ade` as an auth ERC-165 interface even though that selector belongs to `setContenthash`, not resolver authorisation support.
-- Inspector auth verification guessed `isAuthorised(bytes32,address)` externally, which is not a safe canonical read surface for mainnet resolver families.
-- Mainnet ENS deploy script still carried a stale silent `DEFAULT_JOB_MANAGER`, which made ambiguous deployments too easy.
-- Docs still needed explicit language that compatibility getters are mixed preview/effective surfaces and that unchanged Prime may need keeper-assisted metadata repair.
+- Conflict-safe authority establishment for repeated repair/import attempts.
+- Safe prohibition on `repairAuthoritySnapshot(jobId, "")` when authority had not yet been established.
+- Explicit lean-manager legacy migration/adoption path.
+- Script and inspector removal of guessed resolver-auth reads.
+- Documentation cleanup for stale `agijob` vs `agijob-`, `syncEnsForJob`, and legacy-only `useEnsJobTokenURI` references.
 
-## Still missing before patch
+## Dangerous regressions / mismatches observed pre-patch
 
-- Canonical manager compatibility signaling (`rich` vs `lean`) on the read-heavy inspection path.
-- Resolver auth support for both legacy `setAuthorisation` and newer `approve`/`isApprovedFor` families.
-- Audit/runbook artifacts reflecting the real unchanged-Prime operating mode.
-
+- Authority establishment silently no-opped on conflicts instead of proving identity equivalence.
+- `repairAuthoritySnapshot(jobId, "")` could proceed whenever a label had previously been snapshotted, which was too permissive for ambiguous legacy recovery.
+- Inspector/script auth reads still probed `isAuthorised(bytes32,address)`, which is not the canonical resolver-family read surface to rely on for mainnet status.
+- Legacy migration required V1 manager views even though the operational requirement was to support unchanged Prime / explicit owner-supplied recovery.

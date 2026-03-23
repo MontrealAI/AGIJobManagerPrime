@@ -516,52 +516,27 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         returns (bytes32 node)
     {
         if (!_managerSupportsViewV1(jobManager, jobId)) revert InvalidParameters();
-        if (rootVersionCount != 1) revert InvalidParameters();
-        _requireConfigured();
         if (jobManager == address(0)) revert ENSNotConfigured();
-
-        _importExactJobLabel(jobId, exactLabel);
-        string memory label = _jobLabelById[jobId];
-        _establishAuthority(jobId, label, SNAPSHOT_SOURCE_LEGACY_IMPORT, true);
 
         string memory specURI = IAGIJobManagerPrimeViewV1(jobManager).getJobSpecURI(jobId);
         (address employer, address assignedAgent, bool allowAuth) = _jobAuthStateForMigration(jobId);
         if (employer == address(0)) revert InvalidParameters();
         string memory completionURI = IAGIJobManagerPrimeViewV1(jobManager).getJobCompletionURI(jobId);
 
-        node = _jobAuthority[jobId].node;
-        bool adopted;
-        bool created;
+        return _migrateLegacyWrappedJobPageExplicit(jobId, exactLabel, employer, assignedAgent, allowAuth, specURI, completionURI);
+    }
 
-        if (_nodeExists(node)) {
-            if (!_nodeManagedBySelf(node)) {
-                if (!_isWrappedRootNode(_jobAuthority[jobId].rootNode)) revert ENSNotAuthorized();
-                _requireWrapperAuthorization(_jobAuthority[jobId].rootNode);
-                INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
-                    _jobAuthority[jobId].rootNode,
-                    label,
-                    address(this),
-                    0,
-                    type(uint64).max
-                );
-
-                if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
-                adopted = true;
-            }
-        } else {
-            node = _createSubname(_jobAuthority[jobId].rootNode, label);
-            emit JobENSPageCreated(jobId, node);
-            created = true;
-        }
-
-        _setResolverBestEffort(HOOK_CREATE, jobId, node, address(publicResolver));
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
-        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
-        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.completion.public", completionURI);
-
-        emit LegacyJobPageMigrated(jobId, node, label, adopted, created);
+    function migrateLegacyWrappedJobPageExplicit(
+        uint256 jobId,
+        string calldata exactLabel,
+        address employer,
+        address assignedAgent,
+        bool allowAuth,
+        string calldata specURI,
+        string calldata completionURI
+    ) external onlyOwner returns (bytes32 node) {
+        if (employer == address(0)) revert InvalidParameters();
+        return _migrateLegacyWrappedJobPageExplicit(jobId, exactLabel, employer, assignedAgent, allowAuth, specURI, completionURI);
     }
 
     function repairAuthoritySnapshot(uint256 jobId, string calldata exactLabel) external onlyOwner {
@@ -569,7 +544,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (rootVersionCount != 1) revert InvalidParameters();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
-        } else if (!_jobLabelIsSet[jobId]) {
+        } else if (!_jobAuthority[jobId].authorityEstablished) {
             revert InvalidParameters();
         }
         _establishAuthorityForRootVersion(jobId, _jobLabelById[jobId], currentRootVersionId, SNAPSHOT_SOURCE_REPAIR, false);
@@ -579,7 +554,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
-        } else if (!_jobLabelIsSet[jobId]) {
+        } else if (!_jobAuthority[jobId].authorityEstablished) {
             revert InvalidParameters();
         }
         _establishAuthorityForRootVersion(jobId, _jobLabelById[jobId], rootVersionId, SNAPSHOT_SOURCE_REPAIR, false);
@@ -689,6 +664,58 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function replayLockExplicit(uint256 jobId, address employer, address agent, bool burnFuses) external onlyOwner {
         _lockJobENS(jobId, employer, agent, burnFuses);
+    }
+
+
+    function _migrateLegacyWrappedJobPageExplicit(
+        uint256 jobId,
+        string memory exactLabel,
+        address employer,
+        address assignedAgent,
+        bool allowAuth,
+        string memory specURI,
+        string memory completionURI
+    ) internal returns (bytes32 node) {
+        if (rootVersionCount != 1) revert InvalidParameters();
+        _requireConfigured();
+
+        _importExactJobLabel(jobId, exactLabel);
+        string memory label = _jobLabelById[jobId];
+        _establishAuthority(jobId, label, SNAPSHOT_SOURCE_LEGACY_IMPORT, true);
+
+        node = _jobAuthority[jobId].node;
+        bool adopted;
+        bool created;
+
+        if (_nodeExists(node)) {
+            if (!_nodeManagedBySelf(node)) {
+                if (!_isWrappedRootNode(_jobAuthority[jobId].rootNode)) revert ENSNotAuthorized();
+                _requireWrapperAuthorization(_jobAuthority[jobId].rootNode);
+                INameWrapperSubnameOwner(address(nameWrapper)).setSubnodeOwner(
+                    _jobAuthority[jobId].rootNode,
+                    label,
+                    address(this),
+                    0,
+                    type(uint64).max
+                );
+
+                if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
+                adopted = true;
+            }
+        } else {
+            node = _createSubname(_jobAuthority[jobId].rootNode, label);
+            emit JobENSPageCreated(jobId, node);
+            created = true;
+        }
+
+        _setResolverBestEffort(HOOK_CREATE, jobId, node, address(publicResolver));
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, employer, allowAuth);
+        _setAuthorisationBestEffort(HOOK_CREATE, jobId, node, assignedAgent, allowAuth);
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "schema", "agijobmanager/v1");
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.spec.public", specURI);
+        _setTextBestEffort(HOOK_CREATE, jobId, node, "agijobs.completion.public", completionURI);
+
+        emit LegacyJobPageMigrated(jobId, node, label, adopted, created);
     }
 
     function _jobAuthStateForMigration(uint256 jobId)
@@ -1205,12 +1232,20 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         RootVersion memory versionInfo = _rootVersions[rootVersionId];
         if (versionInfo.rootNode == bytes32(0) || bytes(versionInfo.rootName).length == 0) revert InvalidParameters();
         JobAuthority storage authority = _jobAuthority[jobId];
-        if (authority.authorityEstablished) return;
+        bytes32 labelHash = keccak256(bytes(label));
+        bytes32 node = keccak256(abi.encodePacked(versionInfo.rootNode, labelHash));
+        if (authority.authorityEstablished) {
+            if (authority.labelHash != labelHash) revert InvalidParameters();
+            if (authority.rootVersionId != uint32(rootVersionId)) revert InvalidParameters();
+            if (authority.rootNode != versionInfo.rootNode) revert InvalidParameters();
+            if (authority.node != node) revert InvalidParameters();
+            return;
+        }
         if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();
-        authority.labelHash = keccak256(bytes(label));
+        authority.labelHash = labelHash;
         authority.rootVersionId = uint32(rootVersionId);
         authority.rootNode = versionInfo.rootNode;
-        authority.node = keccak256(abi.encodePacked(versionInfo.rootNode, authority.labelHash));
+        authority.node = node;
         authority.authorityEstablishedAt = uint64(block.timestamp);
         authority.snapshotVersion = currentSnapshotVersion;
         authority.snapshotSource = snapshotSource;
@@ -1243,8 +1278,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _supportsLegacyResolverAuthFamily(address resolver) internal view returns (bool) {
         return
             _supportsLegacyResolverAuthWrite(resolver) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this))) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isAuthorised(bytes32,address)", bytes32(0), address(this)));
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this)));
     }
 
     function _supportsResolverReadSurface(address resolver, bytes memory payload) internal view returns (bool ok) {

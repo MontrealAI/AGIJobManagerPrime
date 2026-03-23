@@ -72,6 +72,37 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     assert.equal(await resolver.isAuthorised(legacyNode, agent), true);
   });
 
+  it('supports explicit legacy migration when the manager does not expose V1 views', async () => {
+    const ens = await MockENSRegistry.new({ from: owner });
+    const wrapper = await MockNameWrapper.new({ from: owner });
+    const resolver = await MockPublicResolver.new({ from: owner });
+    const fallbackManager = await MockAGIJobManagerPrimeFallback.new({ from: owner });
+    const pages = await ENSJobPages.new(ens.address, wrapper.address, resolver.address, namehash(ROOT_V1), ROOT_V1, { from: owner });
+    const legacyLabel = 'agijob77';
+    const legacyNode = subnode(namehash(ROOT_V1), legacyLabel);
+
+    await pages.setJobManager(fallbackManager.address, { from: owner });
+    await ens.setOwner(namehash(ROOT_V1), wrapper.address, { from: owner });
+    await wrapper.setOwner(web3.utils.toBN(namehash(ROOT_V1)), owner, { from: owner });
+    await wrapper.setApprovalForAll(pages.address, true, { from: owner });
+
+    const receipt = await pages.migrateLegacyWrappedJobPageExplicit(
+      77,
+      legacyLabel,
+      employer,
+      agent,
+      true,
+      'ipfs://legacy-spec-77',
+      'ipfs://legacy-completion-77',
+      { from: owner }
+    );
+
+    await expectEvent(receipt, 'LegacyJobPageMigrated', { jobId: '77', label: legacyLabel });
+    assert.equal(await pages.effectiveJobEnsNode(77), legacyNode);
+    assert.equal(await resolver.text(legacyNode, 'agijobs.spec.public'), 'ipfs://legacy-spec-77');
+    assert.equal(await resolver.text(legacyNode, 'agijobs.completion.public'), 'ipfs://legacy-completion-77');
+  });
+
   it('requires explicit rootVersion repair once multiple root versions exist', async () => {
     const { ens, manager, pages } = await deployPages();
     await manager.setJob(11, employer, agent, 'ipfs://spec-11', { from: owner });
@@ -82,6 +113,15 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     assert.equal(await pages.effectiveJobEnsName(11), 'agijob-11.alpha.jobs.agi.eth');
 
     await ens.setOwner(namehash(ROOT_V2), pages.address, { from: owner });
+  });
+
+  it('blocks no-label authority repair for ambiguous legacy jobs and rejects conflicting re-snapshots', async () => {
+    const { manager, pages } = await deployPages();
+    await manager.setJob(14, employer, agent, 'ipfs://spec-14', { from: owner });
+
+    await expectRevert.unspecified(pages.repairAuthoritySnapshot(14, '', { from: owner }));
+    await pages.repairAuthoritySnapshot(14, 'agijob-14', { from: owner });
+    await expectRevert.unspecified(pages.repairAuthoritySnapshot(14, 'otherjob-14', { from: owner }));
   });
 
   it('keeps handleHook usable for unchanged Prime-style managers without V1 getters', async () => {

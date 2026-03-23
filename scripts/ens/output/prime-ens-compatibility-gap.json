@@ -2,10 +2,15 @@
   "generatedAt": "2026-03-23T00:00:00Z",
   "managerMode": "lean-handleHook-compatible",
   "managerSupportsV1Views": false,
+  "typedHooksUsedByPrime": false,
   "metadataAutoWriteSupported": false,
+  "authorityAutoIssueSupported": true,
   "keeperRequired": true,
-  "automaticAuthorityIssuanceSupported": true,
-  "explicitMetadataRepairRequired": true,
-  "settlementBlockingRisk": false,
-  "primeRedeployAvoidable": true
+  "recommendedArchitecture": "Option B: unchanged Prime, ENS-side compatibility mode, explicit repair/log recovery for metadata",
+  "missingPrimeViews": [
+    "ensJobManagerViewInterfaceVersion()",
+    "getJobCore(uint256)",
+    "getJobSpecURI(uint256)",
+    "getJobCompletionURI(uint256)"
+  ]
 }

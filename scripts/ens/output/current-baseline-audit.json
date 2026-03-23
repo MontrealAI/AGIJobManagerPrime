@@ -1,29 +1,27 @@
 {
   "generatedAt": "2026-03-23T00:00:00Z",
-  "branch": "main",
-  "primeChangesRequired": false,
-  "managerImplementsViewV1": false,
-  "managerUsesTypedPushHooks": false,
   "authorityModelBroadlyCorrect": true,
-  "primaryBlocker": "Prime-ENS rich-view mismatch plus unsafe resolver/auth detection",
-  "alreadySolved": [
-    "preview-effective split",
+  "primaryBlocker": "Prime-ENS interface mismatch for metadata hydration, not identity issuance.",
+  "primeImplementsV1Views": false,
+  "primeCallsTypedHooks": false,
+  "zeroPrimeRuntimeChangeViable": true,
+  "alreadyMergedCorrect": [
+    "preview/effective split",
     "authority snapshotting",
     "root versioning",
-    "root namehash enforcement",
+    "namehash(rootName)==rootNode enforcement",
     "mixed-mode compatibility getters",
-    "owner-callable repair and replay flows",
-    "non-blocking generic handleHook path"
+    "best-effort non-blocking numeric hook ABI"
   ],
   "incomplete": [
-    "lean mode metadata hydration",
-    "machine-readable manager compatibility signaling",
-    "docs/runbook honesty"
+    "conflict-safe authority re-establishment",
+    "legacy explicit migration under lean manager mode",
+    "docs/runbooks drift",
+    "resolver auth observation cleanup"
   ],
-  "dangerousMismatches": [
-    "0x304e6ade treated as resolver auth support",
-    "inspector guessed isAuthorised(bytes32,address) external read surface",
-    "mainnet deploy script stale implicit job manager default"
-  ],
-  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair"
+  "dangerousMismatchesPrePatch": [
+    "no-label repair too permissive before authority existed",
+    "inspector/script guessed isAuthorised read surface",
+    "legacy migration required V1 manager getters"
+  ]
 }

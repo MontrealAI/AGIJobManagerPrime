@@ -21,9 +21,17 @@ const PRIME_ABI = [
   'function jobAssignedAgentOf(uint256) view returns (address)'
 ];
 const iface = new ethers.Interface(PRIME_ABI);
+const MAX_LOG_BLOCK_RANGE = Number(process.env.MAX_LOG_BLOCK_RANGE || '45000');
 
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  const latestBlock = Number(provider.getBlockNumber ? await provider.getBlockNumber() : provider.getBlock('latest').number);
+  const logs = [];
+  for (let fromBlock = 0; fromBlock <= latestBlock; fromBlock += MAX_LOG_BLOCK_RANGE + 1) {
+    const toBlock = Math.min(latestBlock, fromBlock + MAX_LOG_BLOCK_RANGE);
+    const chunk = await provider.request('eth_getLogs', [{ address, fromBlock: ethers.toQuantity(fromBlock), toBlock: ethers.toQuantity(toBlock), topics: [topic0] }]);
+    logs.push(...chunk);
+  }
+  return logs;
 }
 async function safe(fn, fallback = null) { try { return await fn(); } catch { return fallback; } }
 

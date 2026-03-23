@@ -198,7 +198,7 @@ Recommended pattern for both fields: point to metadata JSON.
 
 At completion NFT mint time (`_mintCompletionNFT`):
 1. Start with `job.jobCompletionURI`.
-2. If `useEnsJobTokenURI` is enabled and ENS hook returns a valid non-empty URI string (within limits), replace value with that ENS-returned string.
+2. Legacy manager only: if `useEnsJobTokenURI` is enabled and the configured ENS helper returns a valid non-empty URI string (within limits), replace the value with that ENS-returned string. Current Prime deployments do not expose this flag.
 3. Call `UriUtils.applyBaseIpfs(tokenUriValue, baseIpfsUrl)`.
 4. Store result in `_tokenURIs[tokenId]`.
 
@@ -223,11 +223,11 @@ Important implications:
 
 ## 7) ENS / `ensJobPages` / `useEnsJobTokenURI` interactions
 
-If `useEnsJobTokenURI == true`, minting attempts a best-effort static call to `ensJobPages`.
+Legacy manager only: if `useEnsJobTokenURI == true`, minting attempts a best-effort static call to `ensJobPages`. Prime does not currently expose this flag.
 
 Implementation details:
 - Selector called: `0x751809b4` with one `uint256 jobId` argument.
-- In `AGIJobPages`, this maps to `jobEnsURI(uint256)` and is also handled in fallback.
+- In `ENSJobPages`, this maps to `jobEnsURI(uint256)` and is also handled in fallback for the legacy manager path.
 - Gas cap: `ENS_URI_GAS_LIMIT = 200000`.
 - Return data cap: `ENS_URI_MAX_RETURN_BYTES = 2048`.
 - Accepted decoded URI string length: `1..ENS_URI_MAX_STRING_BYTES` (`<=1024`).

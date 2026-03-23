@@ -1,36 +1,26 @@
-# CHANGE MINIMIZATION PLAN
+# ENS change minimization plan
 
-## Selected architecture
+## Chosen architecture
 
-**Option B with helper-style read hardening, but no Prime runtime changes.**
+1. **Do not change `AGIJobManagerPrime`.**
+2. **Patch `ENSJobPages` in place** for conflict safety and explicit lean-manager migration capability.
+3. **Use `ENSJobPagesInspector` as canonical rich status** instead of bloating Prime or overloading compatibility getters.
+4. **Use scripts + logs for metadata recovery** instead of adding Prime getters.
+5. **Update docs/runbooks** so operators never call preview values authoritative and never rely on nonexistent repair helpers.
 
-## Why this is the smallest safe patch set
+## Minimal patch list
 
-1. Keep `AGIJobManagerPrime` bytecode unchanged.
-2. Preserve `handleHook(uint8,uint256)` wire compatibility.
-3. Patch only ENS-side authority/auth tooling where the real defects lived.
-4. Use read-heavy inspector + scripts/docs to expose compatibility mode instead of bloating Prime.
+- Harden authority establishment to reject conflicting re-snapshots.
+- Disallow no-label authority repair before authority already exists.
+- Add explicit `migrateLegacyWrappedJobPageExplicit(...)` for unchanged-Prime / owner-supplied migration.
+- Remove guessed `isAuthorised(bytes32,address)` auth reads from inspector + inventory script + capability probing.
+- Keep `handleHook(uint8,uint256)` numeric ABI unchanged.
+- Keep Prime runtime unchanged.
+- Refresh deployment/runbook docs and retain log-driven repair scripts as canonical metadata recovery path.
 
-## Patch scope
+## Explicit non-goals
 
-- `contracts/ens/ENSJobPages.sol`
-  - fix resolver auth write capability detection;
-  - support both legacy `setAuthorisation` and newer `approve(bytes32,address,bool)` write paths.
-- `contracts/ens/ENSJobPagesInspector.sol`
-  - stop probing guessed external `isAuthorised(bytes32,address)`;
-  - read legacy `authorisations(...)` and modern `isApprovedFor(...)` / `isApprovedForAll(...)` surfaces instead;
-  - expose machine-readable manager compatibility status.
-- `contracts/test/*`
-  - add resolver-family coverage for modern approve/isApprovedFor flows.
-- `scripts/ens/*`
-  - align auth probing and compatibility labeling with actual resolver families and unchanged-Prime lean mode.
-- `hardhat/scripts/deploy-ens-job-pages.js`
-  - require explicit `JOB_MANAGER` on mainnet.
-- `README.md`, `hardhat/README.md`, `docs/ENS/*`
-  - make preview/effective and automatic-vs-keeper-assisted semantics explicit.
-
-## Rejected smaller alternatives
-
-- **Docs-only fix:** rejected because resolver capability/auth verification was genuinely unsafe.
-- **Inspector-only fix:** rejected because ENSJobPages itself still assumed the wrong auth write capability model.
-- **Prime change:** rejected because unchanged Prime already provides enough data for truthful authority issuance plus explicit repair flows.
+- No new Prime storage.
+- No new Prime events.
+- No typed-hook dependency for current production readiness.
+- No semantic rewrite of the existing authority snapshot architecture.
