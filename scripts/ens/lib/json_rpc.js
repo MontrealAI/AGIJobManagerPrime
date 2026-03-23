@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 const { execFileSync } = require('node:child_process');
-const { createRequire } = require('node:module');
-const requireFromHere = createRequire(__filename);
-const { ethers } = requireFromHere('../../../hardhat/node_modules/ethers');
+const { ethers } = require('./ethers');
 
 function toQuantity(value) {
   return ethers.toBeHex(value);

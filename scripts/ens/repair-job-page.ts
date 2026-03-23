@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { createRequire } = require('node:module');
-
-const requireFromHere = createRequire(__filename);
-const { ethers } = requireFromHere('../../hardhat/node_modules/ethers');
+const { ethers } = require('./lib/ethers');
 const { CurlJsonRpcProvider } = require('./lib/json_rpc');
 
 const RPC = (process.env.MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com').trim();
