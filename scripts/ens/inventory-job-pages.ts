@@ -36,6 +36,7 @@ const PAGES_ABI = [
   'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function publicResolver() view returns (address)',
   'function nameWrapper() view returns (address)',
+  'function jobsRootNode() view returns (bytes32)',
 ];
 
 const ENS_ABI = [
@@ -68,6 +69,7 @@ function classify(job) {
   if (job.repairable) tags.push('repairable');
   if (job.effectiveReady) tags.push('authoritative-ready');
   if (job.finalized) tags.push('finalized');
+  if (job.missingCore) tags.push('missing-core');
   return tags;
 }
 
@@ -98,7 +100,9 @@ function classify(job) {
   const prime = new ethers.Contract(PRIME, PRIME_ABI, provider);
   const pages = new ethers.Contract(ENS_JOB_PAGES, PAGES_ABI, provider);
   const ens = new ethers.Contract(ENS_REGISTRY, ENS_ABI, provider);
-  const wrapper = new ethers.Contract(await safe(() => pages.nameWrapper(), ethers.ZeroAddress), WRAPPER_ABI, provider);
+  const nameWrapperAddress = await safe(() => pages.nameWrapper(), ethers.ZeroAddress);
+  const wrapper = new ethers.Contract(nameWrapperAddress, WRAPPER_ABI, provider);
+  const jobsRootNode = await safe(() => pages.jobsRootNode(), ethers.ZeroHash);
   const nextJobId = Number(await safe(() => prime.nextJobId(), 0n));
   const total = Math.min(nextJobId, MAX_JOBS);
   truncated = nextJobId > MAX_JOBS;
@@ -107,9 +111,8 @@ function classify(job) {
 
   for (let jobId = 0; jobId < total; jobId += 1) {
     const core = await safe(() => prime.getJobCore(jobId), null);
-    if (!core) continue;
-    const specURI = await safe(() => prime.getJobSpecURI(jobId), '');
-    const completionURI = await safe(() => prime.getJobCompletionURI(jobId), '');
+    const specURI = core ? await safe(() => prime.getJobSpecURI(jobId), '') : '';
+    const completionURI = core ? await safe(() => prime.getJobCompletionURI(jobId), '') : '';
     const labelSnapshot = await safe(() => pages.jobLabelSnapshot(jobId), [false, '']);
     const authority = await safe(() => pages.jobAuthorityInfo(jobId), [false, '', ethers.ZeroHash, 0, ethers.ZeroHash, ethers.ZeroHash, 0, 0, 0, false, false, false]);
     const preview = {
@@ -118,19 +121,26 @@ function classify(job) {
       uri: await safe(() => pages.previewJobEnsURI(jobId), ''),
       node: await safe(() => pages.previewJobEnsNode(jobId), ethers.ZeroHash),
     };
+
     const authorityReady = Boolean(authority[0]);
+    const snapshottedLabel = labelSnapshot[0] ? labelSnapshot[1] : '';
+    const labelProbe = authorityReady ? authority[1] : (snapshottedLabel || preview.label);
+    const labelProbeNode = labelProbe && jobsRootNode !== ethers.ZeroHash
+      ? ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [jobsRootNode, ethers.id(labelProbe)])
+      : ethers.ZeroHash;
+
     const effective = authorityReady ? {
       label: await safe(() => pages.effectiveJobEnsLabel(jobId), ''),
       name: await safe(() => pages.effectiveJobEnsName(jobId), ''),
       uri: await safe(() => pages.effectiveJobEnsURI(jobId), ''),
       node: await safe(() => pages.effectiveJobEnsNode(jobId), ethers.ZeroHash),
     } : { label: '', name: '', uri: '', node: ethers.ZeroHash };
-    const node = authorityReady ? effective.node : preview.node;
+
+    const node = authorityReady ? effective.node : (labelProbeNode !== ethers.ZeroHash ? labelProbeNode : preview.node);
     const owner = node && node !== ethers.ZeroHash ? await safe(() => ens.owner(node), ethers.ZeroAddress) : ethers.ZeroAddress;
     const resolver = node && node !== ethers.ZeroHash ? await safe(() => ens.resolver(node), ethers.ZeroAddress) : ethers.ZeroAddress;
     const expectedResolver = await safe(() => pages.publicResolver(), ethers.ZeroAddress);
-    const nameWrapper = await safe(() => pages.nameWrapper(), ethers.ZeroAddress);
-    const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapper.toLowerCase()
+    const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapperAddress.toLowerCase()
       ? await safe(() => wrapper.ownerOf(BigInt(node)), ethers.ZeroAddress)
       : ethers.ZeroAddress;
 
@@ -142,25 +152,29 @@ function classify(job) {
       const liveResolver = new ethers.Contract(resolver, RESOLVER_ABI, provider);
       specText = await safe(() => liveResolver.text(node, 'agijobs.spec.public'), '');
       completionText = await safe(() => liveResolver.text(node, 'agijobs.completion.public'), '');
-      employerAuth = core.employer === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.employer), false);
-      agentAuth = core.assignedAgent === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.assignedAgent), false);
+      employerAuth = !core || core.employer === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.employer), false);
+      agentAuth = !core || core.assignedAgent === ethers.ZeroAddress ? false : await safe(() => liveResolver.isAuthorised(node, core.assignedAgent), false);
     }
 
     const nodeManagedByContract = owner !== ethers.ZeroAddress && (
       owner.toLowerCase() === ENS_JOB_PAGES.toLowerCase() ||
-      (owner.toLowerCase() === nameWrapper.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
+      (owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
     );
+
     const effectiveReady = authorityReady && owner !== ethers.ZeroAddress && resolver.toLowerCase() === expectedResolver.toLowerCase();
     const finalized = Boolean(authority[10]);
-    const repairable = authorityReady || labelSnapshot[0] || Boolean(specURI) || Boolean(completionURI);
+    const repairable = authorityReady || Boolean(labelSnapshot[0]) || Boolean(specURI) || Boolean(completionURI) || owner !== ethers.ZeroAddress;
 
     const job = {
       jobId,
       preview,
       effective,
+      labelProbe,
+      labelProbeNode,
       labelSnapshotted: Boolean(labelSnapshot[0]),
       authoritySnapshotted: authorityReady,
       legacyImported: Boolean(authority[9]),
+      missingCore: !core,
       finalized,
       fuseBurned: Boolean(authority[11]),
       nodeExists: owner !== ethers.ZeroAddress,
@@ -169,18 +183,18 @@ function classify(job) {
       resolverSetToExpected: resolver.toLowerCase() === expectedResolver.toLowerCase(),
       specTextPresent: Boolean(specText),
       completionTextPresent: Boolean(completionText),
-      authorisationsAsExpected: core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth,
+      authorisationsAsExpected: !core ? false : (core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth),
       effectiveReady,
       finalizable: authorityReady && owner !== ethers.ZeroAddress,
       repairable,
       hasCompletionURI: Boolean(completionURI),
-      core: {
+      core: core ? {
         employer: core.employer,
         assignedAgent: core.assignedAgent,
         completed: core.completed,
         disputed: core.disputed,
         expired: core.expired,
-      },
+      } : null,
       uris: { specURI, completionURI, specText, completionText },
     };
     job.classification = classify(job);
@@ -196,6 +210,7 @@ function classify(job) {
     authoritySnapshotted: out.jobs.filter((job) => job.classification.includes('authority-snapshotted')).map((job) => job.jobId),
     repairable: out.jobs.filter((job) => job.classification.includes('repairable')).map((job) => job.jobId),
     finalized: out.jobs.filter((job) => job.classification.includes('finalized')).map((job) => job.jobId),
+    missingCore: out.jobs.filter((job) => job.classification.includes('missing-core')).map((job) => job.jobId),
   };
 
   if (truncated) {
