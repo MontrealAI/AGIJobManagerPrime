@@ -73,7 +73,7 @@ async function main() {
   const jobsRootName = ethers.ensNormalize(jobsRootNameInput);
   const computedJobsRootNode = namehash(jobsRootName);
   const jobsRootNode = env("JOBS_ROOT_NODE", computedJobsRootNode);
-  const jobManager = env("JOB_MANAGER", DEFAULT_JOB_MANAGER);
+  const jobManager = chainId === 1 ? env("JOB_MANAGER", "") : env("JOB_MANAGER", DEFAULT_JOB_MANAGER);
 
   const verify = isTruthy(env("VERIFY"));
   const lockConfig = isTruthy(env("LOCK_CONFIG"));

@@ -194,9 +194,17 @@ contract ENSJobPagesInspector {
         bool specReadable = _surfaceReadable(manager, abi.encodeWithSignature('getJobSpecURI(uint256)', jobId));
         bool completionReadable = _surfaceReadable(manager, abi.encodeWithSignature('getJobCompletionURI(uint256)', jobId));
         managerSupportsV1Views = coreReadable && specReadable && completionReadable;
-        managerMode = managerSupportsV1Views ? MANAGER_MODE_RICH : MANAGER_MODE_LEAN;
-        metadataAutoWriteSupported = managerSupportsV1Views;
-        keeperRequired = !managerSupportsV1Views;
+        if (managerSupportsV1Views) {
+            return (true, MANAGER_MODE_RICH, true, false);
+        }
+
+        bool leanEmployerReadable = _surfaceReadable(manager, abi.encodeWithSignature('jobEmployerOf(uint256)', jobId));
+        bool leanAgentReadable = _surfaceReadable(manager, abi.encodeWithSignature('jobAssignedAgentOf(uint256)', jobId));
+        if (leanEmployerReadable && leanAgentReadable) {
+            return (false, MANAGER_MODE_LEAN, false, true);
+        }
+
+        return (false, MANAGER_MODE_NONE, false, true);
     }
 
     function _surfaceReadable(address target, bytes memory payload) internal view returns (bool) {

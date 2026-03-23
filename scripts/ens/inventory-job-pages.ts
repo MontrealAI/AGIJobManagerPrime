@@ -168,12 +168,15 @@ async function getLogs(provider, address, topic0) {
       const legacyAuthAbi = ['function authorisations(bytes32,address,address) view returns (bool)'];
       const modernAuthAbi = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
       const operatorAuthAbi = ['function isApprovedForAll(address,address) view returns (bool)'];
+      const legacySingleAuthAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
       const readAuth = async (target) => {
         let value = await safe(() => provider.readContract(resolver, legacyAuthAbi, 'authorisations', [node, ownerForAuth, target])[0], null);
         if (value !== null) return value;
         value = await safe(() => provider.readContract(resolver, modernAuthAbi, 'isApprovedFor', [ownerForAuth, node, target])[0], null);
         if (value !== null) return value;
-        return await safe(() => provider.readContract(resolver, operatorAuthAbi, 'isApprovedForAll', [ownerForAuth, target])[0], null);
+        value = await safe(() => provider.readContract(resolver, operatorAuthAbi, 'isApprovedForAll', [ownerForAuth, target])[0], null);
+        if (value !== null) return value;
+        return await safe(() => provider.readContract(resolver, legacySingleAuthAbi, 'isAuthorised', [node, target])[0], null);
       };
       const employerAuthRead = employer === ethers.ZeroAddress ? true : await readAuth(employer);
       const agentAuthRead = agent === ethers.ZeroAddress ? true : await readAuth(agent);

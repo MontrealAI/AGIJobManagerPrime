@@ -1,7 +1,7 @@
 # ENS Reference (Generated)
 
 Generated at (UTC): 1970-01-01T00:00:00Z
-Source fingerprint: 48e06ed632b51b8c
+Source fingerprint: f2bada7904c1499c
 
 Source files used:
 - `contracts/AGIJobManager.sol`
