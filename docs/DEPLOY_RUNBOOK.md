@@ -64,7 +64,7 @@ truffle exec scripts/verify-config.js --network <network> --address <AGIJOBMANAG
 - [ ] Set additional agents/validators if needed.
 - [ ] Configure blacklists (normally empty at launch).
 - [ ] Add AGI types (`addAGIType`) ensuring combined payout headroom against validation reward.
-- [ ] Configure ENS hook endpoint (`setEnsJobPages`) and `setUseEnsJobTokenURI` as desired.
+- [ ] Configure ENS hook endpoint (`setEnsJobPages`) as desired. On Prime, do **not** plan around `setUseEnsJobTokenURI`; completion NFTs stay completion-URI/IPFS based unless a separately sized manager release explicitly wires ENS URI routing.
 
 ## 4) Verification and bytecode checks
 

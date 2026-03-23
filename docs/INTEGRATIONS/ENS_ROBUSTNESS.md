@@ -18,7 +18,7 @@ This playbook defines how ENS-linked behavior degrades, how failures surface on-
 | Label input malformed | user submits invalid string label | `EnsLabelUtils.requireValidLabel` path fails and action reverts | user support load | enforce label validation in client and ops runbooks | strict UI input constraints |
 | ENS ownership changed unexpectedly | prior participant loses/changes eligibility | future gating follows new ownership state | onboarding surprises | communicate policy; override with Merkle/allowlist if needed | pre-action ownership checks in operator tooling |
 | Hook target (`ensJobPages`) reverts | hook-related events show failure | `_callEnsJobPagesHook` emits `EnsHookAttempted` and continues | job page state may lag | fix or unset `ensJobPages`; keep settlement live | continuous hook smoke tests |
-| `jobEnsURI` malformed/reverting | expected ENS token URI absent | `_mintJobNFT` keeps base URI when ENS URI call fails/invalid | metadata discrepancy | disable ENS URI mode via `setUseEnsJobTokenURI(false)` | enable only after hardened integration tests |
+| `jobEnsURI` malformed/reverting | expected ENS token URI absent | Legacy manager `_mintJobNFT` keeps base URI when ENS URI call fails/invalid; current Prime stays on completion-URI/IPFS routing | metadata discrepancy | On Prime, leave manager NFT routing unchanged and repair ENS metadata on ENSJobPages only; on legacy manager deployments, disable ENS URI mode via `setUseEnsJobTokenURI(false)` | enable only after hardened integration tests |
 | Identity configuration locked too early | cannot rewrite ENS/token/root wiring | guarded setters revert `ConfigLocked` | cannot correct wiring in-place | operate with Merkle/allowlists; plan controlled migration | formal lock checklist with sign-off |
 | RPC / indexer outage | monitoring cannot read ENS state reliably | contract logic unchanged | observability gaps | fail closed operationally, switch providers | multi-provider dashboards + alerts |
 
@@ -34,7 +34,7 @@ Reference implementation anchors:
 | ENS key compromise | attacker may satisfy ENS-based eligibility | multi-path auth (allowlist/Merkle/ENS) + blacklist levers | temporary unauthorized admissions | rotate Merkle roots, blacklist addresses, incident communication |
 | Owner misconfiguration | outage or authorization drift | empty-escrow gate + explicit lock semantics | human error remains | staged deployment procedure and peer review |
 | External contract anomalies | false negatives/instability | gas-bounded staticcalls, conservative decode, false on malformed reads | availability degradation | maintain emergency non-ENS authorization policy |
-| Hook target compromise | corrupted ENS page metadata | best-effort dispatch, non-fatal to settlement | off-chain integrity concerns | disable hook/ENS URI mode and investigate |
+| Hook target compromise | corrupted ENS page metadata | best-effort dispatch, non-fatal to settlement | off-chain integrity concerns | disable hook target and investigate; if operating a legacy manager with ENS URI mode, disable that separately |
 | Phishing/social engineering | user wallet compromise | explicit non-goal; no on-chain anti-phishing guarantees | persistent ecosystem risk | user training and signed operator advisories |
 
 > **Non-goals / limitations**

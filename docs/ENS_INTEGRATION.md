@@ -19,7 +19,7 @@ From `AGIJobManager` constants:
 ## Best-effort behavior
 
 - Hook call failures do not revert job lifecycle actions.
-- ENS URI reads for NFT minting are optional; manager falls back to completion URI when ENS lookup fails/empty.
+- On legacy managers, ENS URI reads for NFT minting are optional; on current Prime deployments, completion NFTs remain completion-URI/IPFS based and manager-side ENS URI routing should not be assumed.
 - Operationally, ENS should be treated as a mirrored metadata layer, not an economic dependency.
 
 ## Wrapped vs unwrapped root handling
@@ -46,7 +46,7 @@ From `AGIJobManager` constants:
    - Wrapped root: `ENS.owner(jobsRootNode) == NameWrapper` and `ownerOf(uint256(jobsRootNode))` is `ENSJobPages` or has approved it with `setApprovalForAll`.
 3. Call `ENSJobPages.setJobManager(AGIJobManager)`.
 4. Call `AGIJobManager.setEnsJobPages(ENSJobPages)`.
-5. Optionally enable NFT URI override through `AGIJobManager.setUseEnsJobTokenURI(true)`.
+5. On current Prime deployments, stop here for manager wiring. Any `useEnsJobTokenURI` enablement is legacy-manager-only and should be documented separately from the Prime path.
 
 Resolver `setText`/`setAuthorisation` writes are intentionally best-effort (try/catch). Large text payloads may exceed hook gas and should be retried directly by authorised actors.
 
