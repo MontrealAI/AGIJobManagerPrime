@@ -35,6 +35,7 @@ const PAGES_ABI = [
   'function publicResolver() view returns (address)',
   'function nameWrapper() view returns (address)',
   'function jobsRootNode() view returns (bytes32)',
+  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function jobEnsIssued(uint256) view returns (bool)',
   'function jobEnsReady(uint256) view returns (bool)'
 ];

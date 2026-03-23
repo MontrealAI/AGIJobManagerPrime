@@ -17,6 +17,7 @@ const PAGES_ABI = [
   'function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)',
   'function jobLabelSnapshot(uint256) view returns (bool,string)',
   'function jobsRootNode() view returns (bytes32)',
+  'function rootVersionInfo(uint256) view returns (bytes32,string,uint64,bool)',
   'function nameWrapper() view returns (address)',
   'function publicResolver() view returns (address)',
   'function jobManager() view returns (address)',

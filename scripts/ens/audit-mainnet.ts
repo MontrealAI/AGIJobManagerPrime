@@ -23,6 +23,7 @@ const PAGES_ABI = [
   'function jobManager() view returns (address)',
   'function jobLabelPrefix() view returns (string)',
   'function configLocked() view returns (bool)',
+  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function validateConfiguration() view returns (uint256)',
 ];
 

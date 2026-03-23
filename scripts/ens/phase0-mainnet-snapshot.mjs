@@ -38,6 +38,7 @@ const ENS_JOB_PAGES_ABI = [
   'function jobsRootName() view returns (string)',
   'function jobLabelPrefix() view returns (string)',
   'function configLocked() view returns (bool)',
+  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function validateConfiguration() view returns (uint256)',
   'function jobLabelSnapshot(uint256) view returns (bool,string)',
   'function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)',
