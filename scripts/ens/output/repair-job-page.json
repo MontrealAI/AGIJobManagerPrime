@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T01:06:53.200Z",
+  "generatedAt": "2026-03-23T01:21:30.915Z",
   "jobId": 0,
   "exactLabel": "agijob-0",
   "labelSnapshot": {
@@ -11,6 +11,7 @@
   "resolvedLabel": "agijob-0",
   "resolvedNode": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "nodeOwner": "0x0000000000000000000000000000000000000000",
+  "hasReadableCore": false,
   "needsCreateReplay": true,
   "execute": false,
   "plan": [
@@ -35,20 +36,6 @@
         0
       ],
       "calldata": "0x1e930b9c0000000000000000000000000000000000000000000000000000000000000000"
-    },
-    {
-      "action": "repairTexts",
-      "args": [
-        0
-      ],
-      "calldata": "0x1db1df2b0000000000000000000000000000000000000000000000000000000000000000"
-    },
-    {
-      "action": "repairAuthorisations",
-      "args": [
-        0
-      ],
-      "calldata": "0xbd0a03bf0000000000000000000000000000000000000000000000000000000000000000"
     }
   ]
 }

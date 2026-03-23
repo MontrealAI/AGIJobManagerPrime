@@ -103,7 +103,11 @@ function classify(job) {
   const nameWrapperAddress = await safe(() => pages.nameWrapper(), ethers.ZeroAddress);
   const wrapper = new ethers.Contract(nameWrapperAddress, WRAPPER_ABI, provider);
   const jobsRootNode = await safe(() => pages.jobsRootNode(), ethers.ZeroHash);
-  const nextJobId = Number(await safe(() => prime.nextJobId(), 0n));
+  const nextJobIdRead = await safe(() => prime.nextJobId(), null);
+  if (nextJobIdRead === null) {
+    throw new Error('Failed to read prime.nextJobId(); refusing to emit a misleading empty inventory.');
+  }
+  const nextJobId = Number(nextJobIdRead);
   const total = Math.min(nextJobId, MAX_JOBS);
   truncated = nextJobId > MAX_JOBS;
   const config = await safe(() => pages.configurationStatus(), null);

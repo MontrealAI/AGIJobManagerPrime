@@ -30,6 +30,12 @@ const ABI = [
 ];
 
 const ENS_ABI = ['function owner(bytes32) view returns (address)'];
+const PRIME_VIEW_ABI = [
+  'function getJobCore(uint256) view returns (address employer,address assignedAgent,uint256 payout,uint256 duration,uint256 assignedAt,bool completed,bool disputed,bool expired,uint8 agentPayoutPct)',
+  'function getJobSpecURI(uint256) view returns (string)',
+  'function getJobCompletionURI(uint256) view returns (string)',
+  'function jobManager() view returns (address)',
+];
 
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
@@ -39,6 +45,8 @@ const ENS_ABI = ['function owner(bytes32) view returns (address)'];
   const authority = await pages.jobAuthorityInfo(jobId).catch(() => null);
   const labelSnapshot = await pages.jobLabelSnapshot(jobId).catch(() => [false, '']);
   const jobsRootNode = await pages.jobsRootNode().catch(() => ethers.ZeroHash);
+  const jobManagerAddress = await new ethers.Contract(ENS_JOB_PAGES, PRIME_VIEW_ABI, provider).jobManager().catch(() => ethers.ZeroAddress);
+  const manager = jobManagerAddress !== ethers.ZeroAddress ? new ethers.Contract(jobManagerAddress, PRIME_VIEW_ABI, provider) : null;
 
   const plan = [];
   const labelSnapshotSet = Boolean(labelSnapshot[0]);
@@ -61,13 +69,16 @@ const ENS_ABI = ['function owner(bytes32) view returns (address)'];
       : ethers.ZeroHash);
   const nodeOwner = resolvedNode !== ethers.ZeroHash ? await ens.owner(resolvedNode).catch(() => ethers.ZeroAddress) : ethers.ZeroAddress;
   const needsCreateReplay = nodeOwner === ethers.ZeroAddress;
+  const hasReadableCore = manager ? Boolean(await manager.getJobCore(jobId).catch(() => null)) : false;
 
   if (needsCreateReplay) {
     plan.push({ action: 'replayCreate', args: [jobId] });
   }
   plan.push({ action: 'repairResolver', args: [jobId] });
-  plan.push({ action: 'repairTexts', args: [jobId] });
-  plan.push({ action: 'repairAuthorisations', args: [jobId] });
+  if (hasReadableCore) {
+    plan.push({ action: 'repairTexts', args: [jobId] });
+    plan.push({ action: 'repairAuthorisations', args: [jobId] });
+  }
 
   const iface = new ethers.Interface(ABI);
   const payload = {
@@ -80,6 +91,7 @@ const ENS_ABI = ['function owner(bytes32) view returns (address)'];
     resolvedLabel,
     resolvedNode,
     nodeOwner,
+    hasReadableCore,
     needsCreateReplay,
     execute,
     plan: plan.map((step) => ({ ...step, calldata: iface.encodeFunctionData(step.action, step.args) })),

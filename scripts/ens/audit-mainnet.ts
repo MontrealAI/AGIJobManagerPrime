@@ -125,7 +125,7 @@ function serialize(value) {
     jobLabelPrefix: unwrap(await safe('pages.jobLabelPrefix', () => pages.jobLabelPrefix())),
     configLocked: unwrap(await safe('pages.configLocked', () => pages.configLocked())),
     useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => pages.useEnsJobTokenURI())),
-    validateConfiguration: toStringValue(unwrap(await safe('pages.validateConfiguration', () => pages.validateConfiguration()), 0n)),
+    validateConfiguration: serialize(await safe('pages.validateConfiguration', () => pages.validateConfiguration())),
     configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => pages.configurationStatus()), null)),
   };
 
