@@ -35,7 +35,7 @@ Expected safe state before locking:
 - **AGIJobManager owner:** calls `setEnsJobPages(...)`, AGIJobManager governance, and (optionally) `lockIdentityConfiguration()`.
 - **wrapped-root owner:** calls NameWrapper `setApprovalForAll(newEnsJobPages, true)` for wrapped-root ENS operations.
 - **Canonical ENS name format:** `<prefix><jobId>.<jobsRootName>`.
-- **Current defaults:** prefix `agijob`, so names look like `agijob0.alpha.jobs.agi.eth`.
+- **Current defaults:** prefix `agijob-`, so names look like `agijob-0.alpha.jobs.agi.eth`.
 - **Legacy behavior:** old snapshotted labels remain historical; prefix changes affect future/unsnapshotted jobs only.
 
 
@@ -97,7 +97,7 @@ AGIJobManager is intended for AI agents exclusively for normal protocol particip
 | Update ENS root nodes | `updateRootNodes(bytes32,bytes32,bytes32,bytes32)` | Owner | `lockIdentityConfig == false`; empty escrow/bonds required | Yes | Safe |
 | Update ENS job pages hook | `setEnsJobPages(address)` | Owner | `lockIdentityConfig == false`; address can be zero or a contract | Yes | Safe |
 | Permanently lock identity configuration | `lockIdentityConfiguration()` | Owner | `lockIdentityConfig == false`; one-way action | Yes | Safe |
-| Toggle ENS tokenURI mode | `setUseEnsJobTokenURI(bool)` | Owner | None | Yes | Safe |
+| Toggle ENS tokenURI mode | Legacy-manager-only `setUseEnsJobTokenURI(bool)` | Owner | Not available on current Prime mainnet | Legacy-only | Treat as out of scope for current Prime operations |
 | Set base IPFS URL | `setBaseIpfsUrl(string)` | Owner | Input length must be `<= MAX_BASE_IPFS_URL_BYTES` | Yes | Safe |
 | Set validator approve threshold | `setRequiredValidatorApprovals(uint256)` | Owner | Empty escrow/bonds required; threshold pair must remain valid | Yes | Safe |
 | Set validator disapprove threshold | `setRequiredValidatorDisapprovals(uint256)` | Owner | Empty escrow/bonds required; threshold pair must remain valid | Yes | Safe |

@@ -6,7 +6,7 @@ Primary source: `contracts/ens/ENSJobPages.sol`.
 
 `AGIJobManager` can call `ENSJobPages.handleHook(hook, jobId)` via `_callEnsJobPagesHook`. The call is gas-limited and best-effort, and emits `EnsHookAttempted` from `AGIJobManager`.
 
-`ENSJobPages` then reads job data back from the caller via `IAGIJobManagerView` (`getJobCore`, `getJobSpecURI`, `getJobCompletionURI`) and applies ENS updates.
+`ENSJobPages` now supports two honest operating modes: a rich manager-view mode when the caller exposes `getJobCore` / `getJobSpecURI` / `getJobCompletionURI`, and a lean Prime-compatible mode that still establishes authoritative identity through `handleHook(uint8,uint256)` using existing `jobEmployerOf` / `jobAssignedAgentOf` views while leaving missing metadata for explicit repair.
 
 ## Hook map
 
@@ -65,6 +65,4 @@ When `burnFuses=true` and root is wrapped, `ENSJobPages` attempts to burn `CANNO
 3. Ensure ownership/authorization:
    - unwrapped: `ENS.owner(jobsRootNode) == ENSJobPages`.
    - wrapped: wrapper owner exists and authorizes `ENSJobPages` when needed.
-4. If using ENS token URIs for minted job NFTs, enable both sides:
-   - `AGIJobManager.setUseEnsJobTokenURI(true)`
-   - optional `ENSJobPages.setUseEnsJobTokenURI(true)` (local flag on companion contract).
+4. On the current Prime path, do **not** plan around manager-side ENS tokenURI routing. `useEnsJobTokenURI` remains an ENSJobPages-local compatibility flag only; authoritative ENS identity and metadata repair happen on the ENS side, while completion NFTs remain completion-URI/IPFS based.

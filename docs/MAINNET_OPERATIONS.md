@@ -28,7 +28,7 @@ Expected: contract deployment succeeds and emits the standard ERC721 initializat
 ### 2) Post-deploy owner configuration calls (in order)
 
 1. `setEnsJobPages(<ensJobPages | 0x0>)`
-2. `setUseEnsJobTokenURI(false)` initially
+2. Do **not** expect Prime mainnet to expose `setUseEnsJobTokenURI`; completion NFTs remain completion-URI/IPFS based on the current Prime path.
 3. add operators:
    - `addModerator(...)`
    - `addAdditionalAgent(...)` / `addAdditionalValidator(...)` as emergency backstops
@@ -41,7 +41,7 @@ Expected: contract deployment succeeds and emits the standard ERC721 initializat
    - root-node and Merkle-root setters
 6. `addAGIType(<erc721>, <payoutPct>)`
 7. run smoke test lifecycle (small payout)
-8. if ENS mirror behavior is clean: `setUseEnsJobTokenURI(true)`
+8. if ENS mirror behavior is clean: keep Prime ENS in authoritative-label / keeper-assisted-metadata mode and document any required ENS-side repair scripts
 9. transfer ownership to multisig: `transferOwnership(<multisig>)`
 10. permanently freeze identity wiring once validated: `lockIdentityConfiguration()`
 
@@ -108,7 +108,7 @@ Hard safety invariant:
 If ENS mirror or ENS ownership infrastructure degrades:
 
 1. Keep core settlement active unless token economics are at risk.
-2. Disable mirror URI mode: `setUseEnsJobTokenURI(false)`.
+2. On Prime, there is no manager-side ENS tokenURI toggle to disable; keep relying on the native completion-URI/IPFS NFT path and repair ENS metadata only on the ENSJobPages side.
 3. Continue operations using allowlists (`additionalAgents`/`additionalValidators`) and/or Merkle roots.
 4. Repair ENS infra off-path; re-enable URI mode only after smoke testing.
 

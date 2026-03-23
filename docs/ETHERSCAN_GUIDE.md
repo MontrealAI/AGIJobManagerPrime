@@ -7,8 +7,8 @@ Use this guide if you only have:
 ## In one minute (Etherscan-first safety)
 
 - Deployments are done with scripts (Hardhat recommended); owner cutover/governance writes are safe on Etherscan.
-- ENS replacement is additive and manual for key wiring: `setApprovalForAll(newEnsJobPages, true)` then `setEnsJobPages(newEnsJobPages)`.
-- ENS naming is `<prefix><jobId>.<jobsRootName>` (defaults: `agijob0.alpha.jobs.agi.eth`, `agijob1.alpha.jobs.agi.eth`).
+- ENS replacement is additive and manual for key wiring: `setApprovalForAll(newEnsJobPages, true)` then `setEnsJobPages(newEnsJobPages)`. On current Prime, keep completion NFTs on the native completion-URI/IPFS path; do not assume manager-side ENS URI routing exists.
+- ENS naming is `<prefix><jobId>.<jobsRootName>` (defaults: `agijob-0.alpha.jobs.agi.eth`, `agijob-1.alpha.jobs.agi.eth`).
 - ENS writes are best-effort: settlement can succeed even if ENS side effects fail.
 - Treat `lockIdentityConfiguration()` and `lockConfiguration()` as irreversible and postpone until full post-cutover validation.
 

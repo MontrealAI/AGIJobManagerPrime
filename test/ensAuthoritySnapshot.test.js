@@ -166,7 +166,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     const { manager, pages } = await deployPages(await MockPublicResolverNoAuthRead.new({ from: owner }));
     const inspector = await ENSJobPagesInspector.new({ from: owner });
     await manager.setJob(12, employer, agent, 'ipfs://spec-12', { from: owner });
-    await manager.callHandleHook(pages.address, 1, 12, { from: owner });
+    await pages.createJobPage(12, employer, 'ipfs://spec-12', { from: owner });
 
     const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authReadSupported, false);

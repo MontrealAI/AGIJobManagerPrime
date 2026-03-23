@@ -31,7 +31,7 @@ On-call operators, security responders, and owner administrators.
 ### 1) ENS hooks failing
 1. Confirm escrow flow still progresses.
 2. Inspect ENSJobPages config (`ens`, `nameWrapper`, resolver, root node).
-3. Decide whether to disable ENS URI mode (`setUseEnsJobTokenURI(false)`).
+3. On Prime, keep completion NFT routing on the native completion-URI/IPFS path; if legacy-manager ENS URI mode is in use elsewhere, disable that separately and treat it as a legacy-only control.
 
 ### 2) Validator participation failure
 1. Inspect validator set health and recent `JobValidated` / `JobDisapproved` volume.

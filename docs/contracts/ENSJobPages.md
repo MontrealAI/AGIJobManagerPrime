@@ -11,7 +11,7 @@ Operators configuring ENS and auditors validating external-call behavior.
 - Contract owner controls page lifecycle methods.
 
 ## Main responsibilities
-- Build deterministic per-job labels (`job-<id>`) and nodes under `jobsRootNode`.
+- Build deterministic per-job labels (`agijob-<id>` by default) and nodes under `jobsRootNode`.
 - Create subname records and publish text records (`schema`, job spec, completion URI).
 - Delegate/revoke resolver authorisation for employer/agent (best-effort).
 - Optionally lock ENS mutability and burn NameWrapper fuses.
@@ -68,7 +68,7 @@ sequenceDiagram
    - **Unwrapped root:** `ENSJobPages` contract, or
    - **Wrapped root:** `NameWrapper` with `ENSJobPages` as owner/approved operator for `uint256(jobsRootNode)`.
 3. Call `setJobManager(<AGIJobManager>)` from the ENSJobPages owner.
-4. Call `AGIJobManager.setEnsJobPages(<ENSJobPages>)`, optionally `AGIJobManager.setUseEnsJobTokenURI(true)`.
+4. Call the manager `setEnsJobPages(<ENSJobPages>)`. On current Prime deployments, do **not** assume manager-side `setUseEnsJobTokenURI(true)` exists or is wired end-to-end.
 5. Optional hardening: call `ENSJobPages.lockConfiguration()` once ownership/approval paths are verified.
 
 ### Guarantees vs best-effort behavior
@@ -84,4 +84,5 @@ sequenceDiagram
 ## References
 - [`../../contracts/ens/ENSJobPages.sol`](../../contracts/ens/ENSJobPages.sol)
 - [`../../contracts/ens/IENSJobPages.sol`](../../contracts/ens/IENSJobPages.sol)
+- [`../../contracts/AGIJobManagerPrime.sol`](../../contracts/AGIJobManagerPrime.sol)
 - [`../../contracts/AGIJobManager.sol`](../../contracts/AGIJobManager.sol)
