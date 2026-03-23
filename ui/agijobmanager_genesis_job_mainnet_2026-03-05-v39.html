@@ -2971,10 +2971,10 @@ Evaluation methodology"></textarea>
               <tr><td>Job label prefix</td><td><span id="ensJobLabelPrefixPreview">—</span></td></tr>
               <tr><td>Next job id</td><td><span id="ensNextJobId">—</span></td></tr>
               <tr><td>Snapshot status</td><td><span id="ensSnapshotStatus">—</span></td></tr>
-              <tr><td>Effective label</td><td><span id="predictedJobLabel">—</span></td></tr>
-              <tr><td>Effective ENS name</td><td><span id="predictedEnsName">—</span></td></tr>
-              <tr><td>Effective ENS URI</td><td><span id="predictedEnsURI">—</span></td></tr>
-              <tr><td>Effective node</td><td><span id="predictedEnsNode">—</span></td></tr>
+              <tr><td>Preview label</td><td><span id="predictedJobLabel">—</span></td></tr>
+              <tr><td>Preview ENS name</td><td><span id="predictedEnsName">—</span></td></tr>
+              <tr><td>Preview ENS URI</td><td><span id="predictedEnsURI">—</span></td></tr>
+              <tr><td>Preview node</td><td><span id="predictedEnsNode">—</span></td></tr>
               <tr><td>ENSJobPages useEnsJobTokenURI</td><td><span id="ensTokenUriMode">—</span></td></tr>
               <tr><td>AGIJobManager tokenURI mode</td><td><span id="managerTokenUriMode">owner-configurable, getter unavailable</span></td></tr>
               <tr><td>Config locked</td><td><span id="ensConfigLocked">—</span></td></tr>
@@ -5468,7 +5468,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     function useEnsUriPreview(){
       const uri = (el("predictedEnsURI")?.textContent || "").trim();
       if(!uri || uri === "—"){ setToast("No ENS URI preview available.", "warn"); return; }
-      navigator.clipboard.writeText(uri).then(()=>setToast("Effective ENS URI copied.", "ok")).catch(()=>setToast(uri, "ok"));
+      navigator.clipboard.writeText(uri).then(()=>setToast("ENS URI copied (preview or authoritative depending on snapshot status).", "ok")).catch(()=>setToast(uri, "ok"));
     }
     async function updateEnsJobPagePreview(){
       try{
@@ -7677,7 +7677,7 @@ async function updateSummary(){
           body:'You are about to call the public ENS lock path for a terminal job. This is best-effort and depends on the ENSJobPages configuration and terminal state.',
           facts:[
             {label:'Job status', value: job ? classifyJobStatus(job) : 'Unknown'},
-            {label:'Effective ENS name', value: currentLivePacket?.job?.id === jobId ? (currentLivePacket.job.ensName || '—') : (job ? ensLabelPreviewForJobId(jobId) : '—')},
+            {label:'Preview ENS name', value: currentLivePacket?.job?.id === jobId ? (currentLivePacket.job.ensName || '—') : (job ? ensLabelPreviewForJobId(jobId) : '—')},
             {label:'Burn fuses', value: 'false'},
             {label:'Terminal requirement', value: 'Completed or expired only'}
           ],
@@ -8340,8 +8340,8 @@ function normalizeIpfsToHttp(uri){
       el('jobUriCards').innerHTML = [
         ['Spec URI', safeLink(job.specURI)],
         ['Completion URI', job.completionURI ? safeLink(job.completionURI) : '—'],
-        ['Effective ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
-        ['Effective ENS name', escapeHtml(ens.ensName || '—')]
+        ['ENS URI (preview or authoritative, see snapshot status)', ens.ensUri ? safeLink(ens.ensUri) : '—'],
+        ['ENS name (preview or authoritative, see snapshot status)', escapeHtml(ens.ensName || '—')]
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
       el('jobEnsRecords').innerHTML = [
         ['ENS root', escapeHtml(ens.rootName || '—')],

@@ -1,6 +1,6 @@
 # Observed Mainnet State
 
-_As of 2026-03-22 UTC this sandbox could not reach Ethereum mainnet RPC (`ENETUNREACH`). This file therefore distinguishes proven local facts from chain facts that must be re-read using the included audit scripts from a networked operator workstation._
+_As of 2026-03-23 UTC this sandbox could not reach Ethereum mainnet RPC (latest `scripts/ens/audit-mainnet.ts` run returned `AggregateError`). This file therefore distinguishes proven local facts from chain facts that must be re-read using the included audit scripts from a networked operator workstation._
 
 ## Proven locally
 
@@ -73,7 +73,7 @@ _As of 2026-03-22 UTC this sandbox could not reach Ethereum mainnet RPC (`ENETUN
 
 ## Required operator action
 
-Run both scripts below from a networked environment and commit the generated JSON artifacts before mainnet cutover decisions:
+Run both scripts below from a networked environment and commit the generated JSON artifacts before mainnet cutover decisions. The checked-in `scripts/ens/output/audit-mainnet.json` from this sandbox run is explicitly non-authoritative because RPC was unreachable:
 
 - `node scripts/ens/audit-mainnet.ts`
 - `node scripts/ens/inventory-job-pages.ts`
