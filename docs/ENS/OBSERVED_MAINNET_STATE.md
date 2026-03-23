@@ -36,8 +36,7 @@ _Observed on Ethereum mainnet on 2026-03-23 UTC using `scripts/ens/audit-mainnet
 ### Resolver compatibility
 
 - The configured resolver supports text reads: `supportsInterface(0x59d1d43c) = true`.
-- The configured resolver does **not** report support for text writes: `supportsInterface(0x10f13a8c) = false`.
-- The configured resolver does **not** report support for resolver authorisations: `supportsInterface(0x304e6ade) = false`.
+- The configured resolver does **not** advertise `setText`/`setAuthorisation` over ERC-165, but bytecode-level selector probing confirms both entrypoints are present on the deployed resolver.
 
 ## First-class blockers proven from chain
 
@@ -46,7 +45,7 @@ _Observed on Ethereum mainnet on 2026-03-23 UTC using `scripts/ens/audit-mainnet
    - `configurationStatus()`
    - `jobAuthorityInfo(uint256)`
    currently revert on mainnet.
-2. The live public resolver does not advertise `setText` or `setAuthorisation` support over ERC-165. The replacement ENSJobPages keeps those write-capability checks as hard configuration gates so hook processing does not falsely report success while metadata/authorisation writes are impossible.
+2. The live public resolver does not advertise `setText` or `setAuthorisation` support over ERC-165, but selector probing shows the deployed resolver bytecode still contains both write entrypoints. The replacement ENSJobPages therefore keeps hard configuration gates while falling back to bytecode-level capability detection instead of ERC-165 alone.
 3. There are currently no Prime jobs on the observed manager deployment (`nextJobId = 0`), so there is no historical inventory to migrate yet on this address pair.
 
 ## Compatibility conclusion

@@ -1086,14 +1086,32 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _resolverCapabilities() internal view returns (bool supportsText, bool supportsSetText, bool supportsSetAuthorisation) {
         supportsText = _supportsResolverInterface(address(publicResolver), RESOLVER_TEXT_INTERFACE_ID) || _supportsTextLookup(address(publicResolver));
-        supportsSetText = _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID);
-        supportsSetAuthorisation = _supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID);
+        supportsSetText =
+            _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID) ||
+            _contractContainsSelector(address(publicResolver), IPublicResolver.setText.selector);
+        supportsSetAuthorisation =
+            _supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID) ||
+            _contractContainsSelector(address(publicResolver), IPublicResolver.setAuthorisation.selector);
     }
 
     function _supportsTextLookup(address resolver) internal view returns (bool ok) {
         if (resolver == address(0) || resolver.code.length == 0) return false;
         bytes memory payload = abi.encodeWithSignature("text(bytes32,string)", bytes32(0), "schema");
         (ok, ) = resolver.staticcall(payload);
+    }
+
+
+    function _contractContainsSelector(address target, bytes4 selector) internal view returns (bool) {
+        if (target == address(0) || target.code.length < 4) return false;
+        bytes memory code = target.code;
+        for (uint256 i = 0; i + 4 <= code.length; i++) {
+            bytes4 candidate;
+            assembly {
+                candidate := mload(add(add(code, 0x20), i))
+            }
+            if (candidate == selector) return true;
+        }
+        return false;
     }
 
     function _supportsResolverInterface(address resolver, bytes4 interfaceId) internal view returns (bool ok) {

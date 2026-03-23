@@ -80,6 +80,18 @@ function methodState(value) {
 }
 
 
+
+async function probeResolverWriteSelector(provider, resolver, selector) {
+  if (!resolver || resolver === ethers.ZeroAddress) return false;
+  try {
+    const code = provider.request('eth_getCode', [resolver, 'latest']);
+    if (!code || code === '0x') return false;
+    return code.toLowerCase().includes(selector.slice(2).toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 async function probeResolverTextSurface(provider, resolver) {
   if (!resolver || resolver === ethers.ZeroAddress) return false;
   const TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
@@ -182,8 +194,8 @@ async function probeResolverTextSurface(provider, resolver) {
     resolverState = {
       address: pagesState.publicResolver,
       supportsText: unwrap(await safe('resolver.supportsInterface(text)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.text])[0]), false) || await probeResolverTextSurface(provider, pagesState.publicResolver),
-      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false),
-      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false),
+      supportsSetText: unwrap(await safe('resolver.supportsInterface(setText)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setText])[0]), false) || await probeResolverWriteSelector(provider, pagesState.publicResolver, ids.setText),
+      supportsSetAuthorisation: unwrap(await safe('resolver.supportsInterface(setAuthorisation)', () => provider.readContract(pagesState.publicResolver, ERC165_ABI, 'supportsInterface', [ids.setAuthorisation])[0]), false) || await probeResolverWriteSelector(provider, pagesState.publicResolver, ids.setAuthorisation),
     };
   }
 
