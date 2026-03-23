@@ -75,11 +75,15 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.setJob(3, employer, agent, 'ipfs://spec-3', { from: owner });
 
     const status = await pages.configurationStatus();
-    assert.equal(status[0], false, 'configuration should not be ready when resolver lacks required interfaces');
+    assert.equal(status[0], false, 'configuration should not be ready when resolver lacks a readable text surface');
+    assert.equal(status[7], false, 'resolver text support should be explicit');
+    assert.equal(status[8], false, 'resolver setText support should be explicit');
+    assert.equal(status[9], false, 'resolver setAuthorisation support should be explicit');
 
     const receipt = await manager.callHandleHook(pages.address, 1, 3, { from: owner });
     await expectEvent.inTransaction(receipt.tx, pages, 'ENSHookSkipped', { hook: '1', jobId: '3' });
   });
+
 
   it('exposes machine-readable inspector status for preview/effective/finalization surfaces', async () => {
     const { manager, pages } = await deployPages();

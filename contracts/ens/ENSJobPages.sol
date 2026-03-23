@@ -817,10 +817,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _setResolverBestEffort(uint8 hook, uint256 jobId, bytes32 node, address resolver) internal {
         if (resolver == address(0)) return;
-        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID)) {
-            emit ENSHookBestEffortFailure(hook, jobId, "RESOLVER_SET_TEXT_UNSUPPORTED");
-        }
-
         if (_isWrappedNode(node)) {
             try IResolverManager(address(nameWrapper)).setResolver(node, resolver) {
                 _jobResolverConfigured[jobId] = true;
@@ -839,10 +835,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _setTextBestEffort(uint8 hook, uint256 jobId, bytes32 node, string memory key, string memory value) internal {
         if (bytes(value).length == 0) return;
-        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID)) {
-            emit ENSHookBestEffortFailure(hook, jobId, "SET_TEXT_UNSUPPORTED");
-            return;
-        }
         try publicResolver.setText(node, key, value) {
             if (keccak256(bytes(key)) == keccak256(bytes("agijobs.completion.public"))) {
                 _jobCompletionTextConfigured[jobId] = true;
@@ -854,11 +846,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _setAuthorisationBestEffort(uint8 hook, uint256 jobId, bytes32 node, address account, bool authorised) internal {
         if (account == address(0)) return;
-        if (!_supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID)) {
-            emit ENSHookBestEffortFailure(hook, jobId, "SET_AUTH_UNSUPPORTED");
-            return;
-        }
-
         try publicResolver.setAuthorisation(node, account, authorised) {
             emit JobENSPermissionsUpdated(jobId, account, authorised);
         } catch {
@@ -1098,9 +1085,15 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     }
 
     function _resolverCapabilities() internal view returns (bool supportsText, bool supportsSetText, bool supportsSetAuthorisation) {
-        supportsText = _supportsResolverInterface(address(publicResolver), RESOLVER_TEXT_INTERFACE_ID);
+        supportsText = _supportsResolverInterface(address(publicResolver), RESOLVER_TEXT_INTERFACE_ID) || _supportsTextLookup(address(publicResolver));
         supportsSetText = _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID);
         supportsSetAuthorisation = _supportsResolverInterface(address(publicResolver), RESOLVER_SETAUTH_INTERFACE_ID);
+    }
+
+    function _supportsTextLookup(address resolver) internal view returns (bool ok) {
+        if (resolver == address(0) || resolver.code.length == 0) return false;
+        bytes memory payload = abi.encodeWithSignature("text(bytes32,string)", bytes32(0), "schema");
+        (ok, ) = resolver.staticcall(payload);
     }
 
     function _supportsResolverInterface(address resolver, bytes4 interfaceId) internal view returns (bool ok) {

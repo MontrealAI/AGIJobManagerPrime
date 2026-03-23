@@ -3,7 +3,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { ethers } = require("../../hardhat/node_modules/ethers");
+const { ethers } = require("./lib/ethers");
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..");
 
