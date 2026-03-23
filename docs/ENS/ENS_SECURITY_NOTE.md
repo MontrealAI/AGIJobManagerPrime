@@ -11,7 +11,7 @@
 
 - The configured ENS root is owned either directly by `ENSJobPages` or by the NameWrapper with active approval for `ENSJobPages`.
 - The configured resolver supports the text/auth flows used by the contract.
-- Operators monitor `EnsHookCallResult` and replay missed updates with `syncEnsForJob` when needed.
+- Operators monitor ENS hook events plus `ENSJobPagesInspector` status and recover missed updates with the explicit ENS-side replay/repair functions and `scripts/ens/repair-from-logs.ts` when needed.
 
 ## Residual risks
 

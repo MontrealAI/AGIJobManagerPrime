@@ -71,8 +71,17 @@ function classify(job) {
   return tags;
 }
 
+const MAX_LOG_BLOCK_RANGE = Number(process.env.MAX_LOG_BLOCK_RANGE || '45000');
+
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  const latestBlock = Number(provider.getBlockNumber ? await provider.getBlockNumber() : provider.getBlock('latest').number);
+  const logs = [];
+  for (let fromBlock = 0; fromBlock <= latestBlock; fromBlock += MAX_LOG_BLOCK_RANGE + 1) {
+    const toBlock = Math.min(latestBlock, fromBlock + MAX_LOG_BLOCK_RANGE);
+    const chunk = await provider.request('eth_getLogs', [{ address, fromBlock: ethers.toQuantity(fromBlock), toBlock: ethers.toQuantity(toBlock), topics: [topic0] }]);
+    logs.push(...chunk);
+  }
+  return logs;
 }
 
 (async function main() {
@@ -168,7 +177,6 @@ async function getLogs(provider, address, topic0) {
       const legacyAuthAbi = ['function authorisations(bytes32,address,address) view returns (bool)'];
       const modernAuthAbi = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
       const operatorAuthAbi = ['function isApprovedForAll(address,address) view returns (bool)'];
-      const legacySingleAuthAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
       const readAuth = async (target) => {
         let value = await safe(() => provider.readContract(resolver, legacyAuthAbi, 'authorisations', [node, ownerForAuth, target])[0], null);
         if (value !== null) return value;
@@ -176,7 +184,7 @@ async function getLogs(provider, address, topic0) {
         if (value !== null) return value;
         value = await safe(() => provider.readContract(resolver, operatorAuthAbi, 'isApprovedForAll', [ownerForAuth, target])[0], null);
         if (value !== null) return value;
-        return await safe(() => provider.readContract(resolver, legacySingleAuthAbi, 'isAuthorised', [node, target])[0], null);
+        return null;
       };
       const employerAuthRead = employer === ethers.ZeroAddress ? true : await readAuth(employer);
       const agentAuthRead = agent === ethers.ZeroAddress ? true : await readAuth(agent);

@@ -7,7 +7,7 @@
 ## ENS cutover expected result
 - `AGIJobManager.ensJobPages` points to the new ENSJobPages address.
 - NameWrapper reports active approval for the new ENSJobPages (or token-level equivalent).
-- Future jobs resolve under `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`).
+- Future jobs resolve under `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).
 - Legacy jobs keep historical snapshotted labels unless explicitly migrated.
 
 ## Never do this by accident

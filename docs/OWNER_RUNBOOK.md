@@ -20,7 +20,7 @@ This runbook is optimized for autonomous, checklist-driven operations and Ethers
 - **ENSJobPages owner (if needed)**: `migrateLegacyWrappedJobPage(jobId, exactLabel)` for legacy jobs missing snapshots.
 
 Expected result:
-- Future jobs resolve using `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`).
+- Future jobs resolve using `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).
 - Legacy snapshotted labels remain stable unless explicitly migrated/imported.
 
 

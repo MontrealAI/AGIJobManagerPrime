@@ -2,7 +2,7 @@
 
 ## In one minute
 - Settlement and ENS metadata are intentionally decoupled: settlement can succeed even if ENS writes fail.
-- ENS name format is `<prefix><jobId>.<jobsRootName>` with default prefix `agijob`.
+- ENS name format is `<prefix><jobId>.<jobsRootName>` with default prefix `agijob-`.
 - Prefix changes do not rename already snapshotted legacy labels.
 - ENSJobPages replacement requires manual NameWrapper approval and manual `setEnsJobPages(...)` wiring.
 
