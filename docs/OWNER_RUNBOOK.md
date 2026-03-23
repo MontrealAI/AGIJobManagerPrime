@@ -20,7 +20,7 @@ This runbook is optimized for autonomous, checklist-driven operations and Ethers
 - **ENSJobPages owner (if needed)**: `migrateLegacyWrappedJobPage(jobId, exactLabel)` for legacy jobs missing snapshots.
 
 Expected result:
-- Future jobs resolve using `<prefix><jobId>.<jobsRootName>` (default prefix `agijob`).
+- Future preview names resolve using `<prefix><jobId>.<jobsRootName>` (default prefix `agijob-`).
 - Legacy snapshotted labels remain stable unless explicitly migrated/imported.
 
 
@@ -117,7 +117,7 @@ Role split reminder:
 
 - Configure ENS via `updateEnsRegistry`, `updateNameWrapper`, `updateRootNodes`.
 - Point job pages with `setEnsJobPages`.
-- Enable/disable ENS-backed token URI path via `setUseEnsJobTokenURI`.
+- Do **not** expect Prime mainnet to expose `setUseEnsJobTokenURI`; on the current Prime deployment completion NFTs remain completion-URI/IPFS based even when ENS identity is configured.
 - Lock identity config permanently with `lockIdentityConfiguration` only after full validation.
 
 `lockIdentityConfiguration` is irreversible. Delay until final addresses/nodes are battle-tested.

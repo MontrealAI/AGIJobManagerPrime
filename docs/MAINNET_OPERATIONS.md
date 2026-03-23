@@ -157,9 +157,9 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    S[Settlement path] --> U{useEnsJobTokenURI}
-    U -- false --> D[Use jobCompletionURI]
-    U -- true --> H[Gas-capped staticcall to ensJobPages.jobEnsURI(jobId)]
+    S[Settlement path] --> U{Current Prime deployment?}
+    U -- yes --> D[Use jobCompletionURI]
+    U -- no, future ENS-aware manager only --> H[Gas-capped staticcall to ensJobPages.jobEnsURI(jobId)]
     H --> V{ABI payload valid?}
     V -- yes --> E[Use ENS URI]
     V -- no --> D

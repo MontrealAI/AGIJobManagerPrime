@@ -51,7 +51,6 @@ const ENS_JOB_PAGES_ABI = [
 const ENS_REGISTRY_ABI = ['function owner(bytes32) view returns (address)', 'function resolver(bytes32) view returns (address)'];
 const NAME_WRAPPER_ABI = ['function ownerOf(uint256) view returns (address)', 'function getApproved(uint256) view returns (address)', 'function isApprovedForAll(address,address) view returns (bool)'];
 const TEXT_ABI = ['function text(bytes32,string) view returns (string)'];
-const AUTH_ABI = ['function isAuthorised(bytes32,address) view returns (bool)'];
 const managerIface = new ethers.Interface(MANAGER_ABI);
 
 function arg(name, fallback = '') {
@@ -64,7 +63,18 @@ const unwrap = (value, fallback = null) => value && value.__error ? (value.fallb
 const serialize = (value) => typeof value === 'bigint' ? value.toString() : Array.isArray(value) ? value.map(serialize) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, serialize(v)])) : value;
 
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  return provider.getLogs({ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] });
+}
+
+async function readResolverAuthorisation(provider, resolver, node, ownerForAuth, target) {
+  if (!resolver || resolver === ethers.ZeroAddress || !target || target === ethers.ZeroAddress) return { supported: true, value: true };
+  let value = unwrap(await safe('resolver.authorisations', () => provider.readContract(resolver, ['function authorisations(bytes32,address,address) view returns (bool)'], 'authorisations', [node, ownerForAuth, target])[0]), null);
+  if (value !== null) return { supported: true, value };
+  value = unwrap(await safe('resolver.isApprovedFor', () => provider.readContract(resolver, ['function isApprovedFor(bytes32,address) view returns (bool)'], 'isApprovedFor', [node, target])[0]), null);
+  if (value !== null) return { supported: true, value };
+  value = unwrap(await safe('resolver.isApprovedForAll', () => provider.readContract(resolver, ['function isApprovedForAll(address,address) view returns (bool)'], 'isApprovedForAll', [ownerForAuth, target])[0]), null);
+  if (value !== null) return { supported: true, value };
+  return { supported: false, value: null };
 }
 
 async function main() {
@@ -128,11 +138,14 @@ async function main() {
     const node = authority[0] ? authority[5] : ethers.ZeroHash;
     const nodeOwner = node !== ethers.ZeroHash ? unwrap(await safe(`ens.owner(node:${jobId})`, () => provider.readContract(ensRegistryAddress, ENS_REGISTRY_ABI, 'owner', [node])[0]), ethers.ZeroAddress) : ethers.ZeroAddress;
     const nodeResolver = node !== ethers.ZeroHash ? unwrap(await safe(`ens.resolver(node:${jobId})`, () => provider.readContract(ensRegistryAddress, ENS_REGISTRY_ABI, 'resolver', [node])[0]), ethers.ZeroAddress) : ethers.ZeroAddress;
+    const ownerForAuth = nodeOwner !== ethers.ZeroAddress && nodeOwner.toLowerCase() === nameWrapperAddress.toLowerCase()
+      ? unwrap(await safe(`wrapper.ownerOf(node:${jobId})`, () => provider.readContract(nameWrapperAddress, NAME_WRAPPER_ABI, 'ownerOf', [BigInt(node)])[0]), ethers.ZeroAddress)
+      : nodeOwner;
     const schemaText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.schema(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'schema'])[0]), '') : '';
     const specText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.spec(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0]), '') : '';
     const completionText = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.completion(${jobId})`, () => provider.readContract(nodeResolver, TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0]), '') : '';
-    const employerAuth = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.employerAuth(${jobId})`, () => provider.readContract(nodeResolver, AUTH_ABI, 'isAuthorised', [node, employer])[0]), null) : null;
-    const agentAuth = nodeResolver !== ethers.ZeroAddress ? unwrap(await safe(`resolver.agentAuth(${jobId})`, () => provider.readContract(nodeResolver, AUTH_ABI, 'isAuthorised', [node, agent])[0]), null) : null;
+    const employerAuthRead = await readResolverAuthorisation(provider, nodeResolver, node, ownerForAuth, employer);
+    const agentAuthRead = await readResolverAuthorisation(provider, nodeResolver, node, ownerForAuth, agent);
     jobs.push({
       jobId,
       previewName,
@@ -155,9 +168,9 @@ async function main() {
       schemaTextPresent: Boolean(schemaText),
       specTextPresent: Boolean(specText),
       completionTextPresent: Boolean(completionText),
-      authReadSupported: employerAuth !== null || agentAuth !== null,
-      employerAuthObserved: employerAuth,
-      agentAuthObserved: agentAuth,
+      authReadSupported: employerAuthRead.supported && agentAuthRead.supported,
+      employerAuthObserved: employerAuthRead.value,
+      agentAuthObserved: agentAuthRead.value,
     });
   }
 

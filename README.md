@@ -202,7 +202,7 @@ If you are also operating legacy `AGIJobManager` + `ENSJobPages`, use the separa
 4. Only lock ENS/identity configuration after post-cutover validation.
 
 Expected result after legacy ENS cutover:
-- New legacy-manager jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob...alpha.jobs.agi.eth`).
+- New legacy-manager jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob-...alpha.jobs.agi.eth`).
 - AGIJobManager lifecycle and settlement continue even if an ENS side-effect fails.
 - Legacy labels remain stable unless explicitly migrated/imported.
 

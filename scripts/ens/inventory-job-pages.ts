@@ -54,6 +54,17 @@ function serialize(value) {
   return value;
 }
 
+async function readResolverAuthorisation(provider, resolver, node, ownerForAuth, target) {
+  if (!target || target === ethers.ZeroAddress) return { supported: true, value: true };
+  let value = await safe(() => provider.readContract(resolver, ['function authorisations(bytes32,address,address) view returns (bool)'], 'authorisations', [node, ownerForAuth, target])[0], null);
+  if (value !== null) return { supported: true, value };
+  value = await safe(() => provider.readContract(resolver, ['function isApprovedFor(bytes32,address) view returns (bool)'], 'isApprovedFor', [node, target])[0], null);
+  if (value !== null) return { supported: true, value };
+  value = await safe(() => provider.readContract(resolver, ['function isApprovedForAll(address,address) view returns (bool)'], 'isApprovedForAll', [ownerForAuth, target])[0], null);
+  if (value !== null) return { supported: true, value };
+  return { supported: false, value: null };
+}
+
 function classify(job) {
   const tags = [];
   if (!job.labelSnapshotted && !job.authoritySnapshotted) tags.push('preview-only');
@@ -72,7 +83,7 @@ function classify(job) {
 }
 
 async function getLogs(provider, address, topic0) {
-  return provider.request('eth_getLogs', [{ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] }]);
+  return provider.getLogs({ address, fromBlock: '0x0', toBlock: 'latest', topics: [topic0] });
 }
 
 (async function main() {
@@ -165,24 +176,11 @@ async function getLogs(provider, address, topic0) {
       specText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
       completionText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
       const ownerForAuth = owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner !== ethers.ZeroAddress ? wrappedTokenOwner : owner;
-      const legacyAuthAbi = ['function authorisations(bytes32,address,address) view returns (bool)'];
-      const modernAuthAbi = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
-      const operatorAuthAbi = ['function isApprovedForAll(address,address) view returns (bool)'];
-      const legacySingleAuthAbi = ['function isAuthorised(bytes32,address) view returns (bool)'];
-      const readAuth = async (target) => {
-        let value = await safe(() => provider.readContract(resolver, legacyAuthAbi, 'authorisations', [node, ownerForAuth, target])[0], null);
-        if (value !== null) return value;
-        value = await safe(() => provider.readContract(resolver, modernAuthAbi, 'isApprovedFor', [ownerForAuth, node, target])[0], null);
-        if (value !== null) return value;
-        value = await safe(() => provider.readContract(resolver, operatorAuthAbi, 'isApprovedForAll', [ownerForAuth, target])[0], null);
-        if (value !== null) return value;
-        return await safe(() => provider.readContract(resolver, legacySingleAuthAbi, 'isAuthorised', [node, target])[0], null);
-      };
-      const employerAuthRead = employer === ethers.ZeroAddress ? true : await readAuth(employer);
-      const agentAuthRead = agent === ethers.ZeroAddress ? true : await readAuth(agent);
-      authReadSupported = employerAuthRead !== null || agentAuthRead !== null;
-      employerAuth = employerAuthRead;
-      agentAuth = agentAuthRead;
+      const employerAuthRead = await readResolverAuthorisation(provider, resolver, node, ownerForAuth, employer);
+      const agentAuthRead = await readResolverAuthorisation(provider, resolver, node, ownerForAuth, agent);
+      authReadSupported = employerAuthRead.supported && agentAuthRead.supported;
+      employerAuth = employerAuthRead.value;
+      agentAuth = agentAuthRead.value;
     }
 
     const job = {

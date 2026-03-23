@@ -3,7 +3,8 @@ const { execFileSync } = require('node:child_process');
 const { ethers } = require('./ethers');
 
 function toQuantity(value) {
-  return ethers.toBeHex(value);
+  const hex = ethers.toBeHex(value);
+  return hex === '0x00' ? '0x0' : `0x${hex.slice(2).replace(/^0+/, '')}`;
 }
 
 class CurlJsonRpcProvider {
@@ -14,19 +15,31 @@ class CurlJsonRpcProvider {
 
   request(method, params = []) {
     const payload = JSON.stringify({ jsonrpc: '2.0', id: ++this.id, method, params });
-    const raw = execFileSync('curl', [
-      '-sS', '--fail-with-body', '-m', '30',
-      '-H', 'content-type: application/json',
-      '--data', payload,
-      this.url,
-    ], { encoding: 'utf8' });
-    const parsed = JSON.parse(raw);
-    if (parsed.error) {
-      const detail = parsed.error.message || JSON.stringify(parsed.error);
-      const data = parsed.error.data ? ` data=${typeof parsed.error.data === 'string' ? parsed.error.data : JSON.stringify(parsed.error.data)}` : '';
-      throw new Error(`${method} failed: ${detail}${data}`);
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const raw = execFileSync('curl', [
+          '-sS', '--fail-with-body', '-m', '30',
+          '-H', 'content-type: application/json',
+          '--data', payload,
+          this.url,
+        ], { encoding: 'utf8' });
+        const parsed = JSON.parse(raw);
+        if (parsed.error) {
+          const detail = parsed.error.message || JSON.stringify(parsed.error);
+          const data = parsed.error.data ? ` data=${typeof parsed.error.data === 'string' ? parsed.error.data : JSON.stringify(parsed.error.data)}` : '';
+          throw new Error(`${method} failed: ${detail}${data}`);
+        }
+        return parsed.result;
+      } catch (error) {
+        lastError = error;
+        const message = error?.message || String(error);
+        if (!(message.includes('503') || message.includes('timeout') || message.includes('connection termination'))) {
+          throw error;
+        }
+      }
     }
-    return parsed.result;
+    throw lastError;
   }
 
   getBlock(tag = 'latest', hydrated = false) {
@@ -63,6 +76,28 @@ class CurlJsonRpcProvider {
 
   getTransactionReceipt(hash) {
     return this.request('eth_getTransactionReceipt', [hash]);
+  }
+
+  getLogs(filter, maxBlockSpan = 50_000n) {
+    try {
+      return this.request('eth_getLogs', [filter]);
+    } catch (error) {
+      const message = error?.message || String(error);
+      if (!message.includes('exceed maximum block range')) throw error;
+      const fromBlock = filter.fromBlock === 'latest' ? this.getBlockNumber() : BigInt(filter.fromBlock || '0x0');
+      const toBlock = !filter.toBlock || filter.toBlock === 'latest' ? this.getBlockNumber() : BigInt(filter.toBlock);
+      const logs = [];
+      for (let start = fromBlock; start <= toBlock; start += maxBlockSpan + 1n) {
+        const end = start + maxBlockSpan > toBlock ? toBlock : start + maxBlockSpan;
+        const chunk = this.request('eth_getLogs', [{
+          ...filter,
+          fromBlock: toQuantity(start),
+          toBlock: toQuantity(end),
+        }]);
+        logs.push(...chunk);
+      }
+      return logs;
+    }
   }
 
   getBlockWithTransactions(tag = 'latest') {

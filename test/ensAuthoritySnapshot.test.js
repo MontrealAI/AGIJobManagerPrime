@@ -84,6 +84,26 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await ens.setOwner(namehash(ROOT_V2), pages.address, { from: owner });
   });
 
+  it('blocks no-label authority repair when authority is absent, forcing explicit legacy confirmation', async () => {
+    const { manager, pages } = await deployPages();
+    await manager.setJob(15, employer, agent, 'ipfs://spec-15', { from: owner });
+
+    await expectRevert.unspecified(pages.repairAuthoritySnapshot(15, '', { from: owner }));
+    await expectRevert.unspecified(pages.repairAuthoritySnapshotExplicit(15, '', 1, { from: owner }));
+
+    await pages.repairAuthoritySnapshot(15, 'agijob-15', { from: owner });
+    assert.equal(await pages.effectiveJobEnsName(15), 'agijob-15.alpha.jobs.agi.eth');
+  });
+
+  it('rejects conflicting post-snapshot authority repairs instead of silently overwriting history', async () => {
+    const { manager, pages } = await deployPages();
+    await manager.setJob(16, employer, agent, 'ipfs://spec-16', { from: owner });
+    await manager.callHandleHook(pages.address, 1, 16, { from: owner });
+
+    await expectRevert.unspecified(pages.repairAuthoritySnapshot(16, 'job-16', { from: owner }));
+    assert.equal(await pages.effectiveJobEnsName(16), 'agijob-16.alpha.jobs.agi.eth');
+  });
+
   it('keeps handleHook usable for unchanged Prime-style managers without V1 getters', async () => {
     const ens = await MockENSRegistry.new({ from: owner });
     const wrapper = await MockNameWrapper.new({ from: owner });
@@ -131,7 +151,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.callHandleHook(pages.address, 2, 9, { from: owner });
     await pages.replayLock(9, false, { from: owner });
 
-    const report = await inspector.inspectJob.call(pages.address, 9, employer, agent, { from: owner, gas: 8000000 });
+    const report = await inspector.inspectJob.call(pages.address, 9, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authoritySnapshotted, true);
     assert.equal(report.previewName, 'agijob-9.alpha.jobs.agi.eth');
     assert.equal(report.effectiveName, 'agijob-9.alpha.jobs.agi.eth');
@@ -148,7 +168,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     await manager.setJob(12, employer, agent, 'ipfs://spec-12', { from: owner });
     await manager.callHandleHook(pages.address, 1, 12, { from: owner });
 
-    const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner, gas: 8000000 });
+    const report = await inspector.inspectJob.call(pages.address, 12, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authReadSupported, false);
     assert.equal(report.authObservationIncomplete, true);
     assert.equal(report.authorisationsAsExpected, false, 'unknown auth state must not be reported as healthy');
@@ -167,7 +187,7 @@ contract('ENSJobPages authority snapshots', (accounts) => {
     assert.equal(await modernResolver.isApprovedFor(node, employer), true);
     assert.equal(await modernResolver.isApprovedFor(node, agent), true);
 
-    const report = await inspector.inspectJob.call(pages.address, 13, employer, agent, { from: owner, gas: 8000000 });
+    const report = await inspector.inspectJob.call(pages.address, 13, employer, agent, { from: owner, gas: 30000000 });
     assert.equal(report.authReadSupported, true);
     assert.equal(report.employerAuthorisedObserved, true);
     assert.equal(report.agentAuthorisedObserved, true);

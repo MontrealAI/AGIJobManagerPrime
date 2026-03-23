@@ -569,6 +569,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (rootVersionCount != 1) revert InvalidParameters();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
+        } else if (!_jobAuthority[jobId].authorityEstablished) {
+            revert InvalidParameters();
         } else if (!_jobLabelIsSet[jobId]) {
             revert InvalidParameters();
         }
@@ -579,6 +581,8 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (!_isRootConfigured() || currentRootVersionId == 0) revert ENSNotConfigured();
         if (bytes(exactLabel).length != 0) {
             _importExactJobLabel(jobId, exactLabel);
+        } else if (!_jobAuthority[jobId].authorityEstablished) {
+            revert InvalidParameters();
         } else if (!_jobLabelIsSet[jobId]) {
             revert InvalidParameters();
         }
@@ -1205,12 +1209,22 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         RootVersion memory versionInfo = _rootVersions[rootVersionId];
         if (versionInfo.rootNode == bytes32(0) || bytes(versionInfo.rootName).length == 0) revert InvalidParameters();
         JobAuthority storage authority = _jobAuthority[jobId];
-        if (authority.authorityEstablished) return;
         if (!_jobLabelIsSet[jobId]) revert JobLabelNotSnapshotted();
-        authority.labelHash = keccak256(bytes(label));
+        bytes32 labelHash = keccak256(bytes(label));
+        bytes32 node = keccak256(abi.encodePacked(versionInfo.rootNode, labelHash));
+        if (authority.authorityEstablished) {
+            if (
+                authority.labelHash != labelHash ||
+                authority.rootVersionId != uint32(rootVersionId) ||
+                authority.rootNode != versionInfo.rootNode ||
+                authority.node != node
+            ) revert InvalidParameters();
+            return;
+        }
+        authority.labelHash = labelHash;
         authority.rootVersionId = uint32(rootVersionId);
         authority.rootNode = versionInfo.rootNode;
-        authority.node = keccak256(abi.encodePacked(versionInfo.rootNode, authority.labelHash));
+        authority.node = node;
         authority.authorityEstablishedAt = uint64(block.timestamp);
         authority.snapshotVersion = currentSnapshotVersion;
         authority.snapshotSource = snapshotSource;
@@ -1243,8 +1257,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _supportsLegacyResolverAuthFamily(address resolver) internal view returns (bool) {
         return
             _supportsLegacyResolverAuthWrite(resolver) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this))) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isAuthorised(bytes32,address)", bytes32(0), address(this)));
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this)));
     }
 
     function _supportsResolverReadSurface(address resolver, bytes memory payload) internal view returns (bool ok) {
@@ -1261,7 +1274,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _supportsModernResolverAuthFamily(address resolver) internal view returns (bool) {
         return
             _supportsModernResolverAuthWrite(resolver) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedFor(address,bytes32,address)", address(this), bytes32(0), address(this))) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedFor(bytes32,address)", bytes32(0), address(this))) ||
             _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedForAll(address,address)", address(this), address(this)));
     }
 
