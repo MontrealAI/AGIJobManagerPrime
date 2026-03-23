@@ -43,6 +43,10 @@ const ENS_ABI = [
   'function resolver(bytes32) view returns (address)',
 ];
 
+const WRAPPER_ABI = [
+  'function ownerOf(uint256) view returns (address)',
+];
+
 const RESOLVER_ABI = [
   'function text(bytes32,string) view returns (string)',
   'function isAuthorised(bytes32,address) view returns (bool)',
@@ -79,6 +83,7 @@ function classify(job) {
     assumed: [],
     jobs: [],
   };
+  let truncated = false;
 
   try {
     out.proven.latestBlock = await provider.getBlockNumber();
@@ -93,8 +98,10 @@ function classify(job) {
   const prime = new ethers.Contract(PRIME, PRIME_ABI, provider);
   const pages = new ethers.Contract(ENS_JOB_PAGES, PAGES_ABI, provider);
   const ens = new ethers.Contract(ENS_REGISTRY, ENS_ABI, provider);
+  const wrapper = new ethers.Contract(await safe(() => pages.nameWrapper(), ethers.ZeroAddress), WRAPPER_ABI, provider);
   const nextJobId = Number(await safe(() => prime.nextJobId(), 0n));
   const total = Math.min(nextJobId, MAX_JOBS);
+  truncated = nextJobId > MAX_JOBS;
   const config = await safe(() => pages.configurationStatus(), null);
   out.proven.configurationStatus = config ? config.map((value) => typeof value === 'bigint' ? value.toString() : value) : null;
 
@@ -123,6 +130,9 @@ function classify(job) {
     const resolver = node && node !== ethers.ZeroHash ? await safe(() => ens.resolver(node), ethers.ZeroAddress) : ethers.ZeroAddress;
     const expectedResolver = await safe(() => pages.publicResolver(), ethers.ZeroAddress);
     const nameWrapper = await safe(() => pages.nameWrapper(), ethers.ZeroAddress);
+    const wrappedTokenOwner = owner !== ethers.ZeroAddress && owner.toLowerCase() === nameWrapper.toLowerCase()
+      ? await safe(() => wrapper.ownerOf(BigInt(node)), ethers.ZeroAddress)
+      : ethers.ZeroAddress;
 
     let specText = '';
     let completionText = '';
@@ -138,7 +148,7 @@ function classify(job) {
 
     const nodeManagedByContract = owner !== ethers.ZeroAddress && (
       owner.toLowerCase() === ENS_JOB_PAGES.toLowerCase() ||
-      owner.toLowerCase() === nameWrapper.toLowerCase()
+      (owner.toLowerCase() === nameWrapper.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
     );
     const effectiveReady = authorityReady && owner !== ethers.ZeroAddress && resolver.toLowerCase() === expectedResolver.toLowerCase();
     const finalized = Boolean(authority[10]);
@@ -155,6 +165,7 @@ function classify(job) {
       fuseBurned: Boolean(authority[11]),
       nodeExists: owner !== ethers.ZeroAddress,
       nodeManagedByContract,
+      wrappedTokenOwner,
       resolverSetToExpected: resolver.toLowerCase() === expectedResolver.toLowerCase(),
       specTextPresent: Boolean(specText),
       completionTextPresent: Boolean(completionText),
@@ -177,12 +188,19 @@ function classify(job) {
   }
 
   out.summary = {
+    nextJobId,
     scannedJobs: out.jobs.length,
+    maxJobs: MAX_JOBS,
+    truncated,
     previewOnly: out.jobs.filter((job) => job.classification.includes('preview-only')).map((job) => job.jobId),
     authoritySnapshotted: out.jobs.filter((job) => job.classification.includes('authority-snapshotted')).map((job) => job.jobId),
     repairable: out.jobs.filter((job) => job.classification.includes('repairable')).map((job) => job.jobId),
     finalized: out.jobs.filter((job) => job.classification.includes('finalized')).map((job) => job.jobId),
   };
+
+  if (truncated) {
+    out.assumed.push(`Inventory truncated at MAX_JOBS=${MAX_JOBS}; re-run with a higher MAX_JOBS to cover full history.`);
+  }
 
   fs.writeFileSync(OUTPUT, `${JSON.stringify(out, null, 2)}\n`);
   console.log(`Wrote ${OUTPUT}`);

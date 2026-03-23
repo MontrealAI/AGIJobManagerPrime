@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-22T23:58:39.254Z",
+  "generatedAt": "2026-03-23T00:43:47.308Z",
   "execute": false,
-  "input": "scripts/ens/output/legacy-job-labels.json",
+  "input": "/tmp/legacy-job-labels.json",
   "items": [
     {
       "jobId": 42,

@@ -10,7 +10,7 @@ const RPC = (process.env.MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com
 const ENS_JOB_PAGES = (process.env.ENS_JOB_PAGES || '0x97E03F7BFAC116E558A25C8f09aEf09108a2779d').trim();
 const OUTPUT = path.resolve('scripts/ens/output/repair-job-page.json');
 const jobId = Number(process.env.JOB_ID || process.argv[2] || '0');
-const exactLabel = process.env.EXACT_LABEL || process.argv[3] || '';
+const exactLabel = (process.env.EXACT_LABEL || process.argv[3] || '').trim();
 const execute = process.env.EXECUTE === '1';
 
 const ABI = [
@@ -34,7 +34,17 @@ const ABI = [
   const labelSnapshot = await pages.jobLabelSnapshot(jobId).catch(() => [false, '']);
 
   const plan = [];
-  if (!authority || !authority[0]) plan.push({ action: 'repairAuthoritySnapshot', args: [jobId, exactLabel] });
+  const labelSnapshotSet = Boolean(labelSnapshot[0]);
+  const requiresAuthorityRepair = !authority || !authority[0];
+  const exactLabelRequired = requiresAuthorityRepair && !labelSnapshotSet;
+  if (exactLabelRequired && !exactLabel) {
+    throw new Error(
+      'EXACT_LABEL is required when planning authority repair for an unsnapshotted job; refusing to default to preview label.'
+    );
+  }
+  if (requiresAuthorityRepair) {
+    plan.push({ action: 'repairAuthoritySnapshot', args: [jobId, exactLabel] });
+  }
   plan.push({ action: 'repairResolver', args: [jobId] });
   plan.push({ action: 'repairTexts', args: [jobId] });
   plan.push({ action: 'repairAuthorisations', args: [jobId] });
@@ -44,8 +54,9 @@ const ABI = [
     generatedAt: new Date().toISOString(),
     jobId,
     exactLabel,
-    labelSnapshot: { isSet: Boolean(labelSnapshot[0]), label: labelSnapshot[1] || '' },
+    labelSnapshot: { isSet: labelSnapshotSet, label: labelSnapshot[1] || '' },
     authorityEstablished: Boolean(authority && authority[0]),
+    exactLabelRequired,
     execute,
     plan: plan.map((step) => ({ ...step, calldata: iface.encodeFunctionData(step.action, step.args) })),
   };

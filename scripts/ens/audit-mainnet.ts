@@ -67,6 +67,16 @@ function toStringValue(value) {
   return value;
 }
 
+
+function serialize(value) {
+  if (typeof value === 'bigint') return value.toString();
+  if (Array.isArray(value)) return value.map((item) => serialize(item));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, serialize(item)]));
+  }
+  return value;
+}
+
 (async function main() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
 
@@ -116,7 +126,7 @@ function toStringValue(value) {
     configLocked: unwrap(await safe('pages.configLocked', () => pages.configLocked())),
     useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => pages.useEnsJobTokenURI())),
     validateConfiguration: toStringValue(unwrap(await safe('pages.validateConfiguration', () => pages.validateConfiguration()), 0n)),
-    configurationStatus: unwrap(await safe('pages.configurationStatus', () => pages.configurationStatus()), null),
+    configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => pages.configurationStatus()), null)),
   };
 
   const primeState = {
