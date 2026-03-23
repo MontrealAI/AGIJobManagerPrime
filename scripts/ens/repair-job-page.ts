@@ -98,6 +98,9 @@ async function main() {
     && nodeOwner.toLowerCase() === nameWrapperAddress.toLowerCase()
     && wrappedTokenOwner !== ethers.ZeroAddress
     && wrappedTokenOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase();
+  const requiresManualNodeTakeover = nodeOwner !== ethers.ZeroAddress
+    && nodeOwner.toLowerCase() !== ENS_JOB_PAGES.toLowerCase()
+    && nodeOwner.toLowerCase() !== nameWrapperAddress.toLowerCase();
   const needsCreateReplay = nodeOwner === ethers.ZeroAddress;
   const hasReadableCore = Boolean(await manager.getJobCore(jobId).catch(() => null));
 
@@ -106,6 +109,8 @@ async function main() {
       throw new Error('Exact legacy label is required to route unmanaged wrapped pages to migrateLegacyWrappedJobPage.');
     }
     plan.push({ action: 'migrateLegacyWrappedJobPage', args: [jobId, resolvedLabel] });
+  } else if (requiresManualNodeTakeover) {
+    // Unwrapped externally-owned nodes need manual ownership takeover before ENSJobPages repair writes can succeed.
   } else if (!needsCreateReplay) {
     plan.push({ action: 'repairResolver', args: [jobId] });
     if (hasReadableCore) {
@@ -135,6 +140,7 @@ async function main() {
     hasReadableCore,
     needsCreateReplay,
     requiresLegacyMigration,
+    requiresManualNodeTakeover,
     execute,
     plan: plan.map((step) => ({ ...step, calldata: iface.encodeFunctionData(step.action, step.args) })),
   };

@@ -65,7 +65,8 @@ function classify(job) {
   if (job.legacyImportCandidate) tags.push('legacy-import-required');
   if (job.nodeExists && !job.nodeManagedByContract) tags.push('node-exists-but-unmanaged');
   if (job.nodeExists && !job.resolverSetToExpected) tags.push('resolver-mismatch');
-  if (job.authoritySnapshotted && (!job.specTextPresent || (job.hasCompletionURI && !job.completionTextPresent))) tags.push('metadata-incomplete');
+  if (job.authoritySnapshotted && (!job.specTextMatchesManager || (job.hasCompletionURI && !job.completionTextMatchesManager))) tags.push('metadata-incomplete');
+  if (job.nodeExists && !job.authorisationsAsExpected) tags.push('permissions-drift');
   if (job.repairable) tags.push('repairable');
   if (job.effectiveReady) tags.push('authoritative-ready');
   if (job.finalized) tags.push('finalized');
@@ -169,7 +170,14 @@ function classify(job) {
       (owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner.toLowerCase() === ENS_JOB_PAGES.toLowerCase())
     );
 
-    const effectiveReady = authorityReady && owner !== ethers.ZeroAddress && resolver.toLowerCase() === expectedResolver.toLowerCase();
+    const specTextMatchesManager = !specURI || specText === specURI;
+    const completionTextMatchesManager = !completionURI || completionText === completionURI;
+    const effectiveReady = authorityReady
+      && owner !== ethers.ZeroAddress
+      && resolver.toLowerCase() === expectedResolver.toLowerCase()
+      && specTextMatchesManager
+      && completionTextMatchesManager
+      && (!core || (core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth));
     const finalized = Boolean(authority[10]);
     const legacyImportCandidate = !Boolean(authority[9]) && (
       (Boolean(labelSnapshot[0]) && labelSnapshot[1] !== preview.label) || wrappedUnmanaged
@@ -195,6 +203,8 @@ function classify(job) {
       resolverSetToExpected: resolver.toLowerCase() === expectedResolver.toLowerCase(),
       specTextPresent: Boolean(specText),
       completionTextPresent: Boolean(completionText),
+      specTextMatchesManager,
+      completionTextMatchesManager,
       authorisationsAsExpected: !core ? false : (core.assignedAgent === ethers.ZeroAddress ? employerAuth : employerAuth && agentAuth),
       effectiveReady,
       finalizable: authorityReady && owner !== ethers.ZeroAddress,
