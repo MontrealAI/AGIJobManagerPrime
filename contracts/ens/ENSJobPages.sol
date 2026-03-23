@@ -1236,24 +1236,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         supportsSetText =
             _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID) ||
             _supportsResolverWriteSurface(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setText.selector, bytes32(0), "schema", "probe"));
-        supportsSetAuthorisation = _supportsLegacyResolverAuthWrite(address(publicResolver)) || _supportsModernResolverAuthWrite(address(publicResolver)) || _supportsResolverAuthReadSurface(address(publicResolver));
+        supportsSetAuthorisation = _supportsLegacyResolverAuthWrite(address(publicResolver)) || _supportsModernResolverAuthWrite(address(publicResolver));
     }
 
-
-    function _supportsResolverAuthReadSurface(address resolver) internal view returns (bool) {
-        return
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("authorisations(bytes32,address,address)", bytes32(0), address(this), address(this))) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedFor(bytes32,address)", bytes32(0), address(this))) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedForAll(address,address)", address(this), address(this))) ||
-            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isAuthorised(bytes32,address)", bytes32(0), address(this)));
-    }
-
-    function _supportsResolverReadSurface(address resolver, bytes memory payload) internal view returns (bool ok) {
-        if (resolver == address(0) || resolver.code.length == 0) return false;
-        bytes memory returndata;
-        (ok, returndata) = resolver.staticcall(payload);
-        return ok && returndata.length >= 32;
-    }
 
     function _supportsLegacyResolverAuthWrite(address resolver) internal view returns (bool) {
         return _supportsResolverWriteSurface(resolver, abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, bytes32(0), address(this), true));
@@ -1268,7 +1253,11 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         bytes memory returndata;
         (ok, returndata) = target.call(payload);
         if (!ok) return false;
-        return returndata.length == 0 || (returndata.length >= 32 && abi.decode(returndata, (bool)));
+        if (returndata.length > 0) {
+            if (returndata.length < 32) return false;
+            return abi.decode(returndata, (bool));
+        }
+        return true;
     }
 
     function _supportsTextLookup(address resolver) internal view returns (bool ok) {

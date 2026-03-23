@@ -231,6 +231,9 @@ contract ENSJobPagesInspector {
         (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedForAll(address,address)', nodeOwner, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isAuthorised(bytes32,address)', node, target));
+        if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
+
         return (false, false, false);
     }
 }
