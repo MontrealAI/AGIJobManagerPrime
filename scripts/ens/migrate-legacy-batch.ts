@@ -46,12 +46,15 @@ function loadInput(file) {
     const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
     for (const item of items) {
-      const { hash } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, 'migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]);
+      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, 'migrateLegacyWrappedJobPage', [item.jobId, item.exactLabel]);
       const sent = { jobId: item.jobId, exactLabel: item.exactLabel, txHash: hash, status: 'broadcast' };
       payload.sent.push(sent);
-      const receipt = await provider.waitForTransaction(hash);
+      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce });
       sent.status = 'confirmed';
       sent.blockNumber = receipt.blockNumber.toString();
+      if (receipt.replaced) {
+        sent.replacedBy = receipt.effectiveHash;
+      }
     }
   }
 

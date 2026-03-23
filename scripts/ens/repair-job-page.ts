@@ -198,12 +198,15 @@ async function main() {
     const signer = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY);
     payload.sent = [];
     for (const step of plan) {
-      const { hash } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, step.action, step.args);
+      const { hash, tx, from } = await provider.sendContractTx(signer, ENS_JOB_PAGES, ABI, step.action, step.args);
       const sent = { action: step.action, txHash: hash, status: 'broadcast' };
       payload.sent.push(sent);
-      const receipt = await provider.waitForTransaction(hash);
+      const receipt = await provider.waitForTransaction(hash, 1, 0, { from, nonce: tx.nonce });
       sent.status = 'confirmed';
       sent.blockNumber = receipt.blockNumber.toString();
+      if (receipt.replaced) {
+        sent.replacedBy = receipt.effectiveHash;
+      }
     }
   }
 

@@ -65,6 +65,10 @@ class CurlJsonRpcProvider {
     return this.request('eth_getTransactionReceipt', [hash]);
   }
 
+  getBlockWithTransactions(tag = 'latest') {
+    return this.request('eth_getBlockByNumber', [tag === 'latest' ? 'latest' : toQuantity(tag), true]);
+  }
+
   call(tx, tag = 'latest') {
     return this.request('eth_call', [tx, tag]);
   }
@@ -116,23 +120,63 @@ class CurlJsonRpcProvider {
 
     const signed = await wallet.signTransaction(tx);
     const hash = this.sendRawTransaction(signed);
-    return { hash, tx };
+    return { hash, tx, from };
   }
 
-  async waitForTransaction(hash, confirmations = 1, timeoutMs = 0) {
+  async waitForTransaction(hash, confirmations = 1, timeoutMs = 0, replacementContext = null) {
     const start = Date.now();
     for (;;) {
-      const receipt = this.getTransactionReceipt(hash);
+      let receipt = this.getTransactionReceipt(hash);
+      let effectiveHash = hash;
+
+      if (!receipt && replacementContext && replacementContext.from !== undefined && replacementContext.nonce !== undefined) {
+        const replacement = this.findReplacementReceipt(replacementContext.from, replacementContext.nonce);
+        if (replacement) {
+          receipt = replacement.receipt;
+          effectiveHash = replacement.hash;
+        }
+      }
+
       if (receipt) {
-        if (confirmations <= 1) return receipt;
+        if (receipt.status === '0x0') {
+          throw new Error(
+            effectiveHash === hash
+              ? `Transaction reverted on-chain: ${effectiveHash}`
+              : `Replacement transaction reverted on-chain: ${effectiveHash} (replaced ${hash})`
+          );
+        }
+        if (confirmations <= 1) return { ...receipt, effectiveHash, replaced: effectiveHash !== hash };
         const blockNumber = this.getBlockNumber();
-        if (BigInt(blockNumber) - BigInt(receipt.blockNumber) + 1n >= BigInt(confirmations)) return receipt;
+        if (BigInt(blockNumber) - BigInt(receipt.blockNumber) + 1n >= BigInt(confirmations)) {
+          return { ...receipt, effectiveHash, replaced: effectiveHash !== hash };
+        }
       }
       if (timeoutMs > 0 && Date.now() - start > timeoutMs) {
         throw new Error(`Timed out waiting for receipt: ${hash}`);
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
+  }
+
+  findReplacementReceipt(from, nonce, scanDepth = 32) {
+    const latestNonce = this.getTransactionCount(from, 'latest');
+    if (latestNonce <= BigInt(nonce)) return null;
+
+    let blockTag = 'latest';
+    for (let i = 0; i < scanDepth; i += 1) {
+      const block = this.getBlockWithTransactions(blockTag);
+      if (!block) break;
+      for (const tx of block.transactions || []) {
+        if (!tx || !tx.from) continue;
+        if (tx.from.toLowerCase() !== from.toLowerCase()) continue;
+        if (BigInt(tx.nonce) !== BigInt(nonce)) continue;
+        const receipt = this.getTransactionReceipt(tx.hash);
+        if (receipt) return { hash: tx.hash, receipt };
+      }
+      if (!block.parentHash || block.parentHash === '0x0000000000000000000000000000000000000000000000000000000000000000') break;
+      blockTag = block.parentHash;
+    }
+    return null;
   }
 }
 
