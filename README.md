@@ -153,8 +153,8 @@ Legacy docs:
 
 - `AGIJobManager` provides the numeric `jobId`.
 - `ENSJobPages` provides the label prefix (`jobLabelPrefix`, default `agijob-`) and root suffix (`jobsRootName`, e.g. `alpha.jobs.agi.eth`).
-- Effective ENS name format is: `<prefix><jobId>.<jobsRootName>`.
-- With current defaults, names are:
+- Preview ENS name format is: `<prefix><jobId>.<jobsRootName>` until a per-job authority snapshot is established; effective ENS names come from immutable per-job authority records.
+- With current defaults, preview names are:
   - `agijob-0.alpha.jobs.agi.eth`
   - `agijob-1.alpha.jobs.agi.eth`
 - Prefix updates only affect jobs whose labels are not yet snapshotted.
@@ -188,7 +188,7 @@ If you are also operating legacy `AGIJobManager` + `ENSJobPages`, use the separa
 4. Only lock ENS/identity configuration after post-cutover validation.
 
 Expected result after legacy ENS cutover:
-- New legacy-manager jobs use `<prefix><jobId>.<jobsRootName>` (default `agijob...alpha.jobs.agi.eth`).
+- New legacy-manager jobs preview as `<prefix><jobId>.<jobsRootName>` (default `agijob-<jobId>.alpha.jobs.agi.eth`) until authority is snapshotted/imported.
 - AGIJobManager lifecycle and settlement continue even if an ENS side-effect fails.
 - Legacy labels remain stable unless explicitly migrated/imported.
 
