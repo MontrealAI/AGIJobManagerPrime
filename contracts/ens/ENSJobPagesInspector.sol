@@ -148,10 +148,11 @@ contract ENSJobPagesInspector {
             status.effectiveReady = bytes(status.effectiveName).length != 0;
 
             IENSRegistryLite ens = IENSRegistryLite(pages.ens());
+            address nameWrapper = pages.nameWrapper();
             address nodeOwner = ens.owner(authoritativeNode);
             address nodeResolver = ens.resolver(authoritativeNode);
             status.nodeExists = nodeOwner != address(0);
-            status.nodeManagedByContract = nodeOwner == target || _isWrappedNodeManagedByTarget(pages.nameWrapper(), nodeOwner, authoritativeNode, target);
+            status.nodeManagedByContract = nodeOwner == target || _isWrappedNodeManagedByTarget(nameWrapper, nodeOwner, authoritativeNode, target);
             status.resolverSetToExpected = nodeResolver == pages.publicResolver();
 
             if (nodeResolver != address(0)) {
@@ -160,9 +161,9 @@ contract ENSJobPagesInspector {
                 status.completionTextPresent = _safeHasText(nodeResolver, authoritativeNode, "agijobs.completion.public");
                 status.metadataComplete = status.schemaTextPresent && status.specTextPresent;
                 (bool authReadSupported, bool employerKnown, bool employerOk) =
-                    employer == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nodeResolver, authoritativeNode, employer);
+                    employer == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nameWrapper, nodeResolver, authoritativeNode, employer);
                 (bool agentReadSupported, bool agentKnown, bool agentOk) =
-                    agent == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nodeResolver, authoritativeNode, agent);
+                    agent == address(0) ? (true, true, true) : _safeReadAuthorisation(ens, nameWrapper, nodeResolver, authoritativeNode, agent);
                 status.authReadSupported = authReadSupported && agentReadSupported;
                 status.employerAuthorisedObserved = employerKnown && employerOk;
                 status.agentAuthorisedObserved = agentKnown && agentOk;
@@ -204,6 +205,17 @@ contract ENSJobPagesInspector {
         return success || data.length != 0;
     }
 
+
+    function _resolveAuthOwner(address nameWrapper, address nodeOwner, bytes32 node) internal view returns (address authOwner) {
+        authOwner = nodeOwner;
+        if (nodeOwner == address(0) || nameWrapper == address(0) || nodeOwner != nameWrapper) return authOwner;
+        (bool success, bytes memory data) = nameWrapper.staticcall(abi.encodeWithSelector(INameWrapperLite.ownerOf.selector, uint256(node)));
+        if (success && data.length >= 32) {
+            address wrappedOwner = abi.decode(data, (address));
+            if (wrappedOwner != address(0)) return wrappedOwner;
+        }
+    }
+
     function _isWrappedNodeManagedByTarget(address nameWrapper, address nodeOwner, bytes32 node, address target) internal view returns (bool) {
         if (nameWrapper == address(0) || nodeOwner != nameWrapper) return false;
         (bool success, bytes memory data) = nameWrapper.staticcall(abi.encodeWithSelector(INameWrapperLite.ownerOf.selector, uint256(node)));
@@ -216,19 +228,22 @@ contract ENSJobPagesInspector {
         return bytes(abi.decode(data, (string))).length != 0;
     }
 
-    function _safeReadAuthorisation(IENSRegistryLite ens, address resolver, bytes32 node, address target)
+    function _safeReadAuthorisation(IENSRegistryLite ens, address nameWrapper, address resolver, bytes32 node, address target)
         internal
         view
         returns (bool readSupported, bool known, bool authorised)
     {
         address nodeOwner = ens.owner(node);
-        (bool success, bytes memory data) = resolver.staticcall(abi.encodeWithSignature('authorisations(bytes32,address,address)', node, nodeOwner, target));
+        address authOwner = _resolveAuthOwner(nameWrapper, nodeOwner, node);
+        bool success;
+        bytes memory data;
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('authorisations(bytes32,address,address)', node, authOwner, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
-        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedFor(address,bytes32,address)', nodeOwner, node, target));
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedFor(address,bytes32,address)', authOwner, node, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
-        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedForAll(address,address)', nodeOwner, target));
+        (success, data) = resolver.staticcall(abi.encodeWithSignature('isApprovedForAll(address,address)', authOwner, target));
         if (success && data.length >= 32) return (true, true, abi.decode(data, (bool)));
 
         (success, data) = resolver.staticcall(abi.encodeWithSignature('isAuthorised(bytes32,address)', node, target));

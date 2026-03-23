@@ -164,7 +164,7 @@ async function getLogs(provider, address, topic0) {
       schemaText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'schema'])[0], '');
       specText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.spec.public'])[0], '');
       completionText = await safe(() => provider.readContract(resolver, RESOLVER_TEXT_ABI, 'text', [node, 'agijobs.completion.public'])[0], '');
-      const ownerForAuth = owner;
+      const ownerForAuth = owner.toLowerCase() === nameWrapperAddress.toLowerCase() && wrappedTokenOwner !== ethers.ZeroAddress ? wrappedTokenOwner : owner;
       const legacyAuthAbi = ['function authorisations(bytes32,address,address) view returns (bool)'];
       const modernAuthAbi = ['function isApprovedFor(address,bytes32,address) view returns (bool)'];
       const operatorAuthAbi = ['function isApprovedForAll(address,address) view returns (bool)'];

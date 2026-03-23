@@ -1236,7 +1236,7 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         supportsSetText =
             _supportsResolverInterface(address(publicResolver), RESOLVER_SETTEXT_INTERFACE_ID) ||
             _supportsResolverWriteSurface(address(publicResolver), abi.encodeWithSelector(IPublicResolver.setText.selector, bytes32(0), "schema", "probe"));
-        supportsSetAuthorisation = _supportsLegacyResolverAuthFamily(address(publicResolver)) || _supportsModernResolverAuthWrite(address(publicResolver));
+        supportsSetAuthorisation = _supportsLegacyResolverAuthFamily(address(publicResolver)) || _supportsModernResolverAuthFamily(address(publicResolver));
     }
 
 
@@ -1256,6 +1256,13 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
     function _supportsLegacyResolverAuthWrite(address resolver) internal view returns (bool) {
         return _supportsResolverWriteSurface(resolver, abi.encodeWithSelector(IPublicResolver.setAuthorisation.selector, bytes32(0), address(this), true));
+    }
+
+    function _supportsModernResolverAuthFamily(address resolver) internal view returns (bool) {
+        return
+            _supportsModernResolverAuthWrite(resolver) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedFor(address,bytes32,address)", address(this), bytes32(0), address(this))) ||
+            _supportsResolverReadSurface(resolver, abi.encodeWithSignature("isApprovedForAll(address,address)", address(this), address(this)));
     }
 
     function _supportsModernResolverAuthWrite(address resolver) internal view returns (bool) {
