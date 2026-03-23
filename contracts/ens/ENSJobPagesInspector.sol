@@ -87,8 +87,10 @@ contract ENSJobPagesInspector {
     {
         IENSJobPagesInspectorTarget pages = IENSJobPagesInspectorTarget(target);
         uint256 failureBitmap;
+        bool configurationReadable;
         try pages.validateConfiguration() returns (uint256 failureBitmap_) {
             failureBitmap = failureBitmap_;
+            configurationReadable = true;
         } catch {}
 
         bool locked = _safeBoolCall(target, abi.encodeWithSignature("configLocked()"));
@@ -103,10 +105,10 @@ contract ENSJobPagesInspector {
         address rootOwner = jobsRootNode == bytes32(0) ? address(0) : IENSRegistryLite(ensAddress).owner(jobsRootNode);
         bool wrappedRoot = rootOwner == nameWrapperAddress && nameWrapperAddress != address(0);
         bool wrapperAuthorizationReady = wrappedRoot && _isWrapperAuthorizationReady(nameWrapperAddress, jobsRootNode, target);
-        bool resolverSupportsText = (failureBitmap & (1 << 7)) == 0;
-        bool resolverSupportsSetText = (failureBitmap & (1 << 8)) == 0;
-        bool resolverSupportsAuthorisation = (failureBitmap & (1 << 9)) == 0;
-        bool configured = failureBitmap == 0;
+        bool resolverSupportsText = configurationReadable && (failureBitmap & (1 << 7)) == 0;
+        bool resolverSupportsSetText = configurationReadable && (failureBitmap & (1 << 8)) == 0;
+        bool resolverSupportsAuthorisation = configurationReadable && (failureBitmap & (1 << 9)) == 0;
+        bool configured = configurationReadable && failureBitmap == 0;
 
         bool authorityEstablished;
         string memory label;
@@ -160,7 +162,7 @@ contract ENSJobPagesInspector {
         status.previewName = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsName(uint256)", jobId));
         status.previewURI = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsURI(uint256)", jobId));
         status.previewReady = bytes(status.previewName).length != 0;
-        status.failureCode = failureBitmap;
+        status.failureCode = configurationReadable ? failureBitmap : type(uint256).max;
 
         if (authorityEstablished) {
             status.effectiveLabel = _safeStringCall(target, abi.encodeWithSignature("effectiveJobEnsLabel(uint256)", jobId));
