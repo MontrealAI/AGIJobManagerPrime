@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AGIJobManager Prime · Prime Mainnet Console v40</title>
+  <title>AGIJobManager Prime · Prime Mainnet Console · v40</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -1309,7 +1309,7 @@
         <div class="v35-brandmark">◎</div>
         <div>
           <div class="v35-brandeyebrow">Prime mainnet</div>
-          <div class="v35-brandtitle">AGIJobManager Prime</div>
+          <div class="v35-brandtitle">AGIJobManager Prime · Mainnet Console v40</div>
         </div>
       </div>
       <nav class="v35-nav" aria-label="Section navigation">
@@ -1746,7 +1746,6 @@
     <div class="primeDeckGrid">
       <div class="primeHeroSurface">
         <div class="eyebrow">Prime access deck</div>
-        <div class="tiny">Standalone snapshot <b>v40</b> · mainnet defaults refreshed</div>
         <div class="missionTitle" style="font-size:clamp(1.85rem,3vw,2.5rem);margin-bottom:10px">Prime mainnet readiness, pricing, and verification.</div>
         <div class="helper">Keep wallet posture, <b>Before You Transact</b>, terms acceptance, ENS verification, and the Alpha-Agent quick start inside the first operating screen. Verified defaults appear first; live reads confirm public bindings where available.</div>
         <div class="primeBadgeRow">
@@ -1763,8 +1762,7 @@
           <div class="registryCard"><span class="label">Settlement kernel</span><code id="primeManagerAddress">0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e</code><div class="tiny">AGIJobManagerPrime</div></div>
           <div class="registryCard"><span class="label">Discovery layer</span><code id="primeDiscoveryAddress">0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29</code><div class="tiny">AGIJobDiscoveryPrime</div></div>
           <div class="registryCard"><span class="label">Completion receipt NFT</span><code id="primeCompletionNftAddress">0xFfCC54dA2Caf1158e57611005965BB648E950737</code><div class="tiny">AGIJobCompletionNFT</div></div>
-          <div class="registryCard"><span class="label">ENS public memory</span><code id="primeEnsPagesAddress">0x703011ef1c6e4277587efe150e6cd74ca18f0069</code><div class="tiny">ENSJobPages</div></div>
-          <div class="registryCard"><span class="label">Superseded ENS public memory</span><code id="primeEnsPagesSupersededAddress">0x97E03F7BFAC116E558A25C8f09aEf09108a2779d</code><div class="tiny">Historical / superseded only (not active)</div></div>
+          <div class="registryCard"><span class="label">ENS public memory</span><code id="primeEnsPagesAddress">0x703011EF1C6E4277587eFe150e6cd74cA18F0069</code><div class="tiny">ENSJobPages (active)</div><div class="tiny">Superseded: 0x97E03F7BFAC116E558A25C8f09aEf09108a2779d</div></div>
         </div>
         <div class="registryGrid" style="margin-top:12px">
           <div class="registryCard"><span class="label">UriUtils</span><code>0xF1b8E6e39F8b4Dd88ADDbb031489c330778db0D1</code></div>
@@ -1786,7 +1784,7 @@
       <div class="primeOpsGrid">
         <div class="primeStat"><span class="label">1 · Settlement kernel</span><div class="value">Escrow, bonds, checkpointing, validation, disputes, settlement, solvency, and pause-adjusted timing via <code>AGIJobManagerPrime</code>.</div></div>
         <div class="primeStat"><span class="label">2 · Discovery layer</span><div class="value">Commit/reveal applications, shortlist, finalists, trial submissions, validator score commit/reveal, winner designation, fallback promotion, and claimable balances via <code>AGIJobDiscoveryPrime</code>.</div></div>
-        <div class="primeStat"><span class="label">3 · Public memory</span><div class="value">Dedicated completion receipt NFTs via <code>AGIJobCompletionNFT</code> and ENS page posture via <code>ENSJobPages</code>. Root-versioned ENS authority with preview/effective reconciliation and explicit configuration validation.</div></div>
+        <div class="primeStat"><span class="label">3 · Public memory</span><div class="value">Dedicated completion receipt NFTs via <code>AGIJobCompletionNFT</code> and ENS page posture via <code>ENSJobPages</code>. Compatibility claims stay conservative when not publicly provable.</div></div>
       </div>
     </div>
 
@@ -2030,7 +2028,7 @@
         <div class="alphaModeGrid">
           <div class="actions alphaModeTabs" id="alphaIdentityModeTabs" style="margin-top:0">
             <button class="btn btn-primary" id="alphaIdentityModeRecommended" type="button" aria-pressed="true">Combined route: name + identity</button>
-            <button class="btn legacyInert" id="alphaIdentityModeEnsOnly" type="button" aria-pressed="false" hidden aria-hidden="true" tabindex="-1">Legacy route hidden</button>
+            <button class="btn legacyInert" id="alphaIdentityModeEnsOnly" type="button" aria-pressed="false" hidden aria-hidden="true" tabindex="-1">Combined route only</button>
           </div>
           <div class="alphaModePrimer" id="alphaModePrimer">
             <div class="alphaModeSummary" id="alphaModeSummary">Recommended path: <b>register(label)</b> mints the wrapped subname and soulbound identity to the connected wallet in one transaction. Gas only, no separate name-only path.</div>
@@ -2256,7 +2254,7 @@
           <div class="alphaDiagnosticsBody">
             <div class="alphaDiagnosticsNote">Legacy compatibility reads remain internal and inert. Public registration in this console uses only the combined identity route on FreeTrialSubdomainRegistrarIdentity.</div>
             <div class="alphaDiagnosticsCard" id="freeTrialRegistrarState"><table class="miniTable">
-              <tr class="legacyInert" hidden aria-hidden="true"><td>Registrar</td><td><span id="freeTrialRegistrarAddress">Compatibility shim hidden</span></td></tr>
+              <tr class="legacyInert" hidden aria-hidden="true"><td>Registrar</td><td><span id="freeTrialRegistrarAddress">Combined route only</span></td></tr>
               <tr><td>NameWrapper</td><td><span id="freeTrialWrapperAddress">—</span></td></tr>
               <tr><td>Target parent</td><td><span id="freeTrialParentName">alpha.agent.agi.eth</span></td></tr>
               <tr><td>Target parent node</td><td><span id="freeTrialParentNode">0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e</span></td></tr>
@@ -2297,7 +2295,7 @@
           <div>
             <div class="eyebrow">Transaction Review</div>
             <h2 style="margin:4px 0 6px">Legacy Alpha compatibility alias</h2>
-            <div class="helper">Legacy review surface retained for protocol compatibility only. Public onboarding routes registration through register(label) for combined name + identity issuance to the connected wallet.</div>
+            <div class="helper">Review surface aligned to the current public contract route only. Public onboarding routes registration through register(label) for combined name + identity issuance to the connected wallet.</div>
           </div>
           <button class="modalClose" id="closeAlphaMintReviewBtn" aria-label="Close">×</button>
         </div>
@@ -2959,7 +2957,7 @@ Evaluation methodology"></textarea>
 
           <div class="softCard">
             <div class="subtleTitle">ENS Job Page Preview</div>
-            <div class="helper" style="margin-bottom:10px">Preview/effective authority workstation. Preview values project from current configuration; effective values reflect authoritative snapshots once established for a real job.</div>
+            <div class="helper" style="margin-bottom:10px">This preview reflects the ENSJobPages integration path. It shows the label, name, node, ens:// URI, and basic hook configuration so the employer understands what the ecosystem is set up to create around a job.</div>
             <table class="miniTable">
               <tr><td>ENSJobPages contract address</td><td><span id="ensPagesAddress">—</span></td></tr>
               <tr><td>Address source</td><td><span id="ensPagesAddressSource">unavailable</span></td></tr>
@@ -2972,22 +2970,19 @@ Evaluation methodology"></textarea>
               <tr><td>Linked jobManager</td><td><span id="ensLinkedJobManager">—</span></td></tr>
               <tr><td>Job label prefix</td><td><span id="ensJobLabelPrefixPreview">—</span></td></tr>
               <tr><td>Next job id</td><td><span id="ensNextJobId">—</span></td></tr>
-              <tr><td>Preview label</td><td><span id="predictedJobLabel">—</span></td></tr>
-              <tr><td>Preview ENS name</td><td><span id="predictedEnsName">—</span></td></tr>
-              <tr><td>Preview ENS URI</td><td><span id="predictedEnsURI">—</span></td></tr>
-              <tr><td>Preview node</td><td><span id="predictedEnsNode">—</span></td></tr>
-              <tr><td>Effective label (next job)</td><td><span id="effectiveJobLabel">—</span></td></tr>
-              <tr><td>Effective ENS URI (next job)</td><td><span id="effectiveEnsURI">—</span></td></tr>
-              <tr><td>Configuration validation mask</td><td><span id="ensValidationMask">—</span></td></tr>
-              <tr><td>Configuration interpretation</td><td><span id="ensValidationSummary">—</span></td></tr>
-              <tr><td>Passing checks</td><td><span id="ensValidationPass">—</span></td></tr>
-              <tr><td>Failing checks</td><td><span id="ensValidationFail">—</span></td></tr>
+              <tr><td>Snapshot status</td><td><span id="ensSnapshotStatus">—</span></td></tr>
+              <tr><td>Effective label</td><td><span id="predictedJobLabel">—</span></td></tr>
+              <tr><td>Effective ENS name</td><td><span id="predictedEnsName">—</span></td></tr>
+              <tr><td>Effective ENS URI</td><td><span id="predictedEnsURI">—</span></td></tr>
+              <tr><td>Effective node</td><td><span id="predictedEnsNode">—</span></td></tr>
+              <tr><td>ENS metadata posture</td><td><span id="ensMetadataPosture">event-derived + resolver-observed</span></td></tr>
+              <tr><td>Manager tokenURI posture</td><td><span id="managerTokenUriMode">Unavailable in public ABI</span></td></tr>
               <tr><td>Config locked</td><td><span id="ensConfigLocked">—</span></td></tr>
               <tr><td>Public prerequisite summary</td><td><span id="ensHookReadiness">—</span></td></tr>
             </table>
             <div class="goodBox" style="margin-top:12px">
               <b>Best-practice interpretation</b><br>
-              Preview values can exist before authority is established. Once authority is established, effective values become canonical for job ENS memory and resolver text posture.
+              If the ENSJobPages stack is configured, a created job can get a predictable ENS label generated by <code>jobLabelPrefix + decimal(jobId)</code>, text records for public spec/completion URIs, and later lock actions after terminal settlement.
             </div>
           </div>
         </div>
@@ -3041,7 +3036,7 @@ Evaluation methodology"></textarea>
         <div class="smallNote" id="createJobReadinessNote" style="margin-top:10px">Best practice: use a canonical <code>ipfs://...</code> Job Spec URI and keep the on-chain details field concise.</div>
         <div class="hintBox" style="margin-top:12px">
           <b>What happens next</b><br>
-          The employer escrows payout, <code>JobCreated</code> emits, and ENSJobPages can establish per-job authority snapshots with root-versioned effective ENS records.
+          The employer escrows the payout, the contract emits <code>JobCreated</code>, and the ENSJobPages hook may attempt to create or update a corresponding job ENS page using the configured root and resolver stack.
         </div>
       </div>
     </div>
@@ -3228,7 +3223,7 @@ Evaluation methodology"></textarea>
           <div class="smallNote">jobsRootNode: <span id="ensAdminJobsRootNode">—</span></div>
           <div class="smallNote">jobsRootName: <span id="ensAdminJobsRootName">—</span></div>
           <div class="smallNote">jobManager: <span id="ensAdminJobManager">—</span></div>
-          <div class="smallNote">validateConfiguration: <span id="ensAdminUseTokenUri">—</span></div>
+          <div class="smallNote">TokenURI mode getter is unavailable in active ENSJobPages ABI.</div>
           <div class="smallNote">configLocked: <span id="ensAdminConfigLocked">—</span></div>
           <div class="smallNote">Job label prefix: <span id="ensJobLabelPrefix">—</span></div>
           <div id="ensAdminPostureBadges" class="actions" style="margin:10px 0"></div>
@@ -3742,22 +3737,14 @@ Evaluation methodology"></textarea>
     const jobCache = new Map();
     const activeJobIndexCache = { ids:null, ts:0 };
     const nftRenderCache = { total:null, myHtml:'', allHtml:'', ts:0, myAccount:'' };
-    const CONTRACT_CONFIG = {
-      AGI_JOB_MANAGER_PRIME: "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
-      AGI_JOB_DISCOVERY_PRIME: "0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29",
-      ENS_JOB_PAGES: "0x703011ef1c6e4277587efe150e6cd74ca18f0069",
-      FREE_TRIAL_SUBDOMAIN_REGISTRAR_IDENTITY: "0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a",
-      AGI_JOB_COMPLETION_NFT_FALLBACK: "0xFfCC54dA2Caf1158e57611005965BB648E950737",
-      NAME_WRAPPER: "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
-      FREE_TRIAL_SUBDOMAIN_REGISTRAR: "0x7aae649184182a01ac7d8d5d7873903015c08761"
-    };
-    const AGI_JOB_MANAGER = CONTRACT_CONFIG.AGI_JOB_MANAGER_PRIME;
-    const AGI_JOB_DISCOVERY = CONTRACT_CONFIG.AGI_JOB_DISCOVERY_PRIME;
-    const AGI_JOB_COMPLETION_NFT = CONTRACT_CONFIG.AGI_JOB_COMPLETION_NFT_FALLBACK;
-    const NAME_WRAPPER = CONTRACT_CONFIG.NAME_WRAPPER;
-    const KNOWN_ENS_JOB_PAGES_FALLBACK = CONTRACT_CONFIG.ENS_JOB_PAGES;
-    const FREE_TRIAL_REGISTRAR = CONTRACT_CONFIG.FREE_TRIAL_SUBDOMAIN_REGISTRAR;
-    const FREE_TRIAL_REGISTRAR_IDENTITY = CONTRACT_CONFIG.FREE_TRIAL_SUBDOMAIN_REGISTRAR_IDENTITY;
+    const AGI_JOB_MANAGER = "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e";
+    const AGI_JOB_DISCOVERY = "0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29";
+    const AGI_JOB_COMPLETION_NFT = "0xFfCC54dA2Caf1158e57611005965BB648E950737";
+    const NAME_WRAPPER = "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401";
+    const ACTIVE_ENS_JOB_PAGES = "0x703011EF1C6E4277587eFe150e6cd74cA18F0069";
+    const SUPERSEDED_ENS_JOB_PAGES = "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d";
+    const FREE_TRIAL_REGISTRAR = "0x7aae649184182a01ac7d8d5d7873903015c08761";
+    const FREE_TRIAL_REGISTRAR_IDENTITY = "0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a";
     const ALPHA_AGENT_PARENT = "alpha.agent.agi.eth";
     const ALPHA_AGENT_PARENT_NODE = "0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e";
     const RECENT_ALPHA_AGENT_KEY = "agijobmanager_v29_recent_alpha_names";
@@ -3917,10 +3904,7 @@ const AGIJobManagerABI = [
       {"inputs":[],"name":"challengePeriodAfterApproval","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"reputation","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"string","name":"_jobSpecURI","type":"string"},{"internalType":"uint256","name":"_payout","type":"uint256"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"string","name":"_details","type":"string"}],"name":"createJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobCore","outputs":[{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"assignedAgent","type":"address"},{"internalType":"uint256","name":"payout","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"uint256","name":"assignedAt","type":"uint256"},{"internalType":"bool","name":"completed","type":"bool"},{"internalType":"bool","name":"disputed","type":"bool"},{"internalType":"bool","name":"expired","type":"bool"},{"internalType":"uint8","name":"agentPayoutPct","type":"uint8"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobValidation","outputs":[{"internalType":"bool","name":"completionRequested","type":"bool"},{"internalType":"uint256","name":"validatorApprovals","type":"uint256"},{"internalType":"uint256","name":"validatorDisapprovals","type":"uint256"},{"internalType":"uint256","name":"completionRequestedAt","type":"uint256"},{"internalType":"uint256","name":"disputedAt","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobSpecURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobCompletionURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEmployerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobAssignedAgentOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"getJobSelectionInfo","outputs":[{"internalType":"uint8","name":"intakeMode","type":"uint8"},{"internalType":"address","name":"selectedAgent","type":"address"},{"internalType":"bytes32","name":"perJobAgentRoot","type":"bytes32"},{"internalType":"uint64","name":"selectionExpiresAt","type":"uint64"},{"internalType":"uint64","name":"checkpointWindow","type":"uint64"},{"internalType":"uint64","name":"checkpointDeadline","type":"uint64"},{"internalType":"bool","name":"checkpointSubmitted","type":"bool"},{"internalType":"address","name":"assignedAgent","type":"address"}],"stateMutability":"view","type":"function"},
@@ -3978,33 +3962,15 @@ const AGIJobManagerABI = [
     ];
 
     const ENSJobPagesABI = [
-      {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"ens","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"nameWrapper","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"publicResolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"jobsRootNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobsRootName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"jobsRootNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"configLocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"jobLabelPrefix","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"validateConfiguration","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"previewJobEnsLabel","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"previewJobEnsName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"previewJobEnsURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"previewJobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"effectiveJobEnsLabel","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"effectiveJobEnsName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"effectiveJobEnsURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"effectiveJobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"publicResolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsLabel","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobLabelSnapshot","outputs":[{"internalType":"bool","name":"isSet","type":"bool"},{"internalType":"string","name":"label","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsIssued","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsReady","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsExists","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobAuthorityInfo","outputs":[{"internalType":"bool","name":"authorityEstablished","type":"bool"},{"internalType":"string","name":"label","type":"string"},{"internalType":"bytes32","name":"labelHash","type":"bytes32"},{"internalType":"uint256","name":"rootVersionId","type":"uint256"},{"internalType":"bytes32","name":"authoritativeRootNode","type":"bytes32"},{"internalType":"bytes32","name":"authoritativeNode","type":"bytes32"},{"internalType":"uint8","name":"snapshotSource","type":"uint8"},{"internalType":"uint256","name":"snapshotVersion","type":"uint256"},{"internalType":"uint256","name":"authorityEstablishedAt","type":"uint256"},{"internalType":"bool","name":"legacyImported","type":"bool"},{"internalType":"bool","name":"finalized","type":"bool"},{"internalType":"bool","name":"fuseBurned","type":"bool"}],"stateMutability":"view","type":"function"}
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"}
     ];
 
 
@@ -4117,7 +4083,6 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       {"inputs":[],"name":"jobsRootNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobsRootName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"validateConfiguration","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"configLocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"moderators","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"blacklistedAgents","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
@@ -4143,7 +4108,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       {"inputs":[{"internalType":"address","name":"newWrapper","type":"address"}],"name":"updateNameWrapper","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"bytes32","name":"a","type":"bytes32"},{"internalType":"bytes32","name":"b","type":"bytes32"},{"internalType":"bytes32","name":"c","type":"bytes32"},{"internalType":"bytes32","name":"d","type":"bytes32"}],"name":"updateRootNodes","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"address","name":"newEnsPages","type":"address"}],"name":"setEnsJobPages","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"lockIdentityConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"lockIdentityConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawAGI","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"rescueETH","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"rescueERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -4194,7 +4159,6 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       {"inputs":[],"name":"jobsRootNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobsRootName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"validateConfiguration","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"configLocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobLabelPrefix","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobLabelSnapshot","outputs":[{"internalType":"bool","name":"isSet","type":"bool"},{"internalType":"string","name":"label","type":"string"}],"stateMutability":"view","type":"function"},
@@ -4208,20 +4172,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       {"inputs":[{"internalType":"address","name":"resolver","type":"address"}],"name":"setPublicResolver","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"bytes32","name":"rootNode","type":"bytes32"},{"internalType":"string","name":"rootName","type":"string"}],"name":"setJobsRoot","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"address","name":"jobManager","type":"address"}],"name":"setJobManager","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"lockConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"string","name":"specURI","type":"string"}],"name":"createJobPage","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"label","type":"string"}],"name":"repairAuthoritySnapshot","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"label","type":"string"},{"internalType":"uint256","name":"rootVersionId","type":"uint256"}],"name":"repairAuthoritySnapshotExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"repairResolver","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"specURI","type":"string"}],"name":"repairSpecTextExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"completionURI","type":"string"}],"name":"repairCompletionTextExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"specURI","type":"string"},{"internalType":"string","name":"completionURI","type":"string"}],"name":"repairTextsExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"bool","name":"revoke","type":"bool"}],"name":"repairAuthorisationsExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"string","name":"specURI","type":"string"}],"name":"replayCreateExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"agent","type":"address"}],"name":"replayAssignExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"completionURI","type":"string"}],"name":"replayCompletionExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"}],"name":"replayRevokeExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"bool","name":"burnFuses","type":"bool"}],"name":"replayLockExplicit","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"lockConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"string","name":"specURI","type":"string"}],"name":"createJobPage","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"agent","type":"address"}],"name":"onAgentAssigned","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"jobCompletionURI","type":"string"}],"name":"onCompletionRequested","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"}],"name":"revokePermissions","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -4252,7 +4204,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return !addr || /^0x0{40}$/i.test(String(addr).trim());
     }
     function clearEnsPreview(reason='ENS preview reset'){
-      ['ensPagesAddress','ensPagesAddressSource','ensPagesOwner','ensRegistryAddress','ensNameWrapperAddress','ensPublicResolverAddress','ensRootName','ensRootNode','ensLinkedJobManager','ensJobLabelPrefixPreview','ensNextJobId','predictedJobLabel','predictedEnsName','predictedEnsURI','predictedEnsNode','effectiveJobLabel','effectiveEnsURI','ensValidationMask','ensValidationSummary','ensValidationPass','ensValidationFail','ensConfigLocked','ensHookReadiness'].forEach(id=>{ if(el(id)) el(id).textContent = id==='ensPagesAddressSource' ? 'unavailable' : '—'; });
+      ['ensPagesAddress','ensPagesAddressSource','ensPagesOwner','ensRegistryAddress','ensNameWrapperAddress','ensPublicResolverAddress','ensRootName','ensRootNode','ensLinkedJobManager','ensJobLabelPrefixPreview','ensNextJobId','ensSnapshotStatus','predictedJobLabel','predictedEnsName','predictedEnsURI','predictedEnsNode','ensMetadataPosture','ensConfigLocked','ensHookReadiness'].forEach(id=>{ if(el(id)) el(id).textContent = id==='ensPagesAddressSource' ? 'unavailable' : '—'; });
+      if(el('managerTokenUriMode')) el('managerTokenUriMode').textContent = 'Unavailable in public ABI';
       resolvedEnsJobPagesAddress = '';
       resolvedEnsJobPagesSource = 'unavailable';
       ensJobPages = null;
@@ -4266,9 +4219,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!read?.__safeReadError && !isZeroAddress(read)){
         viaGetter = String(read);
         source = 'AGIJobManager getter';
-      }else if(!isZeroAddress(KNOWN_ENS_JOB_PAGES_FALLBACK)){
-        viaGetter = KNOWN_ENS_JOB_PAGES_FALLBACK;
-        source = 'verified fallback';
+      }else if(!isZeroAddress(ACTIVE_ENS_JOB_PAGES)){
+        viaGetter = ACTIVE_ENS_JOB_PAGES;
+        source = 'embedded active default';
       }
       if(!viaGetter){ clearEnsPreview('no ENSJobPages address available'); return null; }
       resolvedEnsJobPagesAddress = viaGetter;
@@ -4837,24 +4790,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return true;
     }
     const UI_CONTINUITY_KEY = 'agijobmanagerprime.v40.uiContinuity';
-    const LEGACY_UI_CONTINUITY_KEYS = ['agijobmanagerprime.v39.uiContinuity'];
     const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','preflightTermsAccepted','agentSub','clubSub','mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
     const UI_CONTINUITY_TOGGLES = ['alphaEnsExpertDetails'];
     function continuityLoad(){
-      try{
-        const current = JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {};
-        if(current && Object.keys(current).length) return current;
-      }catch{}
-      for(const legacyKey of LEGACY_UI_CONTINUITY_KEYS){
-        try{
-          const legacy = JSON.parse(localStorage.getItem(legacyKey) || '{}') || {};
-          if(legacy && Object.keys(legacy).length){
-            try{ localStorage.setItem(UI_CONTINUITY_KEY, JSON.stringify({...legacy, migratedFrom:legacyKey, migratedAt:Date.now()})); }catch{}
-            return legacy;
-          }
-        }catch{}
-      }
-      return {};
+      try{ return JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {}; }catch(_){ return {}; }
     }
     function continuitySave(patch={}){
       const current = continuityLoad();
@@ -5394,7 +5333,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           ensPreview: predictedEns || null,
           ensURI: predictedEnsUri && !predictedEnsUri.includes("—") ? predictedEnsUri : null,
           generatedAt: nowIso(),
-          createdVia: "AGIJobManager Prime console v34.0"
+          createdVia: "AGIJobManager Prime console v40.0"
         }
       };
       Object.keys(obj).forEach(k=>{ if(obj[k]===undefined) delete obj[k]; });
@@ -5519,19 +5458,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       setToast("Generated URI inserted into Job Spec URI.", "ok");
     }
     function useEnsUriPreview(){
-      const uri = (el("effectiveEnsURI")?.textContent || "").trim() || (el("predictedEnsURI")?.textContent || "").trim();
+      const uri = (el("predictedEnsURI")?.textContent || "").trim();
       if(!uri || uri === "—"){ setToast("No ENS URI preview available.", "warn"); return; }
-      navigator.clipboard.writeText(uri).then(()=>setToast("ENS URI copied.", "ok")).catch(()=>setToast(uri, "ok"));
-    }
-    function decodeEnsConfigMask(raw){
-      const mask = Number(raw || 0);
-      const defs = [
-        [1,'ENS registry'],[2,'Resolver'],[4,'Root configured'],[8,'Root owner'],[16,'Wrapper approval'],
-        [32,'JobManager link'],[64,'Root namehash'],[128,'Resolver text'],[256,'Resolver setText'],[512,'Resolver setAuthorisation']
-      ];
-      const failing = defs.filter(([bit])=>(mask & bit)!==0).map(([,name])=>name);
-      const passing = defs.filter(([bit])=>(mask & bit)===0).map(([,name])=>name);
-      return {mask, failing, passing, summary: mask===0 ? 'CONFIG_OK · all checks pass' : `CONFIG_ERR · ${failing.length} failing check(s)`};
+      navigator.clipboard.writeText(uri).then(()=>setToast("Effective ENS URI copied.", "ok")).catch(()=>setToast(uri, "ok"));
     }
     async function updateEnsJobPagePreview(){
       try{
@@ -5542,7 +5471,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           return;
         }
         const nextJobId = Number(await agiJobManager.methods.nextJobId().call());
-        const [owner, ensRegistry, nameWrapper, publicResolver, rootName, rootNode, jobManager, validationMask, configLocked, prefix, previewLabel, previewName, previewUri, previewNode, effectiveLabel, effectiveUri] = await Promise.all([
+        const [owner, ensRegistry, nameWrapper, publicResolver, rootName, rootNode, jobManager, configLocked, prefix, snapshot, label, ensName, ensURI, ensNode] = await Promise.all([
           ensContract.methods.owner().call().catch(()=>''),
           ensContract.methods.ens().call().catch(()=>''),
           ensContract.methods.nameWrapper().call().catch(()=>''),
@@ -5550,17 +5479,17 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           ensContract.methods.jobsRootName().call().catch(()=>''),
           ensContract.methods.jobsRootNode().call().catch(()=>''),
           ensContract.methods.jobManager().call().catch(()=>''),
-          ensContract.methods.validateConfiguration().call().catch(()=>0),
           ensContract.methods.configLocked().call().catch(()=>false),
           ensContract.methods.jobLabelPrefix().call().catch(()=>''),
-          ensContract.methods.previewJobEnsLabel(String(nextJobId)).call().catch(()=>''),
-          ensContract.methods.previewJobEnsName(String(nextJobId)).call().catch(()=>''),
-          ensContract.methods.previewJobEnsURI(String(nextJobId)).call().catch(()=>''),
-          ensContract.methods.previewJobEnsNode(String(nextJobId)).call().catch(()=>''), 
-          ensContract.methods.effectiveJobEnsLabel(String(nextJobId)).call().catch(()=>''), 
-          ensContract.methods.effectiveJobEnsURI(String(nextJobId)).call().catch(()=>''), 
+          ensContract.methods.jobLabelSnapshot(String(nextJobId)).call().catch(()=>({isSet:false,label:''})),
+          ensContract.methods.jobEnsLabel(String(nextJobId)).call().catch(()=>''),
+          ensContract.methods.jobEnsName(String(nextJobId)).call().catch(()=>''),
+          ensContract.methods.jobEnsURI(String(nextJobId)).call().catch(()=>''),
+          ensContract.methods.jobEnsNode(String(nextJobId)).call().catch(()=>''),
         ]);
-        const validation = decodeEnsConfigMask(validationMask);
+        const snapIsSet = Array.isArray(snapshot) ? !!snapshot[0] : !!(snapshot?.isSet ?? snapshot?.[0]);
+        const snapLabel = Array.isArray(snapshot) ? String(snapshot[1] || '') : String(snapshot?.label ?? snapshot?.[1] ?? '');
+        const effectiveLabel = String(label || snapLabel || 'unavailable');
         if(el('ensPagesOwner')) el('ensPagesOwner').textContent = owner || '—';
         if(el('ensRegistryAddress')) el('ensRegistryAddress').textContent = ensRegistry || '—';
         if(el('ensNameWrapperAddress')) el('ensNameWrapperAddress').textContent = nameWrapper || '—';
@@ -5570,20 +5499,17 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         if(el('ensLinkedJobManager')) el('ensLinkedJobManager').textContent = jobManager || '—';
         if(el('ensJobLabelPrefixPreview')) el('ensJobLabelPrefixPreview').textContent = prefix || 'unavailable';
         if(el('ensNextJobId')) el('ensNextJobId').textContent = String(nextJobId);
-        if(el('predictedJobLabel')) el('predictedJobLabel').textContent = previewLabel || '—';
-        if(el('predictedEnsName')) el('predictedEnsName').textContent = previewName || '—';
-        if(el('predictedEnsURI')) el('predictedEnsURI').textContent = previewUri || '—';
-        if(el('predictedEnsNode')) el('predictedEnsNode').textContent = previewNode || '—';
-        if(el('effectiveJobLabel')) el('effectiveJobLabel').textContent = effectiveLabel || '—';
-        if(el('effectiveEnsURI')) el('effectiveEnsURI').textContent = effectiveUri || '—';
-        if(el('ensValidationMask')) el('ensValidationMask').textContent = String(validation.mask);
-        if(el('ensValidationSummary')) el('ensValidationSummary').textContent = validation.summary;
-        if(el('ensValidationPass')) el('ensValidationPass').textContent = validation.passing.join(', ') || '—';
-        if(el('ensValidationFail')) el('ensValidationFail').textContent = validation.failing.join(', ') || 'none';
+        if(el('ensSnapshotStatus')) el('ensSnapshotStatus').textContent = snapIsSet ? `snapshotted (${snapLabel || effectiveLabel})` : 'live preview / unsnapshotted';
+        if(el('predictedJobLabel')) el('predictedJobLabel').textContent = effectiveLabel;
+        if(el('predictedEnsName')) el('predictedEnsName').textContent = ensName || '—';
+        if(el('predictedEnsURI')) el('predictedEnsURI').textContent = ensURI || '—';
+        if(el('predictedEnsNode')) el('predictedEnsNode').textContent = ensNode || '—';
+        if(el('ensMetadataPosture')) el('ensMetadataPosture').textContent = 'Observed through effective identity + resolver text checks';
         if(el('ensConfigLocked')) el('ensConfigLocked').textContent = configLocked ? 'true' : 'false';
+        if(el('managerTokenUriMode')) el('managerTokenUriMode').textContent = 'Unavailable in public ABI';
         const linked = !!jobManager && String(jobManager).toLowerCase() === AGI_JOB_MANAGER.toLowerCase();
-        const prereqs = !isZeroAddress(ensRegistry) && !isZeroAddress(publicResolver) && !!rootName && !isZeroAddress(nameWrapper) && linked && validation.mask===0;
-        if(el('ensHookReadiness')) el('ensHookReadiness').textContent = prereqs ? 'Ready: configuration validates and linked authority surface is coherent.' : 'Not fully ready: at least one configuration/authority prerequisite is failing.';
+        const prereqs = !isZeroAddress(ensRegistry) && !isZeroAddress(publicResolver) && !!rootName && !isZeroAddress(nameWrapper) && linked;
+        if(el('ensHookReadiness')) el('ensHookReadiness').textContent = prereqs ? 'Public prerequisites satisfied; full internal readiness not publicly provable.' : 'Public prerequisites incomplete; full internal readiness not publicly provable.';
         window.protocolState = {...(window.protocolState||{}), ensJobLabelPrefix: prefix || '' };
       }catch(e){
         clearEnsPreview('ENS preview read failed');
@@ -8268,25 +8194,14 @@ function normalizeIpfsToHttp(uri){
           const resolved = await resolveEnsJobPagesContract();
           if(!resolved) return {texts:{}, degraded:true};
         }
-        const [rootName, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo] = await Promise.all([
+        const [rootName, ensName, ensUri, node, resolverAddr] = await Promise.all([
           ensJobPages.methods.jobsRootName().call().catch(()=>""),
-          ensJobPages.methods.previewJobEnsName(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.previewJobEnsURI(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.previewJobEnsNode(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.effectiveJobEnsName(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.effectiveJobEnsURI(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.effectiveJobEnsNode(String(jobId)).call().catch(()=>""),
+          ensJobPages.methods.jobEnsName(String(jobId)).call().catch(()=>""),
+          ensJobPages.methods.jobEnsURI(String(jobId)).call().catch(()=>""),
+          ensJobPages.methods.jobEnsNode(String(jobId)).call().catch(()=>""),
           ensJobPages.methods.publicResolver().call().catch(()=>"")
-          ,ensJobPages.methods.jobEnsReady(String(jobId)).call().catch(()=>false)
-          ,ensJobPages.methods.jobEnsIssued(String(jobId)).call().catch(()=>false)
-          ,ensJobPages.methods.jobEnsExists(String(jobId)).call().catch(()=>false)
-          ,ensJobPages.methods.validateConfiguration().call().catch(()=>0)
-          ,ensJobPages.methods.jobAuthorityInfo(String(jobId)).call().catch(()=>null)
         ]);
-        const ensUri = effectiveUri || previewUri || '';
-        const ensName = effectiveName || previewName || '';
-        const node = effectiveNode || previewNode || '';
-        const result = {rootName, ensName, ensUri, node, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo, texts:{}};
+        const result = {rootName, ensName, ensUri, node, resolverAddr, texts:{}};
         if(resolverAddr && resolverAddr !== '0x0000000000000000000000000000000000000000' && node){
           const resolver = new web3.eth.Contract(PublicResolverABI, resolverAddr);
           for(const key of ["schema","agijobs.spec.public","agijobs.completion.public"]){
@@ -8420,16 +8335,11 @@ function normalizeIpfsToHttp(uri){
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
       el('jobEnsRecords').innerHTML = [
         ['ENS root', escapeHtml(ens.rootName || '—')],
-        ['Preview ENS', escapeHtml(ens.previewName || '—')],
-        ['Preview URI', ens.previewUri ? safeLink(ens.previewUri) : '—'],
-        ['Preview node', escapeHtml(ens.previewNode || '—')],
-        ['Effective ENS', escapeHtml(ens.effectiveName || '—')],
-        ['Effective URI', ens.effectiveUri ? safeLink(ens.effectiveUri) : '—'],
-        ['Effective node', escapeHtml(ens.effectiveNode || '—')],
+        ['ENS name', escapeHtml(ens.ensName || '—')],
+        ['ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
+        ['ENS node', escapeHtml(ens.node || '—')],
         ['Resolver', escapeHtml(ens.resolverAddr || '—')],
-        ['Readiness/Issued/Exists', `${ens.ready?'ready':'not-ready'} / ${ens.issued?'issued':'not-issued'} / ${ens.exists?'exists':'missing'}`],
-        ['Legacy tokenURI mode getter', ens.tokenUriMode == null ? 'not exposed on this deployment' : (ens.tokenUriMode ? 'enabled' : 'disabled')],
-        ['Configuration mask', String(ens.validationMask ?? '—')],
+        ['Token URI mode', 'Unavailable in ENSJobPages public ABI (v40)'],
         ['schema', escapeHtml(ens.texts?.schema || '—')], ['agijobs.spec.public', ens.texts?.['agijobs.spec.public'] ? safeLink(ens.texts['agijobs.spec.public']) : '—'],
         ['agijobs.completion.public', ens.texts?.['agijobs.completion.public'] ? safeLink(ens.texts['agijobs.completion.public']) : '—']
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
@@ -8486,7 +8396,7 @@ function normalizeIpfsToHttp(uri){
         version: 'v26',
         chainId: (window.protocolState?.chainId == null ? null : Number(window.protocolState.chainId)),
         contract: AGI_JOB_MANAGER,
-        ensJobPages: resolvedEnsJobPagesAddress || KNOWN_ENS_JOB_PAGES_FALLBACK,
+        ensJobPages: resolvedEnsJobPagesAddress || ACTIVE_ENS_JOB_PAGES,
         generatedAt: new Date().toISOString(),
         source
       };
@@ -8689,19 +8599,7 @@ function normalizeIpfsToHttp(uri){
       setJobLabelPrefix:[{name:'prefix',type:'string'}], setENSRegistry:[{name:'registry',type:'address'}], setNameWrapper:[{name:'wrapper',type:'address'}], setPublicResolver:[{name:'resolver',type:'address'}],
       setJobsRoot:[{name:'rootNode',type:'bytes32'},{name:'rootName',type:'string'}], setJobManager:[{name:'jobManager',type:'address'}],
       lockConfiguration:[],
-      createJobPage:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'specURI',type:'string'}],
-      repairAuthoritySnapshot:[{name:'jobId',type:'uint256'},{name:'label',type:'string'}],
-      repairAuthoritySnapshotExplicit:[{name:'jobId',type:'uint256'},{name:'label',type:'string'},{name:'rootVersionId',type:'uint256'}],
-      repairResolver:[{name:'jobId',type:'uint256'}],
-      repairSpecTextExplicit:[{name:'jobId',type:'uint256'},{name:'specURI',type:'string'}],
-      repairCompletionTextExplicit:[{name:'jobId',type:'uint256'},{name:'completionURI',type:'string'}],
-      repairTextsExplicit:[{name:'jobId',type:'uint256'},{name:'specURI',type:'string'},{name:'completionURI',type:'string'}],
-      repairAuthorisationsExplicit:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'},{name:'revoke',type:'bool'}],
-      replayCreateExplicit:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'specURI',type:'string'}],
-      replayAssignExplicit:[{name:'jobId',type:'uint256'},{name:'agent',type:'address'}],
-      replayCompletionExplicit:[{name:'jobId',type:'uint256'},{name:'completionURI',type:'string'}],
-      replayRevokeExplicit:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'}],
-      replayLockExplicit:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'},{name:'burnFuses',type:'bool'}],
+createJobPage:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'specURI',type:'string'}],
       onAgentAssigned:[{name:'jobId',type:'uint256'},{name:'agent',type:'address'}], onCompletionRequested:[{name:'jobId',type:'uint256'},{name:'jobCompletionURI',type:'string'}],
       revokePermissions:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'}], lockJobENS:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{name:'agent',type:'address'},{name:'burnFuses',type:'bool'}]
     };
@@ -8793,7 +8691,7 @@ function normalizeIpfsToHttp(uri){
       if(!agiJobManager) return;
       if(!ensJobPages) await resolveEnsJobPagesContract();
       if(!ensJobPages) return;
-      const [mOwnerRead, eOwnerRead, moderatorRead, prefixRead, ensRegistryRead, nameWrapperRead, publicResolverRead, rootNodeRead, rootNameRead, jobManagerRead, validationMaskRead, configLockedRead] = await Promise.all([
+      const [mOwnerRead, eOwnerRead, moderatorRead, prefixRead, ensRegistryRead, nameWrapperRead, publicResolverRead, rootNodeRead, rootNameRead, jobManagerRead, configLockedRead] = await Promise.all([
         runSafeReadStep('owner', ()=>agiJobManager.methods.owner().call(), {silent:true}),
         runSafeReadStep('ensOwner', ()=>ensJobPages.methods.owner().call(), {silent:true}),
         userAccount ? runSafeReadStep('moderators', ()=>agiJobManager.methods.moderators(userAccount).call(), {silent:true}) : false,
@@ -8804,7 +8702,6 @@ function normalizeIpfsToHttp(uri){
         runSafeReadStep('jobsRootNode', ()=>ensJobPages.methods.jobsRootNode().call(), {silent:true}),
         runSafeReadStep('jobsRootName', ()=>ensJobPages.methods.jobsRootName().call(), {silent:true}),
         runSafeReadStep('jobManager', ()=>ensJobPages.methods.jobManager().call(), {silent:true}),
-        runSafeReadStep('validateConfiguration', ()=>ensJobPages.methods.validateConfiguration().call(), {silent:true}),
         runSafeReadStep('configLocked', ()=>ensJobPages.methods.configLocked().call(), {silent:true})
       ]);
       const managerOwner = mOwnerRead?.__safeReadError ? 'unavailable' : mOwnerRead;
@@ -8820,7 +8717,6 @@ function normalizeIpfsToHttp(uri){
       if(el('ensAdminJobsRootNode')) el('ensAdminJobsRootNode').textContent = rootNodeRead?.__safeReadError ? '—' : (rootNodeRead || '—');
       if(el('ensAdminJobsRootName')) el('ensAdminJobsRootName').textContent = rootNameRead?.__safeReadError ? '—' : (rootNameRead || '—');
       if(el('ensAdminJobManager')) el('ensAdminJobManager').textContent = jobManagerRead?.__safeReadError ? '—' : (jobManagerRead || '—');
-      if(el('ensAdminUseTokenUri')) el('ensAdminUseTokenUri').textContent = validationMaskRead?.__safeReadError ? '—' : String(validationMaskRead);
       if(el('ensAdminConfigLocked')) el('ensAdminConfigLocked').textContent = configLockedRead?.__safeReadError ? '—' : String(!!configLockedRead);
       if(el('ensJobLabelPrefix')) el('ensJobLabelPrefix').textContent = prefixRead?.__safeReadError ? 'unavailable' : (prefixRead || '—');
       const isManagerOwner = userAccount && managerOwner && String(userAccount).toLowerCase() === String(managerOwner).toLowerCase();
@@ -8830,7 +8726,7 @@ function normalizeIpfsToHttp(uri){
       if(el('ensAdminPostureBadges')) el('ensAdminPostureBadges').innerHTML = [postureBadge(!!userAccount, 'Wallet connected', 'Wallet disconnected'),postureBadge(!!isEnsOwner, 'ENSJobPages owner', 'Not ENSJobPages owner')].join(' ');
       if(el('managerRoutineControls')) el('managerRoutineControls').innerHTML = ['pause','unpause','setSettlementPaused','addModerator','removeModerator','blacklistAgent','blacklistValidator','withdrawAGI','updateMerkleRoots','setRequiredValidatorApprovals','setRequiredValidatorDisapprovals','setPremiumReputationThreshold','setVoteQuorum','setMaxJobPayout','setJobDurationLimit','setMaxActiveJobsPerAgent','setCompletionReviewPeriod','setDisputeReviewPeriod','setValidatorBondParams','setAgentBondParams','setValidatorSlashBps','setChallengePeriodAfterApproval','setValidationRewardPercentage','addAdditionalValidator','removeAdditionalValidator','addAdditionalAgent','removeAdditionalAgent','addAGIType','disableAGIType'].map(m=>adminControlButton('manager',m,false)).join(' ');
       if(el('managerDangerControls')) el('managerDangerControls').innerHTML = ['updateAGITokenAddress','updateEnsRegistry','updateNameWrapper','updateRootNodes','setEnsJobPages','lockIdentityConfiguration','rescueETH','rescueERC20','rescueToken','resolveDisputeWithCode','resolveStaleDispute','withdrawAGI'].map(m=>adminControlButton('manager',m,true)).join(' ');
-      if(el('ensRoutineControls')) el('ensRoutineControls').innerHTML = ['setJobLabelPrefix','setENSRegistry','setNameWrapper','setPublicResolver','setJobsRoot','setJobManager','createJobPage','onAgentAssigned','onCompletionRequested','revokePermissions','lockJobENS','repairAuthoritySnapshot','repairAuthoritySnapshotExplicit','repairResolver','repairSpecTextExplicit','repairCompletionTextExplicit','repairTextsExplicit','repairAuthorisationsExplicit','replayCreateExplicit','replayAssignExplicit','replayCompletionExplicit','replayRevokeExplicit','replayLockExplicit'].map(m=>adminControlButton('ens',m,false)).join(' ');
+      if(el('ensRoutineControls')) el('ensRoutineControls').innerHTML = ['setJobLabelPrefix','setENSRegistry','setNameWrapper','setPublicResolver','setJobsRoot','setJobManager','createJobPage','onAgentAssigned','onCompletionRequested','revokePermissions','lockJobENS'].map(m=>adminControlButton('ens',m,false)).join(' ');
       if(el('ensDangerControls')) el('ensDangerControls').innerHTML = ['lockConfiguration'].map(m=>adminControlButton('ens',m,true)).join(' ');
       window.protocolState = {...(window.protocolState||{}), ensJobLabelPrefix: prefixRead?.__safeReadError ? '' : String(prefixRead || '') };
     }
