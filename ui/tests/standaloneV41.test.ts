@@ -2,13 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-describe('standalone v41 artifact', () => {
-  const file = path.resolve(__dirname, '../agijobmanager_genesis_job_mainnet_2026-03-05-v41.html');
+describe('standalone v42 artifact', () => {
+  const file = path.resolve(__dirname, '../agijobmanager_genesis_job_mainnet_2026-03-05-v42.html');
 
-  it('exists and is versioned as v41', () => {
+  it('exists and is versioned as v42', () => {
     expect(fs.existsSync(file)).toBe(true);
     const html = fs.readFileSync(file, 'utf8');
-    expect(html).toContain('Prime Mainnet Console · v41');
+    expect(html).toContain('Prime Mainnet Console · v42');
   });
 
   it('pins the required live contract addresses in the standalone snapshot', () => {
