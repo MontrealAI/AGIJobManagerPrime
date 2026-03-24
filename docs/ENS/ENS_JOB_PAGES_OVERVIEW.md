@@ -62,6 +62,12 @@ The contract now exposes explicit owner repair entrypoints that do **not** rely 
 - `replayRevokeExplicit(jobId, employer, agent)`
 - `replayLockExplicit(jobId, employer, agent, burnFuses)`
 
+For legacy unmanaged-node migration without expanding `ENSJobPages` runtime size, use:
+
+- `ENSJobPagesMigrationHelper.migrateLegacyJobPageExplicit(pages, jobId, exactLabel, rootVersionId, employer, specURI)`
+
+This helper is intentionally separate so migration/adoption remains first-class while preserving `ENSJobPages` bytecode budget.
+
 The older convenience functions remain useful only when the manager exposes the richer V1 view surface.
 
 ## Compatibility truth model

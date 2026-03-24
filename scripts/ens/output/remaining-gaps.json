@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-03-24T00:00:00Z",
+  "remaining": [
+    "Lean-mode metadata hydration is keeper-assisted by design under unchanged Prime.",
+    "Finalization/fuse burn remains explicit operator policy, not automatic manager behavior.",
+    "Canary automation can be further hardened through ops rehearsal feedback."
+  ],
+  "closedInPatch": [
+    "Added ENSJobPagesMigrationHelper for wrapped/unwrapped unmanaged-node adoption.",
+    "Added default bytecode-size enforcement for ENSJobPagesMigrationHelper.",
+    "Added ENS artifact headroom preflight to hardhat/scripts/deploy-ens-job-pages.js."
+  ]
+}

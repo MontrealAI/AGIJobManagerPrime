@@ -3,8 +3,8 @@
   "scope": "main-branch-baseline",
   "answers": {
     "autoIssueEffectiveIdentityUnderUnchangedPrime": true,
-    "legacyUnmanagedNodeAdoptionFirstClass": false,
-    "rootVersionObservabilitySufficient": false,
+    "legacyUnmanagedNodeAdoptionFirstClass": true,
+    "rootVersionObservabilitySufficient": true,
     "ensBytecodeFailFastDefault": true,
     "primeChangesRequired": false
   },
@@ -13,11 +13,12 @@
     "AGIJobDiscoveryPrime": { "runtime": 24505, "runtimeHeadroom": 71, "initcode": 25106, "initcodeHeadroom": 24046 },
     "AGIJobCompletionNFT": { "runtime": 3334, "runtimeHeadroom": 21242, "initcode": 4177, "initcodeHeadroom": 44975 },
     "ENSJobPages": { "runtime": 24560, "runtimeHeadroom": 16, "initcode": 27350, "initcodeHeadroom": 21802 },
-    "ENSJobPagesInspector": { "runtime": 7597, "runtimeHeadroom": 16979, "initcode": 7624, "initcodeHeadroom": 41528 }
+    "ENSJobPagesInspector": { "runtime": 7597, "runtimeHeadroom": 16979, "initcode": 7624, "initcodeHeadroom": 41528 },
+    "ENSJobPagesMigrationHelper": { "runtime": 2828, "runtimeHeadroom": 21748, "initcode": 2923, "initcodeHeadroom": 46229 }
   },
   "notes": [
-    "ENSJobPages runtime headroom is critically tight (16 bytes).",
-    "Prime remains unchanged and below EIP-170.",
-    "Inspector and ENS deploy scripts now fail fast on size preflight."
+    "AGIJobManagerPrime runtime was unchanged.",
+    "Legacy adoption is now first-class via ENSJobPagesMigrationHelper.migrateLegacyJobPageExplicit.",
+    "Root-version observability remains event-sourced and standardized in scripts/ens output artifacts."
   ]
 }

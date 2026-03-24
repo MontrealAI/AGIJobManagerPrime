@@ -23,6 +23,7 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 - `AGIJobCompletionNFT` runtime `3334` bytes (headroom `21242`), initcode `4177` bytes (headroom `44975`)
 - `ENSJobPages` runtime `24560` bytes (headroom `16`), initcode `27350` bytes (headroom `21802`)
 - `ENSJobPagesInspector` runtime `7597` bytes (headroom `16979`), initcode `7624` bytes (headroom `41528`)
+- `ENSJobPagesMigrationHelper` runtime `2828` bytes (headroom `21748`), initcode `2923` bytes (headroom `46229`)
 
 ## Commands executed in this pass
 
@@ -54,4 +55,4 @@ A fresh source audit was performed against the current checked-out baseline befo
 - Re-verified `renounceOwnership()` disablement in both Prime contracts.
 - Re-verified runtime+initcode gate logic in `scripts/check-bytecode-size.js`.
 
-No new Prime blocker regressions were identified in the current baseline. ENS-side bytecode headroom is now explicitly tracked as part of size-gate outputs.
+No new Prime blocker regressions were identified in the current baseline. ENS-side bytecode headroom is now explicitly tracked as part of size-gate outputs, including helper contracts intended for production migration operations.

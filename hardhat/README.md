@@ -29,6 +29,7 @@ Prime architecture:
 - `scripts/deploy.js` now runs ENS semantic preflight before wiring (`target code`, `handleHook callability`, `target.jobManager alignment`).
 - `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
 - `LOCK_CONFIG=1` is refused when manager compatibility mode is keeper-required/unresolved (`lean`/`none`).
+- `scripts/deploy-ens-job-pages.js` now also enforces ENS artifact budget thresholds (`MIN_RUNTIME_HEADROOM`, `MIN_INITCODE_HEADROOM`) before broadcast.
 - Plan summary printed before execution, including Prime bytecode/runtime headroom.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
 
@@ -62,6 +63,7 @@ Common deploy controls:
 - `scripts/deploy.js` now runs ENS semantic preflight before wiring (`target code`, `handleHook callability`, `target.jobManager alignment`).
 - `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
 - `LOCK_CONFIG=1` is refused when manager compatibility mode is keeper-required/unresolved (`lean`/`none`).
+- `MIN_RUNTIME_HEADROOM` / `MIN_INITCODE_HEADROOM` for ENS deploy preflight headroom floors.
 - `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
 - Pass `--network <mainnet|sepolia>` directly to `npm run verify:prime`
 
