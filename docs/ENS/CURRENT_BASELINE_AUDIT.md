@@ -47,3 +47,5 @@ Branch audited: current `main` working tree before final patch validation.
 
 - Re-ran size gates (`npm run size`, `npm run test:size`, `npm run test:size:benchmark`) and confirmed no `AGIJobManagerPrime` runtime growth.
 - Re-ran ENS/ABI/Prime hook regression tests and aligned stale assertions to current `agijob-` default label semantics and unchanged Prime hook behavior.
+- Hardened Hardhat cutover tooling so `deploy.js` preflights ENS target compatibility (code existence, `validateConfiguration()`, manager alignment, manager mode) before wiring `setEnsJobPages(...)`.
+- Hardened `deploy-ens-job-pages.js` to classify manager compatibility mode and refuse `LOCK_CONFIG` in unsafe/unresolved modes unless explicit keeper override is acknowledged.

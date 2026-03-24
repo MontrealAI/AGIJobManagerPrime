@@ -26,6 +26,10 @@ Prime architecture:
 - Dry-run mode:
   - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
+- `ENS_JOB_PAGES` wiring now runs semantic preflight before `setEnsJobPages(...)`:
+  - target must expose `validateConfiguration()`
+  - target `jobManager()` must match the just-deployed manager address
+  - manager compatibility mode must be `rich` or `lean` (never `none`)
 - `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
 - Plan summary printed before execution, including Prime bytecode/runtime headroom.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
@@ -190,6 +194,8 @@ Recommended wiring flow:
 
 1. Run `node ../scripts/ens/audit-mainnet.ts` and `node ../scripts/ens/phase0-mainnet-snapshot.mjs` first.
 2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js` and an explicit `JOB_MANAGER=<prime-or-legacy-manager>` on mainnet.
+   - script prints machine-readable compatibility posture (`managerMode`, `keeperRequired`, etc).
+   - `LOCK_CONFIG=1` is refused in unsafe modes and, for keeper-required mode, requires explicit `ALLOW_LOCK_WITH_KEEPER=1`.
 3. Confirm wrapped-root approvals and `validateConfiguration()==0`.
 4. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
 5. Validate one canary create flow plus one explicit repair flow from `node ../scripts/ens/repair-from-logs.ts`.

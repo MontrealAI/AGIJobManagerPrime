@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-03-24T00:00:00Z",
-  "branch": "main",
+  "branch": "work",
   "primeChangesRequired": false,
   "managerImplementsViewV1": false,
   "managerUsesTypedPushHooks": false,
@@ -16,14 +16,13 @@
     "non-blocking generic handleHook path"
   ],
   "incomplete": [
-    "lean mode metadata hydration",
-    "machine-readable manager compatibility signaling",
-    "docs/runbook honesty"
+    "lean mode metadata hydration (keeper-assisted by design)"
   ],
   "dangerousMismatches": [
     "0x304e6ade treated as resolver auth support",
     "inspector guessed isAuthorised(bytes32,address) external read surface",
     "mainnet deploy script stale implicit job manager default"
   ],
-  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair"
+  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair",
+  "hardhatPreflightPatched": true
 }

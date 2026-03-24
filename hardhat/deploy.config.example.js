@@ -18,8 +18,9 @@ module.exports = {
       '0x0effa6c54d4c4866ca6e9f4fc7426ba49e70e8f6303952e04c8f0218da68b99b',
     ],
     finalOwner: '0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201',
-    // Prime manager mainnet deployment currently observed in ENS replacement tooling:
-    // 0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e
+    // Optional: only set this if the ENSJobPages target has already passed
+    // validateConfiguration()==0 and has jobManager wired to the manager deployed by deploy.js.
+    // ensJobPages: '0x0000000000000000000000000000000000000000',
   },
 
   // Fill with real Sepolia addresses before any broadcast.
