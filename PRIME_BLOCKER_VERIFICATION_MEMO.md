@@ -21,9 +21,9 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 - `AGIJobManagerPrime` runtime `24472` bytes (headroom `104`), initcode `29972` bytes (headroom `19180`)
 - `AGIJobDiscoveryPrime` runtime `24505` bytes (headroom `71`), initcode `25106` bytes (headroom `24046`)
 - `AGIJobCompletionNFT` runtime `3334` bytes (headroom `21242`), initcode `4177` bytes (headroom `44975`)
-- `ENSJobPages` runtime `24560` bytes (headroom `16`), initcode `27350` bytes (headroom `21802`)
+- `ENSJobPages` runtime `24576` bytes (headroom `0`), initcode `27366` bytes (headroom `21786`)
 - `ENSJobPagesInspector` runtime `7597` bytes (headroom `16979`), initcode `7624` bytes (headroom `41528`)
-- `ENSJobPagesMigrationHelper` runtime `2828` bytes (headroom `21748`), initcode `2923` bytes (headroom `46229`)
+- `ENSJobPagesMigrationHelper` runtime `3135` bytes (headroom `21441`), initcode `3230` bytes (headroom `45922`)
 
 ## Commands executed in this pass
 

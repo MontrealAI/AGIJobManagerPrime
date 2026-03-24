@@ -40,6 +40,20 @@ contract('ENSJobPagesMigrationHelper', (accounts) => {
     assert.equal(await resolver.text(node, 'agijobs.spec.public'), 'ipfs://legacy-spec-7');
   });
 
+  it('adopts unmanaged unwrapped nodes when ENSJobPages already controls the parent root', async () => {
+    const { ens, manager, pages, helper, resolver } = await setup();
+    const label = 'agijob-17';
+    const node = subnode(namehash(ROOT), label);
+
+    await ens.setOwner(namehash(ROOT), pages.address, { from: owner });
+    await ens.setSubnodeRecord(namehash(ROOT), web3.utils.keccak256(label), outsider, resolver.address, 0, { from: owner });
+    await manager.setJob(17, employer, agent, 'ipfs://legacy-spec-17', { from: owner });
+    await pages.transferOwnership(helper.address, { from: owner });
+
+    await helper.migrateLegacyJobPageExplicit(pages.address, 17, label, 1, employer, 'ipfs://legacy-spec-17', { from: owner });
+    assert.equal(await ens.owner(node), pages.address, 'node should be reclaimed through ENSJobPages parent control path');
+  });
+
   it('adopts wrapped legacy nodes through wrapper subnode rewrite', async () => {
     const { ens, wrapper, manager, pages, helper } = await setup();
     const label = 'agijob-8';

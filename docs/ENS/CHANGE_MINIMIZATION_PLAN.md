@@ -27,4 +27,4 @@
 
 - Prime runtime modifications.
 - Automatic manager-side finalization/fuse burn paths.
-- `ENSJobPages` runtime growth (headroom remains critically tight at 16 bytes).
+- `ENSJobPages` runtime growth (headroom is now 0 bytes at the EIP-170 ceiling).

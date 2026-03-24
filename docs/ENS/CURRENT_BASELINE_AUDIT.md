@@ -38,4 +38,4 @@ Audit date: 2026-03-24 (UTC)
 
 ## Dangerous mismatches identified
 
-- Bytecode headroom on `ENSJobPages` remains extremely tight (`16` bytes), therefore migrations/finality enhancements should prefer ENS-side helper contracts and scripts over direct `ENSJobPages` runtime expansion.
+- Bytecode headroom on `ENSJobPages` is now exactly `0` bytes (at the EIP-170 ceiling), therefore migrations/finality enhancements must prefer ENS-side helper contracts and scripts over direct `ENSJobPages` runtime expansion.

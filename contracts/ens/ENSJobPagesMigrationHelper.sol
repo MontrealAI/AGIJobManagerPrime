@@ -67,7 +67,11 @@ contract ENSJobPagesMigrationHelper is Ownable {
             target.replayCreateExplicit(jobId, employer, specURI);
             created = true;
         } else if (!_nodeManagedByTarget(wrapper, currentOwner, node, pages)) {
-            _adoptNode(ensRegistry, wrapper, rootNode, exactLabel, node, pages);
+            if (ensRegistry.owner(rootNode) == pages) {
+                target.replayCreateExplicit(jobId, employer, specURI);
+            } else {
+                _adoptNode(ensRegistry, wrapper, rootNode, exactLabel, node, pages);
+            }
             adopted = true;
         }
 

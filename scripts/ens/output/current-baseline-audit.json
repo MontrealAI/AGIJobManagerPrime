@@ -9,16 +9,46 @@
     "primeChangesRequired": false
   },
   "bytecode": {
-    "AGIJobManagerPrime": { "runtime": 24472, "runtimeHeadroom": 104, "initcode": 29972, "initcodeHeadroom": 19180 },
-    "AGIJobDiscoveryPrime": { "runtime": 24505, "runtimeHeadroom": 71, "initcode": 25106, "initcodeHeadroom": 24046 },
-    "AGIJobCompletionNFT": { "runtime": 3334, "runtimeHeadroom": 21242, "initcode": 4177, "initcodeHeadroom": 44975 },
-    "ENSJobPages": { "runtime": 24560, "runtimeHeadroom": 16, "initcode": 27350, "initcodeHeadroom": 21802 },
-    "ENSJobPagesInspector": { "runtime": 7597, "runtimeHeadroom": 16979, "initcode": 7624, "initcodeHeadroom": 41528 },
-    "ENSJobPagesMigrationHelper": { "runtime": 2828, "runtimeHeadroom": 21748, "initcode": 2923, "initcodeHeadroom": 46229 }
+    "AGIJobManagerPrime": {
+      "runtime": 24472,
+      "runtimeHeadroom": 104,
+      "initcode": 29972,
+      "initcodeHeadroom": 19180
+    },
+    "AGIJobDiscoveryPrime": {
+      "runtime": 24505,
+      "runtimeHeadroom": 71,
+      "initcode": 25106,
+      "initcodeHeadroom": 24046
+    },
+    "AGIJobCompletionNFT": {
+      "runtime": 3334,
+      "runtimeHeadroom": 21242,
+      "initcode": 4177,
+      "initcodeHeadroom": 44975
+    },
+    "ENSJobPages": {
+      "runtime": 24576,
+      "runtimeHeadroom": 0,
+      "initcode": 27366,
+      "initcodeHeadroom": 21786
+    },
+    "ENSJobPagesInspector": {
+      "runtime": 7597,
+      "runtimeHeadroom": 16979,
+      "initcode": 7624,
+      "initcodeHeadroom": 41528
+    },
+    "ENSJobPagesMigrationHelper": {
+      "runtime": 3135,
+      "runtimeHeadroom": 21441,
+      "initcode": 3230,
+      "initcodeHeadroom": 45922
+    }
   },
   "notes": [
     "AGIJobManagerPrime runtime was unchanged.",
-    "Legacy adoption is now first-class via ENSJobPagesMigrationHelper.migrateLegacyJobPageExplicit.",
-    "Root-version observability remains event-sourced and standardized in scripts/ens output artifacts."
+    "Legacy adoption supports unmanaged nodes even when ENSJobPages controls the parent root.",
+    "ENSJobPages now sits exactly at the EIP-170 runtime ceiling (0 bytes headroom); future additions should be helper/script-only."
   ]
 }
