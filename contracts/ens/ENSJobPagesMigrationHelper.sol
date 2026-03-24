@@ -10,6 +10,8 @@ interface IENSRegistryMigration {
 
 interface INameWrapperMigration {
     function ownerOf(uint256 tokenId) external view returns (address);
+    function getApproved(uint256 tokenId) external view returns (address);
+    function isApprovedForAll(address owner, address operator) external view returns (bool);
     function setSubnodeRecord(
         bytes32 parentNode,
         string calldata label,
@@ -67,7 +69,7 @@ contract ENSJobPagesMigrationHelper is Ownable {
             target.replayCreateExplicit(jobId, employer, specURI);
             created = true;
         } else if (!_nodeManagedByTarget(wrapper, currentOwner, node, pages)) {
-            if (ensRegistry.owner(rootNode) == pages) {
+            if (ensRegistry.owner(rootNode) == pages || _pagesCanControlWrappedRoot(wrapper, rootNode, pages)) {
                 target.replayCreateExplicit(jobId, employer, specURI);
             } else {
                 _adoptNode(ensRegistry, wrapper, rootNode, exactLabel, node, pages);
@@ -105,5 +107,20 @@ contract ENSJobPagesMigrationHelper is Ownable {
         } catch {
             return false;
         }
+    }
+
+    function _pagesCanControlWrappedRoot(address wrapper, bytes32 rootNode, address pages) internal view returns (bool) {
+        if (wrapper == address(0)) return false;
+        uint256 tokenId = uint256(rootNode);
+        try INameWrapperMigration(wrapper).ownerOf(tokenId) returns (address wrappedOwner) {
+            if (wrappedOwner == pages) return true;
+            try INameWrapperMigration(wrapper).getApproved(tokenId) returns (address approved) {
+                if (approved == pages) return true;
+            } catch {}
+            try INameWrapperMigration(wrapper).isApprovedForAll(wrappedOwner, pages) returns (bool approvedForAll) {
+                return approvedForAll;
+            } catch {}
+        } catch {}
+        return false;
     }
 }

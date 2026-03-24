@@ -71,6 +71,23 @@ contract('ENSJobPagesMigrationHelper', (accounts) => {
     assert.equal(await wrapper.ownerOf(web3.utils.toBN(node)), pages.address, 'wrapped token owner should be helper target');
   });
 
+  it('adopts wrapped nodes when wrapped parent control is on ENSJobPages', async () => {
+    const { ens, wrapper, manager, pages, helper } = await setup();
+    const label = 'agijob-18';
+    const node = subnode(namehash(ROOT), label);
+
+    await ens.setOwner(namehash(ROOT), wrapper.address, { from: owner });
+    await wrapper.setOwner(web3.utils.toBN(namehash(ROOT)), pages.address, { from: owner });
+    await wrapper.setApproved(web3.utils.toBN(namehash(ROOT)), owner, { from: owner });
+    await wrapper.setOwner(web3.utils.toBN(node), outsider, { from: owner });
+    await ens.setOwner(node, wrapper.address, { from: owner });
+    await manager.setJob(18, employer, agent, 'ipfs://legacy-spec-18', { from: owner });
+    await pages.transferOwnership(helper.address, { from: owner });
+
+    await helper.migrateLegacyJobPageExplicit(pages.address, 18, label, 1, employer, 'ipfs://legacy-spec-18', { from: owner });
+    assert.equal(await wrapper.ownerOf(web3.utils.toBN(node)), pages.address, 'node should be reclaimed by ENSJobPages wrapped-root control');
+  });
+
   it('fails with explicit AdoptionBlocked when neither wrapped authority nor helper-owned parent exists', async () => {
     const { ens, manager, pages, helper } = await setup();
     await ens.setOwner(namehash(ROOT), outsider, { from: owner });

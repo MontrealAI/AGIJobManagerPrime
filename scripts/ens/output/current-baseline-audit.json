@@ -40,10 +40,10 @@
       "initcodeHeadroom": 41528
     },
     "ENSJobPagesMigrationHelper": {
-      "runtime": 3135,
-      "runtimeHeadroom": 21441,
-      "initcode": 3230,
-      "initcodeHeadroom": 45922
+      "runtime": 3508,
+      "runtimeHeadroom": 21068,
+      "initcode": 3603,
+      "initcodeHeadroom": 45549
     }
   },
   "notes": [

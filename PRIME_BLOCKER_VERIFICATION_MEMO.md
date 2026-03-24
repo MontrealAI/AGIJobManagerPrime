@@ -23,7 +23,7 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 - `AGIJobCompletionNFT` runtime `3334` bytes (headroom `21242`), initcode `4177` bytes (headroom `44975`)
 - `ENSJobPages` runtime `24576` bytes (headroom `0`), initcode `27366` bytes (headroom `21786`)
 - `ENSJobPagesInspector` runtime `7597` bytes (headroom `16979`), initcode `7624` bytes (headroom `41528`)
-- `ENSJobPagesMigrationHelper` runtime `3135` bytes (headroom `21441`), initcode `3230` bytes (headroom `45922`)
+- `ENSJobPagesMigrationHelper` runtime `3508` bytes (headroom `21068`), initcode `3603` bytes (headroom `45549`)
 
 ## Commands executed in this pass
 
