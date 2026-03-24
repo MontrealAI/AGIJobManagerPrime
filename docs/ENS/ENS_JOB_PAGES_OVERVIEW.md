@@ -68,6 +68,7 @@ The older convenience functions remain useful only when the manager exposes the 
 
 - `jobEnsIssued(jobId)` now means: authoritative node exists onchain.
 - `jobEnsReady(jobId)` now means: authoritative node exists, expected resolver is set, and base metadata (`schema` + spec text) is present.
+- Bytecode gates are fail-fast for deployed ENS-side artifacts (`ENSJobPages` and `ENSJobPagesInspector`) in `scripts/check-bytecode-size.js`, and `hardhat/scripts/deploy-ens-job-pages.js` executes that gate before deployment.
 
 These compatibility booleans do **not** claim completion metadata, auth state, or finalization truth.
 

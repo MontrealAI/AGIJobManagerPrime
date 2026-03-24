@@ -193,7 +193,7 @@ Prime settlement works without ENS wiring. If operators want ENS-backed public j
 Recommended wiring flow:
 
 1. Run `node ../scripts/ens/audit-mainnet.ts` and `node ../scripts/ens/phase0-mainnet-snapshot.mjs` first.
-2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js` and an explicit `JOB_MANAGER=<prime-or-legacy-manager>` on mainnet.
+2. Deploy/prepare the replacement `ENSJobPages` target with `scripts/deploy-ens-job-pages.js` and an explicit `JOB_MANAGER=<prime-or-legacy-manager>` on mainnet (the script now runs bytecode-size preflight and aborts on EIP-170/EIP-3860 overages before broadcast).
 3. Confirm wrapped-root approvals and `validateConfiguration()==0`.
 4. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
 5. Validate one canary create flow plus one explicit repair flow from `node ../scripts/ens/repair-from-logs.ts`.

@@ -1,4 +1,6 @@
 const hre = require("hardhat");
+const { execSync } = require("child_process");
+const path = require("path");
 
 const { ethers, run, network } = hre;
 const { detectManagerCompatibility, preflightEnsJobPagesTarget, assertSafeLockConfig } = require('./lib/ens-preflight');
@@ -54,6 +56,10 @@ async function main() {
 
   const confirmations = parseIntEnv("CONFIRMATIONS", 3, 0);
   const verifyDelayMs = parseIntEnv("VERIFY_DELAY_MS", 3500, 0);
+
+  console.log("Running bytecode size preflight...");
+  const sizeCheckScript = path.resolve(__dirname, "..", "..", "scripts", "check-bytecode-size.js");
+  execSync(`node "${sizeCheckScript}"`, { cwd: path.resolve(__dirname, "..", ".."), stdio: "inherit" });
 
   if (chainId === 1) {
     const confirm = env("DEPLOY_CONFIRM_MAINNET");

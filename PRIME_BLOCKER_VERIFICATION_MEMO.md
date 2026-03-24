@@ -18,9 +18,11 @@ This memo records the blocker-by-blocker verification pass performed on the curr
 
 `npm run test:size` produced:
 
-- `AGIJobManagerPrime` runtime `24456` bytes (headroom `120`), initcode `29956` bytes (headroom `19196`)
-- `AGIJobDiscoveryPrime` runtime `21563` bytes (headroom `3013`), initcode `22142` bytes (headroom `27010`)
+- `AGIJobManagerPrime` runtime `24472` bytes (headroom `104`), initcode `29972` bytes (headroom `19180`)
+- `AGIJobDiscoveryPrime` runtime `24505` bytes (headroom `71`), initcode `25106` bytes (headroom `24046`)
 - `AGIJobCompletionNFT` runtime `3334` bytes (headroom `21242`), initcode `4177` bytes (headroom `44975`)
+- `ENSJobPages` runtime `24560` bytes (headroom `16`), initcode `27350` bytes (headroom `21802`)
+- `ENSJobPagesInspector` runtime `7597` bytes (headroom `16979`), initcode `7624` bytes (headroom `41528`)
 
 ## Commands executed in this pass
 
@@ -52,4 +54,4 @@ A fresh source audit was performed against the current checked-out baseline befo
 - Re-verified `renounceOwnership()` disablement in both Prime contracts.
 - Re-verified runtime+initcode gate logic in `scripts/check-bytecode-size.js`.
 
-No new blocker regressions were identified in the current baseline. This means the smallest safe action for this pass is a documentation/verification refresh rather than additional settlement/discovery logic churn.
+No new Prime blocker regressions were identified in the current baseline. ENS-side bytecode headroom is now explicitly tracked as part of size-gate outputs.

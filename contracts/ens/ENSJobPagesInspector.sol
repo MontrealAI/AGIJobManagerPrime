@@ -19,6 +19,8 @@ interface IENSJobPagesInspectorTarget {
     function effectiveJobEnsNode(uint256 jobId) external view returns (bytes32);
     function validateConfiguration() external view returns (uint256);
     function jobAuthorityInfo(uint256 jobId) external view returns (bool,string memory,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool);
+    function rootVersionCount() external view returns (uint256);
+    function currentRootVersionId() external view returns (uint256);
 }
 
 interface IENSRegistryLite {
@@ -69,6 +71,9 @@ contract ENSJobPagesInspector {
         bool finalized;
         bool fuseBurned;
         uint8 managerMode;
+        uint8 repairRecommendationCode;
+        uint256 rootVersionCount;
+        uint256 currentRootVersionId;
         string previewLabel;
         string previewName;
         string previewURI;
@@ -163,6 +168,8 @@ contract ENSJobPagesInspector {
         status.previewURI = _safeStringCall(target, abi.encodeWithSignature("previewJobEnsURI(uint256)", jobId));
         status.previewReady = bytes(status.previewName).length != 0;
         status.failureCode = configurationReadable ? failureBitmap : type(uint256).max;
+        status.rootVersionCount = _safeUintCall(target, abi.encodeWithSignature("rootVersionCount()"));
+        status.currentRootVersionId = _safeUintCall(target, abi.encodeWithSignature("currentRootVersionId()"));
 
         if (authorityEstablished) {
             status.effectiveLabel = _safeStringCall(target, abi.encodeWithSignature("effectiveJobEnsLabel(uint256)", jobId));
@@ -197,6 +204,7 @@ contract ENSJobPagesInspector {
         }
 
         status.finalizable = status.authoritySnapshotted && status.nodeExists && status.resolverSetToExpected;
+        status.repairRecommendationCode = _repairRecommendation(status);
     }
 
 
@@ -260,6 +268,28 @@ contract ENSJobPagesInspector {
         uint256 decoded = abi.decode(data, (uint256));
         if (decoded > 1) return false;
         return decoded != 0;
+    }
+
+    function _safeUintCall(address target, bytes memory payload) internal view returns (uint256 value) {
+        if (target == address(0) || target.code.length == 0) return 0;
+        (bool success, bytes memory data) = target.staticcall(payload);
+        if (!success || data.length < 32) return 0;
+        return abi.decode(data, (uint256));
+    }
+
+    function _repairRecommendation(JobStatusView memory status) internal pure returns (uint8) {
+        if (!status.authoritySnapshotted) {
+            if (!status.labelSnapshotted) return 1; // import exact label first
+            if (status.rootVersionCount > 1) return 2; // explicit root version repair required
+            return 3; // single-root authority repair
+        }
+        if (!status.nodeExists) return 4; // create/adopt node
+        if (!status.nodeManagedByContract) return 5; // adoption needed
+        if (!status.resolverSetToExpected) return 6; // resolver repair
+        if (!status.metadataComplete) return 7; // metadata hydration
+        if (!status.authorisationsAsExpected && !status.authObservationIncomplete) return 8; // auth repair
+        if (status.authObservationIncomplete) return 9; // observation incomplete
+        return 0; // no action
     }
 
     function _isWrapperAuthorizationReady(address nameWrapper, bytes32 rootNode, address target) internal view returns (bool) {
