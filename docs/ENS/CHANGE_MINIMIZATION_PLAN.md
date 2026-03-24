@@ -1,30 +1,15 @@
-# ENS Change-Minimization Plan
+# ENS change minimization plan
 
-## Objectives
+## Prime size freeze policy
+- Keep `AGIJobManagerPrime` bytecode unchanged.
+- Keep manager hook ABI unchanged (`handleHook(uint8,uint256)`).
+- Place all new behavior in ENS helper/inspector and tests/docs/scripts.
 
-- Preserve current merged ENS authority architecture.
-- Preserve zero-Prime-runtime-change default.
-- Tighten production safety with minimal bytecode impact.
+## Minimal implementation choices
+1. Reuse existing replay/create repair entrypoint instead of introducing manager changes.
+2. Keep settlement path non-blocking and ENS best-effort failure semantics unchanged.
+3. Defer unmanaged-node adoption + root-version info additions until a bytecode-safe refactor path is approved (current ENSJobPages headroom is 16 bytes).
 
-## Decisions in this patch
-
-1. **Prime unchanged**
-   - Keep `handleHook(uint8,uint256)` path.
-   - Keep current best-effort/non-blocking ENS behavior.
-
-2. **Bytecode gate hardening (scripts-only)**
-   - Enforce `ENSJobPagesInspector` size gate by default.
-   - Run `scripts/check-bytecode-size.js` preflight in `deploy-ens-job-pages.js` before deployment.
-
-3. **Inspector read-surface extension (read-only)**
-   - Added compact recommendation code and root-version read probes via safe staticcalls.
-   - No manager ABI changes.
-
-## Deferred (separate patch due ENSJobPages 16-byte runtime headroom)
-
-- First-class unmanaged-node adoption API directly inside `ENSJobPages`.
-- Additional ENSJobPages public root-version getters.
-
-These are deferred to avoid breaching EIP-170 under current headroom constraints; any future attempt should use either:
-- helper contract offloading, or
-- carefully budgeted ENSJobPages refactor with compensating size reductions.
+## Rejected alternatives
+- New Prime typed hook push ABI: rejected (size/churn risk, unnecessary).
+- Broad ENSJobPages redesign: rejected (already-correct architecture preserved).

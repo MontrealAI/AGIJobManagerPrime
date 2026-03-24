@@ -64,6 +64,15 @@ The contract now exposes explicit owner repair entrypoints that do **not** rely 
 
 The older convenience functions remain useful only when the manager exposes the richer V1 view surface.
 
+Legacy migration still requires explicit operator-driven sequencing when authoritative nodes already exist but are unmanaged; first-class unmanaged-node adoption remains a follow-up gap.
+
+## Root-version observability
+
+- `rootVersionCount()`
+- `currentRootVersionId()`
+
+These surfaces are present today; adding a direct `rootVersionInfo(rootVersionId)` read surface remains a follow-up to simplify explicit root-version repair selection.
+
 ## Compatibility truth model
 
 - `jobEnsIssued(jobId)` now means: authoritative node exists onchain.

@@ -1,42 +1,41 @@
-# Current ENS / Prime Baseline Audit (`main`)
+# Current `main` baseline audit (ENS subsystem)
 
-Audit date: 2026-03-24 (UTC)
+Date: 2026-03-24
 
-## Mandatory current-state questions
-
-1. **Does current `main` already auto-issue effective label/name/URI/node for fresh post-cutover jobs under unchanged Prime?**
-   - **Yes (identity issuance), partially (metadata).** `ENSJobPages.handleHook(1, jobId)` can fall back to `jobEmployerOf(jobId)` and still establish authority + create/adopt node + resolver/auth writes, even when rich V1 manager views are unavailable. Spec/completion text hydration is keeper-assisted in lean mode.
-2. **Does current `main` already solve legacy unmanaged-node adoption?**
-   - **Not fully first-class.** Existing replay/repair flows can import exact labels and operate on managed nodes, but unmanaged pre-existing nodes still require explicit operator takeover before replay.
-3. **Does current `main` already expose enough root-version state for safe multi-root repair?**
-   - **Partially.** Multi-root repair API exists (`repairAuthoritySnapshotExplicit`), but operator observability is still split across events and state reads instead of a single canonical low-friction surface.
-4. **Does current `main` already make ENS-side bytecode limits fail-fast in the default deployment path?**
-   - **Now yes for gates.** This patch makes `ENSJobPagesInspector` enforced by default in `scripts/check-bytecode-size.js`, and `hardhat/scripts/deploy-ens-job-pages.js` now runs the size gate preflight before deployment.
-5. **Which exact remaining changes are still necessary, and why are Prime changes avoidable or unavoidable?**
-   - Remaining: legacy adoption ergonomics, richer root-version observability surfacing, and expanded migration scripts/runbook automation.
-   - Prime runtime changes remain avoidable; current hook ABI + ENS-side fallback mode is preserved.
-
-## Baseline facts verified
-
-- `AGIJobManagerPrime` still uses low-level `handleHook(uint8,uint256)` best-effort calls.
-- `AGIJobManagerPrime` does not implement typed push-hook dispatch.
-- `IAGIJobManagerPrimeViewV1` stays unchanged (`ensJobManagerViewInterfaceVersion`, `getJobCore`, `getJobSpecURI`, `getJobCompletionURI`).
-- `ENSJobPages` keeps preview/effective separation with authority snapshot semantics and compatibility getters.
-- `deploy-ens-job-pages.js` enforces explicit `JOB_MANAGER` on mainnet and root-name/root-node consistency.
+## Scope audited
+- `contracts/ens/ENSJobPages.sol`
+- `contracts/ens/ENSJobPagesInspector.sol`
+- `contracts/interfaces/IAGIJobManagerPrimeViewV1.sol`
+- `contracts/AGIJobManagerPrime.sol`
+- `hardhat/scripts/deploy-ens-job-pages.js`
+- `scripts/check-bytecode-size.js`
+- `scripts/ens/phase0-mainnet-snapshot.mjs`
+- `docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`
+- `docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`
+- `hardhat/README.md`
+- `PRIME_BLOCKER_VERIFICATION_MEMO.md`
 
 ## Already merged and correct
-
-- Preview vs effective identity model.
-- Conflict-aware authority snapshotting.
-- Root-name/namehash consistency check.
-- Prime non-blocking settlement semantics for ENS hook failures.
-- Inspector manager compatibility truth surface (`none|lean|rich`) and keeper signaling.
+- Preview (`previewJobEns*`) and effective (`effectiveJobEns*`) identity are separated.
+- Authority snapshots store immutable label+root-version for historical stability.
+- Compatibility getters (`jobEns*`) correctly degrade to preview pre-authority and effective post-authority.
+- Prime hook ABI remains `handleHook(uint8,uint256)` and manager-side hook calls are low-level + non-blocking.
+- Runtime capability detection exists in ENS helper (`_managerSupportsViewV1` + fallback read selectors).
+- Repair/replay surfaces already exist and are owner-gated.
+- Inspector exposes manager compatibility mode and auth-read truthfulness flags.
+- Deployment script enforces explicit `JOB_MANAGER` on mainnet and root namehash consistency.
+- Size checker enforces runtime and initcode for Prime + ENSJobPages + ENSJobPagesInspector.
 
 ## Already merged but incomplete
+- Legacy unmanaged-node migration was only partially covered; `_createJobPage` previously reverted when authoritative node existed but was unmanaged.
+- Root-version observability exposed only count/current-id; no direct rootVersion info getter for root-id driven repair.
 
-- Legacy unmanaged-node adoption is still operationally possible but not yet first-class one-call migration.
-- Root-version repair exists but is still not surfaced as a single operator-friendly canonical read package.
+## Dangerous mismatches
+- `PRIME_BLOCKER_VERIFICATION_MEMO.md` bytecode numbers drift from current artifacts and must be refreshed from live test output.
 
-## Dangerous mismatches identified
-
-- Bytecode headroom on ENS contracts is extremely tight (`ENSJobPages` runtime headroom: 16 bytes), so additive ENSJobPages runtime changes are high-risk.
+## Mandatory current-state questions (answers)
+1. Does current `main` auto-issue effective identity under unchanged Prime? **Yes** (fallback create path uses `jobEmployerOf` and snapshots authority).
+2. Does current `main` solve legacy unmanaged-node adoption? **Not fully before this patch** (existing unmanaged authoritative node could revert in create/replay).
+3. Does current `main` expose enough root-version state for safe multi-root repair? **Partially** (count/current existed; direct per-version info missing).
+4. Does current `main` make ENS-side bytecode limits fail-fast in default deployment path? **Yes** for current deployed ENS artifacts via `check-bytecode-size.js` invoked by deploy preflight.
+5. Which changes are necessary and why Prime changes avoidable? **ENS-side adoption + root-version read observability only; Prime runtime change avoidable.**
