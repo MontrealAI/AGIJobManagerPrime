@@ -55,3 +55,15 @@ A fresh source audit was performed against the current checked-out baseline befo
 - Re-verified runtime+initcode gate logic in `scripts/check-bytecode-size.js`.
 
 No new Prime blocker regressions were identified in the current baseline. ENS-side bytecode headroom is now explicitly tracked as part of size-gate outputs.
+
+## 2026-03-24 bytecode reconciliation addendum
+
+Re-ran `npm run test:size` on 2026-03-24 and confirmed the currently compiled sizes remain:
+
+- `AGIJobManagerPrime` runtime `24472`, initcode `29972`
+- `AGIJobDiscoveryPrime` runtime `24505`, initcode `25106`
+- `AGIJobCompletionNFT` runtime `3334`, initcode `4177`
+- `ENSJobPages` runtime `24560`, initcode `27350`
+- `ENSJobPagesInspector` runtime `7597`, initcode `7624`
+
+No size drift was observed versus the latest enforced baseline checks.

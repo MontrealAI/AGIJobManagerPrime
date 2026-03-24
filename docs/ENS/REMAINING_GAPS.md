@@ -1,22 +1,10 @@
-# ENS Remaining Gaps (Post-Audit)
+# Remaining ENS cutover gaps
 
-## Still missing / incomplete
+## Confirmed still-open code gaps
+- First-class unmanaged-node adoption/migration flow in `ENSJobPages` (wrapped and unwrapped parent-controlled takeover) remains open.
+- Direct per-version root metadata reader (`rootVersionInfo`) remains open.
 
-1. **First-class unmanaged-node adoption endpoint**
-   - Current state: achievable via manual ownership transfer + replay.
-   - Gap: no compact idempotent single-call migration endpoint for wrapped/unwrapped adoption.
-
-2. **Root-version operator observability packaging**
-   - Current state: explicit repair entrypoint exists.
-   - Gap: operator UX still requires combining multiple reads/log context.
-
-3. **Migration tooling expansion**
-   - `scripts/ens/*` already provide strong audit/repair primitives, but adoption-batch orchestration and conflict-code reporting should be expanded further.
-
-4. **Runbook hardening for finalization policy and fuse states**
-   - Finalization/fuse statuses are inspectable, but batch cutover playbooks should include stricter pre/post checks and staged canary guidance.
-
-## Explicitly closed in this patch
-
-- ENS-side deployed-contract bytecode gates now fail fast by default for `ENSJobPagesInspector`.
-- ENS deploy script now runs size-gate preflight and aborts before broadcast on violations.
+## Operational follow-ups
+- Refresh memo/doc bytecode tables from fresh CI size output.
+- Run mainnet dry-run scripts and persist JSON snapshots in `scripts/ens/output/` before cutover.
+- Execute canary post-cutover and archive proofs.

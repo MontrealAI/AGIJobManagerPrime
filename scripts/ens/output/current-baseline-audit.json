@@ -1,23 +1,19 @@
 {
-  "generatedAt": "2026-03-24T00:00:00Z",
-  "scope": "main-branch-baseline",
-  "answers": {
-    "autoIssueEffectiveIdentityUnderUnchangedPrime": true,
-    "legacyUnmanagedNodeAdoptionFirstClass": false,
-    "rootVersionObservabilitySufficient": false,
-    "ensBytecodeFailFastDefault": true,
-    "primeChangesRequired": false
+  "generatedAtUtc": "2026-03-24T00:00:00Z",
+  "status": {
+    "previewEffectiveSeparation": "present",
+    "authoritySnapshotting": "present",
+    "primeHandleHookAbi": "unchanged",
+    "autoIssueUnderPrimeFallback": true,
+    "legacyUnmanagedNodeAdoption": "open_gap",
+    "rootVersionObservability": "count_and_current_only",
+    "ensSizeFailFastDefault": true
   },
-  "bytecode": {
-    "AGIJobManagerPrime": { "runtime": 24472, "runtimeHeadroom": 104, "initcode": 29972, "initcodeHeadroom": 19180 },
-    "AGIJobDiscoveryPrime": { "runtime": 24505, "runtimeHeadroom": 71, "initcode": 25106, "initcodeHeadroom": 24046 },
-    "AGIJobCompletionNFT": { "runtime": 3334, "runtimeHeadroom": 21242, "initcode": 4177, "initcodeHeadroom": 44975 },
-    "ENSJobPages": { "runtime": 24560, "runtimeHeadroom": 16, "initcode": 27350, "initcodeHeadroom": 21802 },
-    "ENSJobPagesInspector": { "runtime": 7597, "runtimeHeadroom": 16979, "initcode": 7624, "initcodeHeadroom": 41528 }
-  },
-  "notes": [
-    "ENSJobPages runtime headroom is critically tight (16 bytes).",
-    "Prime remains unchanged and below EIP-170.",
-    "Inspector and ENS deploy scripts now fail fast on size preflight."
-  ]
+  "mandatoryQuestions": {
+    "q1_autoIssue": true,
+    "q2_legacyAdoptionSolved": "no",
+    "q3_rootVersionRepairStateExposure": "partial",
+    "q4_sizeFailFast": true,
+    "q5_primeChangeNeeded": false
+  }
 }
