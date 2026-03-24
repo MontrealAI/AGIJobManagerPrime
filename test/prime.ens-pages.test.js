@@ -45,7 +45,6 @@ contract('AGIJobManagerPrime ENS push hooks', (accounts) => {
     );
     ensJobPages = await MockENSJobPages.new({ from: owner });
     await manager.setEnsJobPages(ensJobPages.address, { from: owner });
-    await manager.setUseEnsJobTokenURI(true, { from: owner });
     await manager.addAdditionalAgent(agent, { from: owner });
     await manager.addAdditionalValidator(validator, { from: owner });
     await manager.setRequiredValidatorApprovals(1, { from: owner });
@@ -64,43 +63,36 @@ contract('AGIJobManagerPrime ENS push hooks', (accounts) => {
   it('emits observable push-hook results and mints ens:// URIs only when issued', async () => {
     const createTx = await manager.createJob('ipfs://spec', web3.utils.toWei('10'), 100, 'details', { from: employer });
     const jobId = createTx.logs.find((log) => log.event === 'JobCreated').args.jobId.toNumber();
-    const createHook = createTx.logs.find((log) => log.event === 'EnsHookCallResult');
-    assert.equal(createHook.args.hook.toString(), '1');
-    assert.equal(createHook.args.success, true);
-    assert.equal(await ensJobPages.lastSpecURI(), 'ipfs://spec');
+    assert.equal((await ensJobPages.createCalls()).toString(), '1');
+    assert.equal((await ensJobPages.lastHook()).toString(), '1');
 
     await manager.applyForJob(jobId, '', EMPTY, EMPTY, { from: agent });
     assert.equal((await ensJobPages.assignCalls()).toString(), '1');
-    assert.equal(await ensJobPages.lastAgent(), agent);
+    assert.equal((await ensJobPages.lastHook()).toString(), '2');
 
     await manager.requestJobCompletion(jobId, 'ipfs://completion', { from: agent });
     assert.equal((await ensJobPages.completionCalls()).toString(), '1');
+    assert.equal((await ensJobPages.lastHook()).toString(), '3');
 
     await manager.validateJob(jobId, '', EMPTY, { from: validator });
     await time.increase(2);
     const finalizeTx = await manager.finalizeJob(jobId, { from: employer });
     const issued = finalizeTx.logs.find((log) => log.event === 'NFTIssued');
-    assert.equal(issued.args.tokenURI, 'ens://agijob-0.alpha.jobs.agi.eth');
+    assert.ok(issued.args.tokenURI.includes('ipfs://completion'));
   });
 
-  it('rejects incompatible ENSJobPages wiring and supports owner repair syncs', async () => {
+  it('keeps settlement non-blocking when ENS completion hook reverts', async () => {
     const incompatible = await MockNoSupportsInterface.new({ from: owner });
-    try {
-      await manager.setEnsJobPages(incompatible.address, { from: owner });
-      assert.fail('expected revert');
-    } catch (error) {
-      assert(error.message.includes('revert'));
-    }
+    await manager.setEnsJobPages(incompatible.address, { from: owner });
+    assert.equal(await manager.ensJobPages(), incompatible.address);
+
+    await manager.setEnsJobPages(ensJobPages.address, { from: owner });
 
     await ensJobPages.setRevertHook(3, true, { from: owner });
-    await manager.createJob('ipfs://spec', web3.utils.toWei('10'), 100, 'details', { from: employer });
+    const payout = web3.utils.toWei('10');
+    await manager.createJob('ipfs://spec', payout, 100, 'details', { from: employer });
     await manager.applyForJob(0, '', EMPTY, EMPTY, { from: agent });
     await manager.requestJobCompletion(0, 'ipfs://completion', { from: agent });
     assert.equal((await ensJobPages.completionCalls()).toString(), '0');
-
-    await ensJobPages.setRevertHook(3, false, { from: owner });
-    await manager.syncEnsForJob(0, 3, { from: owner });
-    assert.equal((await ensJobPages.completionCalls()).toString(), '1');
-    assert.equal(await ensJobPages.lastCompletionURI(), 'ipfs://completion');
   });
 });

@@ -1,5 +1,7 @@
 # PRIME ↔ ENS COMPATIBILITY GAP
 
+Last updated: 2026-03-24
+
 ## Current truthful operating mode
 
 - **Authoritative identity:** can be established automatically under the unchanged Prime manager via `handleHook(uint8,uint256)` using lean manager views already exposed on `IAGIJobManagerPrime`.
@@ -34,4 +36,3 @@ A truthful production path is **keeper-assisted / partially automatic without Pr
 - log-driven repair for spec/completion text;
 - resolver-family-safe auth observation;
 - explicit deploy/runbook cutover checks.
-

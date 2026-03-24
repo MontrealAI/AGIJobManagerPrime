@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T17:44:41.178Z",
+  "generatedAt": "2026-03-24T00:58:41.125Z",
   "network": "ethereum-mainnet",
   "rpc": "https://ethereum-rpc.publicnode.com",
   "inputs": {
@@ -11,9 +11,9 @@
   },
   "proven": {
     "latestBlock": {
-      "number": "0x179397c",
-      "hash": "0xe899cd2a0315aa347927f05b69097a64b98bb759593c026b40940e3edbef1af6",
-      "timestamp": "0x69c17bf7"
+      "number": "0x17941ef",
+      "hash": "0x0750bcd68679bf91407c23785aa02d97be31d2d9b9ee41af6fed0c7d69a6bd70",
+      "timestamp": "0x69c1e1bb"
     },
     "expectedRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
     "handleHook": {
@@ -30,7 +30,6 @@
       "jobManager": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
       "jobLabelPrefix": "agijob-",
       "configLocked": false,
-      "useEnsJobTokenURI": false,
       "validateConfiguration": {
         "error": "eth_call failed: execution reverted data=0x",
         "label": "pages.validateConfiguration",

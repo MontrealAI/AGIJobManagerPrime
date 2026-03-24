@@ -210,7 +210,7 @@ contract("AGIJobManager ENS job pages hooks", (accounts) => {
     assert.ok(issued, "NFTIssued event should be emitted");
     const tokenId = issued.args.tokenId.toString();
     const tokenUri = await manager.tokenURI(tokenId);
-    assert.equal(tokenUri, "ens://job-0.alpha.jobs.agi.eth");
+    assert.equal(tokenUri, "ens://agijob-0.alpha.jobs.agi.eth");
   });
 
   it("accepts only AGIJobManager exact calldata shapes for hook and ENS URI calls", async () => {
@@ -241,7 +241,7 @@ contract("AGIJobManager ENS job pages hooks", (accounts) => {
     const issued = receipt.logs.find((log) => log.event === "NFTIssued");
     const tokenId = issued.args.tokenId.toString();
     const tokenUri = await manager.tokenURI(tokenId);
-    assert.equal(tokenUri, "ens://job-0.alpha.jobs.agi.eth");
+    assert.equal(tokenUri, "ens://agijob-0.alpha.jobs.agi.eth");
   });
 
 

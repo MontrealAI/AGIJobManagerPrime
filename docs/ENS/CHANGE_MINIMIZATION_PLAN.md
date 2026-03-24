@@ -1,5 +1,7 @@
 # CHANGE MINIMIZATION PLAN
 
+Last updated: 2026-03-24
+
 ## Selected architecture
 
 **Option B with helper-style read hardening, but no Prime runtime changes.**
