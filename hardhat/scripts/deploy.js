@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { ethers, network, run } = require('hardhat');
 const hardhatConfig = require('../hardhat.config');
+const { preflightEnsJobPagesTarget } = require('./lib/ens-preflight');
 
 const MAINNET_CONFIRMATION_VALUE = 'I_UNDERSTAND_MAINNET_DEPLOYMENT';
 const DEFAULT_VERIFY_DELAY_MS = 3500;
@@ -392,8 +393,28 @@ async function main() {
   };
   console.log(`[wired] AGIJobManagerPrime.setDiscoveryModule(${discoveryDeployment.address}) tx=${setDiscoveryTx.hash}`);
 
-  let ensJobPagesWiring = { executed: false, txHash: null, blockNumber: null, target: null, reason: 'not_configured' };
+  let ensJobPagesWiring = { executed: false, txHash: null, blockNumber: null, target: null, reason: 'not_configured', preflight: null };
   if (resolvedEnsJobPages) {
+    const ensPreflight = await preflightEnsJobPagesTarget(resolvedEnsJobPages, managerDeployment.address, 0);
+    ensJobPagesWiring.preflight = ensPreflight;
+    console.log('[preflight] ENS_JOB_PAGES compatibility', JSON.stringify(ensPreflight, null, 2));
+
+    if (!ensPreflight.targetReachable) {
+      throw new Error(`ENS_JOB_PAGES preflight failed: target ${resolvedEnsJobPages} has no code.`);
+    }
+    if (!ensPreflight.legacyHandleHookCallable) {
+      throw new Error('ENS_JOB_PAGES preflight failed: handleHook(uint8,uint256) is not callable from the manager context.');
+    }
+    if (
+      ensPreflight.targetJobManagerReadable &&
+      ensPreflight.targetJobManager.toLowerCase() !== ethers.ZeroAddress.toLowerCase() &&
+      ensPreflight.targetJobManager.toLowerCase() !== managerDeployment.address.toLowerCase()
+    ) {
+      throw new Error(
+        `ENS_JOB_PAGES preflight failed: target.jobManager=${ensPreflight.targetJobManager} does not match deployed manager ${managerDeployment.address}.`
+      );
+    }
+
     const setEnsTx = await manager.setEnsJobPages(resolvedEnsJobPages);
     const setEnsReceipt = await setEnsTx.wait(confirmations);
     ensJobPagesWiring = {
@@ -402,6 +423,7 @@ async function main() {
       blockNumber: setEnsReceipt.blockNumber,
       target: resolvedEnsJobPages,
       reason: null,
+      preflight: ensJobPagesWiring.preflight,
     };
     console.log(`[wired] AGIJobManagerPrime.setEnsJobPages(${resolvedEnsJobPages}) tx=${setEnsTx.hash}`);
   } else {

@@ -20,6 +20,8 @@ module.exports = {
     finalOwner: '0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201',
     // Prime manager mainnet deployment currently observed in ENS replacement tooling:
     // 0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e
+    // If you wire ENS_JOB_PAGES in hardhat/scripts/deploy.js, preflight now enforces
+    // handleHook compatibility and target.jobManager alignment before setEnsJobPages(...).
   },
 
   // Fill with real Sepolia addresses before any broadcast.

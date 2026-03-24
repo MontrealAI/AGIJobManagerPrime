@@ -1,49 +1,41 @@
-# CURRENT BASELINE AUDIT
+# Current ENS/Prime Baseline Audit (main branch)
 
-Date: 2026-03-24
-Branch audited: current `main` working tree before final patch validation.
+Audit date: 2026-03-24 (UTC).
 
-## Executive answers
+## Mandatory current-state questions
 
-1. **Is the current ENSJobPages authority model itself already broadly correct?** Yes. Preview/effective separation, snapshotted authority, root versioning, and root-namehash enforcement were already present and directionally correct.
-2. **Is the current blocker primarily the Prime↔ENS interface mismatch?** Mostly yes. The unchanged Prime manager still uses only `handleHook(uint8,uint256)` and does not expose the rich V1 view surface, so automatic metadata hydration was incomplete even though authority issuance could still succeed.
+1. **Is the current ENSJobPages authority model broadly correct?** Yes. Preview/effective split, authority snapshotting, root versioning, and conflict-aware authority establishment are present.
+2. **Is the current blocker instead Prime↔ENS interface mismatch?** Yes. Prime remains lean (`handleHook(uint8,uint256)` + limited getters), so automatic spec/completion hydration is partial without keeper replay.
 3. **Does current Prime implement `IAGIJobManagerPrimeViewV1`?** No.
-4. **Does current Prime call the typed push hooks in `IENSJobPagesHooksV1`?** No. It still uses the generic numeric hook path.
-5. **Can a truthful keeper-assisted or partially automatic production path be achieved without any Prime runtime change?** Yes.
-6. **What remained to patch?** Resolver capability/auth detection, inspector auth reads, explicit compatibility signaling, deploy-script honesty, docs/runbooks, and audit/operator artifacts.
-7. **Was a Prime change required?** No.
+4. **Does current Prime call typed push hooks in `IENSJobPagesHooksV1`?** No; it calls legacy `handleHook(uint8,uint256)` only.
+5. **Can a truthful keeper-assisted production path be achieved without Prime runtime change?** Yes.
+6. **What remains to patch?** Hardhat preflight/cutover safeguards, explicit compatibility classification in deploy tooling, lock refusal in unsafe compatibility mode, and audit/runbook refresh.
+7. **If Prime changed, what bytecode cost?** Not applicable; Prime unchanged in this patch.
 
 ## Already merged and correct
 
-- Preview/effective ENS identity split exists.
-- Effective getters read immutable snapshotted authority once established.
-- Root versioning exists and preserves historical names across later root changes.
-- Constructor and `setJobsRoot(...)` already enforce `namehash(rootName) == rootNode`.
-- Compatibility getters remain mixed-mode for old integrations.
-- Explicit repair/replay endpoints already exist for manual/keeper paths.
-- Prime hook ABI compatibility is already preserved through `handleHook(uint8,uint256)`.
-- Prime ENS hook path is already non-blocking and gas-bounded.
+- `ENSJobPages` enforces preview vs effective identity separation and preserves compatibility getters as preview-or-effective wrappers.
+- Authority snapshots pin label/root/node; post-snapshot mutable globals do not retroactively rewrite effective identity.
+- `setJobsRoot(...)` enforces `namehash(rootName) == rootNode` and registers root versions.
+- `repairAuthoritySnapshot(...)` no longer permits silently crystallizing a preview label for unsnapshotted legacy jobs.
+- `_establishAuthorityForRootVersion(...)` is conflict-aware and reverts on mismatched re-establishment.
+- Chain-observed status semantics for `jobEnsIssued` / `jobEnsReady` are already non-sticky and resolver/text aware.
+- Inspector already reads ENS owner/resolver/text/auth observations and classifies manager compatibility (`none|lean|rich`).
 
 ## Already merged but incomplete
 
-- Lean-manager fallback could create authoritative nodes automatically, but metadata hydration remained partial when V1 getters were unavailable.
-- `jobEnsIssued` / `jobEnsReady` were already observed-chain checks, but docs still needed to stop overclaiming mixed-mode getters as authoritative.
-- Scripts already existed for audit/inventory/repair, but auth probing and compatibility labeling still assumed the wrong resolver ABI family.
+- Deployment scripts validated address shape/code, but Prime↔ENS semantic preflight remained too weak.
+- ENS deploy script allowed `LOCK_CONFIG` in keeper-required mode, which is operationally unsafe for cutover/repair windows.
+- Prime deploy script could wire `setEnsJobPages(...)` without proving runtime hook compatibility and manager-target alignment.
 
-## Dangerous regressions / mismatches found
+## Still missing before this patch
 
-- Resolver capability detection treated `0x304e6ade` as an auth ERC-165 interface even though that selector belongs to `setContenthash`, not resolver authorisation support.
-- Inspector auth verification guessed `isAuthorised(bytes32,address)` externally, which is not a safe canonical read surface for mainnet resolver families.
-- Mainnet ENS deploy script still carried a stale silent `DEFAULT_JOB_MANAGER`, which made ambiguous deployments too easy.
-- Docs still needed explicit language that compatibility getters are mixed preview/effective surfaces and that unchanged Prime may need keeper-assisted metadata repair.
+- Script-level machine-readable preflight object for manager mode + hook callability + target jobManager alignment.
+- Explicit refusal path for unsafe `LOCK_CONFIG` requests.
+- Canonical Hardhat operator docs fully aligned to new preflight gates.
 
-## Still missing before patch
+## Dangerous regressions checked and rejected
 
-- Canonical manager compatibility signaling (`rich` vs `lean`) on the read-heavy inspection path.
-- Resolver auth support for both legacy `setAuthorisation` and newer `approve`/`isApprovedFor` families.
-- Audit/runbook artifacts reflecting the real unchanged-Prime operating mode.
-
-## Validation refresh (2026-03-24)
-
-- Re-ran size gates (`npm run size`, `npm run test:size`, `npm run test:size:benchmark`) and confirmed no `AGIJobManagerPrime` runtime growth.
-- Re-ran ENS/ABI/Prime hook regression tests and aligned stale assertions to current `agijob-` default label semantics and unchanged Prime hook behavior.
+- No evidence of retroactive effective identity drift in current authority model.
+- No evidence of settlement-blocking ENS paths; Prime still performs best-effort bounded hook calls.
+- Main residual risk was cutover miswiring, now addressed in deploy scripts.

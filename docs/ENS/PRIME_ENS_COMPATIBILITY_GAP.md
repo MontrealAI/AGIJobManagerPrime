@@ -1,38 +1,26 @@
-# PRIME ↔ ENS COMPATIBILITY GAP
+# Prime ↔ ENS Compatibility Gap (Current main)
 
-Last updated: 2026-03-24
+## Executive summary
 
-## Current truthful operating mode
+`AGIJobManagerPrime` remains intentionally lean and selector-stable. It does not expose V1 rich ENS view getters, and it does not emit typed push-hook calls. Production correctness therefore depends on:
 
-- **Authoritative identity:** can be established automatically under the unchanged Prime manager via `handleHook(uint8,uint256)` using lean manager views already exposed on `IAGIJobManagerPrime`.
-- **Metadata completeness:** not always automatic, because unchanged Prime does not provide `getJobSpecURI` / `getJobCompletionURI` onchain.
-- **Completion text hydration:** may require explicit repair from manager event logs.
-- **Settlement safety:** preserved, because ENS writes remain best-effort and non-blocking.
+1. legacy `handleHook(uint8,uint256)` compatibility;
+2. ENS-side authority snapshot correctness;
+3. keeper-assisted replay/repair for metadata where rich manager views are unavailable.
 
 ## Gap classification
 
-### Already solved
-- Historical identity snapshotting.
-- Root isolation across later mutable config changes.
-- Mixed-mode compatibility getters for legacy consumers.
-- Owner-callable explicit repair/replay surfaces.
+- **Solved in-contract:** authority model, historical identity stability, root versioning, compatibility getters, repair/replay endpoints.
+- **Gap at cutover/tooling layer:** script preflight previously did not enforce semantic compatibility before wiring or locking.
 
-### Incomplete before this patch
-- Resolver capability detection and auth verification were not production-safe.
-- Inspector did not expose resolver-family-safe authorisation truth.
-- Operator tooling/docs did not clearly label lean manager mode as keeper-assisted for metadata.
-- Mainnet deploy script still allowed ambiguous manager defaults.
+## Patched in this change set
 
-### Not required
-- Prime runtime changes.
-- Typed push-hook migration.
-- New Prime storage or public surfaces.
+- Added shared Hardhat preflight library to classify manager mode (`rich-v1-view-compatible`, `lean-handleHook-compatible`, `none`) and hook callability.
+- `deploy-ens-job-pages.js` now prints compatibility mode and refuses `LOCK_CONFIG` in keeper-required / unresolved mode.
+- `deploy.js` now preflights ENS target before `setEnsJobPages(...)`, including code existence, legacy hook callability, and target-manager alignment.
 
-## Production-grade conclusion
+## Operating modes
 
-A truthful production path is **keeper-assisted / partially automatic without Prime redeploy**:
-- automatic authoritative label/name/URI/node issuance where possible;
-- explicit metadata completeness state when URIs are unavailable onchain;
-- log-driven repair for spec/completion text;
-- resolver-family-safe auth observation;
-- explicit deploy/runbook cutover checks.
+- **Rich mode (fully automatic metadata path):** no keeper required for spec/completion hydration.
+- **Lean mode (current Prime reality):** authoritative node issuance works, but keeper-assisted metadata repair/replay remains required.
+- **None mode:** refuse cutover.
