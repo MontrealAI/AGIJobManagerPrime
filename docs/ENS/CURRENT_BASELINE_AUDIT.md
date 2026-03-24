@@ -1,7 +1,7 @@
 # CURRENT BASELINE AUDIT
 
 Date: 2026-03-24
-Branch audited: current `main` working tree before final patch validation.
+Branch audited: current `work` branch working tree (remediation branch) as of 2026-03-24.
 
 ## Executive answers
 

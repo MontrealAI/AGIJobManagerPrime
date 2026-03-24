@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-24T00:00:00Z",
-  "branch": "main",
+  "generatedAt": "2026-03-24T23:59:00Z",
+  "branch": "work",
   "primeChangesRequired": false,
   "managerImplementsViewV1": false,
   "managerUsesTypedPushHooks": false,
@@ -25,5 +25,37 @@
     "inspector guessed isAuthorised(bytes32,address) external read surface",
     "mainnet deploy script stale implicit job manager default"
   ],
-  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair"
+  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair",
+  "remeasuredSizes": {
+    "AGIJobManagerPrime": {
+      "runtimeBytes": 24472,
+      "runtimeHeadroom": 104,
+      "initcodeBytes": 29972,
+      "initcodeHeadroom": 19180
+    },
+    "AGIJobDiscoveryPrime": {
+      "runtimeBytes": 24505,
+      "runtimeHeadroom": 71,
+      "initcodeBytes": 25106,
+      "initcodeHeadroom": 24046
+    },
+    "AGIJobCompletionNFT": {
+      "runtimeBytes": 3334,
+      "runtimeHeadroom": 21242,
+      "initcodeBytes": 4177,
+      "initcodeHeadroom": 44975
+    },
+    "ENSJobPages": {
+      "runtimeBytes": 24560,
+      "runtimeHeadroom": 16,
+      "initcodeBytes": 27350,
+      "initcodeHeadroom": 21802
+    },
+    "ENSJobPagesInspector": {
+      "runtimeBytes": 7269,
+      "runtimeHeadroom": 17307,
+      "initcodeBytes": 7296,
+      "initcodeHeadroom": 41856
+    }
+  }
 }
