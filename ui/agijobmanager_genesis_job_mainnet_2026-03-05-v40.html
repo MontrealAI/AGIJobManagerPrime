@@ -8194,14 +8194,38 @@ function normalizeIpfsToHttp(uri){
           const resolved = await resolveEnsJobPagesContract();
           if(!resolved) return {texts:{}, degraded:true};
         }
-        const [rootName, ensName, ensUri, node, resolverAddr] = await Promise.all([
-          ensJobPages.methods.jobsRootName().call().catch(()=>""),
-          ensJobPages.methods.jobEnsName(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.jobEnsURI(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.jobEnsNode(String(jobId)).call().catch(()=>""),
-          ensJobPages.methods.publicResolver().call().catch(()=>"")
+        const ensRead = (method, ...args)=>{
+          try{
+            const fn = ensJobPages?.methods?.[method];
+            if(typeof fn !== 'function') return Promise.resolve("");
+            return fn(...args).call().catch(()=>"");
+          }catch{ return Promise.resolve(""); }
+        };
+        const [
+          rootName,
+          previewName, previewUri, previewNode,
+          effectiveName, effectiveUri, effectiveNode,
+          storedName, storedUri, storedNode,
+          tokenUriMode,
+          resolverAddr
+        ] = await Promise.all([
+          ensRead('jobsRootName'),
+          ensRead('previewJobEnsName', String(jobId)),
+          ensRead('previewJobEnsURI', String(jobId)),
+          ensRead('previewJobEnsNode', String(jobId)),
+          ensRead('effectiveJobEnsName', String(jobId)),
+          ensRead('effectiveJobEnsURI', String(jobId)),
+          ensRead('effectiveJobEnsNode', String(jobId)),
+          ensRead('jobEnsName', String(jobId)),
+          ensRead('jobEnsURI', String(jobId)),
+          ensRead('jobEnsNode', String(jobId)),
+          ensRead('tokenURIMode'),
+          ensRead('publicResolver')
         ]);
-        const result = {rootName, ensName, ensUri, node, resolverAddr, texts:{}};
+        const ensName = effectiveName || previewName || storedName || "";
+        const ensUri = effectiveUri || previewUri || storedUri || "";
+        const node = effectiveNode || previewNode || storedNode || "";
+        const result = {rootName, ensName, ensUri, node, resolverAddr, tokenUriMode, texts:{}};
         if(resolverAddr && resolverAddr !== '0x0000000000000000000000000000000000000000' && node){
           const resolver = new web3.eth.Contract(PublicResolverABI, resolverAddr);
           for(const key of ["schema","agijobs.spec.public","agijobs.completion.public"]){
@@ -8339,7 +8363,7 @@ function normalizeIpfsToHttp(uri){
         ['ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
         ['ENS node', escapeHtml(ens.node || '—')],
         ['Resolver', escapeHtml(ens.resolverAddr || '—')],
-        ['Token URI mode', 'Unavailable in ENSJobPages public ABI (v40)'],
+        ['Token URI mode', ens.tokenUriMode || 'Unavailable in ENSJobPages public ABI (v40)'],
         ['schema', escapeHtml(ens.texts?.schema || '—')], ['agijobs.spec.public', ens.texts?.['agijobs.spec.public'] ? safeLink(ens.texts['agijobs.spec.public']) : '—'],
         ['agijobs.completion.public', ens.texts?.['agijobs.completion.public'] ? safeLink(ens.texts['agijobs.completion.public']) : '—']
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
