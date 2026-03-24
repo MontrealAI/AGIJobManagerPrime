@@ -3099,7 +3099,7 @@ Evaluation methodology"></textarea>
         <div>
           <h2 style="margin:0 0 12px">Jobs</h2>
           <div class="helper">This table is your live operational surface. Open jobs accept eligible agent applications; assigned jobs can move into completion review; completed or expired jobs can have ENS locking actions. Buttons only appear when the current UI state suggests the action may be relevant.</div>
-          <div class="muted" style="margin-top:8px">Actions below call the on-chain methods on <code>0xB3AA…81d1</code>.</div>
+          <div class="muted" style="margin-top:8px">Actions below call the on-chain methods on <code>0xF8fc…993e</code>.</div>
         </div>
         <div class="miniPills">
           <span class="miniPill">Searchable</span>
@@ -8194,14 +8194,14 @@ function normalizeIpfsToHttp(uri){
           const resolved = await resolveEnsJobPagesContract();
           if(!resolved) return {texts:{}, degraded:true};
         }
-        const [rootName, ensName, ensUri, node, tokenUriMode, resolverAddr] = await Promise.all([
+        const [rootName, ensName, ensUri, node, resolverAddr] = await Promise.all([
           ensJobPages.methods.jobsRootName().call().catch(()=>""),
           ensJobPages.methods.jobEnsName(String(jobId)).call().catch(()=>""),
           ensJobPages.methods.jobEnsURI(String(jobId)).call().catch(()=>""),
           ensJobPages.methods.jobEnsNode(String(jobId)).call().catch(()=>""),
           ensJobPages.methods.publicResolver().call().catch(()=>"")
         ]);
-        const result = {rootName, ensName, ensUri, node, tokenUriMode, resolverAddr, texts:{}};
+        const result = {rootName, ensName, ensUri, node, resolverAddr, texts:{}};
         if(resolverAddr && resolverAddr !== '0x0000000000000000000000000000000000000000' && node){
           const resolver = new web3.eth.Contract(PublicResolverABI, resolverAddr);
           for(const key of ["schema","agijobs.spec.public","agijobs.completion.public"]){
@@ -8339,7 +8339,7 @@ function normalizeIpfsToHttp(uri){
         ['ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
         ['ENS node', escapeHtml(ens.node || '—')],
         ['Resolver', escapeHtml(ens.resolverAddr || '—')],
-        ['Token URI mode', ens.tokenUriMode ? 'ENS token URI enabled' : 'Completion URI / base IPFS path'],
+        ['Token URI mode', 'Unavailable in ENSJobPages public ABI (v40)'],
         ['schema', escapeHtml(ens.texts?.schema || '—')], ['agijobs.spec.public', ens.texts?.['agijobs.spec.public'] ? safeLink(ens.texts['agijobs.spec.public']) : '—'],
         ['agijobs.completion.public', ens.texts?.['agijobs.completion.public'] ? safeLink(ens.texts['agijobs.completion.public']) : '—']
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
