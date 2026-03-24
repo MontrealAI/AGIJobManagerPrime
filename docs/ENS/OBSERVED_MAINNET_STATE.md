@@ -15,7 +15,6 @@ _Observed on Ethereum mainnet on 2026-03-23 UTC using `scripts/ens/audit-mainnet
 - wired job manager: `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e`
 - job label prefix: `agijob-`
 - `configLocked = false`
-- `useEnsJobTokenURI = false`
 
 ### AGIJobManagerPrime at `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e`
 

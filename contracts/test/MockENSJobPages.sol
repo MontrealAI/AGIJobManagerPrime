@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MockENSJobPages {
-    function ensJobPagesInterfaceVersion() external pure returns (uint256) { return 1; }
     using Strings for uint256;
 
     uint8 public constant HOOK_CREATE = 1;
@@ -15,7 +14,6 @@ contract MockENSJobPages {
     uint8 public constant HOOK_LOCK_BURN = 6;
 
     mapping(uint8 => bool) public revertHook;
-    bool public useEnsJobTokenURI;
     bool public useJobEnsUriOverride;
     string public jobEnsUriOverride;
     bytes4 public lastHandleHookSelector;
@@ -197,7 +195,4 @@ contract MockENSJobPages {
     function jobEnsIssued(uint256) external pure returns (bool) { return true; }
     function jobEnsReady(uint256) external pure returns (bool) { return true; }
 
-    function setUseEnsJobTokenURI(bool enabled) external {
-        useEnsJobTokenURI = enabled;
-    }
 }

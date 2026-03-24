@@ -32,10 +32,10 @@ const PAGES_ABI = [
   'function effectiveJobEnsNode(uint256) view returns (bytes32)',
   'function jobLabelSnapshot(uint256) view returns (bool,string)',
   'function jobAuthorityInfo(uint256) view returns (bool,string,bytes32,uint32,bytes32,bytes32,uint8,uint32,uint64,bool,bool,bool)',
-  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function publicResolver() view returns (address)',
   'function nameWrapper() view returns (address)',
   'function jobsRootNode() view returns (bytes32)',
+  'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
   'function jobEnsIssued(uint256) view returns (bool)',
   'function jobEnsReady(uint256) view returns (bool)'
 ];

@@ -7,8 +7,8 @@ Use this guide if you only have:
 ## In one minute (Etherscan-first safety)
 
 - Deployments are done with scripts (Hardhat recommended); owner cutover/governance writes are safe on Etherscan.
-- ENS replacement is additive and manual for key wiring: `setApprovalForAll(newEnsJobPages, true)` then `setEnsJobPages(newEnsJobPages)`.
-- ENS naming is `<prefix><jobId>.<jobsRootName>` (defaults: `agijob0.alpha.jobs.agi.eth`, `agijob1.alpha.jobs.agi.eth`).
+- ENS replacement is additive and manual for key wiring: `setApprovalForAll(newEnsJobPages, true)` then `setEnsJobPages(newEnsJobPages)`. On current Prime, keep completion NFTs on the native completion-URI/IPFS path; do not assume manager-side ENS URI routing exists.
+- ENS naming is `<prefix><jobId>.<jobsRootName>` (defaults: `agijob-0.alpha.jobs.agi.eth`, `agijob-1.alpha.jobs.agi.eth`).
 - ENS writes are best-effort: settlement can succeed even if ENS side effects fail.
 - Treat `lockIdentityConfiguration()` and `lockConfiguration()` as irreversible and postpone until full post-cutover validation.
 
@@ -26,7 +26,7 @@ Use this guide if you only have:
 Use this order on mainnet to avoid partial cutovers:
 1. Wrapped-root owner on NameWrapper: `setApprovalForAll(newEnsJobPages, true)`.
 2. AGIJobManager owner on AGIJobManager: `setEnsJobPages(newEnsJobPages)`.
-3. ENSJobPages owner (if needed): `migrateLegacyWrappedJobPage(jobId, exactLabel)` for affected legacy jobs.
+3. ENSJobPages owner (if needed): `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls` for affected legacy jobs.
 4. Verify `status=1` receipts and read fields before considering lock calls.
 
 Expected outcome: new job hooks resolve through the new ENSJobPages; legacy jobs retain historical labels unless migrated.
@@ -44,7 +44,7 @@ Do not call irreversible lock functions until these checks are complete.
 | --- | --- | --- |
 | `setApprovalForAll(newEnsJobPages, true)` on NameWrapper | wrapped-root owner | Yes |
 | `setEnsJobPages(newEnsJobPages)` on AGIJobManager | AGIJobManager owner | Yes |
-| `migrateLegacyWrappedJobPage(jobId, exactLabel)` on ENSJobPages | ENSJobPages owner | Yes |
+| `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls` on ENSJobPages | ENSJobPages owner | Yes |
 | `lockIdentityConfiguration()` / `lockConfiguration()` | owner(s) | Yes, but irreversible |
 
 ### Expected result after ENS replacement cutover checks

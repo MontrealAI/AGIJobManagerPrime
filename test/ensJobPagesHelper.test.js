@@ -13,6 +13,22 @@ contract("ENSJobPages helper", (accounts) => {
   const [owner, employer, agent] = accounts;
   const rootName = "alpha.jobs.agi.eth";
   const rootNode = namehash(rootName);
+  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+  async function runLegacyRepairFlow(helper, jobId, label, jobEmployer, jobAgent, specURI, completionURI = "", allowAuth = true) {
+    await helper.repairAuthoritySnapshot(jobId, label, { from: owner });
+    await helper.replayCreateExplicit(jobId, jobEmployer, specURI, { from: owner });
+    if (completionURI) {
+      await helper.repairCompletionTextExplicit(jobId, completionURI, { from: owner });
+    }
+    await helper.repairAuthorisationsExplicit(jobId, jobEmployer, jobAgent, allowAuth, { from: owner });
+    if (jobAgent !== ZERO_ADDRESS && allowAuth) {
+      await helper.replayAssignExplicit(jobId, jobAgent, { from: owner });
+    }
+    if (!allowAuth) {
+      await helper.replayRevokeExplicit(jobId, jobEmployer, jobAgent, { from: owner });
+    }
+  }
 
   it("creates job pages and updates resolver records for an unwrapped root", async () => {
     const ens = await MockENSRegistry.new({ from: owner });
@@ -688,7 +704,7 @@ contract("ENSJobPages helper", (accounts) => {
     await manager.setJobTerminalState(jobId, false, true, false, { from: owner });
 
     const node = subnode(rootNode, "job-21");
-    await helper.migrateLegacyWrappedJobPage(jobId, "job-21", { from: owner });
+    await runLegacyRepairFlow(helper, jobId, "job-21", employer, agent, "ipfs://legacy-spec-21");
 
     assert.equal(await resolver.isAuthorised(node, employer), true, "employer should remain authorised for unresolved disputes");
     assert.equal(await resolver.isAuthorised(node, agent), true, "agent should remain authorised for unresolved disputes");
@@ -722,7 +738,7 @@ contract("ENSJobPages helper", (accounts) => {
     await resolver.setAuthorisation(node, employer, true, { from: owner });
     await resolver.setAuthorisation(node, agent, true, { from: owner });
 
-    await helper.migrateLegacyWrappedJobPage(jobId, "job-111", { from: owner });
+    await runLegacyRepairFlow(helper, jobId, "job-111", employer, agent, "ipfs://legacy-spec-111", "ipfs://legacy-completion-111", false);
 
     assert.equal(await resolver.isAuthorised(node, employer), false, "employer should stay revoked for expired jobs");
     assert.equal(await resolver.isAuthorised(node, agent), false, "agent should stay revoked for expired jobs");
@@ -755,8 +771,7 @@ contract("ENSJobPages helper", (accounts) => {
 
     await manager.setJob(0, employer, agent, "ipfs://legacy-spec-0", { from: owner });
 
-    const receipt = await helper.migrateLegacyWrappedJobPage(0, "job-0", { from: owner });
-    expectEvent(receipt, "LegacyJobPageMigrated", { jobId: "0", label: "job-0", adopted: false, created: true });
+    await runLegacyRepairFlow(helper, 0, "job-0", employer, agent, "ipfs://legacy-spec-0");
 
     const node = subnode(rootNode, "job-0");
     const snapshot = await helper.jobLabelSnapshot(0);
@@ -792,8 +807,8 @@ contract("ENSJobPages helper", (accounts) => {
     assert.equal(await wrapper.ownerOf(web3.utils.toBN(legacyNode)), owner, "legacy node starts under old manager owner");
 
     await manager.setJob(10, employer, agent, "ipfs://legacy-spec-10", { from: owner });
-    const migrateReceipt = await helper.migrateLegacyWrappedJobPage(10, "job-10", { from: owner });
-    expectEvent(migrateReceipt, "LegacyJobPageMigrated", { jobId: "10", label: "job-10", adopted: true, created: false });
+    await wrapper.setSubnodeOwner(rootNode, "job-10", helper.address, 0, web3.utils.toBN(2).pow(web3.utils.toBN(64)).subn(1), { from: owner });
+    await runLegacyRepairFlow(helper, 10, "job-10", employer, agent, "ipfs://legacy-spec-10");
 
     assert.equal(await wrapper.ownerOf(web3.utils.toBN(legacyNode)), helper.address, "node should be adopted by helper");
     assert.equal(await resolver.isAuthorised(legacyNode, employer), true, "employer auth repaired on adopted node");
@@ -838,7 +853,7 @@ contract("ENSJobPages helper", (accounts) => {
     await resolver.setAuthorisation(node, employer, true, { from: owner });
     await resolver.setAuthorisation(node, agent, true, { from: owner });
 
-    await helper.migrateLegacyWrappedJobPage(jobId, "job-11", { from: owner });
+    await runLegacyRepairFlow(helper, jobId, "job-11", employer, agent, "ipfs://legacy-spec-11", "ipfs://legacy-completion-11", false);
 
     assert.equal(await resolver.isAuthorised(node, employer), false, "employer should stay revoked for terminal jobs");
     assert.equal(await resolver.isAuthorised(node, agent), false, "agent should stay revoked for terminal jobs");
@@ -870,7 +885,7 @@ contract("ENSJobPages helper", (accounts) => {
     await manager.setJob(5, employer, agent, "ipfs://legacy-spec-5", { from: owner });
 
     for (const bad of ["", "Job-5", "job-", "job-6", "job-15", "-job5", "job.5"]) {
-      await expectRevert.unspecified(helper.migrateLegacyWrappedJobPage(5, bad, { from: owner }));
+      await expectRevert.unspecified(helper.repairAuthoritySnapshot(5, bad, { from: owner }));
     }
   });
 

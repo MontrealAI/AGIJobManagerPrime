@@ -37,7 +37,7 @@ The command bundle above demonstrates the canonical success/failure expectations
 | 1 | Operator | `npx truffle test --network test test/adminOps.test.js` | Node deps installed; local chain from Truffle test harness | ENS wiring admin controls and lock behavior validated | `EnsRegistryUpdated`, `NameWrapperUpdated`, `RootNodesUpdated`, `IdentityConfigurationLocked` assertions |
 | 2 | Operator | `npx truffle test --network test test/mainnetHardening.test.js` | Same | ENS hook + URI hardening and best-effort behavior validated | hook/URI assertions pass; no settlement-side regressions |
 | 3 | Owner | Deploy AGIJobManager with initial ENS addresses and roots (repo deployment flow) | constructor args prepared | Contract starts with expected identity wiring | reads: `ens()`, `nameWrapper()`, root node getters |
-| 4 | Owner | Optional: `setEnsJobPages(address)` and `setUseEnsJobTokenURI(bool)` | hook target deployed and reviewed | optional ENS pages/URI path enabled | read `ensJobPages()`, observe `NFTIssued` URI semantics |
+| 4 | Owner | Optional: `setEnsJobPages(address)`; `setUseEnsJobTokenURI(bool)` is legacy-manager-only | hook target deployed and reviewed | optional ENS pages path enabled; Prime NFT routing remains completion-URI/IPFS based | read `ensJobPages()`; if using a legacy manager, also observe `NFTIssued` URI semantics |
 | 5 | Eligible actor | `applyForJob(jobId, subdomain, proof)` or validator vote with valid identity | open job + role requirements | successful ENS-eligible action | `JobApplied` / validator vote event |
 | 6 | Ineligible actor | same action with wrong label/ownership/proof | same business-state preconditions | fail-closed authorization | revert `NotAuthorized` |
 | 7 | Owner | Optional `lockIdentityConfiguration()` | all wiring and negative tests complete | identity wiring permanently frozen | `lockIdentityConfig()==true`, `IdentityConfigurationLocked` |
@@ -58,7 +58,7 @@ sequenceDiagram
     participant A as Agent/Validator
 
     O->>M: updateEnsRegistry / updateNameWrapper / updateRootNodes
-    O->>M: optional setEnsJobPages + setUseEnsJobTokenURI
+    O->>M: optional setEnsJobPages (and legacy-only setUseEnsJobTokenURI)
     A->>M: applyForJob(jobId, label, proof)
     M->>E: wrapper + resolver ownership checks (if fallback needed)
     E-->>M: authorization result
@@ -107,7 +107,7 @@ flowchart TD
 
 1. Read current state: `ens`, `nameWrapper`, root node getters, Merkle roots, `lockIdentityConfig`, `ensJobPages`.
 2. Submit owner txs in minimal batches: `updateEnsRegistry`, `updateNameWrapper`, `updateRootNodes`, optional `setEnsJobPages`.
-3. If enabling ENS URI mode, call `setUseEnsJobTokenURI(true)` only after hook target validation.
+3. On current Prime deployments, stop after `setEnsJobPages(...)`; only legacy managers should consider `setUseEnsJobTokenURI(true)`, and only after hook target validation.
 
 ### Verification steps
 

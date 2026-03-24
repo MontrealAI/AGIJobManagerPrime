@@ -41,7 +41,7 @@ ENS writes are best-effort side effects. Core escrow settlement is intentionally
 Old jobs may have snapshotted historical labels from previous ENSJobPages configuration. New prefix settings apply to unsnapshotted/future jobs only, and preview values must not be treated as authoritative until `effectiveJobEns*` authority exists.
 
 ## Why do old jobs need migration after ENSJobPages replacement?
-A replacement ENSJobPages contract may not have legacy label snapshots. Without snapshots, some post-create writes can fail until owner imports exact labels via `migrateLegacyWrappedJobPage(jobId, exactLabel)`.
+A replacement ENSJobPages contract may not have legacy label snapshots. Without snapshots, some post-create writes can fail until owner imports exact labels via `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls`.
 
 ## Why can’t I just change the prefix and expect old jobs to follow it?
 Prefix is used for unsnapshotted label derivation only. Once a job label is snapshotted, that exact label is stable and does not auto-rename.
@@ -55,7 +55,7 @@ Confirm final addresses, AGIJobManager->ENSJobPages wiring, NameWrapper approval
 ## What should I do if post-create ENS writes fail after cutover?
 1. Verify AGIJobManager points to the new ENSJobPages.
 2. Verify NameWrapper approval for the new ENSJobPages.
-3. For affected legacy jobs, run `migrateLegacyWrappedJobPage(jobId, exactLabel)`.
+3. For affected legacy jobs, run `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls`.
 
 ## Why do fee-on-transfer/deflationary ERC20 tokens fail?
 AGIJobManager expects strict transfer semantics and accounting consistency. Tokens that reduce transferred amount or apply transfer-side mechanics can trigger `TransferFailed` or solvency checks.

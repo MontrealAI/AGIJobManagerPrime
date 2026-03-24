@@ -163,7 +163,7 @@ Job label for that legacy job was never imported/snapshotted in current ENSJobPa
 
 ### Fix
 On ENSJobPages owner account call:
-- `migrateLegacyWrappedJobPage(jobId, exactLabel)`
+- `repairAuthoritySnapshot(jobId, exactLabel)` + explicit resolver/text/auth repair calls`
 
 `exactLabel` must exactly match the historical label for that job id.
 

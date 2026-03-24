@@ -23,9 +23,8 @@ const PAGES_ABI = [
   'function jobManager() view returns (address)',
   'function jobLabelPrefix() view returns (string)',
   'function configLocked() view returns (bool)',
-  'function useEnsJobTokenURI() view returns (bool)',
-  'function validateConfiguration() view returns (uint256)',
   'function configurationStatus() view returns (bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint256)',
+  'function validateConfiguration() view returns (uint256)',
 ];
 
 const PRIME_ABI = [
@@ -147,7 +146,6 @@ async function probeResolverTextSurface(provider, resolver) {
     jobManager: unwrap(await safe('pages.jobManager', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobManager')[0])),
     jobLabelPrefix: unwrap(await safe('pages.jobLabelPrefix', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'jobLabelPrefix')[0])),
     configLocked: unwrap(await safe('pages.configLocked', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configLocked')[0])),
-    useEnsJobTokenURI: unwrap(await safe('pages.useEnsJobTokenURI', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'useEnsJobTokenURI')[0])),
     validateConfiguration: serialize(await safe('pages.validateConfiguration', () => provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'validateConfiguration')[0])),
     configurationStatus: serialize(unwrap(await safe('pages.configurationStatus', () => Array.from(provider.readContract(ENS_JOB_PAGES, PAGES_ABI, 'configurationStatus'))), null)),
   };

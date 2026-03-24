@@ -112,5 +112,5 @@ Override paths:
    - `setJobManager(AGIJobManagerAddress)`
 4. On AGIJobManager (owner):
    - `setEnsJobPages(routerAddress)`
-   - `setUseEnsJobTokenURI(true)`
+   - legacy manager only: `setUseEnsJobTokenURI(true)` (do not expect this on current Prime mainnet)
 5. Keep `jobCompletionURI` populated as a durability fallback.

@@ -89,14 +89,27 @@ const checks = [
   {
     name: "AGIJobManagerPrime",
     artifactPath: artifactPathFor("AGIJobManagerPrime.sol", "AGIJobManagerPrime"),
+    enforce: true,
   },
   {
     name: "AGIJobDiscoveryPrime",
     artifactPath: artifactPathFor("AGIJobDiscoveryPrime.sol", "AGIJobDiscoveryPrime"),
+    enforce: true,
   },
   {
     name: "AGIJobCompletionNFT",
     artifactPath: artifactPathFor("periphery/AGIJobCompletionNFT.sol", "AGIJobCompletionNFT"),
+    enforce: true,
+  },
+  {
+    name: "ENSJobPages",
+    artifactPath: artifactPathFor("ens/ENSJobPages.sol", "ENSJobPages"),
+    enforce: true,
+  },
+  {
+    name: "ENSJobPagesInspector",
+    artifactPath: artifactPathFor("ens/ENSJobPagesInspector.sol", "ENSJobPagesInspector"),
+    enforce: process.env.STRICT_ENS_SIZE === "1",
   },
 ];
 
@@ -140,10 +153,10 @@ for (const check of checks) {
     continue;
   }
 
-  if (runtimeSizeBytes > MAX_RUNTIME_BYTES) {
+  if (runtimeSizeBytes > MAX_RUNTIME_BYTES && check.enforce) {
     oversizedRuntime.push({ name: check.name, sizeBytes: runtimeSizeBytes });
   }
-  if (initcodeSizeBytesValue > MAX_INITCODE_BYTES) {
+  if (initcodeSizeBytesValue > MAX_INITCODE_BYTES && check.enforce) {
     oversizedInitcode.push({ name: check.name, sizeBytes: initcodeSizeBytesValue });
   }
 }
@@ -185,4 +198,7 @@ for (const check of checks) {
   const initcodeSizeBytesValue = initcodeSizeBytes(artifact);
   console.log(`${check.name} runtime headroom: ${MAX_RUNTIME_BYTES - runtimeSizeBytes} bytes`);
   console.log(`${check.name} initcode headroom: ${MAX_INITCODE_BYTES - initcodeSizeBytesValue} bytes`);
+  if (!check.enforce) {
+    console.log(`${check.name} size gate: report-only (set STRICT_ENS_SIZE=1 to fail fast on ENS-side overages)`);
+  }
 }

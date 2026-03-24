@@ -112,7 +112,7 @@ These steps keep ENS integration **opt-in** and ensure lifecycle hooks remain be
 - Revoke resolver authorizations after terminal settlement.
 
 ## ENS job NFT tokenURI (optional)
-The deployed Prime manager does not expose `setUseEnsJobTokenURI` or `useEnsJobTokenURI`. On the current Prime path, completion NFTs continue to use the completion metadata pointer/IPFS flow. `useEnsJobTokenURI` remains an ENSJobPages compatibility flag only and should be treated as quarantined documentation-wise until a separately sized manager release explicitly wires it end-to-end.
+The deployed Prime manager does not expose `setUseEnsJobTokenURI` or `useEnsJobTokenURI`. On the current Prime path, completion NFTs continue to use the completion metadata pointer/IPFS flow. Any historical `useEnsJobTokenURI` references should be treated as legacy-only and non-authoritative for the current Prime stack.
 
 ## Post‑terminal lock (optional)
 `AGIJobManager.lockJobENS(jobId, burnFuses)` can be called after a terminal state to re‑revoke resolver authorizations and optionally attempt fuse burning (best‑effort).
