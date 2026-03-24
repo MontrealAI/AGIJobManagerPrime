@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AGIJobManager Prime · Prime Mainnet Console</title>
+  <title>AGIJobManager Prime · Prime Mainnet Console v40</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -1245,7 +1245,7 @@
   </style>
 
 
-  <style id="v39-premium-discovery-styles">
+  <style id="v40-premium-discovery-styles">
     #premiumDiscoverySection{position:relative;overflow:hidden;padding:clamp(18px,2vw,30px);border-radius:30px;background:linear-gradient(180deg,#fffdfd 0%,#fbf8fd 52%,#f8f6fb 100%);border:1px solid rgba(124,97,152,.12);box-shadow:0 22px 58px rgba(88,67,119,.08)}
     #premiumDiscoverySection::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(145,110,207,.08),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.74),rgba(244,238,250,.34));pointer-events:none}
     #premiumDiscoverySection,#premiumDiscoverySection *{box-sizing:border-box}
@@ -1746,6 +1746,7 @@
     <div class="primeDeckGrid">
       <div class="primeHeroSurface">
         <div class="eyebrow">Prime access deck</div>
+        <div class="tiny">Standalone snapshot <b>v40</b> · mainnet defaults refreshed</div>
         <div class="missionTitle" style="font-size:clamp(1.85rem,3vw,2.5rem);margin-bottom:10px">Prime mainnet readiness, pricing, and verification.</div>
         <div class="helper">Keep wallet posture, <b>Before You Transact</b>, terms acceptance, ENS verification, and the Alpha-Agent quick start inside the first operating screen. Verified defaults appear first; live reads confirm public bindings where available.</div>
         <div class="primeBadgeRow">
@@ -1763,6 +1764,7 @@
           <div class="registryCard"><span class="label">Discovery layer</span><code id="primeDiscoveryAddress">0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29</code><div class="tiny">AGIJobDiscoveryPrime</div></div>
           <div class="registryCard"><span class="label">Completion receipt NFT</span><code id="primeCompletionNftAddress">0xFfCC54dA2Caf1158e57611005965BB648E950737</code><div class="tiny">AGIJobCompletionNFT</div></div>
           <div class="registryCard"><span class="label">ENS public memory</span><code id="primeEnsPagesAddress">0x703011ef1c6e4277587efe150e6cd74ca18f0069</code><div class="tiny">ENSJobPages</div></div>
+          <div class="registryCard"><span class="label">Superseded ENS public memory</span><code id="primeEnsPagesSupersededAddress">0x97E03F7BFAC116E558A25C8f09aEf09108a2779d</code><div class="tiny">Historical / superseded only (not active)</div></div>
         </div>
         <div class="registryGrid" style="margin-top:12px">
           <div class="registryCard"><span class="label">UriUtils</span><code>0xF1b8E6e39F8b4Dd88ADDbb031489c330778db0D1</code></div>
@@ -4834,11 +4836,25 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!hasAcceptedTerms){ setToast('Accept the Terms & Conditions before sending any write transaction.', 'warn'); return false; }
       return true;
     }
-    const UI_CONTINUITY_KEY = 'agijobmanagerprime.v39.uiContinuity';
+    const UI_CONTINUITY_KEY = 'agijobmanagerprime.v40.uiContinuity';
+    const LEGACY_UI_CONTINUITY_KEYS = ['agijobmanagerprime.v39.uiContinuity'];
     const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','preflightTermsAccepted','agentSub','clubSub','mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
     const UI_CONTINUITY_TOGGLES = ['alphaEnsExpertDetails'];
     function continuityLoad(){
-      try{ return JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {}; }catch(_){ return {}; }
+      try{
+        const current = JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {};
+        if(current && Object.keys(current).length) return current;
+      }catch{}
+      for(const legacyKey of LEGACY_UI_CONTINUITY_KEYS){
+        try{
+          const legacy = JSON.parse(localStorage.getItem(legacyKey) || '{}') || {};
+          if(legacy && Object.keys(legacy).length){
+            try{ localStorage.setItem(UI_CONTINUITY_KEY, JSON.stringify({...legacy, migratedFrom:legacyKey, migratedAt:Date.now()})); }catch{}
+            return legacy;
+          }
+        }catch{}
+      }
+      return {};
     }
     function continuitySave(patch={}){
       const current = continuityLoad();
@@ -8252,7 +8268,7 @@ function normalizeIpfsToHttp(uri){
           const resolved = await resolveEnsJobPagesContract();
           if(!resolved) return {texts:{}, degraded:true};
         }
-        const [rootName, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo, tokenUriMode] = await Promise.all([
+        const [rootName, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo] = await Promise.all([
           ensJobPages.methods.jobsRootName().call().catch(()=>""),
           ensJobPages.methods.previewJobEnsName(String(jobId)).call().catch(()=>""),
           ensJobPages.methods.previewJobEnsURI(String(jobId)).call().catch(()=>""),
@@ -8266,12 +8282,11 @@ function normalizeIpfsToHttp(uri){
           ,ensJobPages.methods.jobEnsExists(String(jobId)).call().catch(()=>false)
           ,ensJobPages.methods.validateConfiguration().call().catch(()=>0)
           ,ensJobPages.methods.jobAuthorityInfo(String(jobId)).call().catch(()=>null)
-          ,ensJobPages.methods.useEnsJobTokenURI ? ensJobPages.methods.useEnsJobTokenURI().call().catch(()=>null) : null
         ]);
         const ensUri = effectiveUri || previewUri || '';
         const ensName = effectiveName || previewName || '';
         const node = effectiveNode || previewNode || '';
-        const result = {rootName, ensName, ensUri, node, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo, tokenUriMode, texts:{}};
+        const result = {rootName, ensName, ensUri, node, previewName, previewUri, previewNode, effectiveName, effectiveUri, effectiveNode, resolverAddr, ready, issued, exists, validationMask, authorityInfo, texts:{}};
         if(resolverAddr && resolverAddr !== '0x0000000000000000000000000000000000000000' && node){
           const resolver = new web3.eth.Contract(PublicResolverABI, resolverAddr);
           for(const key of ["schema","agijobs.spec.public","agijobs.completion.public"]){
@@ -9249,7 +9264,7 @@ function normalizeIpfsToHttp(uri){
     })();
   </script>
 
-  <script id="v39-premium-discovery">
+  <script id="v40-premium-discovery">
 (function(){
       const PREMIUM_PRESETS = {
         govern:{name:'To Govern Their Own Kind — flagship', note:'Canonical constitutional commission for recursive AI self-governance.', schedule:{commit:72,reveal:24,accept:48,trial:168,scoreCommit:24,scoreReveal:24,selected:72,checkpoint:168}, counts:{finalists:3,minReveal:5,maxReveal:7}, weights:{historical:3500,trial:6500}, economicsBps:{application:30, finalistStake:125, stipend:150, validatorReward:12, validatorBond:35}, posture:'flagship'},
