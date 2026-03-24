@@ -3,7 +3,7 @@
 Institutional-grade Next.js dApp + operations console with **read-only first**, **simulation-first writes**, and deterministic demo mode.
 
 ## Quick links
-- [Standalone Genesis Mainnet HTML UI (`v41`)](./GENESIS_JOB_MAINNET_HTML_UI.md)
+- [Standalone Genesis Mainnet HTML UI (`v42`)](./GENESIS_JOB_MAINNET_HTML_UI.md)
 - [Standalone HTML artifact index (`ui/*.html`)](./STANDALONE_HTML_UIS.md)
 - [UI directory inventory (`/ui`)](../../ui/README.md)
 - [Overview](./OVERVIEW.md)
@@ -28,7 +28,7 @@ npm run dev
 
 ## Demo mode
 
-`.env.example` is prefilled with the official `v0.1.0-mainnet-beta` Ethereum mainnet deployment defaults.
+`.env.example` is prefilled with the official the Prime mainnet Ethereum mainnet deployment defaults.
 ```bash
 NEXT_PUBLIC_DEMO_MODE=1 NEXT_PUBLIC_DEMO_ACTOR=visitor npm run dev
 ```
@@ -50,7 +50,7 @@ This folder is **text-only**. Binary assets are forbidden and CI-enforced by `np
 
 ## Standalone HTML artifact (additive)
 
-For the versioned, single-file mainnet page in `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v41.html`, use:
+For the versioned, single-file mainnet page in `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v42.html`, use:
 
 - [GENESIS_JOB_MAINNET_HTML_UI.md](./GENESIS_JOB_MAINNET_HTML_UI.md)
 - [STANDALONE_HTML_UIS.md](./STANDALONE_HTML_UIS.md)

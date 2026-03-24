@@ -1,9 +1,9 @@
-# Standalone HTML UI: `agijobmanager_genesis_job_mainnet_2026-03-05-v41.html`
+# Standalone HTML UI: `agijobmanager_genesis_job_mainnet_2026-03-05-v42.html`
 
 ## At-a-glance navigation
 
 - [Quick start (safe and practical)](#quick-start-safe-and-practical)
-- [Embedded network and contract assumptions (v41)](#embedded-network-and-contract-assumptions-v41)
+- [Embedded network and contract assumptions (v42)](#embedded-network-and-contract-assumptions-v42)
 - [Security and trust hygiene](#security-and-trust-hygiene)
 - [Troubleshooting (standalone page)](#troubleshooting-standalone-page)
 - [What this page does not replace](#what-this-page-does-not-replace)
@@ -11,10 +11,10 @@
 
 ## What this page is
 
-`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v41.html` is a **standalone, versioned HTML interface artifact** for AGIJobManager mainnet operations and demonstrations.
+`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v42.html` is a **standalone, versioned HTML interface artifact** for AGIJobManager mainnet operations and demonstrations.
 
 Version/lifecycle posture:
-- This file is a point-in-time artifact (`v41`) committed in-repo for reproducible browser-based operations and review.
+- This file is a point-in-time artifact (`v42`) committed in-repo for reproducible browser-based operations and review.
 - It is intentionally additive to the broader/full UI effort (Next.js app in `ui/src/`, docs in [docs/ui/README.md](./README.md)).
 - It is not the deployment authority and not a replacement for Hardhat runbooks.
 
@@ -48,7 +48,7 @@ Do not use it as a deployment source of truth:
 
 This page is a UI client for that ecosystem, not a deployment framework.
 
-## Grounded capabilities in v41
+## Grounded capabilities in v42
 
 Based on the file contents, this standalone page includes:
 
@@ -63,9 +63,9 @@ Based on the file contents, this standalone page includes:
 - `$AGIALPHA` bridge/conversion console (deBridge widget embedding plus `depositExact` flow into `AGIALPHAEqualMinterVault`).
 - Embedded Terms & Conditions section and in-page acceptance gating for write controls.
 
-Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v41` file.
+Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v42` file.
 
-## Grounded page sections and expected outcomes (v41)
+## Grounded page sections and expected outcomes (v42)
 
 | Section in page | What you do there | Expected result |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Grounding note: this list is based on visible controls, embedded ABIs, and in-pa
 | AGIALPHA bridge/conversion area | Review bridged vs official balances, run approval, run vault conversion, optionally use embedded deBridge route. | Bridged token can be converted into official Ethereum `$AGIALPHA` (when wallet and vault state permit). |
 | Terms & Conditions area | Review and accept embedded terms. | Write controls remain intentionally locked until terms are accepted in-page. |
 
-Inference boundary: this table describes visible UX and method wiring present in `v41`; it does not redefine protocol-level permissions.
+Inference boundary: this table describes visible UX and method wiring present in `v42`; it does not redefine protocol-level permissions.
 
 ## Grounded non-goals (important)
 
@@ -100,7 +100,7 @@ This section maps major UI actions to the contract methods surfaced in the file'
 
 If uncertain about exact callable semantics, confirm against contract docs/runbooks before signing.
 
-## Write-capable transaction methods exposed in v41
+## Write-capable transaction methods exposed in v42
 
 The standalone page includes handlers that can submit the following transactions (subject to role/state checks enforced by contracts):
 
@@ -129,7 +129,7 @@ Primary:
 - Reviewers/auditors/demo participants validating end-to-end operator UX without running the full Next.js stack.
 
 Secondary:
-- Developers comparing standalone snapshots (`v13` ... `v41`) during UI iteration.
+- Developers comparing standalone snapshots (`v13` ... `v42`) during UI iteration.
 
 ## Quick start (safe and practical)
 
@@ -143,7 +143,7 @@ python3 -m http.server 8000
 Open:
 
 ```text
-http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-03-05-v41.html
+http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-03-05-v42.html
 ```
 
 (Direct `file://` open can work, but local HTTP is more reliable for wallet/provider behavior.)
@@ -166,7 +166,7 @@ No local backend, indexer, or database is required for this standalone page.
 ### Open method
 
 Use either:
-1. Direct file open (`file://.../ui/agijobmanager_genesis_job_mainnet_2026-03-05-v41.html`), or
+1. Direct file open (`file://.../ui/agijobmanager_genesis_job_mainnet_2026-03-05-v42.html`), or
 2. Serve over HTTP from repository root.
 
 Recommended HTTP approach:
@@ -179,7 +179,7 @@ python3 -m http.server 8000
 Then open:
 
 ```text
-http://localhost:8000/ui/agijobmanager_genesis_job_mainnet_2026-03-05-v41.html
+http://localhost:8000/ui/agijobmanager_genesis_job_mainnet_2026-03-05-v42.html
 ```
 
 HTTP serving is generally safer for extension compatibility and future browser restrictions.
@@ -195,7 +195,7 @@ HTTP serving is generally safer for extension compatibility and future browser r
 ### Minimal safe operating sequence
 
 1. Open via local HTTP.
-2. Confirm filename/path ends with `agijobmanager_genesis_job_mainnet_2026-03-05-v41.html`.
+2. Confirm filename/path ends with `agijobmanager_genesis_job_mainnet_2026-03-05-v42.html`.
 3. Connect wallet and confirm Ethereum Mainnet.
 4. Confirm address panel values against deployment docs.
 5. Accept terms in-page.
@@ -237,17 +237,17 @@ Use this checklist before each write transaction:
 - **Read-only (no wallet):** You can view static sections and most dashboard content, but cannot submit on-chain transactions.
 - **Action-capable (wallet + mainnet + terms accepted):** Write buttons unlock and the page can submit contract transactions through your wallet.
 
-Write-gate conditions in v41 are explicitly tied to:
+Write-gate conditions in v42 are explicitly tied to:
 1. wallet connection,
 2. Ethereum mainnet (`chainId 1`), and
 3. in-page terms acceptance checkbox.
 
-## Embedded network and contract assumptions (v41)
+## Embedded network and contract assumptions (v42)
 
 The page hardcodes the following addresses/constants in the script block:
 
-- `AGI_JOB_MANAGER`: `0xB3AAeb69b630f0299791679c063d68d6687481d1`
-- `ENS_JOB_PAGES`: `0xc19A84D10ed28c2642EfDA532eC7f3dD88E5ed94`
+- `AGI_JOB_MANAGER`: `0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e`
+- `ENS_JOB_PAGES`: `0x703011EF1C6E4277587eFe150e6cd74cA18F0069`
 - `NAME_WRAPPER`: `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`
 - `BRIDGED_AGIALPHA_ETH`: `0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe`
 - `OFFICIAL_AGIALPHA_ETH`: `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`
@@ -267,11 +267,11 @@ The broader UI is a separate Next.js surface that continues to evolve in paralle
 - Broader UI docs hub: [docs/ui/README.md](./README.md)
 - UI directory inventory (artifact + app): [ui/README.md](../../ui/README.md)
 
-Use this `v41` runbook when you intentionally need a single-file, versioned browser interface. Use the broader UI docs when you need roadmap/development/testing context.
+Use this `v42` runbook when you intentionally need a single-file, versioned browser interface. Use the broader UI docs when you need roadmap/development/testing context.
 
 ## Relationship to other UI artifacts in `ui/`
 
-- `v41` is the documented standalone artifact for this runbook.
+- `v42` is the documented standalone artifact for this runbook.
 - Other `agijobmanager_genesis_job_mainnet_2026-03-05-v*.html` files are adjacent snapshots for comparison/reproducibility.
 - The Next.js app in `ui/` remains the broader/full UI effort under active development.
 
@@ -325,7 +325,7 @@ Operationally, AGIJobManager settlement/dispute outcomes remain authoritative ev
 
 ## Status and lifecycle
 
-- This file documents a **versioned standalone artifact**: `v41`.
+- This file documents a **versioned standalone artifact**: `v42`.
 - It is intended as an additive, practical browser interface for current operator/reviewer workflows.
 - The broader/full UI effort is still in active development in `ui/` (Next.js surface) and tracked in [docs/ui/README.md](./README.md).
 - When operational guidance conflicts, treat deployment/operator docs and on-chain contract behavior as canonical.
@@ -350,7 +350,7 @@ For full UI development and operations docs, use:
 
 ### Write buttons remain disabled
 
-Typical causes in v41:
+Typical causes in v42:
 - Wallet not connected.
 - Not on Ethereum Mainnet.
 - Terms not accepted in-page.
