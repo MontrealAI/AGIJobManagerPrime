@@ -21,6 +21,23 @@ async function hasCode(address) {
   return !!code && code !== '0x';
 }
 
+
+function extractRevertData(error) {
+  const candidates = [
+    error?.data,
+    error?.error?.data,
+    error?.info?.error?.data,
+    error?.revert?.data,
+    error?.receipt?.revertReason,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.startsWith('0x') && candidate.length > 2) {
+      return candidate;
+    }
+  }
+  return '0x';
+}
+
 async function callSupports(target, fragment, args = [], from) {
   if (!(await hasCode(target))) return false;
   const iface = new ethers.Interface([`function ${fragment}`]);
@@ -30,11 +47,11 @@ async function callSupports(target, fragment, args = [], from) {
     await ethers.provider.call(tx);
     return true;
   } catch (error) {
-    const message = String(error?.message || '');
-    if (message.includes('missing revert data') || message.includes('execution reverted')) {
-      return true;
-    }
-    return false;
+    const revertData = extractRevertData(error);
+    // Treat selector-missing / empty-data reverts as unsupported.
+    // Only count as supported when we can observe encoded revert payload,
+    // which indicates the selector reached executable code.
+    return revertData !== '0x';
   }
 }
 
