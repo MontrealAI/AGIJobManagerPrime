@@ -10,6 +10,9 @@ const DEFAULT_CONFIRMATIONS = 3;
 
 const MAX_MAINNET_RUNTIME_BYTES = 24_576;
 const MAX_MAINNET_INITCODE_BYTES = 49_152;
+const MANAGER_MODE_NONE = 'none';
+const MANAGER_MODE_LEAN = 'lean';
+const MANAGER_MODE_RICH = 'rich';
 
 const FQNS = {
   AGIJobManagerPrime: 'contracts/AGIJobManagerPrime.sol:AGIJobManagerPrime',
@@ -85,6 +88,129 @@ function validateAddress(label, value, { allowZero = false } = {}) {
 
 function validateBytes32(label, value) {
   if (!ethers.isHexString(value, 32)) throw new Error(`${label} must be bytes32: ${String(value)}`);
+}
+
+async function callUintIfPresent(address, signature) {
+  const selector = ethers.id(signature).slice(0, 10);
+  try {
+    const raw = await ethers.provider.call({ to: address, data: selector });
+    if (!raw || raw === '0x' || raw.length < 66) return { ok: false, value: 0n };
+    return { ok: true, value: BigInt(raw) };
+  } catch {
+    return { ok: false, value: 0n };
+  }
+}
+
+async function surfaceReadable(address, signature, args = []) {
+  try {
+    const iface = new ethers.Interface([`function ${signature}`]);
+    const data = iface.encodeFunctionData(signature.split('(')[0], args);
+    const raw = await ethers.provider.call({ to: address, data });
+    return !!raw && raw !== '0x';
+  } catch {
+    return false;
+  }
+}
+
+async function classifyManagerCompatibility(managerAddress, probeJobId = 1n) {
+  const version = await callUintIfPresent(managerAddress, 'ensJobManagerViewInterfaceVersion()');
+  if (version.ok && version.value === 1n) {
+    return {
+      managerMode: MANAGER_MODE_RICH,
+      managerViewCompatible: true,
+      managerPushHookCompatible: true,
+      keeperRequired: false,
+      reason: 'manager declares IAGIJobManagerPrimeViewV1',
+    };
+  }
+
+  const richReadable = await Promise.all([
+    surfaceReadable(
+      managerAddress,
+      'getJobCore(uint256) view returns (address,address,uint256,uint256,uint256,bool,bool,bool,uint8)',
+      [probeJobId]
+    ),
+    surfaceReadable(managerAddress, 'getJobSpecURI(uint256) view returns (string)', [probeJobId]),
+    surfaceReadable(managerAddress, 'getJobCompletionURI(uint256) view returns (string)', [probeJobId]),
+  ]);
+  if (richReadable.every(Boolean)) {
+    return {
+      managerMode: MANAGER_MODE_RICH,
+      managerViewCompatible: true,
+      managerPushHookCompatible: true,
+      keeperRequired: false,
+      reason: 'manager rich view surfaces are readable',
+    };
+  }
+
+  const leanReadable = await Promise.all([
+    surfaceReadable(managerAddress, 'jobEmployerOf(uint256) view returns (address)', [probeJobId]),
+    surfaceReadable(managerAddress, 'jobAssignedAgentOf(uint256) view returns (address)', [probeJobId]),
+  ]);
+  if (leanReadable.every(Boolean)) {
+    return {
+      managerMode: MANAGER_MODE_LEAN,
+      managerViewCompatible: false,
+      managerPushHookCompatible: true,
+      keeperRequired: true,
+      reason: 'manager exposes lean fallback read surfaces only',
+    };
+  }
+
+  return {
+    managerMode: MANAGER_MODE_NONE,
+    managerViewCompatible: false,
+    managerPushHookCompatible: false,
+    keeperRequired: true,
+    reason: 'manager does not expose rich or lean ENS-compatible read surfaces',
+  };
+}
+
+async function preflightEnsWiring(managerAddress, ensJobPagesAddress) {
+  const [managerCompat, targetValidationMask, targetJobManager] = await Promise.all([
+    classifyManagerCompatibility(managerAddress, 1n),
+    callUintIfPresent(ensJobPagesAddress, 'validateConfiguration()'),
+    (async () => {
+      try {
+        const iface = new ethers.Interface(['function jobManager() view returns (address)']);
+        const raw = await ethers.provider.call({
+          to: ensJobPagesAddress,
+          data: iface.encodeFunctionData('jobManager', []),
+        });
+        if (!raw || raw === '0x') return ethers.ZeroAddress;
+        return iface.decodeFunctionResult('jobManager', raw)[0];
+      } catch {
+        return ethers.ZeroAddress;
+      }
+    })(),
+  ]);
+
+  const targetSupportsValidateConfiguration = targetValidationMask.ok;
+  const validationMask = targetValidationMask.value;
+  if (!targetSupportsValidateConfiguration) {
+    throw new Error('ENS_JOB_PAGES target is not ENSJobPages-compatible (validateConfiguration unavailable).');
+  }
+
+  if (managerCompat.managerMode === MANAGER_MODE_NONE || !managerCompat.managerPushHookCompatible) {
+    throw new Error(`Refusing ENS wiring: manager compatibility mode is unsafe (${managerCompat.managerMode}).`);
+  }
+
+  const expectedManager = managerAddress.toLowerCase();
+  const observedManager = String(targetJobManager || ethers.ZeroAddress).toLowerCase();
+  const managerAligned = observedManager === expectedManager;
+  if (!managerAligned) {
+    throw new Error(
+      `Refusing ENS wiring: ENS_JOB_PAGES.jobManager (${targetJobManager}) does not match manager (${managerAddress}).`
+    );
+  }
+
+  return {
+    managerCompatibility: managerCompat,
+    targetValidationMask: validationMask,
+    targetSupportsValidateConfiguration,
+    targetJobManager,
+    managerAligned,
+  };
 }
 
 function loadDeployConfig() {
@@ -394,6 +520,10 @@ async function main() {
 
   let ensJobPagesWiring = { executed: false, txHash: null, blockNumber: null, target: null, reason: 'not_configured' };
   if (resolvedEnsJobPages) {
+    const ensPreflight = await preflightEnsWiring(managerDeployment.address, resolvedEnsJobPages);
+    console.log(
+      `[preflight] ENS target=${resolvedEnsJobPages} mode=${ensPreflight.managerCompatibility.managerMode} keeperRequired=${ensPreflight.managerCompatibility.keeperRequired} validationMask=${ensPreflight.targetValidationMask}`
+    );
     const setEnsTx = await manager.setEnsJobPages(resolvedEnsJobPages);
     const setEnsReceipt = await setEnsTx.wait(confirmations);
     ensJobPagesWiring = {
@@ -401,6 +531,8 @@ async function main() {
       txHash: setEnsTx.hash,
       blockNumber: setEnsReceipt.blockNumber,
       target: resolvedEnsJobPages,
+      managerCompatibility: ensPreflight.managerCompatibility,
+      targetValidationMask: ensPreflight.targetValidationMask.toString(),
       reason: null,
     };
     console.log(`[wired] AGIJobManagerPrime.setEnsJobPages(${resolvedEnsJobPages}) tx=${setEnsTx.hash}`);

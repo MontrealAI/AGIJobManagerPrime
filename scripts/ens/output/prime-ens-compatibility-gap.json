@@ -6,6 +6,8 @@
   "keeperRequired": true,
   "automaticAuthorityIssuanceSupported": true,
   "explicitMetadataRepairRequired": true,
+  "deployScriptEnsPreflightRequired": true,
+  "deployScriptEnsPreflightImplemented": true,
   "settlementBlockingRisk": false,
   "primeRedeployAvoidable": true
 }

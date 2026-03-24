@@ -27,7 +27,12 @@ Last updated: 2026-03-24
 - `scripts/ens/*`
   - align auth probing and compatibility labeling with actual resolver families and unchanged-Prime lean mode.
 - `hardhat/scripts/deploy-ens-job-pages.js`
-  - require explicit `JOB_MANAGER` on mainnet.
+  - require explicit `JOB_MANAGER` on mainnet;
+  - emit compatibility mode (`rich`/`lean`/`none`) and keeper-required status;
+  - refuse `LOCK_CONFIG` in unsafe/unresolved compatibility posture.
+- `hardhat/scripts/deploy.js`
+  - preflight ENS target compatibility before calling `setEnsJobPages(...)`;
+  - enforce manager↔ENS target alignment and fail fast on unsafe manager mode.
 - `README.md`, `hardhat/README.md`, `docs/ENS/*`
   - make preview/effective and automatic-vs-keeper-assisted semantics explicit.
 

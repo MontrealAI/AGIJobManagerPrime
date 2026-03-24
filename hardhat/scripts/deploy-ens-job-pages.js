@@ -8,6 +8,9 @@ const MAINNET_PUBLIC_RESOLVER = "0xF29100983E058B709F3D539b0c765937B804AC15";
 const DEFAULT_JOB_MANAGER = "";
 const DEFAULT_ROOT_NAME = "alpha.jobs.agi.eth";
 const MAINNET_SAFETY_PHRASE = "I_UNDERSTAND_MAINNET_DEPLOYMENT";
+const MANAGER_MODE_NONE = "none";
+const MANAGER_MODE_LEAN = "lean";
+const MANAGER_MODE_RICH = "rich";
 
 function env(k, d = "") {
   const v = process.env[k];
@@ -45,6 +48,82 @@ function parseIntEnv(key, fallback, min = 0) {
     throw new Error(`${key} must be an integer >= ${min}. Received: ${raw}`);
   }
   return parsed;
+}
+
+async function callUintIfPresent(address, signature) {
+  const selector = ethers.id(signature).slice(0, 10);
+  try {
+    const raw = await ethers.provider.call({ to: address, data: selector });
+    if (!raw || raw === "0x" || raw.length < 66) return { ok: false, value: 0n };
+    return { ok: true, value: BigInt(raw) };
+  } catch {
+    return { ok: false, value: 0n };
+  }
+}
+
+async function surfaceReadable(address, signature, args = []) {
+  try {
+    const iface = new ethers.Interface([`function ${signature}`]);
+    const data = iface.encodeFunctionData(signature.split("(")[0], args);
+    const raw = await ethers.provider.call({ to: address, data });
+    return !!raw && raw !== "0x";
+  } catch {
+    return false;
+  }
+}
+
+async function classifyManagerCompatibility(managerAddress, probeJobId = 1n) {
+  const version = await callUintIfPresent(managerAddress, "ensJobManagerViewInterfaceVersion()");
+  if (version.ok && version.value === 1n) {
+    return {
+      managerMode: MANAGER_MODE_RICH,
+      managerViewCompatible: true,
+      managerPushHookCompatible: true,
+      keeperRequired: false,
+      reason: "manager declares IAGIJobManagerPrimeViewV1",
+    };
+  }
+
+  const richReadable = await Promise.all([
+    surfaceReadable(
+      managerAddress,
+      "getJobCore(uint256) view returns (address,address,uint256,uint256,uint256,bool,bool,bool,uint8)",
+      [probeJobId],
+    ),
+    surfaceReadable(managerAddress, "getJobSpecURI(uint256) view returns (string)", [probeJobId]),
+    surfaceReadable(managerAddress, "getJobCompletionURI(uint256) view returns (string)", [probeJobId]),
+  ]);
+  if (richReadable.every(Boolean)) {
+    return {
+      managerMode: MANAGER_MODE_RICH,
+      managerViewCompatible: true,
+      managerPushHookCompatible: true,
+      keeperRequired: false,
+      reason: "manager rich view surfaces are readable",
+    };
+  }
+
+  const leanReadable = await Promise.all([
+    surfaceReadable(managerAddress, "jobEmployerOf(uint256) view returns (address)", [probeJobId]),
+    surfaceReadable(managerAddress, "jobAssignedAgentOf(uint256) view returns (address)", [probeJobId]),
+  ]);
+  if (leanReadable.every(Boolean)) {
+    return {
+      managerMode: MANAGER_MODE_LEAN,
+      managerViewCompatible: false,
+      managerPushHookCompatible: true,
+      keeperRequired: true,
+      reason: "manager exposes lean fallback read surfaces only",
+    };
+  }
+
+  return {
+    managerMode: MANAGER_MODE_NONE,
+    managerViewCompatible: false,
+    managerPushHookCompatible: false,
+    keeperRequired: true,
+    reason: "manager does not expose rich or lean ENS-compatible read surfaces",
+  };
 }
 
 async function main() {
@@ -101,6 +180,8 @@ async function main() {
     await requireCode(nameWrapper, "NAME_WRAPPER");
   }
 
+  const managerCompatibility = await classifyManagerCompatibility(jobManager, 1n);
+
   const [deployer] = await ethers.getSigners();
   const ens = await ethers.getContractAt(
     ["function owner(bytes32 node) view returns (address)"],
@@ -121,6 +202,11 @@ async function main() {
   console.log("current root owner:", currentRootOwner);
   console.log("root tokenId decimal:", BigInt(jobsRootNode).toString());
   console.log("JOB_MANAGER:", jobManager);
+  console.log("managerMode:", managerCompatibility.managerMode);
+  console.log("managerViewCompatible:", managerCompatibility.managerViewCompatible);
+  console.log("managerPushHookCompatible:", managerCompatibility.managerPushHookCompatible);
+  console.log("keeperRequired:", managerCompatibility.keeperRequired);
+  console.log("managerCompatibilityReason:", managerCompatibility.reason);
   console.log("LOCK_CONFIG:", lockConfig);
   console.log("resolved owner override:", ownerOverride || "(none)");
   console.log("VERIFY:", verify);
@@ -158,6 +244,17 @@ async function main() {
   }
 
   if (lockConfig) {
+    const allowKeeperLock = isTruthy(env("ALLOW_LOCK_WITH_KEEPER", "0"));
+    if (!managerCompatibility.managerPushHookCompatible || managerCompatibility.managerMode === MANAGER_MODE_NONE) {
+      throw new Error(
+        `LOCK_CONFIG refused because manager compatibility is unsafe (${managerCompatibility.managerMode}).`,
+      );
+    }
+    if (managerCompatibility.keeperRequired && !allowKeeperLock) {
+      throw new Error(
+        "LOCK_CONFIG refused in keeper-required mode. Set ALLOW_LOCK_WITH_KEEPER=1 only after keeper/repair runbooks are operational.",
+      );
+    }
     if (validationMask !== 0n) {
       throw new Error(
         `LOCK_CONFIG requested before ENSJobPages validateConfiguration() reached zero. Current bitmask: ${validationMask.toString()}`,
@@ -191,8 +288,10 @@ async function main() {
   console.log("\nManual next steps (not automated):");
   console.log("1) Wrapped-root owner must keep NameWrapper approvalForAll(newEnsJobPages)=true before cutover.");
   console.log("2) Re-run ENSJobPages.validateConfiguration(); continue only once the bitmask is 0.");
-  console.log("3) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) after validation is green.");
-  console.log("4) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and use explicit ENSJobPages repair/replay calls for affected jobs.");
+  console.log("3) Confirm manager compatibility mode above; if keeperRequired=true, stage keeper replay/repair before lock+cutover.");
+  console.log("4) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) after validation/preflight is green.");
+  console.log("5) Run one canary job end-to-end and inspector verification before broad traffic.");
+  console.log("6) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and use explicit ENSJobPages repair/replay calls for affected jobs.");
 }
 
 main().catch((err) => {

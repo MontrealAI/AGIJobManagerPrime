@@ -22,6 +22,7 @@ Last updated: 2026-03-24
 - Inspector did not expose resolver-family-safe authorisation truth.
 - Operator tooling/docs did not clearly label lean manager mode as keeper-assisted for metadata.
 - Mainnet deploy script still allowed ambiguous manager defaults.
+- Prime deploy script wired ENS targets without semantic compatibility preflight.
 
 ### Not required
 - Prime runtime changes.
@@ -35,4 +36,5 @@ A truthful production path is **keeper-assisted / partially automatic without Pr
 - explicit metadata completeness state when URIs are unavailable onchain;
 - log-driven repair for spec/completion text;
 - resolver-family-safe auth observation;
+- semantic preflight before Prime ENS wiring;
 - explicit deploy/runbook cutover checks.

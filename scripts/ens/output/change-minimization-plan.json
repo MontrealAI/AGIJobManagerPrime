@@ -9,6 +9,7 @@
     "resolver-family-safe auth writes and reads",
     "read-heavy inspector compatibility signaling",
     "deploy script mainnet explicit JOB_MANAGER guard",
+    "deploy.js ENS target semantic preflight before setEnsJobPages",
     "runbook/docs honesty",
     "ENS-side bytecode reporting"
   ],
