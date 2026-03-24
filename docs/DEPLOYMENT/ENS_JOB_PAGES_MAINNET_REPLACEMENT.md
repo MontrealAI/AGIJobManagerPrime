@@ -70,6 +70,12 @@ node scripts/ens/repair-from-logs.ts
 JOB_ID=<id> EXACT_LABEL=<label> node scripts/ens/repair-job-page.ts
 ```
 
+For unmanaged legacy nodes (wrapped or unwrapped), use `ENSJobPagesMigrationHelper`:
+
+1. Temporarily transfer `ENSJobPages` ownership to the migration helper.
+2. Run `migrateLegacyJobPageExplicit(...)` per job (or batched script output).
+3. Return `ENSJobPages` ownership back to the operator multisig.
+
 ## Canary sequence
 
 1. Create one fresh job and confirm automatic authority issuance.

@@ -128,14 +128,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     event ENSHookBestEffortFailure(uint8 indexed hook, uint256 indexed jobId, bytes32 indexed operation);
     event ConfigurationLocked(address indexed locker);
     event JobLabelPrefixUpdated(string oldPrefix, string newPrefix);
-    event LegacyJobPageMigrated(
-        uint256 indexed jobId,
-        bytes32 indexed node,
-        string label,
-        bool adopted,
-        bool created
-    );
-
     IENSRegistry public ens;
     INameWrapper public nameWrapper;
     IPublicResolver public publicResolver;
@@ -495,7 +487,9 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
 
         bytes32 node = _jobAuthority[jobId].node;
         if (_nodeExists(node)) {
-            if (!_nodeManagedBySelf(node)) revert ENSNotAuthorized();
+            if (!_nodeManagedBySelf(node)) {
+                _createSubname(_jobAuthority[jobId].rootNode, label);
+            }
         } else {
             node = _createSubname(_jobAuthority[jobId].rootNode, label);
             emit JobENSPageCreated(jobId, node);
@@ -745,8 +739,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
     function _setTextBestEffort(uint8 hook, uint256 jobId, bytes32 node, string memory key, string memory value) internal {
         if (bytes(value).length == 0) return;
         try publicResolver.setText(node, key, value) {
-            if (keccak256(bytes(key)) == keccak256(bytes("agijobs.completion.public"))) {
-            }
         } catch {
             emit ENSHookBestEffortFailure(hook, jobId, "SET_TEXT");
         }
@@ -777,10 +769,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         if (ownerAddress != address(nameWrapper)) return false;
         (ok, ownerAddress) = _staticcallAddress(address(nameWrapper), abi.encodeWithSelector(WRAPPER_OWNER_OF_SELECTOR, uint256(node)));
         return ok && ownerAddress == address(this);
-    }
-
-    function _isWrappedRoot() internal view returns (bool) {
-        return _isWrappedRootNode(jobsRootNode);
     }
 
     function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool) {

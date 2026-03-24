@@ -2,21 +2,19 @@
 
 ## Still missing / incomplete
 
-1. **First-class unmanaged-node adoption endpoint**
-   - Current state: achievable via manual ownership transfer + replay.
-   - Gap: no compact idempotent single-call migration endpoint for wrapped/unwrapped adoption.
+1. **Lean-mode metadata hydration remains keeper-assisted**
+   - This is intentional under unchanged Prime ABI (`handleHook(uint8,uint256)` + fallback getters).
+   - Required operation: keep using `repair-from-logs` / `repair-job-page` flows.
 
-2. **Root-version operator observability packaging**
-   - Current state: explicit repair entrypoint exists.
-   - Gap: operator UX still requires combining multiple reads/log context.
+2. **Finalization policy remains explicit/manual**
+   - Deliberately avoids automatic manager-side fuse burning to preserve Prime size and safety posture.
+   - Required operation: continue explicit lock/fuse runbook calls.
 
-3. **Migration tooling expansion**
-   - `scripts/ens/*` already provide strong audit/repair primitives, but adoption-batch orchestration and conflict-code reporting should be expanded further.
-
-4. **Runbook hardening for finalization policy and fuse states**
-   - Finalization/fuse statuses are inspectable, but batch cutover playbooks should include stricter pre/post checks and staged canary guidance.
+3. **Cutover canary automation can still be tightened**
+   - Batch scripts and inspector data are now stronger, but staged canary playbooks should continue to evolve with live ops feedback.
 
 ## Explicitly closed in this patch
 
-- ENS-side deployed-contract bytecode gates now fail fast by default for `ENSJobPagesInspector`.
-- ENS deploy script now runs size-gate preflight and aborts before broadcast on violations.
+- Added first-class migration contract `ENSJobPagesMigrationHelper` for wrapped/unwrapped unmanaged-node adoption + idempotent create replay.
+- ENS-side bytecode gates now include `ENSJobPagesMigrationHelper` by default.
+- ENS deploy script now runs ENS artifact budget preflight (limits + minimum headroom) before broadcast.

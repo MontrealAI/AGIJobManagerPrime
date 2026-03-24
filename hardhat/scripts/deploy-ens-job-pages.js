@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const { execSync } = require("child_process");
 const path = require("path");
+const fs = require("fs");
 
 const { ethers, run, network } = hre;
 const { detectManagerCompatibility, preflightEnsJobPagesTarget, assertSafeLockConfig } = require('./lib/ens-preflight');
@@ -11,6 +12,10 @@ const MAINNET_PUBLIC_RESOLVER = "0xF29100983E058B709F3D539b0c765937B804AC15";
 const DEFAULT_JOB_MANAGER = "";
 const DEFAULT_ROOT_NAME = "alpha.jobs.agi.eth";
 const MAINNET_SAFETY_PHRASE = "I_UNDERSTAND_MAINNET_DEPLOYMENT";
+const MAX_RUNTIME_BYTES = 24576;
+const MAX_INITCODE_BYTES = 49152;
+const DEFAULT_MIN_RUNTIME_HEADROOM = 0;
+const DEFAULT_MIN_INITCODE_HEADROOM = 1024;
 
 function env(k, d = "") {
   const v = process.env[k];
@@ -50,16 +55,72 @@ function parseIntEnv(key, fallback, min = 0) {
   return parsed;
 }
 
+function artifactPathFor(contractFile, contractName) {
+  return path.resolve(
+    __dirname,
+    "..",
+    "artifacts",
+    "contracts",
+    contractFile,
+    `${contractName}.json`,
+  );
+}
+
+function byteLength(hexValue) {
+  const hex = String(hexValue || "").replace(/^0x/, "");
+  return hex.length / 2;
+}
+
+function loadArtifactMetrics(contractFile, contractName) {
+  const artifactPath = artifactPathFor(contractFile, contractName);
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`Missing compile artifact for ${contractName}: ${artifactPath}`);
+  }
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  const runtimeBytes = byteLength(artifact.deployedBytecode || artifact.evm?.deployedBytecode?.object);
+  const initcodeBytes = byteLength(artifact.bytecode || artifact.evm?.bytecode?.object);
+  if (!runtimeBytes || !initcodeBytes) {
+    throw new Error(`Artifact missing bytecode for ${contractName}: ${artifactPath}`);
+  }
+  return { contractName, runtimeBytes, initcodeBytes };
+}
+
+function assertEnsArtifactBudget(minRuntimeHeadroom, minInitcodeHeadroom) {
+  const checks = [
+    loadArtifactMetrics("ens/ENSJobPages.sol", "ENSJobPages"),
+    loadArtifactMetrics("ens/ENSJobPagesInspector.sol", "ENSJobPagesInspector"),
+  ];
+
+  for (const item of checks) {
+    const runtimeHeadroom = MAX_RUNTIME_BYTES - item.runtimeBytes;
+    const initcodeHeadroom = MAX_INITCODE_BYTES - item.initcodeBytes;
+    if (item.runtimeBytes > MAX_RUNTIME_BYTES || item.initcodeBytes > MAX_INITCODE_BYTES) {
+      throw new Error(
+        `${item.contractName} exceeds EVM size limits (runtime=${item.runtimeBytes}, initcode=${item.initcodeBytes}).`,
+      );
+    }
+    if (runtimeHeadroom < minRuntimeHeadroom || initcodeHeadroom < minInitcodeHeadroom) {
+      throw new Error(
+        `${item.contractName} headroom too tight (runtime=${runtimeHeadroom}, initcode=${initcodeHeadroom}). ` +
+          `Minimum required headroom: runtime>=${minRuntimeHeadroom}, initcode>=${minInitcodeHeadroom}.`,
+      );
+    }
+  }
+}
+
 async function main() {
   const net = await ethers.provider.getNetwork();
   const chainId = Number(net.chainId);
 
   const confirmations = parseIntEnv("CONFIRMATIONS", 3, 0);
   const verifyDelayMs = parseIntEnv("VERIFY_DELAY_MS", 3500, 0);
+  const minRuntimeHeadroom = parseIntEnv("MIN_RUNTIME_HEADROOM", DEFAULT_MIN_RUNTIME_HEADROOM, 0);
+  const minInitcodeHeadroom = parseIntEnv("MIN_INITCODE_HEADROOM", DEFAULT_MIN_INITCODE_HEADROOM, 0);
 
   console.log("Running bytecode size preflight...");
   const sizeCheckScript = path.resolve(__dirname, "..", "..", "scripts", "check-bytecode-size.js");
   execSync(`node "${sizeCheckScript}"`, { cwd: path.resolve(__dirname, "..", ".."), stdio: "inherit" });
+  assertEnsArtifactBudget(minRuntimeHeadroom, minInitcodeHeadroom);
 
   if (chainId === 1) {
     const confirm = env("DEPLOY_CONFIRM_MAINNET");

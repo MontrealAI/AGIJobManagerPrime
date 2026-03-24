@@ -111,6 +111,11 @@ const checks = [
     artifactPath: artifactPathFor("ens/ENSJobPagesInspector.sol", "ENSJobPagesInspector"),
     enforce: true,
   },
+  {
+    name: "ENSJobPagesMigrationHelper",
+    artifactPath: artifactPathFor("ens/ENSJobPagesMigrationHelper.sol", "ENSJobPagesMigrationHelper"),
+    enforce: true,
+  },
 ];
 
 ensurePrimeArtifacts(checks);

@@ -16,15 +16,15 @@
    - Enforce `ENSJobPagesInspector` size gate by default.
    - Run `scripts/check-bytecode-size.js` preflight in `deploy-ens-job-pages.js` before deployment.
 
-3. **Inspector read-surface extension (read-only)**
-   - Added compact recommendation code and root-version read probes via safe staticcalls.
-   - No manager ABI changes.
+3. **Migration/adoption moved to dedicated ENS-side helper**
+   - Added `ENSJobPagesMigrationHelper` so legacy wrapped/unwrapped unmanaged nodes are adoptable without touching Prime runtime.
+   - Helper requires temporary `ENSJobPages` ownership during migration execution, then ownership can be returned to operator multisig.
 
-## Deferred (separate patch due ENSJobPages 16-byte runtime headroom)
+4. **Deploy preflight tightened (scripts-only)**
+   - `deploy-ens-job-pages.js` now enforces ENS artifact budget checks (limit + configurable minimum headroom) after `check-bytecode-size.js`.
 
-- First-class unmanaged-node adoption API directly inside `ENSJobPages`.
-- Additional ENSJobPages public root-version getters.
+## Kept intentionally out-of-scope
 
-These are deferred to avoid breaching EIP-170 under current headroom constraints; any future attempt should use either:
-- helper contract offloading, or
-- carefully budgeted ENSJobPages refactor with compensating size reductions.
+- Prime runtime modifications.
+- Automatic manager-side finalization/fuse burn paths.
+- `ENSJobPages` runtime growth (headroom is now 0 bytes at the EIP-170 ceiling).
