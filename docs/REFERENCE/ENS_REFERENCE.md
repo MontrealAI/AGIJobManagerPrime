@@ -1,7 +1,7 @@
 # ENS Reference (Generated)
 
 Generated at (UTC): 1970-01-01T00:00:00Z
-Source fingerprint: ec16d446cef0a43f
+Source fingerprint: 11700317e2fa26fc
 
 Source files used:
 - `contracts/AGIJobManager.sol`
@@ -50,13 +50,13 @@ Source files used:
 - `function setNameWrapper(address nameWrapperAddress) external onlyOwner` ([contracts/ens/ENSJobPages.sol#L214](../../contracts/ens/ENSJobPages.sol#L214))
 - `function setJobsRoot(bytes32 rootNode, string calldata rootName) external onlyOwner` ([contracts/ens/ENSJobPages.sol#L230](../../contracts/ens/ENSJobPages.sol#L230))
 - `function lockConfiguration() external onlyOwner` ([contracts/ens/ENSJobPages.sol#L250](../../contracts/ens/ENSJobPages.sol#L250))
-- `function handleHook(uint8 hook, uint256 jobId) external onlyJobManager` ([contracts/ens/ENSJobPages.sol#L547](../../contracts/ens/ENSJobPages.sol#L547))
-- `function lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) public onlyOwner` ([contracts/ens/ENSJobPages.sol#L689](../../contracts/ens/ENSJobPages.sol#L689))
-- `function _lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) internal` ([contracts/ens/ENSJobPages.sol#L693](../../contracts/ens/ENSJobPages.sol#L693))
-- `function _createSubname(bytes32 parentRootNode, string memory label) internal returns (bytes32 node)` ([contracts/ens/ENSJobPages.sol#L720](../../contracts/ens/ENSJobPages.sol#L720))
-- `function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool)` ([contracts/ens/ENSJobPages.sol#L797](../../contracts/ens/ENSJobPages.sol#L797))
-- `function _requireWrapperAuthorization(bytes32 rootNode) internal view` ([contracts/ens/ENSJobPages.sol#L809](../../contracts/ens/ENSJobPages.sol#L809))
-- `function _registerRootVersion(bytes32 rootNode, string memory rootName) internal` ([contracts/ens/ENSJobPages.sol#L962](../../contracts/ens/ENSJobPages.sol#L962))
+- `function handleHook(uint8 hook, uint256 jobId) external onlyJobManager` ([contracts/ens/ENSJobPages.sol#L536](../../contracts/ens/ENSJobPages.sol#L536))
+- `function lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) public onlyOwner` ([contracts/ens/ENSJobPages.sol#L678](../../contracts/ens/ENSJobPages.sol#L678))
+- `function _lockJobENS(uint256 jobId, address employer, address agent, bool burnFuses) internal` ([contracts/ens/ENSJobPages.sol#L682](../../contracts/ens/ENSJobPages.sol#L682))
+- `function _createSubname(bytes32 parentRootNode, string memory label) internal returns (bytes32 node)` ([contracts/ens/ENSJobPages.sol#L709](../../contracts/ens/ENSJobPages.sol#L709))
+- `function _isWrappedRootNode(bytes32 rootNode) internal view returns (bool)` ([contracts/ens/ENSJobPages.sol#L786](../../contracts/ens/ENSJobPages.sol#L786))
+- `function _requireWrapperAuthorization(bytes32 rootNode) internal view` ([contracts/ens/ENSJobPages.sol#L798](../../contracts/ens/ENSJobPages.sol#L798))
+- `function _registerRootVersion(bytes32 rootNode, string memory rootName) internal` ([contracts/ens/ENSJobPages.sol#L951](../../contracts/ens/ENSJobPages.sol#L951))
 - `function verifyENSOwnership(` ([contracts/utils/ENSOwnership.sol#L32](../../contracts/utils/ENSOwnership.sol#L32))
 - `function verifyENSOwnership(` ([contracts/utils/ENSOwnership.sol#L48](../../contracts/utils/ENSOwnership.sol#L48))
 - `function verifyMerkleOwnership(address claimant, bytes32[] calldata proof, bytes32 merkleRoot)` ([contracts/utils/ENSOwnership.sol#L61](../../contracts/utils/ENSOwnership.sol#L61))

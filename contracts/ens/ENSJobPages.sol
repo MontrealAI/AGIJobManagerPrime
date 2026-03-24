@@ -483,17 +483,6 @@ contract ENSJobPages is Ownable, ERC1155Holder, IENSJobPagesHooksV1 {
         _lockJobENS(jobId, employer, agent, burnFuses);
     }
 
-    function _jobAuthStateForMigration(uint256 jobId)
-        internal
-        view
-        returns (address employer, address assignedAgent, bool allowAuth)
-    {
-        bool completed;
-        bool expired;
-        (employer, assignedAgent, , , , completed, , expired, ) = IAGIJobManagerPrimeViewV1(jobManager).getJobCore(jobId);
-        allowAuth = !(completed || expired);
-    }
-
     function _createJobPage(uint256 jobId, address employer, string memory specURI) internal {
         if (employer == address(0)) revert InvalidParameters();
         _requireConfigured();
