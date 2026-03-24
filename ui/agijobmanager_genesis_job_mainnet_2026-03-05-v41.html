@@ -2757,6 +2757,7 @@
         <h2 style="margin:0 0 10px">My Stats</h2>
         <div class="muted">My $AGIALPHA Balance: <b><span id="agiBalance">0</span></b></div>
         <div class="muted">My Reputation: <b><span id="myReputation">0</span></b></div>
+        <div class="muted">Historical score preview: <b><span id="myHistoricalScore">—</span></b> <span class="tiny">(live getter when available)</span></div>
         <div class="muted">Jobs I posted: <b><span id="myJobs">0</span></b></div>
         <div style="margin-top:10px">
           <span class="pill" id="agentPill">Agent ENS: not verified</span>
@@ -3920,7 +3921,8 @@ const AGIJobManagerABI = [
       {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"}],"name":"expireJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"}],"name":"cancelJob","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"bool","name":"burnFuses","type":"bool"}],"name":"lockJobENS","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"agent","type":"address"}],"name":"getHighestPayoutPercentage","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+            {"inputs":[{"internalType":"address","name":"agent","type":"address"}],"name":"getHighestPayoutPercentage","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"agent","type":"address"}],"name":"previewHistoricalScore","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
 ,
       {"inputs":[],"name":"agentBond","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"agentBondBps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -4256,6 +4258,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="muted">Runtime context reset. Reconnect and refresh to load live jobs.</td></tr>';
       if(el('jobsVisibleSummary')) el('jobsVisibleSummary').textContent = 'Runtime context reset; live job index not loaded.';
       if(el('myJobs')) el('myJobs').textContent = '—';
+      if(el('myHistoricalScore')) el('myHistoricalScore').textContent = '—';
       if(el('managerOwnerAddress')) el('managerOwnerAddress').textContent = '—';
       if(el('ensOwnerAddress')) el('ensOwnerAddress').textContent = '—';
       if(el('managerModeratorPosture')) el('managerModeratorPosture').textContent = 'Runtime context reset';
@@ -4789,7 +4792,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!hasAcceptedTerms){ setToast('Accept the Terms & Conditions before sending any write transaction.', 'warn'); return false; }
       return true;
     }
-    const UI_CONTINUITY_KEY = 'agijobmanagerprime.v40.uiContinuity';
+    const UI_CONTINUITY_KEY = 'agijobmanagerprime.v41.uiContinuity';
     const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','preflightTermsAccepted','agentSub','clubSub','mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
     const UI_CONTINUITY_TOGGLES = ['alphaEnsExpertDetails'];
     function continuityLoad(){
@@ -5333,7 +5336,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           ensPreview: predictedEns || null,
           ensURI: predictedEnsUri && !predictedEnsUri.includes("—") ? predictedEnsUri : null,
           generatedAt: nowIso(),
-          createdVia: "AGIJobManager Prime console v40.0"
+          createdVia: "AGIJobManager Prime console v41.0"
         }
       };
       Object.keys(obj).forEach(k=>{ if(obj[k]===undefined) delete obj[k]; });
@@ -6787,6 +6790,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           el("challengePeriod").textContent = "—";
           el("agiBalance").textContent = "—";
           el("myReputation").textContent = "—";
+          if(el("myHistoricalScore")) el("myHistoricalScore").textContent = "—";
           el("myJobs").textContent = "—";
           const tbody = el("jobsBody");
           if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="muted">Switch to Ethereum Mainnet (chainId 1) to load jobs.</td></tr>';
@@ -6905,6 +6909,8 @@ async function updateSummary(){
 
       const rep = await agiJobManager.methods.reputation(userAccount).call();
       el("myReputation").textContent = rep;
+      const historicalRead = await runSafeReadStep('previewHistoricalScore', ()=>agiJobManager.methods.previewHistoricalScore(userAccount).call(), {silent:true});
+      el("myHistoricalScore").textContent = historicalRead?.__safeReadError ? 'Unavailable on this ABI/runtime' : String(historicalRead);
 
       el("myJobs").textContent = "—";
       updateCalculator();
@@ -8339,7 +8345,7 @@ function normalizeIpfsToHttp(uri){
         ['ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
         ['ENS node', escapeHtml(ens.node || '—')],
         ['Resolver', escapeHtml(ens.resolverAddr || '—')],
-        ['Token URI mode', 'Unavailable in ENSJobPages public ABI (v40)'],
+        ['Token URI mode', 'Unavailable in ENSJobPages public ABI (v41)'],
         ['schema', escapeHtml(ens.texts?.schema || '—')], ['agijobs.spec.public', ens.texts?.['agijobs.spec.public'] ? safeLink(ens.texts['agijobs.spec.public']) : '—'],
         ['agijobs.completion.public', ens.texts?.['agijobs.completion.public'] ? safeLink(ens.texts['agijobs.completion.public']) : '—']
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
