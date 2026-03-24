@@ -94,5 +94,11 @@ contract('AGIJobManagerPrime ENS push hooks', (accounts) => {
     await manager.applyForJob(0, '', EMPTY, EMPTY, { from: agent });
     await manager.requestJobCompletion(0, 'ipfs://completion', { from: agent });
     assert.equal((await ensJobPages.completionCalls()).toString(), '0');
+
+    await manager.validateJob(0, '', EMPTY, { from: validator });
+    await time.increase(2);
+    const finalizeTx = await manager.finalizeJob(0, { from: employer });
+    const issued = finalizeTx.logs.find((log) => log.event === 'NFTIssued');
+    assert.ok(issued, 'finalization should remain live and mint completion NFT');
   });
 });
