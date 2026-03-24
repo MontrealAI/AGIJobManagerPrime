@@ -9,15 +9,15 @@
 
 ## Official release
 
-- AGIJobManager: v0.1.0-mainnet-beta
+- AGIJobManager: Prime mainnet stack (2026-03-05 lineage)
 - ENSJobPages: v0.2.0-mainnet-identity-layer
 - Chain ID: 1
 - Explorer: https://etherscan.io
 - AGIJobManager deployer: 0x6c8B8897Fb6b08B4070387233B89b3E9A94eD00E
 - AGIJobManager final owner: 0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201
-- AGIJobManager: 0xB3AAeb69b630f0299791679c063d68d6687481d1
+- AGIJobManager: 0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e
 - AGIJobManager deployment block: 24522684
-- ENSJobPages: 0xc19A84D10ed28c2642EfDA532eC7f3dD88E5ed94
+- ENSJobPages: 0x703011EF1C6E4277587eFe150e6cd74cA18F0069
 - ENSJobPages deployment block: 24531331
 
 ## Linked libraries (AGIJobManager)
@@ -73,10 +73,10 @@
 [
   {
     "contract": "ENSJobPages",
-    "address": "0xc19A84D10ed28c2642EfDA532eC7f3dD88E5ed94",
+    "address": "0x703011EF1C6E4277587eFe150e6cd74cA18F0069",
     "function": "setJobManager(address)",
     "args": {
-      "jobManager": "0xB3AAeb69b630f0299791679c063d68d6687481d1"
+      "jobManager": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e"
     },
     "txHash": "0xac2fd0dae7a1bc312eeb44b86734f73f61422d602b1194f862fb1d84a89f631b",
     "blockNumber": 24531335,
@@ -87,7 +87,7 @@
     "address": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
     "function": "setApprovalForAll(address,bool)",
     "args": {
-      "operator": "0xc19A84D10ed28c2642EfDA532eC7f3dD88E5ed94",
+      "operator": "0x703011EF1C6E4277587eFe150e6cd74cA18F0069",
       "approved": true
     },
     "txHash": "0x2079a282e0cba9505f5e51e1495f2113e4ca2bfa5cb52324a89247174ecf41b4",
@@ -97,10 +97,10 @@
   },
   {
     "contract": "AGIJobManager",
-    "address": "0xB3AAeb69b630f0299791679c063d68d6687481d1",
+    "address": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
     "function": "setEnsJobPages(address)",
     "args": {
-      "ensJobPages": "0xc19A84D10ed28c2642EfDA532eC7f3dD88E5ed94"
+      "ensJobPages": "0x703011EF1C6E4277587eFe150e6cd74cA18F0069"
     },
     "txHash": "0x1df147a640999d4c4406f6d1007571ebf1cc1379a5ae53250394d86608d65e6b",
     "blockNumber": 24531440,
@@ -128,4 +128,4 @@
 | BondMath | contracts/utils/BondMath.sol:BondMath | 0x0c2a50a9C1db998707662db2A13B93175c3E7394 |
 | ReputationMath | contracts/utils/ReputationMath.sol:ReputationMath | 0x4F64e44a3693489289B1F20D55CF56130fE66C0b |
 | ENSOwnership | contracts/utils/ENSOwnership.sol:ENSOwnership | 0x6852a13650F5c90342663c9fF7555f97F62515c8 |
-| AGIJobManager | contracts/AGIJobManager.sol:AGIJobManager | 0xB3AAeb69b630f0299791679c063d68d6687481d1 |
+| AGIJobManager | contracts/AGIJobManager.sol:AGIJobManager | 0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e |
