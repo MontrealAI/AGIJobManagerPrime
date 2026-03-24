@@ -38,7 +38,7 @@ function extractRevertData(error) {
   return '0x';
 }
 
-async function callSupports(target, fragment, args = [], from) {
+async function callSupports(target, fragment, args = [], from, options = {}) {
   if (!(await hasCode(target))) return false;
   const iface = new ethers.Interface([`function ${fragment}`]);
   try {
@@ -48,10 +48,13 @@ async function callSupports(target, fragment, args = [], from) {
     return true;
   } catch (error) {
     const revertData = extractRevertData(error);
-    // Treat selector-missing / empty-data reverts as unsupported.
-    // Only count as supported when we can observe encoded revert payload,
-    // which indicates the selector reached executable code.
-    return revertData !== '0x';
+    // By default, preflight requires a successful call (non-reverting path).
+    // Optional read-surface probing may allow encoded revert payload as evidence
+    // that a selector exists for this target.
+    if (options.allowRevertDataAsSupported === true) {
+      return revertData !== '0x';
+    }
+    return false;
   }
 }
 
@@ -84,9 +87,9 @@ async function detectManagerCompatibility(manager, probeJobId = 0) {
   } catch (_) {}
 
   const richChecks = await Promise.all([
-    callSupports(manager, 'getJobCore(uint256) view returns (address,address,uint256,uint256,uint256,bool,bool,bool,uint8)', [probeJobId]),
-    callSupports(manager, 'getJobSpecURI(uint256) view returns (string)', [probeJobId]),
-    callSupports(manager, 'getJobCompletionURI(uint256) view returns (string)', [probeJobId]),
+    callSupports(manager, 'getJobCore(uint256) view returns (address,address,uint256,uint256,uint256,bool,bool,bool,uint8)', [probeJobId], undefined, { allowRevertDataAsSupported: true }),
+    callSupports(manager, 'getJobSpecURI(uint256) view returns (string)', [probeJobId], undefined, { allowRevertDataAsSupported: true }),
+    callSupports(manager, 'getJobCompletionURI(uint256) view returns (string)', [probeJobId], undefined, { allowRevertDataAsSupported: true }),
   ]);
   if (richChecks.every(Boolean)) {
     return {
@@ -99,8 +102,8 @@ async function detectManagerCompatibility(manager, probeJobId = 0) {
   }
 
   const leanChecks = await Promise.all([
-    callSupports(manager, 'jobEmployerOf(uint256) view returns (address)', [probeJobId]),
-    callSupports(manager, 'jobAssignedAgentOf(uint256) view returns (address)', [probeJobId]),
+    callSupports(manager, 'jobEmployerOf(uint256) view returns (address)', [probeJobId], undefined, { allowRevertDataAsSupported: true }),
+    callSupports(manager, 'jobAssignedAgentOf(uint256) view returns (address)', [probeJobId], undefined, { allowRevertDataAsSupported: true }),
   ]);
   if (leanChecks.every(Boolean)) {
     return {
