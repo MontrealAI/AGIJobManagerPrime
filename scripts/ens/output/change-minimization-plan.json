@@ -1,20 +1,19 @@
 {
-  "generatedAt": "2026-03-24T00:00:00Z",
-  "selectedArchitecture": "Option B: Prime unchanged, automatic authority issuance plus explicit keeper-assisted metadata repair",
-  "primeChangesRequired": false,
-  "preserveHandleHookAbi": true,
-  "preservePrimeRuntimeBaseline": true,
-  "ensSidePatchScope": [
-    "resolver capability detection",
-    "resolver-family-safe auth writes and reads",
-    "read-heavy inspector compatibility signaling",
-    "deploy script mainnet explicit JOB_MANAGER guard",
-    "runbook/docs honesty",
-    "ENS-side bytecode reporting"
+  "selectedArchitecture": "Option B (Prime unchanged keeper-assisted authoritative issuance) with Option A cutover preflight hardening",
+  "primeRuntimeChange": false,
+  "patches": [
+    "hardhat/scripts/lib/ens-preflight.js",
+    "hardhat/scripts/deploy-ens-job-pages.js",
+    "hardhat/scripts/deploy.js",
+    "hardhat/README.md",
+    "hardhat/deploy.config.example.js",
+    "docs/ENS/CURRENT_BASELINE_AUDIT.md",
+    "docs/ENS/PRIME_ENS_COMPATIBILITY_GAP.md",
+    "docs/ENS/CHANGE_MINIMIZATION_PLAN.md"
   ],
   "rejectedAlternatives": [
-    "docs-only fix",
-    "inspector-only fix",
-    "Prime runtime change"
+    "Prime_runtime_mutation",
+    "Prime_redeploy",
+    "ENS_authority_subsystem_rewrite"
   ]
 }

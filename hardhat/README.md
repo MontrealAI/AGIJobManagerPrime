@@ -26,7 +26,9 @@ Prime architecture:
 - Dry-run mode:
   - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
+- `scripts/deploy.js` now runs ENS semantic preflight before wiring (`target code`, `handleHook callability`, `target.jobManager alignment`).
 - `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
+- `LOCK_CONFIG=1` is refused when manager compatibility mode is keeper-required/unresolved (`lean`/`none`).
 - Plan summary printed before execution, including Prime bytecode/runtime headroom.
 - Network/chainId mismatch protection (mainnet=1, sepolia=11155111).
 
@@ -57,7 +59,9 @@ Common deploy controls:
 - `VERIFY=1` (set `0` or unset to skip verification)
 - `DRY_RUN=1`
 - `ENS_JOB_PAGES` (optional ENSJobPages-compatible target wired via `setEnsJobPages`)
+- `scripts/deploy.js` now runs ENS semantic preflight before wiring (`target code`, `handleHook callability`, `target.jobManager alignment`).
 - `JOB_MANAGER` is mandatory for `scripts/deploy-ens-job-pages.js` on Ethereum mainnet; the script now refuses stale/implicit defaults.
+- `LOCK_CONFIG=1` is refused when manager compatibility mode is keeper-required/unresolved (`lean`/`none`).
 - `DEPLOYMENT_ARTIFACT` (optional; used by `scripts/verify-prime.js`)
 - Pass `--network <mainnet|sepolia>` directly to `npm run verify:prime`
 
@@ -193,5 +197,6 @@ Recommended wiring flow:
 3. Confirm wrapped-root approvals and `validateConfiguration()==0`.
 4. Call `AGIJobManagerPrime.setEnsJobPages(target)` as manager owner.
 5. Validate one canary create flow plus one explicit repair flow from `node ../scripts/ens/repair-from-logs.ts`.
+6. Treat printed manager mode as authoritative deployment metadata: `rich-v1-view-compatible` vs `lean-handleHook-compatible` vs `none`.
 
 Lifecycle hooks are best-effort and bounded, so settlement remains authoritative even if ENS/page calls fail. Under unchanged Prime wiring, authoritative ENS identity can still be issued automatically, but missing spec/completion metadata may require explicit ENS-side repair functions and log-driven scripts; do not rely on stale/nonexistent manager-side sync helpers.

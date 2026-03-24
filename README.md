@@ -169,6 +169,7 @@ See full behavior details: [`docs/ENS/ENS_JOB_PAGES_OVERVIEW.md`](docs/ENS/ENS_J
 - `effectiveJobEnsLabel/name/URI/node` are authoritative only after `ENSJobPages` has snapshotted authority for that job.
 - Compatibility getters (`jobEnsLabel`, `jobEnsName`, `jobEnsURI`, `jobEnsNode`) are mixed-mode convenience surfaces: they return effective values once authority exists, otherwise preview values. Do **not** present them as always-authoritative.
 - Under the current unchanged `AGIJobManagerPrime` ABI, automatic authority issuance can still occur through `handleHook(uint8,uint256)`, but spec/completion text hydration may require explicit keeper/operator repair using log-driven scripts when rich V1 getters are unavailable.
+- Hardhat deploy tooling now preflights Prime↔ENS compatibility mode before wiring (`rich` vs `lean` vs `none`) and refuses unsafe `LOCK_CONFIG` in keeper-required modes.
 - `jobEnsIssued` and `jobEnsReady` are chain-observed compatibility bits, not sticky write-attempt caches. `jobEnsReady` means authority exists, the node exists, the configured resolver is installed, and the required base metadata texts (`schema`, `agijobs.spec.public`) are observable onchain.
 
 Canonical audit / gap docs for the current branch live in:

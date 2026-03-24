@@ -1,11 +1,14 @@
 {
-  "generatedAt": "2026-03-24T00:00:00Z",
+  "auditedAt": "2026-03-24T00:00:00Z",
   "managerMode": "lean-handleHook-compatible",
-  "managerSupportsV1Views": false,
+  "managerViewCompatible": false,
   "metadataAutoWriteSupported": false,
   "keeperRequired": true,
-  "automaticAuthorityIssuanceSupported": true,
-  "explicitMetadataRepairRequired": true,
-  "settlementBlockingRisk": false,
-  "primeRedeployAvoidable": true
+  "automaticAuthorityIssuance": true,
+  "automaticMetadataHydration": "partial_only",
+  "primeRedeployRequired": false,
+  "scriptLevelPatchesApplied": [
+    "deploy_ens_job_pages_preflight_and_lock_guard",
+    "deploy_prime_setEnsJobPages_preflight_gate"
+  ]
 }

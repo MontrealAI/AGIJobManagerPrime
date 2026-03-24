@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 
 const { ethers, run, network } = hre;
+const { detectManagerCompatibility, preflightEnsJobPagesTarget, assertSafeLockConfig } = require('./lib/ens-preflight');
 
 const MAINNET_ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 const MAINNET_NAME_WRAPPER = "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401";
@@ -101,6 +102,8 @@ async function main() {
     await requireCode(nameWrapper, "NAME_WRAPPER");
   }
 
+  const managerCompatibility = await detectManagerCompatibility(jobManager, 0);
+
   const [deployer] = await ethers.getSigners();
   const ens = await ethers.getContractAt(
     ["function owner(bytes32 node) view returns (address)"],
@@ -121,6 +124,11 @@ async function main() {
   console.log("current root owner:", currentRootOwner);
   console.log("root tokenId decimal:", BigInt(jobsRootNode).toString());
   console.log("JOB_MANAGER:", jobManager);
+
+  console.log("manager compatibility mode:", managerCompatibility.managerMode);
+  console.log("managerViewCompatible:", managerCompatibility.managerViewCompatible);
+  console.log("metadataAutoWriteSupported:", managerCompatibility.metadataAutoWriteSupported);
+  console.log("keeperRequired:", managerCompatibility.keeperRequired);
   console.log("LOCK_CONFIG:", lockConfig);
   console.log("resolved owner override:", ownerOverride || "(none)");
   console.log("VERIFY:", verify);
@@ -157,7 +165,11 @@ async function main() {
     );
   }
 
+  const wiringPreflight = await preflightEnsJobPagesTarget(ensJobPagesAddress, jobManager, 0);
+  console.log('post-deploy Prime↔ENS preflight:', JSON.stringify(wiringPreflight, null, 2));
+
   if (lockConfig) {
+    assertSafeLockConfig(wiringPreflight);
     if (validationMask !== 0n) {
       throw new Error(
         `LOCK_CONFIG requested before ENSJobPages validateConfiguration() reached zero. Current bitmask: ${validationMask.toString()}`,
@@ -193,6 +205,7 @@ async function main() {
   console.log("2) Re-run ENSJobPages.validateConfiguration(); continue only once the bitmask is 0.");
   console.log("3) AGIJobManagerPrime owner calls setEnsJobPages(newEnsJobPages) after validation is green.");
   console.log("4) If rollback is required, repoint AGIJobManagerPrime.setEnsJobPages(previousTarget) and use explicit ENSJobPages repair/replay calls for affected jobs.");
+  console.log("5) Prime↔ENS compatibility mode on this deployment:", wiringPreflight.managerMode, "(keeperRequired=", wiringPreflight.keeperRequired, ").");
 }
 
 main().catch((err) => {
