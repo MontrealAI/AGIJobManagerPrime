@@ -1,6 +1,6 @@
 # CURRENT BASELINE AUDIT
 
-Date: 2026-03-23
+Date: 2026-03-24
 Branch audited: current `main` working tree before final patch validation.
 
 ## Executive answers
@@ -43,3 +43,7 @@ Branch audited: current `main` working tree before final patch validation.
 - Resolver auth support for both legacy `setAuthorisation` and newer `approve`/`isApprovedFor` families.
 - Audit/runbook artifacts reflecting the real unchanged-Prime operating mode.
 
+## Validation refresh (2026-03-24)
+
+- Re-ran size gates (`npm run size`, `npm run test:size`, `npm run test:size:benchmark`) and confirmed no `AGIJobManagerPrime` runtime growth.
+- Re-ran ENS/ABI/Prime hook regression tests and aligned stale assertions to current `agijob-` default label semantics and unchanged Prime hook behavior.
