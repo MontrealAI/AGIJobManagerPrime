@@ -1,27 +1,30 @@
-# ENS/Prime Change Minimization Plan (Selected)
+# ENS Change-Minimization Plan
 
-Selected architecture: **Option B with Option A safeguards** (Prime unchanged, keeper-assisted authoritative issuance, explicit script preflight gates).
+## Objectives
 
-## Why this is minimal and safe
+- Preserve current merged ENS authority architecture.
+- Preserve zero-Prime-runtime-change default.
+- Tighten production safety with minimal bytecode impact.
 
-1. No `AGIJobManagerPrime` runtime edits.
-2. No Prime ABI changes.
-3. No new Prime storage/events/functions.
-4. Keep existing ENSJobPages authority architecture; patch only deployment/cutover risk surface.
+## Decisions in this patch
 
-## Patch scope
+1. **Prime unchanged**
+   - Keep `handleHook(uint8,uint256)` path.
+   - Keep current best-effort/non-blocking ENS behavior.
 
-- Add Hardhat helper: `hardhat/scripts/lib/ens-preflight.js`.
-- Update `hardhat/scripts/deploy-ens-job-pages.js`:
-  - manager compatibility classification,
-  - post-deploy Prime↔ENS preflight printout,
-  - refuse `LOCK_CONFIG` when keeper-required/unresolved.
-- Update `hardhat/scripts/deploy.js`:
-  - preflight ENS target before `setEnsJobPages(...)`,
-  - fail fast on incompatibility.
-- Update Hardhat docs/config comments to reflect keeper-required lean mode and preflight behavior.
+2. **Bytecode gate hardening (scripts-only)**
+   - Enforce `ENSJobPagesInspector` size gate by default.
+   - Run `scripts/check-bytecode-size.js` preflight in `deploy-ens-job-pages.js` before deployment.
 
-## Explicit non-goals
+3. **Inspector read-surface extension (read-only)**
+   - Added compact recommendation code and root-version read probes via safe staticcalls.
+   - No manager ABI changes.
 
-- No Prime redeploy requirement introduced.
-- No rewrite of already merged ENS authority subsystems.
+## Deferred (separate patch due ENSJobPages 16-byte runtime headroom)
+
+- First-class unmanaged-node adoption API directly inside `ENSJobPages`.
+- Additional ENSJobPages public root-version getters.
+
+These are deferred to avoid breaching EIP-170 under current headroom constraints; any future attempt should use either:
+- helper contract offloading, or
+- carefully budgeted ENSJobPages refactor with compensating size reductions.

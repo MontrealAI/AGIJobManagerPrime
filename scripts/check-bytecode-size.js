@@ -109,7 +109,7 @@ const checks = [
   {
     name: "ENSJobPagesInspector",
     artifactPath: artifactPathFor("ens/ENSJobPagesInspector.sol", "ENSJobPagesInspector"),
-    enforce: process.env.STRICT_ENS_SIZE === "1",
+    enforce: true,
   },
 ];
 
@@ -198,7 +198,4 @@ for (const check of checks) {
   const initcodeSizeBytesValue = initcodeSizeBytes(artifact);
   console.log(`${check.name} runtime headroom: ${MAX_RUNTIME_BYTES - runtimeSizeBytes} bytes`);
   console.log(`${check.name} initcode headroom: ${MAX_INITCODE_BYTES - initcodeSizeBytesValue} bytes`);
-  if (!check.enforce) {
-    console.log(`${check.name} size gate: report-only (set STRICT_ENS_SIZE=1 to fail fast on ENS-side overages)`);
-  }
 }
