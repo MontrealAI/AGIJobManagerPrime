@@ -8363,7 +8363,7 @@ function normalizeIpfsToHttp(uri){
         ['ENS URI', ens.ensUri ? safeLink(ens.ensUri) : '—'],
         ['ENS node', escapeHtml(ens.node || '—')],
         ['Resolver', escapeHtml(ens.resolverAddr || '—')],
-        ['Token URI mode', ens.tokenUriMode || 'Unavailable in ENSJobPages public ABI (v40)'],
+        ['Token URI mode', escapeHtml(ens.tokenUriMode || 'Unavailable in ENSJobPages public ABI (v40)')],
         ['schema', escapeHtml(ens.texts?.schema || '—')], ['agijobs.spec.public', ens.texts?.['agijobs.spec.public'] ? safeLink(ens.texts['agijobs.spec.public']) : '—'],
         ['agijobs.completion.public', ens.texts?.['agijobs.completion.public'] ? safeLink(ens.texts['agijobs.completion.public']) : '—']
       ].map(([k,v])=>`<div class="ensRecord"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
