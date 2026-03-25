@@ -35,6 +35,7 @@ describe('standalone v42 artifact', () => {
     const html = fs.readFileSync(file, 'utf8');
     expect(html).toContain("0:'available',1:'active',2:'claimable',3:'expired',4:'desynced',5:'invalid-label',6:'root-inactive',7:'parent-unusable',8:'unavailable'");
     expect(html).toContain('preview(label) failed; expert direct register fallback available');
+    expect(html).toContain('const previewFresh = alphaIdentityPreviewIsFresh(local.label);');
   });
 
   it('renders direct register review facts against FreeTrialSubdomainRegistrarIdentity', () => {
@@ -43,6 +44,14 @@ describe('standalone v42 artifact', () => {
     expect(html).toContain("['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY]");
     expect(html).toContain("['Method', methodLabel]");
     expect(html).toContain("['ETH value', '0']");
+    expect(html).toContain("['Method selector', selector || 'Unavailable (contract not loaded)']");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
+  });
+
+  it('hydrates local identity derivations before preview(label) resolves', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain("freeTrialRegistrarIdentity.methods.fullNameForLabel(local.label).call()");
+    expect(html).toContain("freeTrialRegistrarIdentity.methods.nodeForLabel(local.label).call()");
+    expect(html).toContain("freeTrialRegistrarIdentity.methods.available(local.label).call()");
   });
 });
