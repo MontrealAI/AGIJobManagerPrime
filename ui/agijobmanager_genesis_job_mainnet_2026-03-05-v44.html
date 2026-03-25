@@ -2375,7 +2375,7 @@
     <input id="mintAlphaRecipient" type="hidden" value="">
     <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Reserved hidden control</button>
 
-    <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
+    <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="alphaIdentityReviewTitle" aria-describedby="alphaIdentityReviewHelper">
       <div class="modalCard reviewModalCard" aria-labelledby="alphaIdentityReviewTitle" aria-describedby="alphaIdentityReviewHelper">
         <div class="modalHeader alphaReviewHeader"><div><div class="eyebrow">Mainnet authorization memorandum</div><h2 style="margin:6px 0 8px" id="alphaIdentityReviewTitle">Register Alpha-Agent identity</h2><div class="helper" id="alphaIdentityReviewHelper">Single canonical signing surface for the direct contract call.</div><div class="alphaReviewHeaderPills"><span class="alphaReviewPill" id="alphaIdentityRoutePill">Register now</span><span class="alphaReviewPill subtle" id="alphaIdentitySourcePill">Source: preview(label) + rootHealth()</span></div></div><button class="modalClose alphaReviewClose" id="closeAlphaIdentityReviewBtn" aria-label="Close transaction review" title="Close transaction review">×</button></div>
         <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
@@ -4262,7 +4262,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       WrappedFuseMismatch:{sig:'WrappedFuseMismatch(uint32,uint32)', rem:'Required wrapped fuse posture mismatched. Root/parent config needs repair.'},
       WrappedExpiryMismatch:{sig:'WrappedExpiryMismatch(uint64,uint64)', rem:'Wrapped expiry changed since preview. Refresh and retry.'},
       IdentityNotEligible:{sig:'IdentityNotEligible(uint256)', rem:'Identity is not eligible for this route. Follow preview recommendation.'},
-      NonexistentToken:{sig:'NonexistentToken(uint256)', rem:'Token does not exist yet. Use register(label) if preview recommends it.'}
+      NonexistentToken:{sig:'NonexistentToken(uint256)', rem:'Token does not exist yet. Use register(label) if preview recommends it.'},
+      ZeroAddress:{sig:'ZeroAddress()', rem:'A zero-address dependency was detected. Retry after contract configuration is restored.'},
+      DependencyHasNoCode:{sig:'DependencyHasNoCode(address)', rem:'A required dependency has no bytecode at the configured address. Owner repair required.'},
+      EtherNotAccepted:{sig:'EtherNotAccepted()', rem:'This method requires exactly 0 ETH value. Keep value at zero and retry.'},
+      Soulbound:{sig:'Soulbound()', rem:'Identity tokens are soulbound. Transfers and approvals are intentionally disabled.'}
     };
     function buildIdentityErrorSelectorMap(){
       const hash = (sig)=>{
@@ -4298,6 +4302,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     }
     async function runIdentityPreflight(action, label){
       if(!web3 || !userAccount || !freeTrialRegistrarIdentity) return {ok:false, verdict:'Unavailable', note:'Wallet/provider unavailable', calldata:'', estimateGas:null};
+      if(!isMainnet) return {ok:false, verdict:'Blocked', note:'Switch to Ethereum mainnet before preflight.', calldata:'', estimateGas:null};
       const calldata = freeTrialRegistrarIdentity?.methods?.[action]?.(label)?.encodeABI?.() || '';
       const tx = {to:FREE_TRIAL_REGISTRAR_IDENTITY, from:userAccount, data:calldata, value:'0x0'};
       const verdict = {call:'Skipped', estimate:'Skipped'};

@@ -167,6 +167,29 @@ describe('standalone v44 artifact', () => {
     expect(html).not.toContain('Legacy hidden control');
   });
 
+
+  it('covers full registrar custom error decode set and explicit zero-eth posture', () => {
+    const html = loadHtml();
+    [
+      'RootInactive','InvalidLabel','ParentNotWrapped','ParentNotLocked','RegistrarNotAuthorised','ParentExpired',
+      'NameUnavailable(bytes32)','WrappedOwnerMismatch(address,address)','WrappedFuseMismatch(uint32,uint32)',
+      'WrappedExpiryMismatch(uint64,uint64)','IdentityNotEligible(uint256)','NonexistentToken(uint256)',
+      'ZeroAddress()','DependencyHasNoCode(address)','EtherNotAccepted()','Soulbound()'
+    ].forEach((signature) => expect(html).toContain(signature));
+    expect(html).toContain("value:'0x0'");
+  });
+
+  it('keeps identity review modal semantically declared for accessibility', () => {
+    const html = loadHtml();
+    expect(html).toContain('id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="alphaIdentityReviewTitle" aria-describedby="alphaIdentityReviewHelper"');
+    expect(html).toContain('trapAlphaIdentityReviewFocus(e);');
+  });
+
+  it('blocks identity preflight when not on chainId 1', () => {
+    const html = loadHtml();
+    expect(html).toContain("if(!isMainnet) return {ok:false, verdict:'Blocked', note:'Switch to Ethereum mainnet before preflight.'");
+  });
+
   it('hardens admin argument modal wiring with null guards and contract-specific subtitle address', () => {
     const html = loadHtml();
     expect(html).toContain("if(!modal || !formNode || !confirmBtn || !cancelBtn || !closeBtn){");
