@@ -2167,8 +2167,8 @@
           <div class="alphaWorkbenchCard" id="alphaIdentityPreviewCard" data-emphasis="primary">
             <div class="alphaPreviewHeader">
               <div>
-                <div class="subtleTitle" style="margin:0">Authoritative identity preview <span class="alphaIdentityStatusPill" id="alphaIdentityStatusPill">—</span></div>
-                <div class="smallNote">Driven by <b>preview(label)</b> and <b>rootHealth()</b>. This is the primary state card for the recommended route.</div>
+                <div class="subtleTitle" style="margin:0">Live preview(label) decision card <span class="alphaIdentityStatusPill" id="alphaIdentityStatusPill">—</span></div>
+                <div class="smallNote">Driven by <b>preview(label)</b> plus <b>rootHealth()</b> context. Preview guides route selection; issuance facts are verified from token/root reads.</div>
               </div>
               <span class="pill">Contract · <b id="alphaIdentityContractAddress">0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a</b></span>
             </div>
@@ -2294,7 +2294,7 @@
         <div class="modalHeader">
           <div>
             <div class="eyebrow">Transaction Review</div>
-            <h2 style="margin:4px 0 6px">Legacy Alpha compatibility alias</h2>
+            <h2 style="margin:4px 0 6px">Alpha identity transaction review</h2>
             <div class="helper">Review surface aligned to the current public contract route only. Public onboarding routes registration through register(label) for combined name + identity issuance to the connected wallet.</div>
           </div>
           <button class="modalClose" id="closeAlphaMintReviewBtn" aria-label="Close">×</button>
@@ -3762,7 +3762,7 @@ Evaluation methodology"></textarea>
     const verified = { agent:null, club:null, agentAlpha:false, clubAlpha:false };
     const APP_STATE = {
       wallet:{account:null, chainId:null, isMainnet:false, termsAccepted:false},
-      protocol:{}, jobsReadDegraded:false, admin:{managerOwner:null, ensOwner:null, isModerator:false}, registrar:{wrapper:null,parentUsable:null,parentActive:false,managerAuthorized:false}, identity:{preview:null,rootHealth:null,label:"",tokenData:null}
+      protocol:{}, jobsReadDegraded:false, admin:{managerOwner:null, ensOwner:null, isModerator:false}, registrar:{wrapper:null,parentUsable:null,parentActive:false,managerAuthorized:false}, identity:{preview:null,rootHealth:null,label:"",tokenData:null,previewLabel:"",requestId:0,activeRequestId:0,async:{rootHealth:'idle',preview:'idle',tokenDossier:'idle'},errors:{rootHealth:'',preview:'',tokenDossier:''},recommendation:{method:'none',reason:'Await preview(label)'},parity:null}
     };
 
     let isMainnet = false;
@@ -5724,6 +5724,40 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       p.statusLabel = IDENTITY_PREVIEW_STATUS[p.status] || `unknown-${p.status}`;
       return p;
     }
+    function nextIdentityRequestToken(){
+      APP_STATE.identity.requestId = Number(APP_STATE.identity.requestId || 0) + 1;
+      APP_STATE.identity.activeRequestId = APP_STATE.identity.requestId;
+      return APP_STATE.identity.requestId;
+    }
+    function isCurrentIdentityRequest(requestId){
+      return Number(APP_STATE.identity.activeRequestId || 0) === Number(requestId || 0);
+    }
+    function deriveIdentityRecommendation(preview, rootHealth, local){
+      const paused = !!(preview?.pausedOut ?? rootHealth?.pausedOut);
+      const rootActive = !!(preview?.rootActiveOut ?? rootHealth?.active);
+      const rootUsable = !!(preview?.rootUsable ?? rootHealth?.rootUsable);
+      if(!local?.ok) return {method:'none', reason:local?.reason || 'Invalid label', fallback:false};
+      if(paused) return {method:'none', reason:'Identity contract is paused', fallback:false};
+      if(!rootActive) return {method:'none', reason:'Identity root is inactive', fallback:false};
+      if(!rootUsable) return {method:'none', reason:'Identity parent/root is not usable', fallback:false};
+      if(!preview){
+        const previewFailed = APP_STATE.identity?.async?.preview === 'failed';
+        if(previewFailed && userAccount && isMainnet && hasAcceptedTerms){
+          return {method:'register', reason:'preview(label) failed; expert direct register fallback available', fallback:true};
+        }
+        return {method:'none', reason:'Loading preview(label)', fallback:false};
+      }
+      const status = Number(preview.status ?? 8);
+      if(status === 0) return {method:'register', reason:'Status AVAILABLE', fallback:false};
+      if(status === 1) return {method:'none', reason:'Status ACTIVE', fallback:false};
+      if(status === 2) return {method:'claimIdentity', reason:'Status CLAIMABLE', fallback:false};
+      if(status === 3) return {method:'syncIdentityByLabel', reason:'Status EXPIRED', fallback:false};
+      if(status === 4) return {method:'syncIdentityByLabel', reason:'Status DESYNCED', fallback:false};
+      if(status === 5) return {method:'none', reason:'Status INVALID_LABEL', fallback:false};
+      if(status === 6) return {method:'none', reason:'Status ROOT_INACTIVE', fallback:false};
+      if(status === 7) return {method:'none', reason:'Status PARENT_UNUSABLE', fallback:false};
+      return {method:'none', reason:`Status ${preview.statusLabel || 'UNAVAILABLE'}`, fallback:false};
+    }
     function alphaIdentityPreviewIsFresh(label){
       return !!label && String(APP_STATE.identity?.previewLabel || '') === String(label || '');
     }
@@ -5740,7 +5774,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!local.ok) return local.reason;
       const rootMismatchReason = alphaIdentityRootMismatchReason();
       if(rootMismatchReason) return rootMismatchReason;
-      if(!preview) return 'Load preview(label) to evaluate the combined Alpha-Agent route.';
+      if(!preview){
+        const rec = APP_STATE.identity?.recommendation || {};
+        if(rec.fallback && rec.method === 'register') return '';
+        return APP_STATE.identity?.async?.preview === 'failed' ? 'preview(label) read failed. Review diagnostics or use expert register fallback when root posture is healthy.' : 'Load preview(label) to evaluate the combined Alpha-Agent route.';
+      }
       if(!preview.validLabel) return 'Invalid label.';
       if(preview.status === 6 || preview.rootActiveOut === false) return 'Identity root is inactive.';
       if(preview.status === 7 || preview.rootUsable === false) return 'Identity parent is not usable.';
@@ -5751,19 +5789,26 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const preview = APP_STATE.identity?.preview || null;
       const health = APP_STATE.identity?.rootHealth || null;
+      const recommendationModel = deriveIdentityRecommendation(preview, health, local);
+      APP_STATE.identity.recommendation = recommendationModel;
       const mismatchLockedReason = alphaIdentityRootMismatchReason();
       const rootMismatch = !!mismatchLockedReason;
       const baseLockedReason = !userAccount ? 'Connect the wallet you want to issue to.' : !isMainnet ? 'Switch to Ethereum Mainnet.' : !hasAcceptedTerms ? 'Accept the shared Terms & Conditions near the top of the page.' : !local.ok ? local.reason : '';
       const previewLockedReason = preview ? identityWriteLockedReason(preview) : '';
       const lockedReason = baseLockedReason || mismatchLockedReason || previewLockedReason;
-      const registerEnabled = !lockedReason && !!preview?.registrable;
-      const claimEnabled = !lockedReason && !!preview?.claimable;
-      const syncEnabled = !lockedReason && !!preview?.identityExists && (preview?.status===3 || preview?.status===4);
+      const registerEnabled = !lockedReason && recommendationModel.method === 'register';
+      const claimEnabled = !lockedReason && recommendationModel.method === 'claimIdentity';
+      const syncEnabled = !lockedReason && recommendationModel.method === 'syncIdentityByLabel';
       let recommendation = local.ok ? 'Loading preview(label)' : 'Await preview(label)';
       let tone = 'active';
       let title = 'Enter a label to evaluate the combined route.';
       let body = 'preview(label) and rootHealth() determine whether register(label), claimIdentity(label), or syncIdentityByLabel(label) is appropriate.';
-      if(!baseLockedReason && local.ok && !preview){
+      if(!baseLockedReason && local.ok && !preview && recommendationModel.fallback){
+        tone='repair';
+        recommendation='register(label) fallback';
+        title='preview(label) read failed; expert register fallback available.';
+        body='rootHealth() is usable and local validation passed. You can proceed with direct register(label) at 0 ETH after explicit review while preview telemetry is degraded.';
+      }else if(!baseLockedReason && local.ok && !preview){
         tone = 'active';
         recommendation = 'Loading preview(label)';
         title = 'Loading live preview for the combined route.';
@@ -5967,6 +6012,15 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!web3) return;
       if(!freeTrialRegistrarIdentity) freeTrialRegistrarIdentity = new web3.eth.Contract(FreeTrialSubdomainRegistrarIdentityABI, FREE_TRIAL_REGISTRAR_IDENTITY);
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
+      const requestId = nextIdentityRequestToken();
+      APP_STATE.identity.async = APP_STATE.identity.async || {};
+      APP_STATE.identity.errors = APP_STATE.identity.errors || {};
+      APP_STATE.identity.async.rootHealth = 'loading';
+      APP_STATE.identity.async.preview = local.ok ? 'loading' : 'idle';
+      APP_STATE.identity.async.tokenDossier = 'idle';
+      APP_STATE.identity.errors.rootHealth = '';
+      APP_STATE.identity.errors.preview = '';
+      APP_STATE.identity.errors.tokenDossier = '';
       APP_STATE.identity.label = local.label || '';
       if(el('alphaIdentityContractAddress')) el('alphaIdentityContractAddress').textContent = FREE_TRIAL_REGISTRAR_IDENTITY;
       const [rootName,rootNode,rootActive,paused,wrapper,registry,owner,pendingOwner,fuses,name,symbol,health,identityBalance] = await Promise.all([
@@ -5989,6 +6043,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         rootName:String(health[0]||''), rootNode:String(health[1]||''), active:!!health[2], pausedOut:!!health[3], wrapperAddress:String(health[4]||''), ensRegistryAddress:String(health[5]||''), contractOwner:String(health[6]||''), wrappedParentOwner:String(health[7]||''), parentWrapped:!!health[8], parentLocked:!!health[9], registrarAuthorised:!!health[10], effectiveParentExpiry:Number(health[11]||0), rootUsable:!!health[12]
       } : health) : null;
       APP_STATE.identity.rootHealth = h;
+      APP_STATE.identity.async.rootHealth = h ? 'loaded' : 'failed';
+      if(!h) APP_STATE.identity.errors.rootHealth = 'rootHealth() read failed';
+      if(!isCurrentIdentityRequest(requestId)) return;
       APP_STATE.identity.rootNode = String(h?.rootNode || rootNode || '');
       if(el('alphaIdentityRootName')) el('alphaIdentityRootName').textContent = h?.rootName || rootName || ALPHA_AGENT_PARENT;
       if(el('alphaIdentityRootNode')) el('alphaIdentityRootNode').textContent = h?.rootNode || rootNode || '—';
@@ -6016,10 +6073,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(managerEns && registry && managerEns.toLowerCase() !== registry.toLowerCase()) mismatchWarnings.push('Identity ensRegistry differs from AGIJobManager.ens().');
       if(managerWrapper && wrapper && managerWrapper.toLowerCase() !== wrapper.toLowerCase()) mismatchWarnings.push('Identity wrapper differs from AGIJobManager.nameWrapper().');
 
-      const previewRaw = local.ok ? await freeTrialRegistrarIdentity.methods.preview(local.label).call().catch(()=>null) : null;
+      const previewRaw = local.ok ? await freeTrialRegistrarIdentity.methods.preview(local.label).call().catch((err)=>{ APP_STATE.identity.errors.preview = err?.message || 'preview(label) read failed'; return null; }) : null;
+      if(!isCurrentIdentityRequest(requestId)) return;
       const preview = parseIdentityPreviewResult(previewRaw);
       APP_STATE.identity.preview = preview;
       APP_STATE.identity.previewLabel = local.label || '';
+      APP_STATE.identity.async.preview = local.ok ? (preview ? 'loaded' : 'failed') : 'idle';
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : '—';
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
@@ -6029,10 +6088,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
       if(el('alphaIdentityFullName')) el('alphaIdentityFullName').textContent = preview?.fullName || (local.ok ? `${local.label}.${ALPHA_AGENT_PARENT}` : '—');
-      if(el('alphaIdentityTokenId')) el('alphaIdentityTokenId').textContent = preview?.tokenId || '—';
-      if(el('alphaIdentityExists')) el('alphaIdentityExists').textContent = preview ? String(!!preview.identityExists) : '—';
-      if(el('alphaIdentityClaimable')) el('alphaIdentityClaimable').textContent = preview ? String(!!preview.claimable) : '—';
-      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = preview ? String(!!preview.registrable) : '—';
+      if(el('alphaIdentityTokenId')) el('alphaIdentityTokenId').textContent = preview?.tokenId || (local.ok ? 'Unavailable until preview(label) resolves' : 'Not applicable (invalid/empty label)');
+      if(el('alphaIdentityExists')) el('alphaIdentityExists').textContent = preview ? String(!!preview.identityExists) : (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable');
+      if(el('alphaIdentityClaimable')) el('alphaIdentityClaimable').textContent = preview ? String(!!preview.claimable) : (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable');
+      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = preview ? String(!!preview.registrable) : (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable');
       const ui = deriveAlphaIdentityUiState();
       const lockedReason = ui.lockedReason;
       const registerEnabled = ui.registerEnabled;
@@ -6046,11 +6105,13 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         else if(registerEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: register(label) mints wrapped ENS name + soulbound identity to the connected wallet.';
         else if(claimEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: claimIdentity(label) for wrapped names already owned by the connected wallet.';
         else if(syncEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: syncIdentityByLabel(label) repair path for desynced or expired identity posture.';
+        else if(APP_STATE.identity?.async?.preview === 'failed') el('alphaIdentityActionStatus').textContent = 'preview(label) read failed. Register fallback is available only when rootHealth is usable and shared write gates are satisfied.';
         else if(mismatchWarnings.length) el('alphaIdentityActionStatus').textContent = mismatchWarnings.join(' ');
         else el('alphaIdentityActionStatus').textContent = 'Preview loaded. No combined Alpha-Agent write is currently recommended for this label.';
       }
 
       if(preview?.tokenId && !!preview?.identityExists){
+        APP_STATE.identity.async.tokenDossier = 'loading';
         const [ownerOf, labelData, tokenURI, lockedState] = await Promise.all([
           freeTrialRegistrarIdentity.methods.ownerOf(preview.tokenId).call().catch(()=> preview?.tokenOwner || ''),
           freeTrialRegistrarIdentity.methods.labelData(preview.tokenId).call().catch(()=>null),
@@ -6058,6 +6119,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           freeTrialRegistrarIdentity.methods.locked(preview.tokenId).call().catch(()=>true),
         ]);
         const ld = labelData ? (Array.isArray(labelData) ? {label:String(labelData[0]||''), labelhash:String(labelData[1]||''), mintedAt:Number(labelData[2]||0)} : {label:String(labelData.label||''), labelhash:String(labelData.labelhash||''), mintedAt:Number(labelData.mintedAt||0)}) : null;
+        if(!isCurrentIdentityRequest(requestId)) return;
+        APP_STATE.identity.async.tokenDossier = 'loaded';
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = ownerOf || preview?.tokenOwner || '—';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || '—';
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || '—';
@@ -6075,7 +6138,10 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
             const node = el('alphaIdentityTokenImage');
             const fallback = el('alphaIdentityTokenImageFallback');
             if(node){ if(img){ node.style.display='block'; node.src = img; if(fallback) fallback.style.display='none'; } else { node.style.display='none'; node.removeAttribute('src'); if(fallback) fallback.style.display='block'; } }
-          }catch{}
+          }catch(err){
+            APP_STATE.identity.errors.tokenDossier = `tokenURI parse failed: ${err?.message || 'invalid metadata payload'}`;
+            if(el('alphaIdentityTokenMetaDescription')) el('alphaIdentityTokenMetaDescription').textContent = APP_STATE.identity.errors.tokenDossier;
+          }
         }else{
           if(el('alphaIdentityTokenMetaName')) el('alphaIdentityTokenMetaName').textContent = 'Metadata unavailable';
           if(el('alphaIdentityTokenMetaDescription')) el('alphaIdentityTokenMetaDescription').textContent = 'No tokenURI metadata is currently available for this label.';
@@ -6085,11 +6151,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           if(fallback) fallback.style.display='block';
         }
       }else{
+        APP_STATE.identity.async.tokenDossier = preview ? 'unavailable' : 'idle';
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = '—';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || '—';
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || '—';
         if(el('alphaIdentityWrappedExpiry')) el('alphaIdentityWrappedExpiry').textContent = preview ? formatTimestamp(preview.currentWrappedExpiry) : '—';
-        if(el('alphaIdentityMintedAt')) el('alphaIdentityMintedAt').textContent = '—';
+        if(el('alphaIdentityMintedAt')) el('alphaIdentityMintedAt').textContent = preview?.identityExists ? 'Not returned by labelData(tokenId)' : 'Not applicable (identity not issued)';
         if(el('alphaIdentityTokenMetaName')) el('alphaIdentityTokenMetaName').textContent = preview?.identityExists ? 'Metadata unavailable' : 'Identity not yet issued';
         if(el('alphaIdentityTokenMetaDescription')) el('alphaIdentityTokenMetaDescription').textContent = preview?.identityExists ? 'No tokenURI metadata is currently available for this token.' : 'Issue the identity first, or load a label with an existing token to inspect metadata.';
         const node = el('alphaIdentityTokenImage');
@@ -6106,22 +6173,29 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const preview = APP_STATE.identity.preview;
       const previewFresh = alphaIdentityPreviewIsFresh(local.label);
       const lockedReason = previewFresh ? identityWriteLockedReason(preview) : 'Preview is refreshing for this label.';
+      const rec = APP_STATE.identity?.recommendation || {};
       const actionMeta = {
-        register:{title:'Register Alpha Agent Identity', helper:'register(label) mints the wrapped ENS name plus the soulbound identity to the connected wallet.', enabled:!lockedReason && !!preview?.registrable, cta:'Submit register(label)'},
+        register:{title:'Register Alpha Agent Identity', helper:'register(label) mints the wrapped ENS name plus the soulbound identity to the connected wallet.', enabled:!lockedReason && (!!preview?.registrable || !!rec?.fallback), cta:'Submit register(label)'},
         claimIdentity:{title:'Claim Alpha Agent Identity', helper:'claimIdentity(label) recovers identity for a wrapped name that is already owned by the connected wallet.', enabled:!lockedReason && !!preview?.claimable, cta:'Submit claimIdentity(label)'},
         syncIdentityByLabel:{title:'Sync Alpha Agent Identity', helper:'syncIdentityByLabel(label) is a repair-only path for expired or desynced local identity posture.', enabled:!lockedReason && !!preview?.identityExists && (preview?.status===3 || preview?.status===4), cta:'Submit syncIdentityByLabel(label)'}
       }[action] || {title:`${action} Alpha Agent Identity`, helper:'Contract-faithful action preview.', enabled:false, cta:'Submit'};
       if(!local.ok) return setToast(local.reason, 'warn');
       if(lockedReason) return setToast(lockedReason, 'warn');
       if(!actionMeta.enabled) return setToast('Current preview does not allow that identity action yet.', 'warn');
+      const methodLabel = action==='register' ? 'register(label)' : action==='claimIdentity' ? 'claimIdentity(label)' : 'syncIdentityByLabel(label)';
+      const calldata = freeTrialRegistrarIdentity?.methods?.[action]?.(local.label)?.encodeABI?.() || '';
+      APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY, method:methodLabel, args:[local.label], value:'0', chainId:isMainnet ? 1 : (APP_STATE.wallet?.chainId || null), from:userAccount || '', calldata};
       const facts = [
-        ['Contract', FREE_TRIAL_REGISTRAR_IDENTITY],
-        ['Method', action==='register' ? 'register(label)' : action==='claimIdentity' ? 'claimIdentity(label)' : 'syncIdentityByLabel(label)'],
+        ['Contract', 'FreeTrialSubdomainRegistrarIdentity'],
+        ['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY],
+        ['Method', methodLabel],
+        ['Args', `[\"${local.label || ''}\"]`],
         ['Label', local.label || '—'],
         ['Full name', `${local.label || '—'}.${ALPHA_AGENT_PARENT}`],
         ['Token / node posture', preview?.tokenId ? `tokenId ${preview.tokenId}` : (preview?.node || 'Derived from nodeForLabel(label)')],
-        ['Owner target', userAccount || 'connected wallet required'],
-        ['Value', '0 ETH'],
+        ['Issuer', userAccount || 'connected wallet required'],
+        ['ETH value', '0'],
+        ['Calldata', calldata || 'Unavailable (contract not loaded)'],
         ['Preview status', preview ? `${preview.statusLabel} (${preview.status})` : '—'],
         ['Soulbound', 'true']
       ];
@@ -6144,7 +6218,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(!alphaIdentityPreviewIsFresh(local.label)) return setToast('Preview is still refreshing for this label. Wait for the updated recommendation before submitting.', 'warn');
       const lockedReason = identityWriteLockedReason(preview);
       if(lockedReason) return setToast(lockedReason, 'warn');
-      if(action==='register' && !preview?.registrable) return setToast('register(label) is not available for the current preview state.', 'warn');
+      const rec = APP_STATE.identity?.recommendation || {};
+      const allowRegisterFallback = action==='register' && rec?.fallback === true;
+      if(action==='register' && !preview?.registrable && !allowRegisterFallback) return setToast('register(label) is not available for the current preview state.', 'warn');
       if(action==='claimIdentity' && !preview?.claimable) return setToast('claimIdentity(label) is not available for the current preview state.', 'warn');
       if(action==='syncIdentityByLabel' && !(preview?.identityExists && (preview?.status===3 || preview?.status===4))) return setToast('syncIdentityByLabel(label) is only available for expired or desynced identity posture.', 'warn');
       if(!freeTrialRegistrarIdentity) freeTrialRegistrarIdentity = new web3.eth.Contract(FreeTrialSubdomainRegistrarIdentityABI, FREE_TRIAL_REGISTRAR_IDENTITY);
@@ -6154,6 +6230,15 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(action==='claimIdentity') send = ()=>freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'});
       if(action==='syncIdentityByLabel') send = ()=>freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'});
       if(!send) return;
+      const txMeta = {
+        contract: FREE_TRIAL_REGISTRAR_IDENTITY,
+        method: action==='register' ? 'register(string)' : action==='claimIdentity' ? 'claimIdentity(string)' : 'syncIdentityByLabel(string)',
+        args: [local.label],
+        value: '0',
+        chainId: isMainnet ? 1 : (APP_STATE.wallet?.chainId || null),
+        from: userAccount || ''
+      };
+      APP_STATE.identity.parity = txMeta;
       const receipt = await runTrackedTx(`Alpha identity ${action} ${local.label}`, send, {pendingDetail:`Submitting ${action}…`, successDetail:`${action} confirmed.`});
       const tokenId = preview?.tokenId || (preview?.node ? (()=>{ try{return BigInt(preview.node).toString();}catch{return 'n/a';} })() : 'n/a');
       saveRecentAlphaAgentName(local.label);
