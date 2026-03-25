@@ -932,6 +932,34 @@
     .commitFormula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.83rem;line-height:1.5;padding:12px;border-radius:14px;background:rgba(56,37,67,.96);color:#fff;overflow:auto;}
     @media (max-width:1100px){.primeDeckGrid,.vaultGrid,.registryGrid,.primeOpsGrid{grid-template-columns:1fr;}}
     @media (max-width:700px){body{background-attachment:scroll}.container{width:min(100%,94%);padding-bottom:96px;}}
+  
+    /* v43 identity review final pass: canonical premium signing surface */
+    #alphaIdentityReviewModal{background:rgba(12,10,22,.58)!important;backdrop-filter:blur(16px)!important}
+    #alphaIdentityReviewModal .reviewModalCard{display:flex!important;flex-direction:column!important;overflow:hidden!important;border-radius:26px!important;border:1px solid rgba(94,74,129,.26)!important;box-shadow:0 30px 92px rgba(36,24,58,.28)!important}
+    #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:18px 22px 0!important;overflow:auto!important;overscroll-behavior:contain}
+    #alphaIdentityReviewModal .alphaReviewBody{display:grid;gap:14px;padding:0 0 calc(156px + env(safe-area-inset-bottom))!important}
+    #alphaIdentityReviewModal .alphaReviewSummaryStrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    #alphaIdentityReviewModal .alphaReviewSummaryChip{display:grid;gap:2px;padding:10px 11px;border-radius:12px;border:1px solid rgba(115,89,159,.21);background:rgba(251,248,255,.92)}
+    #alphaIdentityReviewModal .alphaReviewSummaryChip .k{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(78,58,107,.66)}
+    #alphaIdentityReviewModal .alphaReviewSummaryChip .v{font-weight:700;color:#281d33}
+    #alphaIdentityReviewModal .alphaReviewSection{border:1px solid rgba(124,99,161,.18)!important;background:rgba(255,255,255,.9)!important;padding:15px 16px!important}
+    #alphaIdentityReviewModal .alphaReviewSection h3{font-size:.8rem!important;letter-spacing:.09em!important;color:rgba(79,58,106,.7)!important}
+    #alphaIdentityReviewModal .alphaReviewAddress code{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #alphaIdentityReviewModal .alphaReviewFooter{position:sticky!important;bottom:0!important;z-index:20!important;margin:0!important;padding:14px 22px calc(16px + env(safe-area-inset-bottom))!important;background:linear-gradient(180deg,rgba(250,247,253,.84),rgba(250,247,253,.97) 26%,#f7f2fb 100%)!important;border-top:1px solid rgba(118,95,155,.2)!important;box-shadow:0 -10px 28px rgba(64,47,89,.12)!important}
+    #alphaIdentityReviewModal .alphaReviewFooter .actions .btn{min-height:48px;min-width:180px}
+    #alphaIdentityReviewModal .alphaReviewFooter .actions .btn.btn-primary{background:linear-gradient(135deg,#6340b4,#8468d2);border-color:rgba(99,64,180,.4)}
+    #alphaIdentityReviewModal .alphaReviewFooter .actions .btn:not(.btn-primary){background:#fff;border-color:rgba(119,93,158,.28)}
+    @media (max-width:900px){
+      #alphaIdentityReviewModal{align-items:flex-end!important;padding:0!important}
+      #alphaIdentityReviewModal .reviewModalCard{width:100vw!important;max-width:100vw!important;max-height:calc(var(--app-vh,1vh) * 100 - env(safe-area-inset-top))!important;border-radius:24px 24px 0 0!important}
+      #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:12px 14px 0!important}
+      #alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(214px + env(safe-area-inset-bottom))!important}
+      #alphaIdentityReviewModal .alphaReviewSummaryStrip{grid-template-columns:1fr}
+      #alphaIdentityReviewModal .alphaReviewFooter{padding:12px 14px calc(20px + env(safe-area-inset-bottom))!important}
+      #alphaIdentityReviewModal .alphaReviewFooter .actions{display:grid!important;grid-template-columns:1fr!important;width:100%!important}
+      #alphaIdentityReviewModal .alphaReviewFooter .actions .btn{width:100%!important;min-width:0!important;min-height:52px!important}
+    }
+
   </style>
 
   <style id="v26-mobile-enhancements">
@@ -1109,6 +1137,8 @@
       #agialphaBridgeSection #debridgeWidgetMount,
       #agialphaBridgeSection .debridgeWidgetMount iframe{min-height:560px !important}
     }
+  
+
   </style>
 
 
@@ -1294,6 +1324,8 @@
       #jobsSection .jobs-table tbody td{border-bottom:1px solid rgba(121,96,150,.1)!important}
       #jobsSection .jobs-table tbody td::before{color:rgba(82,63,98,.52)!important}
     }
+  
+
   </style>
 
 
@@ -1351,6 +1383,8 @@
     .premiumHeroMetrics{grid-template-columns:repeat(4,minmax(0,1fr))}.premiumHeroMetrics .premiumMiniCard{min-width:0}.premiumTable{width:100%;border-collapse:collapse;font-size:.9rem}.premiumTable th,.premiumTable td{padding:10px 12px;border-top:1px solid rgba(73,44,97,.14);text-align:left;vertical-align:top}.tableWrap{overflow:auto;border:1px solid rgba(73,44,97,.12);border-radius:18px;background:rgba(255,255,255,.82)}.premiumFormulaRow{display:flex;flex-wrap:wrap;gap:8px}.premiumFormulaPill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(121,91,255,.08);border:1px solid rgba(121,91,255,.16);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem}.premiumWarningNote{color:#7a182f;font-weight:600}
 @media (max-width:1200px){.premiumIntegratedTop,.premiumCreateLayout,.premiumAttachCards,.premiumClaimsGrid,.premiumInspectorTeachGrid,.premiumBridgeStrip{grid-template-columns:1fr}.premiumStickyRail{position:static}.premiumOverviewGrid,.premiumOverviewStory,.premiumCastGrid,.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid,.premiumCommissionBrief,.premiumSupportCardGrid,.premiumDoctrineGrid,.premiumHeroMetrics,.premiumIntegratedAside{grid-template-columns:repeat(2,minmax(0,1fr))}.premiumLifecycleRail{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (max-width:900px){#premiumDiscoverySection{padding:18px}.premiumMetricGrid,.premiumFundingGrid,.premiumDataGrid,.premiumActionGrid,.premiumInputGrid,.premiumInputGrid.three,.premiumOverviewGrid,.premiumOverviewStory,.premiumCastGrid,.premiumPresetRow,.premiumAttachTopGrid,.premiumInspectorStatusGrid,.premiumCommissionBrief,.premiumSupportCardGrid,.premiumDoctrineGrid,.premiumIntegratedAside,.premiumHeroMetrics,.premiumLifecycleRail{grid-template-columns:1fr}.premiumStickyBar{padding:12px 14px;flex-direction:column;align-items:stretch}.premiumPrimaryCtas .btn,.premiumUtilityCtas .btn,.premiumRoleActionRow .btn,.premiumMobileReview .btn,.premiumTemplateActions .btn,.premiumTuningChips .btn{width:100%}.premiumSurfaceNav{margin-bottom:12px}}
+  
+
   </style>
 
 </head>
@@ -2347,7 +2381,7 @@
         <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
         <div class="reviewFooter alphaReviewFooter" style="margin-top:12px">
           <div class="helper" id="alphaIdentityReviewFooterNote">Authorize only when the action, label, wallet, and contract all match your intent.</div>
-          <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn" aria-label="Cancel transaction review">Cancel review</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn" aria-label="Authorize mainnet transaction">Authorize on Ethereum mainnet</button></div>
+          <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn" aria-label="Cancel transaction review">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn" aria-label="Authorize mainnet transaction">Authorize register(string)</button></div>
         </div>
       </div>
     </div>
@@ -6340,16 +6374,20 @@ function syncModalState(){
         <div class="alphaReviewBody">
           <section class="alphaReviewSection">
             <h3>Decision summary</h3>
-            <div class="alphaReviewGrid">
-              <div class="alphaReviewItem"><span class="k">Recommended action</span><span class="v">${escapeHtml(actionMeta.route || methodLabel)}</span></div>
-              <div class="alphaReviewItem"><span class="k">Preview status</span><span class="v">${escapeHtml(previewStatus)}</span></div>
+            <div class="alphaReviewSummaryStrip">
+              <div class="alphaReviewSummaryChip"><span class="k">Recommended action</span><span class="v">${escapeHtml(actionMeta.route || methodLabel)}</span></div>
+              <div class="alphaReviewSummaryChip"><span class="k">Preview status</span><span class="v">${escapeHtml(previewStatus)}</span></div>
+              <div class="alphaReviewSummaryChip"><span class="k">Preflight verdict</span><span class="v">${escapeHtml(preflightVerdict)}</span></div>
+            </div>
+            <div class="alphaReviewGrid" style="margin-top:10px">
               <div class="alphaReviewItem"><span class="k">Root posture</span><span class="v">${escapeHtml(rootPosture)}</span></div>
               <div class="alphaReviewItem"><span class="k">Wallet</span><span class="v">${escapeHtml(walletShort || 'Connect wallet')}</span></div>
               <div class="alphaReviewItem"><span class="k">Network</span><span class="v">${isMainnet ? 'Ethereum Mainnet (chainId 1)' : `Unsupported network (chainId ${escapeHtml(String(APP_STATE.wallet?.chainId || 'unknown'))})`}</span></div>
               <div class="alphaReviewItem"><span class="k">Terms accepted</span><span class="v">${hasAcceptedTerms ? 'Yes' : 'No'}</span></div>
               <div class="alphaReviewItem"><span class="k">Contract</span><span class="v">${escapeHtml(contractShort)}</span></div>
               <div class="alphaReviewItem"><span class="k">Value</span><span class="v">0 ETH (gas only)</span></div>
-              <div class="alphaReviewItem"><span class="k">Preflight verdict</span><span class="v">${escapeHtml(preflightVerdict)}</span></div>
+              <div class="alphaReviewItem"><span class="k">Signer</span><span class="v">${escapeHtml(walletShort || 'Connect wallet')}</span></div>
+              <div class="alphaReviewItem"><span class="k">Source</span><span class="v">preview(label) + rootHealth()</span></div>
             </div>
           </section>
           <section class="alphaReviewSection">
@@ -6385,7 +6423,7 @@ function syncModalState(){
               <div class="alphaReviewItem"><span class="k">Terms acceptance</span><span class="v">${hasAcceptedTerms ? 'Ready' : 'Blocked'}</span></div>
               <div class="alphaReviewItem"><span class="k">Preview resolved</span><span class="v">${preview ? 'Ready' : 'Blocked'}</span></div>
               <div class="alphaReviewItem"><span class="k">Root usable</span><span class="v">${(preview?.rootUsable ?? health?.rootUsable) ? 'Ready' : 'Blocked'}</span></div>
-              <div class="alphaReviewItem"><span class="k">Simulation / estimate</span><span class="v">Gas estimate requested from the connected wallet at signature time.</span></div>
+              <div class="alphaReviewItem"><span class="k">Simulation / estimate</span><span class="v">Wallet gas estimation occurs at signature time.</span></div>
             </div>
           </section>
           <details class="alphaReviewSection alphaReviewAdvanced">
@@ -6425,7 +6463,7 @@ rootHealth: ${JSON.stringify({active:health?.active,pausedOut:health?.pausedOut,
         m.classList.remove('open');
         m.setAttribute('aria-hidden','true');
       }
-      if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize on Ethereum mainnet';
+      if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize register(string)';
       APP_STATE.identity.lastFocusedBeforeReview = null;
       if(wasOpen && restoreTarget?.focus){
         setTimeout(()=>restoreTarget.focus(), 20);
