@@ -107,14 +107,27 @@ describe('standalone v43 artifact', () => {
     const html = loadHtml();
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
-    expect(html).toContain('Final authorize control remains sticky and reachable on mobile.');
+    expect(html).toContain('Authorize only when this summary matches your intent and wallet.');
   });
 
-  it('removes public compatibility-alias wording from identity flow and keeps compatibility controls inert', () => {
+  it('removes public compatibility-alias wording and legacy duplicate identity review modal', () => {
     const html = loadHtml();
     expect(html).not.toContain('Compatibility register alias');
     expect(html).not.toContain('Compatibility-only alias');
-    expect(html).toContain('Legacy hidden control');
+    expect(html).not.toContain('Legacy modal retained for backwards compatibility');
+    expect(html).not.toContain('id="alphaMintReviewModal"');
     expect(html).toContain("if(el('mintAlphaAgentBtn')) el('mintAlphaAgentBtn').disabled = true;");
+  });
+
+  it('renders executive review memo sections with preview/root source and advanced disclosure', () => {
+    const html = loadHtml();
+    expect(html).toContain('Mainnet Authorization Memo');
+    expect(html).toContain('Source: preview(label) + rootHealth()');
+    expect(html).toContain('Decision summary');
+    expect(html).toContain('Action facts');
+    expect(html).toContain('Why this action is available now');
+    expect(html).toContain('Advanced technical facts');
+    expect(html).toContain('Authorize register(string)');
+    expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
   });
 });
