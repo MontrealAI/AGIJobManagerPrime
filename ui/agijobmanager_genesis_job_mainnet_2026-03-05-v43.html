@@ -495,19 +495,19 @@
     #alphaIdentityReviewModal .alphaReviewCopy{border-color:rgba(121,96,150,.24);background:rgba(111,75,195,.08);color:#4b3577;font-weight:600}
     #alphaIdentityReviewModal .alphaReviewAdvanced summary{font-size:.88rem;color:#3d2a58}
     #alphaIdentityReviewModal .alphaReviewAdvanced pre{background:rgba(49,36,59,.96);border-color:rgba(121,96,150,.26);color:#f7f0ff;max-height:230px;overflow:auto}
-    #alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;background:linear-gradient(180deg,rgba(255,255,255,.92),#faf7fc 22%,#f7f2fb 100%);border-top:1px solid rgba(121,96,150,.18);box-shadow:0 -12px 22px rgba(84,60,118,.1);margin:0;padding:14px 22px calc(14px + env(safe-area-inset-bottom));align-items:center}
+    #alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;background:linear-gradient(180deg,rgba(255,255,255,.96),#faf7fc 24%,#f7f2fb 100%);border-top:1px solid rgba(121,96,150,.18);box-shadow:0 -12px 22px rgba(84,60,118,.1);margin:0;padding:14px 22px calc(14px + env(safe-area-inset-bottom));align-items:center;backdrop-filter:blur(6px)}
     #alphaIdentityReviewModal .alphaReviewFooter .helper{color:rgba(67,50,82,.76)}
     #alphaIdentityReviewModal .alphaReviewFooter .actions{display:flex;gap:10px;justify-content:flex-end}
     #alphaIdentityReviewModal .alphaReviewFooter .btn{min-height:46px;min-width:170px}
     #alphaIdentityReviewModal .alphaReviewFooter .btn:not(.btn-primary){background:#fff;border-color:rgba(121,96,150,.24)}
     #alphaIdentityReviewModal .alphaReviewAddress{gap:6px}
-    #alphaIdentityReviewModal .alphaReviewAddress code{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #alphaIdentityReviewModal .alphaReviewAddress code{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     @media (max-width:900px){
       #alphaIdentityReviewModal{align-items:flex-end!important;padding:0!important}
       #alphaIdentityReviewModal .reviewModalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100 - env(safe-area-inset-top));border-radius:22px 22px 0 0}
       #alphaIdentityReviewModal .alphaReviewHeader{padding:16px 16px 12px;border-radius:22px 22px 0 0}
       #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:12px 16px 0}
-      #alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(168px + env(safe-area-inset-bottom))}
+      #alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(192px + env(safe-area-inset-bottom))}
       #alphaIdentityReviewModal .alphaReviewFooter{padding:12px 16px calc(18px + env(safe-area-inset-bottom));margin:0}
       #alphaIdentityReviewModal .alphaReviewFooter .actions{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
       #alphaIdentityReviewModal .alphaReviewFooter .btn{width:100%;min-width:0;min-height:50px}
@@ -2343,10 +2343,10 @@
 
     <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
       <div class="modalCard reviewModalCard" aria-labelledby="alphaIdentityReviewTitle" aria-describedby="alphaIdentityReviewHelper">
-        <div class="modalHeader alphaReviewHeader"><div><div class="eyebrow">Mainnet authorization memorandum</div><h2 style="margin:6px 0 8px" id="alphaIdentityReviewTitle">Register Alpha-Agent identity</h2><div class="helper" id="alphaIdentityReviewHelper">Direct contract call review before wallet signature.</div><div class="alphaReviewHeaderPills"><span class="alphaReviewPill" id="alphaIdentityRoutePill">Register now</span><span class="alphaReviewPill subtle" id="alphaIdentitySourcePill">Source: preview(label) + rootHealth()</span></div></div><button class="modalClose alphaReviewClose" id="closeAlphaIdentityReviewBtn" aria-label="Close transaction review" title="Close transaction review">×</button></div>
+        <div class="modalHeader alphaReviewHeader"><div><div class="eyebrow">Mainnet authorization memorandum</div><h2 style="margin:6px 0 8px" id="alphaIdentityReviewTitle">Register Alpha-Agent identity</h2><div class="helper" id="alphaIdentityReviewHelper">Single canonical signing surface for the direct contract call.</div><div class="alphaReviewHeaderPills"><span class="alphaReviewPill" id="alphaIdentityRoutePill">Register now</span><span class="alphaReviewPill subtle" id="alphaIdentitySourcePill">Source: preview(label) + rootHealth()</span></div></div><button class="modalClose alphaReviewClose" id="closeAlphaIdentityReviewBtn" aria-label="Close transaction review" title="Close transaction review">×</button></div>
         <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
         <div class="reviewFooter alphaReviewFooter" style="margin-top:12px">
-          <div class="helper" id="alphaIdentityReviewFooterNote">Authorize only when this summary matches your intent and wallet.</div>
+          <div class="helper" id="alphaIdentityReviewFooterNote">Authorize only when the action, label, wallet, and contract all match your intent.</div>
           <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn" aria-label="Cancel transaction review">Cancel review</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn" aria-label="Authorize mainnet transaction">Authorize on Ethereum mainnet</button></div>
         </div>
       </div>
@@ -5953,7 +5953,9 @@ function syncModalState(){
         : (APP_STATE.identity?.async?.preview === 'failed' || APP_STATE.identity?.async?.rootHealth === 'failed') ? 'read_failed'
         : !preview ? 'loading_reads'
         : preview?.inconsistencies?.length ? 'preview_inconsistent'
-        : (registerEnabled || claimEnabled || syncEnabled ? 'write_ready' : 'write_blocked');
+        : (registerEnabled || claimEnabled || syncEnabled) ? 'write_ready'
+        : recommendationModel.method === 'none' ? 'preview_ready'
+        : 'write_blocked';
       const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY, requestId:Number(APP_STATE.identity?.activeRequestId||0), state, recommendation, registerEnabled, claimEnabled, syncEnabled, lockedReason:lockedReason||'', previewStatus:Number(preview?.status ?? -1), previewStatusLabel:preview?.statusLabel || 'unresolved', rootUsable:Boolean(preview?.rootUsable ?? health?.rootUsable), termsAccepted:Boolean(hasAcceptedTerms), preflightVerdict: lockedReason ? 'blocked' : 'ready', recommendedMethod: recommendationModel.method || 'none'};
       APP_STATE.identity.snapshot = snapshot;
       APP_STATE.identity.state = state;
@@ -6211,7 +6213,7 @@ function syncModalState(){
       APP_STATE.identity.preview = preview;
       APP_STATE.identity.previewLabel = local.label || '';
       APP_STATE.identity.async.preview = local.ok ? (preview ? 'loaded' : 'failed') : 'idle';
-      APP_STATE.identity.state = local.ok ? (preview ? 'preview_loaded' : 'preview_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
+      APP_STATE.identity.state = local.ok ? (preview ? 'preview_ready' : 'read_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : (APP_STATE.identity?.async?.preview === 'failed' ? 'preview failed' : 'loading');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
@@ -6247,7 +6249,6 @@ function syncModalState(){
 
       if(preview?.tokenId && !!preview?.identityExists){
         APP_STATE.identity.async.tokenDossier = 'loading';
-        APP_STATE.identity.state = 'dossier_loading';
         const [ownerOf, labelData, tokenURI, lockedState] = await Promise.all([
           freeTrialRegistrarIdentity.methods.ownerOf(preview.tokenId).call().catch(()=> preview?.tokenOwner || ''),
           freeTrialRegistrarIdentity.methods.labelData(preview.tokenId).call().catch(()=>null),
@@ -6257,7 +6258,6 @@ function syncModalState(){
         const ld = labelData ? (Array.isArray(labelData) ? {label:String(labelData[0]||''), labelhash:String(labelData[1]||''), mintedAt:Number(labelData[2]||0)} : {label:String(labelData.label||''), labelhash:String(labelData.labelhash||''), mintedAt:Number(labelData.mintedAt||0)}) : null;
         if(!isCurrentIdentityRequest(requestId)) return;
         APP_STATE.identity.async.tokenDossier = 'loaded';
-        APP_STATE.identity.state = 'dossier_loaded';
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = ownerOf || preview?.tokenOwner || 'Unavailable from ownerOf(tokenId)';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || 'Unavailable from preview(label)';
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || 'Resolver not set';
@@ -6290,7 +6290,6 @@ function syncModalState(){
         }
       }else{
         APP_STATE.identity.async.tokenDossier = preview ? 'unavailable' : 'idle';
-        APP_STATE.identity.state = preview ? 'dossier_loaded' : APP_STATE.identity.state;
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = preview?.identityExists ? 'Unavailable from ownerOf(tokenId)' : 'Not applicable (identity not issued)';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || (preview ? 'Not returned by preview(label)' : 'Not applicable (identity not issued)');
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || (preview ? 'Resolver not set' : 'Not applicable (identity not issued)');
@@ -6346,7 +6345,7 @@ function syncModalState(){
               <div class="alphaReviewItem"><span class="k">Preview status</span><span class="v">${escapeHtml(previewStatus)}</span></div>
               <div class="alphaReviewItem"><span class="k">Root posture</span><span class="v">${escapeHtml(rootPosture)}</span></div>
               <div class="alphaReviewItem"><span class="k">Wallet</span><span class="v">${escapeHtml(walletShort || 'Connect wallet')}</span></div>
-              <div class="alphaReviewItem"><span class="k">Network</span><span class="v">${isMainnet ? 'Ethereum Mainnet (chainId 1)' : `chainId ${escapeHtml(String(APP_STATE.wallet?.chainId || 'unknown'))}`}</span></div>
+              <div class="alphaReviewItem"><span class="k">Network</span><span class="v">${isMainnet ? 'Ethereum Mainnet (chainId 1)' : `Unsupported network (chainId ${escapeHtml(String(APP_STATE.wallet?.chainId || 'unknown'))})`}</span></div>
               <div class="alphaReviewItem"><span class="k">Terms accepted</span><span class="v">${hasAcceptedTerms ? 'Yes' : 'No'}</span></div>
               <div class="alphaReviewItem"><span class="k">Contract</span><span class="v">${escapeHtml(contractShort)}</span></div>
               <div class="alphaReviewItem"><span class="k">Value</span><span class="v">0 ETH (gas only)</span></div>
@@ -6386,7 +6385,7 @@ function syncModalState(){
               <div class="alphaReviewItem"><span class="k">Terms acceptance</span><span class="v">${hasAcceptedTerms ? 'Ready' : 'Blocked'}</span></div>
               <div class="alphaReviewItem"><span class="k">Preview resolved</span><span class="v">${preview ? 'Ready' : 'Blocked'}</span></div>
               <div class="alphaReviewItem"><span class="k">Root usable</span><span class="v">${(preview?.rootUsable ?? health?.rootUsable) ? 'Ready' : 'Blocked'}</span></div>
-              <div class="alphaReviewItem"><span class="k">Simulation / estimate</span><span class="v">Wallet estimation at signature time.</span></div>
+              <div class="alphaReviewItem"><span class="k">Simulation / estimate</span><span class="v">Gas estimate requested from the connected wallet at signature time.</span></div>
             </div>
           </section>
           <details class="alphaReviewSection alphaReviewAdvanced">
