@@ -5733,6 +5733,39 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const out = String(v || '');
       return /^0x[a-fA-F0-9]{40}$/.test(out) ? out : '';
     }
+    function parseIdentityRootHealthResult(health){
+      if(!health) return null;
+      const out = Array.isArray(health) ? {
+        rootName:String(health[0]||''),
+        rootNode:String(health[1]||''),
+        active:normalizeBool(health[2]),
+        pausedOut:normalizeBool(health[3]),
+        wrapperAddress:normalizeAddress(health[4]),
+        ensRegistryAddress:normalizeAddress(health[5]),
+        contractOwner:normalizeAddress(health[6]),
+        wrappedParentOwner:normalizeAddress(health[7]),
+        parentWrapped:normalizeBool(health[8]),
+        parentLocked:normalizeBool(health[9]),
+        registrarAuthorised:normalizeBool(health[10]),
+        effectiveParentExpiry:normalizeInt(health[11],0),
+        rootUsable:normalizeBool(health[12])
+      } : {
+        rootName:String(health.rootName||''),
+        rootNode:String(health.rootNode||''),
+        active:normalizeBool(health.active),
+        pausedOut:normalizeBool(health.pausedOut),
+        wrapperAddress:normalizeAddress(health.wrapperAddress),
+        ensRegistryAddress:normalizeAddress(health.ensRegistryAddress),
+        contractOwner:normalizeAddress(health.contractOwner),
+        wrappedParentOwner:normalizeAddress(health.wrappedParentOwner),
+        parentWrapped:normalizeBool(health.parentWrapped),
+        parentLocked:normalizeBool(health.parentLocked),
+        registrarAuthorised:normalizeBool(health.registrarAuthorised),
+        effectiveParentExpiry:normalizeInt(health.effectiveParentExpiry,0),
+        rootUsable:normalizeBool(health.rootUsable)
+      };
+      return out;
+    }
     function identityPreviewInconsistencies(p){
       const out = [];
       const status = Number(p?.status ?? 8);
@@ -5875,7 +5908,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         : !local.ok ? 'invalid_label'
         : (APP_STATE.identity?.async?.rootHealth === 'loading' || APP_STATE.identity?.async?.preview === 'loading') ? 'loading_reads'
         : APP_STATE.identity?.async?.preview === 'failed' ? 'preview_failed'
-        : preview ? (preview?.inconsistencies?.length ? 'write_blocked' : 'preview_loaded') : 'loading_reads';
+        : preview ? (preview?.inconsistencies?.length ? 'write_blocked' : (registerEnabled || claimEnabled || syncEnabled ? 'write_ready' : 'write_blocked')) : 'loading_reads';
       const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY, requestId:Number(APP_STATE.identity?.activeRequestId||0), state, recommendation, registerEnabled, claimEnabled, syncEnabled, lockedReason:lockedReason||''};
       APP_STATE.identity.snapshot = snapshot;
       APP_STATE.identity.state = state;
@@ -6061,6 +6094,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       APP_STATE.identity.async.rootHealth = 'loading';
       APP_STATE.identity.async.preview = local.ok ? 'loading' : 'idle';
       APP_STATE.identity.async.tokenDossier = 'idle';
+      APP_STATE.identity.state = local.ok ? 'loading_reads' : (local.label ? 'invalid_label' : 'idle_no_label');
       APP_STATE.identity.errors.rootHealth = '';
       APP_STATE.identity.errors.preview = '';
       APP_STATE.identity.errors.tokenDossier = '';
@@ -6094,9 +6128,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         userAccount ? freeTrialRegistrarIdentity.methods.balanceOf(userAccount).call().catch(()=>null) : Promise.resolve(null)
       ]);
       const computed = namehash(ALPHA_AGENT_PARENT);
-      const h = health ? (Array.isArray(health) ? {
-        rootName:String(health[0]||''), rootNode:String(health[1]||''), active:!!health[2], pausedOut:!!health[3], wrapperAddress:String(health[4]||''), ensRegistryAddress:String(health[5]||''), contractOwner:String(health[6]||''), wrappedParentOwner:String(health[7]||''), parentWrapped:!!health[8], parentLocked:!!health[9], registrarAuthorised:!!health[10], effectiveParentExpiry:Number(health[11]||0), rootUsable:!!health[12]
-      } : health) : null;
+      const h = parseIdentityRootHealthResult(health);
       APP_STATE.identity.rootHealth = h;
       APP_STATE.identity.async.rootHealth = h ? 'loaded' : 'failed';
       if(!h) APP_STATE.identity.errors.rootHealth = 'rootHealth() read failed';
@@ -6134,6 +6166,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       APP_STATE.identity.preview = preview;
       APP_STATE.identity.previewLabel = local.label || '';
       APP_STATE.identity.async.preview = local.ok ? (preview ? 'loaded' : 'failed') : 'idle';
+      APP_STATE.identity.state = local.ok ? (preview ? 'preview_loaded' : 'preview_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : (APP_STATE.identity?.async?.preview === 'failed' ? 'preview failed' : 'loading');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
@@ -6169,6 +6202,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
 
       if(preview?.tokenId && !!preview?.identityExists){
         APP_STATE.identity.async.tokenDossier = 'loading';
+        APP_STATE.identity.state = 'dossier_loading';
         const [ownerOf, labelData, tokenURI, lockedState] = await Promise.all([
           freeTrialRegistrarIdentity.methods.ownerOf(preview.tokenId).call().catch(()=> preview?.tokenOwner || ''),
           freeTrialRegistrarIdentity.methods.labelData(preview.tokenId).call().catch(()=>null),
@@ -6178,6 +6212,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         const ld = labelData ? (Array.isArray(labelData) ? {label:String(labelData[0]||''), labelhash:String(labelData[1]||''), mintedAt:Number(labelData[2]||0)} : {label:String(labelData.label||''), labelhash:String(labelData.labelhash||''), mintedAt:Number(labelData.mintedAt||0)}) : null;
         if(!isCurrentIdentityRequest(requestId)) return;
         APP_STATE.identity.async.tokenDossier = 'loaded';
+        APP_STATE.identity.state = 'dossier_loaded';
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = ownerOf || preview?.tokenOwner || 'Unavailable from ownerOf(tokenId)';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || 'Unavailable from preview(label)';
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || 'Resolver not set';
@@ -6210,6 +6245,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         }
       }else{
         APP_STATE.identity.async.tokenDossier = preview ? 'unavailable' : 'idle';
+        APP_STATE.identity.state = preview ? 'dossier_loaded' : APP_STATE.identity.state;
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = preview?.identityExists ? 'Unavailable from ownerOf(tokenId)' : 'Not applicable (identity not issued)';
         if(el('alphaIdentityWrappedOwner')) el('alphaIdentityWrappedOwner').textContent = preview?.wrappedOwner || (preview ? 'Not returned by preview(label)' : 'Not applicable (identity not issued)');
         if(el('alphaIdentityResolver')) el('alphaIdentityResolver').textContent = preview?.resolver || (preview ? 'Resolver not set' : 'Not applicable (identity not issued)');
@@ -6254,7 +6290,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         ['Issuer', userAccount || 'connected wallet required'],
         ['Issuance target', 'Connected wallet only'],
         ['ETH value', '0'],
-        ['Route', 'Combined wrapped name + soulbound identity'],
+        ['Route', action==='register' ? 'Combined wrapped name + soulbound identity' : action==='claimIdentity' ? 'Recovery: claim identity for wrapped name already owned by connected wallet' : 'Recovery: sync stale/desynced identity posture'],
         ['Name-only public route', 'Not exposed in this console'],
         ['Method selector', selector || 'Unavailable (contract not loaded)'],
         ['Calldata', calldata || 'Unavailable (contract not loaded)'],
