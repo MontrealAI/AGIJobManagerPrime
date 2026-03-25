@@ -26,11 +26,10 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'})");
-    expect(html).toContain("['Contract', 'FreeTrialSubdomainRegistrarIdentity']");
-    expect(html).toContain("['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY]");
-    expect(html).toContain("['ETH value', '0']");
-    expect(html).toContain("['Route', action==='register' ? 'Combined wrapped name + soulbound identity'");
-    expect(html).toContain("['Name-only public route', 'Not exposed in this console']");
+    expect(html).toContain('APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY');
+    expect(html).toContain("methodLabel = action==='register' ? 'register(string)'");
+    expect(html).toContain("['Value', '<span>0 ETH</span>']");
+    expect(html).toContain("['Route statement', `<span>${action==='register' ? 'Wrapped name + identity are issued together.'");
   });
 
   it('uses deterministic state machine + normalized snapshot + stale-request guards', () => {
@@ -39,12 +38,13 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("const state = !local.label ? 'idle_no_label'");
     expect(html).toContain(": !local.ok ? 'invalid_label'");
     expect(html).toContain("? 'loading_reads'");
-    expect(html).toContain("? 'preview_failed'");
+    expect(html).toContain("? 'read_failed'");
+    expect(html).toContain("'preview_ready'");
+    expect(html).toContain("'preview_inconsistent'");
     expect(html).toContain("'write_ready'");
-    expect(html).toContain("'write_blocked'");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loading';");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loaded';");
-    expect(html).toContain("APP_STATE.identity.state = 'tx_review';");
+    expect(html).toContain("APP_STATE.identity.state = 'review_open';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_pending';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_success';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_failed';");
@@ -107,7 +107,7 @@ describe('standalone v43 artifact', () => {
     const html = loadHtml();
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
-    expect(html).toContain('Final authorize control remains sticky and reachable on mobile.');
+    expect(html).toContain('Authorize transaction');
   });
 
   it('removes public compatibility-alias wording from identity flow and keeps compatibility controls inert', () => {
@@ -115,6 +115,8 @@ describe('standalone v43 artifact', () => {
     expect(html).not.toContain('Compatibility register alias');
     expect(html).not.toContain('Compatibility-only alias');
     expect(html).toContain('Legacy hidden control');
+    expect(html).not.toContain('Legacy modal retained for backwards compatibility');
+    expect(html).not.toContain('Submit mint');
     expect(html).toContain("if(el('mintAlphaAgentBtn')) el('mintAlphaAgentBtn').disabled = true;");
   });
 });
