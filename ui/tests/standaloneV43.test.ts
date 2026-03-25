@@ -26,11 +26,10 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'})");
-    expect(html).toContain("['Contract', 'FreeTrialSubdomainRegistrarIdentity']");
-    expect(html).toContain("['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY]");
-    expect(html).toContain("['ETH value', '0']");
-    expect(html).toContain("['Route', action==='register' ? 'Combined wrapped name + soulbound identity'");
-    expect(html).toContain("['Name-only public route', 'Not exposed in this console']");
+    expect(html).toContain("const contractShort = shortAddr(FREE_TRIAL_REGISTRAR_IDENTITY);");
+    expect(html).toContain("ETH value</span><span class=\"v\">0 ETH (gas only)</span>");
+    expect(html).toContain("Combined wrapped name + soulbound identity in one public route.");
+    expect(html).toContain("APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY");
   });
 
   it('uses deterministic state machine + normalized snapshot + stale-request guards', () => {
