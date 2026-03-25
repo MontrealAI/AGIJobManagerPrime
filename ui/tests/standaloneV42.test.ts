@@ -24,4 +24,17 @@ describe('standalone v42 artifact', () => {
     expect(html).toContain('Compatibility ENS URI (preview/effective)');
     expect(html).toContain('authority snapshot established');
   });
+
+  it('uses preview decision-card wording and removes authoritative-preview copy', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain('Live preview(label) decision card');
+    expect(html).not.toContain('Authoritative identity preview');
+  });
+
+  it('contains identity snapshot + stale-request guards and preview fallback messaging', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain('function buildIdentitySnapshot');
+    expect(html).toContain('isCurrentIdentityRequest');
+    expect(html).toContain('preview(label) read failed — direct register fallback available.');
+  });
 });
