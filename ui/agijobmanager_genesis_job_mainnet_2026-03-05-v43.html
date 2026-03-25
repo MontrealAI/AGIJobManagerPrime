@@ -5715,13 +5715,47 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     const IDENTITY_PREVIEW_STATUS = {
       0:'available',1:'active',2:'claimable',3:'expired',4:'desynced',5:'invalid-label',6:'root-inactive',7:'parent-unusable',8:'unavailable'
     };
+    function normalizeBool(v){
+      if(typeof v === 'boolean') return v;
+      if(typeof v === 'string') return v.toLowerCase() === 'true' || v === '1';
+      if(typeof v === 'number') return v === 1;
+      return !!v;
+    }
+    function normalizeInt(v, fallback=0){
+      try{
+        if(v === null || typeof v === 'undefined' || v === '') return fallback;
+        return Number(v);
+      }catch{
+        return fallback;
+      }
+    }
+    function normalizeAddress(v){
+      const out = String(v || '');
+      return /^0x[a-fA-F0-9]{40}$/.test(out) ? out : '';
+    }
+    function identityPreviewInconsistencies(p){
+      const out = [];
+      const status = Number(p?.status ?? 8);
+      if(status === 0 && (!p?.registrable || !p?.availableOut)) out.push('AVAILABLE status without registrable+availableOut=true.');
+      if(status === 1 && p?.registrable) out.push('ACTIVE status with registrable=true.');
+      if(status === 2 && !p?.claimable) out.push('CLAIMABLE status without claimable=true.');
+      if((status === 3 || status === 4) && !p?.identityExists) out.push('EXPIRED/DESYNCED status without identityExists=true.');
+      if(status >= 5 && (p?.registrable || p?.claimable)) out.push('Blocked status with write booleans enabled.');
+      if(status === 5 && p?.validLabel) out.push('INVALID_LABEL status but validLabel=true.');
+      if(status === 6 && p?.rootActiveOut) out.push('ROOT_INACTIVE status but rootActiveOut=true.');
+      if(status === 7 && p?.rootUsable) out.push('PARENT_UNUSABLE status but rootUsable=true.');
+      return out;
+    }
     function parseIdentityPreviewResult(v){
       if(!v) return null;
-      const p = Array.isArray(v)
-        ? {validLabel:!!v[0], fullName:String(v[1]||''), labelOut:String(v[2]||''), labelhash:String(v[3]||''), node:String(v[4]||''), tokenId:String(v[5]||''), rootActiveOut:!!v[6], pausedOut:!!v[7], parentWrapped:!!v[8], parentLocked:!!v[9], registrarAuthorised:!!v[10], rootUsable:!!v[11], availableOut:!!v[12], identityExists:!!v[13], registrable:!!v[14], claimable:!!v[15], tokenOwner:String(v[16]||''), wrappedOwner:String(v[17]||''), resolver:String(v[18]||''), currentWrappedExpiry:Number(v[19]||0), expectedNewExpiry:Number(v[20]||0), status:Number(v[21]||0)}
-        : {validLabel:!!v.validLabel, fullName:String(v.fullName||''), labelOut:String(v.labelOut||''), labelhash:String(v.labelhash||''), node:String(v.node||''), tokenId:String(v.tokenId||''), rootActiveOut:!!v.rootActiveOut, pausedOut:!!v.pausedOut, parentWrapped:!!v.parentWrapped, parentLocked:!!v.parentLocked, registrarAuthorised:!!v.registrarAuthorised, rootUsable:!!v.rootUsable, availableOut:!!v.availableOut, identityExists:!!v.identityExists, registrable:!!v.registrable, claimable:!!v.claimable, tokenOwner:String(v.tokenOwner||''), wrappedOwner:String(v.wrappedOwner||''), resolver:String(v.resolver||''), currentWrappedExpiry:Number(v.currentWrappedExpiry||0), expectedNewExpiry:Number(v.expectedNewExpiry||0), status:Number(v.status||0)};
+      const fromArray = Array.isArray(v);
+      if(fromArray && v.length < 22) return null;
+      const p = fromArray
+        ? {validLabel:normalizeBool(v[0]), fullName:String(v[1]||''), labelOut:String(v[2]||''), labelhash:String(v[3]||''), node:String(v[4]||''), tokenId:String(v[5]||''), rootActiveOut:normalizeBool(v[6]), pausedOut:normalizeBool(v[7]), parentWrapped:normalizeBool(v[8]), parentLocked:normalizeBool(v[9]), registrarAuthorised:normalizeBool(v[10]), rootUsable:normalizeBool(v[11]), availableOut:normalizeBool(v[12]), identityExists:normalizeBool(v[13]), registrable:normalizeBool(v[14]), claimable:normalizeBool(v[15]), tokenOwner:normalizeAddress(v[16]), wrappedOwner:normalizeAddress(v[17]), resolver:normalizeAddress(v[18]), currentWrappedExpiry:normalizeInt(v[19],0), expectedNewExpiry:normalizeInt(v[20],0), status:normalizeInt(v[21],8)}
+        : {validLabel:normalizeBool(v.validLabel), fullName:String(v.fullName||''), labelOut:String(v.labelOut||''), labelhash:String(v.labelhash||''), node:String(v.node||''), tokenId:String(v.tokenId||''), rootActiveOut:normalizeBool(v.rootActiveOut), pausedOut:normalizeBool(v.pausedOut), parentWrapped:normalizeBool(v.parentWrapped), parentLocked:normalizeBool(v.parentLocked), registrarAuthorised:normalizeBool(v.registrarAuthorised), rootUsable:normalizeBool(v.rootUsable), availableOut:normalizeBool(v.availableOut), identityExists:normalizeBool(v.identityExists), registrable:normalizeBool(v.registrable), claimable:normalizeBool(v.claimable), tokenOwner:normalizeAddress(v.tokenOwner), wrappedOwner:normalizeAddress(v.wrappedOwner), resolver:normalizeAddress(v.resolver), currentWrappedExpiry:normalizeInt(v.currentWrappedExpiry,0), expectedNewExpiry:normalizeInt(v.expectedNewExpiry,0), status:normalizeInt(v.status,8)};
       if(!p.tokenId && p.node){ try{ p.tokenId = BigInt(p.node).toString(); }catch{} }
       p.statusLabel = IDENTITY_PREVIEW_STATUS[p.status] || `unknown-${p.status}`;
+      p.inconsistencies = identityPreviewInconsistencies(p);
       return p;
     }
     function nextIdentityRequestToken(){
@@ -5745,7 +5779,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           ? {method:'none', reason:'preview(label) read failed', fallback:false}
           : {method:'none', reason:'Loading preview(label)', fallback:false};
       }
-      if((preview.status === 0 && !preview.registrable) || (preview.status === 2 && !preview.claimable) || (preview.status === 1 && preview.registrable)){
+      if(preview?.inconsistencies?.length){
         return {method:'none', reason:'Preview status/boolean mismatch', fallback:false};
       }
       const status = Number(preview.status ?? 8);
@@ -5841,7 +5875,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         : !local.ok ? 'invalid_label'
         : (APP_STATE.identity?.async?.rootHealth === 'loading' || APP_STATE.identity?.async?.preview === 'loading') ? 'loading_reads'
         : APP_STATE.identity?.async?.preview === 'failed' ? 'preview_failed'
-        : preview ? 'preview_loaded' : 'loading_reads';
+        : preview ? (preview?.inconsistencies?.length ? 'write_blocked' : 'preview_loaded') : 'loading_reads';
       const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY, requestId:Number(APP_STATE.identity?.activeRequestId||0), state, recommendation, registerEnabled, claimEnabled, syncEnabled, lockedReason:lockedReason||''};
       APP_STATE.identity.snapshot = snapshot;
       APP_STATE.identity.state = state;
@@ -6106,6 +6140,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityExpectedExpiry')) el('alphaIdentityExpectedExpiry').textContent = preview ? formatTimestamp(preview.expectedNewExpiry || preview.currentWrappedExpiry) : '—';
       const helper = el('alphaIdentityActionHelper');
       if(helper) helper.textContent = !preview ? (APP_STATE.identity?.async?.preview === 'failed' ? 'preview(label) failed. Retry preview; write controls remain conservative until preview resolves.' : 'The recommendation banner above will indicate whether register(label), claimIdentity(label), syncIdentityByLabel(label), or no write action is appropriate.') : preview.status === 0 ? 'Ready to use register(label) for the recommended route. This mints the wrapped name and soulbound identity together in one transaction.' : preview.status === 2 ? 'Use claimIdentity(label) when the wrapped name already belongs to the connected wallet.' : (preview.status === 3 || preview.status === 4) ? 'Use syncIdentityByLabel(label) only for stale, expired, or desynced identity posture.' : 'No write action is currently preferred for this preview state. Review the banner and diagnostics for exact posture.';
+      if(helper && preview?.inconsistencies?.length) helper.textContent = `Preview inconsistency detected: ${preview.inconsistencies.join(' ')}`;
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
       if(el('alphaIdentityFullName')) el('alphaIdentityFullName').textContent = preview?.fullName || (local.ok ? (derivedFullName || `${local.label}.${ALPHA_AGENT_PARENT}`) : 'Not applicable (invalid/empty label)');
@@ -6127,6 +6162,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         else if(claimEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: claimIdentity(label) for wrapped names already owned by the connected wallet.';
         else if(syncEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: syncIdentityByLabel(label) repair path for desynced or expired identity posture.';
         else if(APP_STATE.identity?.async?.preview === 'failed') el('alphaIdentityActionStatus').textContent = 'preview(label) read failed. Retry preview before authorizing writes.';
+        else if(preview?.inconsistencies?.length) el('alphaIdentityActionStatus').textContent = `Preview mismatch: ${preview.inconsistencies.join(' ')}`;
         else if(mismatchWarnings.length) el('alphaIdentityActionStatus').textContent = mismatchWarnings.join(' ');
         else el('alphaIdentityActionStatus').textContent = 'Preview loaded. No combined Alpha-Agent write is currently recommended for this label.';
       }
@@ -6228,6 +6264,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityReviewFacts')) el('alphaIdentityReviewFacts').innerHTML = facts.map(([k,v])=>`<div class="reviewFact"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(String(v||''))}</span></div>`).join('');
       if(el('alphaIdentityReviewTitle')) el('alphaIdentityReviewTitle').textContent = actionMeta.title;
       if(el('alphaIdentityReviewHelper')) el('alphaIdentityReviewHelper').textContent = actionMeta.helper;
+      APP_STATE.identity.state = 'tx_review';
       if(el('confirmAlphaIdentityReviewBtn')){
         el('confirmAlphaIdentityReviewBtn').dataset.identityAction = action;
         el('confirmAlphaIdentityReviewBtn').textContent = actionMeta.cta;
@@ -6247,6 +6284,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(action==='register' && !preview?.registrable) return setToast('register(label) is not available for the current preview state.', 'warn');
       if(action==='claimIdentity' && !preview?.claimable) return setToast('claimIdentity(label) is not available for the current preview state.', 'warn');
       if(action==='syncIdentityByLabel' && !(preview?.identityExists && (preview?.status===3 || preview?.status===4))) return setToast('syncIdentityByLabel(label) is only available for expired or desynced identity posture.', 'warn');
+      if(preview?.inconsistencies?.length) return setToast('preview(label) returned inconsistent status/booleans. Retry preview before write.', 'warn');
       if(!freeTrialRegistrarIdentity) freeTrialRegistrarIdentity = new web3.eth.Contract(FreeTrialSubdomainRegistrarIdentityABI, FREE_TRIAL_REGISTRAR_IDENTITY);
       closeAlphaIdentityReview();
       let send;
@@ -6263,7 +6301,15 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         from: userAccount || ''
       };
       APP_STATE.identity.parity = txMeta;
-      const receipt = await runTrackedTx(`Alpha identity ${action} ${local.label}`, send, {pendingDetail:`Submitting ${action}…`, successDetail:`${action} confirmed.`});
+      APP_STATE.identity.state = 'tx_pending';
+      let receipt;
+      try{
+        receipt = await runTrackedTx(`Alpha identity ${action} ${local.label}`, send, {pendingDetail:`Submitting ${action}…`, successDetail:`${action} confirmed.`});
+      }catch(err){
+        APP_STATE.identity.state = 'tx_failed';
+        throw err;
+      }
+      APP_STATE.identity.state = 'tx_success';
       const tokenId = preview?.tokenId || (preview?.node ? (()=>{ try{return BigInt(preview.node).toString();}catch{return 'n/a';} })() : 'n/a');
       saveRecentAlphaAgentName(local.label);
       if(el('agentSub')) el('agentSub').value = local.label;
