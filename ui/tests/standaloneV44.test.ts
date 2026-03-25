@@ -198,4 +198,16 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("AGI_JOB_MANAGER || agiJobManager?.options?.address || 'unresolved AGIJobManager address'");
     expect(html).toContain("modal.addEventListener('click', onBackdropClick);");
   });
+
+  it('adds discovery write preflight and stale-load guards for procurement inspector', () => {
+    const html = loadHtml();
+    expect(html).toContain('async function runDiscoveryWritePreflight({method, txBuilder})');
+    expect(html).toContain("Switch to Ethereum mainnet before submitting discovery writes.");
+    expect(html).toContain("Accept terms to unlock write authorization.");
+    expect(html).toContain("await web3.eth.call(callTx, 'latest');");
+    expect(html).toContain("let premiumProcurementLoadRequestId = 0;");
+    expect(html).toContain("if(requestId !== premiumProcurementLoadRequestId) return;");
+    expect(html).toContain("Awaiting live nextActionForProcurement()");
+    expect(html).toContain("Target contract', value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`");
+  });
 });
