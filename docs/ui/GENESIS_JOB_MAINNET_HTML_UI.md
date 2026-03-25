@@ -65,6 +65,8 @@ Based on the file contents, this standalone page includes:
 
 Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v43` file.
 
+Alpha identity review modal is a single canonical signing surface fed by a normalized preview(label)+rootHealth() snapshot. The public register route directly signs `register(string)` on `FreeTrialSubdomainRegistrarIdentity` with `value = 0` on mainnet.
+
 ## Grounded page sections and expected outcomes (v43)
 
 | Section in page | What you do there | Expected result |
