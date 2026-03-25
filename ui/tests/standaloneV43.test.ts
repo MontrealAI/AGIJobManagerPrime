@@ -26,11 +26,10 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'})");
-    expect(html).toContain("['Contract', 'FreeTrialSubdomainRegistrarIdentity']");
-    expect(html).toContain("['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY]");
-    expect(html).toContain("['ETH value', '0']");
-    expect(html).toContain("['Route', action==='register' ? 'Combined wrapped name + soulbound identity'");
-    expect(html).toContain("['Name-only public route', 'Not exposed in this console']");
+    expect(html).toContain("const contractShort = shortAddr(FREE_TRIAL_REGISTRAR_IDENTITY);");
+    expect(html).toContain("ETH value</span><span class=\"v\">0 ETH (gas only)</span>");
+    expect(html).toContain("Combined wrapped name + soulbound identity in one public route.");
+    expect(html).toContain("APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY");
   });
 
   it('uses deterministic state machine + normalized snapshot + stale-request guards', () => {
@@ -107,14 +106,36 @@ describe('standalone v43 artifact', () => {
     const html = loadHtml();
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
-    expect(html).toContain('Final authorize control remains sticky and reachable on mobile.');
+    expect(html).toContain('Authorize only when this summary matches your intent and wallet.');
   });
 
-  it('removes public compatibility-alias wording from identity flow and keeps compatibility controls inert', () => {
+  it('removes public compatibility-alias wording and legacy duplicate identity review modal', () => {
     const html = loadHtml();
     expect(html).not.toContain('Compatibility register alias');
     expect(html).not.toContain('Compatibility-only alias');
-    expect(html).toContain('Legacy hidden control');
+    expect(html).not.toContain('Legacy modal retained for backwards compatibility');
+    expect(html).not.toContain('id="alphaMintReviewModal"');
     expect(html).toContain("if(el('mintAlphaAgentBtn')) el('mintAlphaAgentBtn').disabled = true;");
+  });
+
+  it('renders executive review memo sections with preview/root source and advanced disclosure', () => {
+    const html = loadHtml();
+    expect(html).toContain('Mainnet Authorization Memo');
+    expect(html).toContain('Source: preview(label) + rootHealth()');
+    expect(html).toContain('Decision summary');
+    expect(html).toContain('Action facts');
+    expect(html).toContain('Why this action is available now');
+    expect(html).toContain('Advanced technical facts');
+    expect(html).toContain('Authorize register(string)');
+    expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
+  });
+
+  it('hardens admin argument modal wiring with null guards and contract-specific subtitle address', () => {
+    const html = loadHtml();
+    expect(html).toContain("if(!modal || !formNode || !confirmBtn || !cancelBtn || !closeBtn){");
+    expect(html).toContain("setToast('Admin argument modal is unavailable in this build.', 'bad');");
+    expect(html).toContain("resolvedEnsJobPagesAddress || ensJobPages?.options?.address || 'unresolved ENSJobPages address'");
+    expect(html).toContain("AGI_JOB_MANAGER || agiJobManager?.options?.address || 'unresolved AGIJobManager address'");
+    expect(html).toContain("modal.addEventListener('click', onBackdropClick);");
   });
 });
