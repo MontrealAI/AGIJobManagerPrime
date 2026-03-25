@@ -27,8 +27,8 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("const contractShort = shortAddr(FREE_TRIAL_REGISTRAR_IDENTITY);");
-    expect(html).toContain("ETH value</span><span class=\"v\">0 ETH (gas only)</span>");
-    expect(html).toContain("Combined wrapped name + soulbound identity in one public route.");
+    expect(html).toContain("<span class=\"k\">Value</span><span class=\"v\">0 ETH (gas only)</span>");
+    expect(html).toContain("Wrapped label and soulbound identity are issued together in one public transaction.");
     expect(html).toContain("APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY");
   });
 
@@ -38,16 +38,18 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("const state = !local.label ? 'idle_no_label'");
     expect(html).toContain(": !local.ok ? 'invalid_label'");
     expect(html).toContain("? 'loading_reads'");
-    expect(html).toContain("? 'preview_failed'");
+    expect(html).toContain("? 'read_failed'");
+    expect(html).toContain("'preview_inconsistent'");
     expect(html).toContain("'write_ready'");
     expect(html).toContain("'write_blocked'");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loading';");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loaded';");
-    expect(html).toContain("APP_STATE.identity.state = 'tx_review';");
+    expect(html).toContain("APP_STATE.identity.state = 'review_open';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_pending';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_success';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_failed';");
     expect(html).toContain("const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY");
+    expect(html).toContain("previewStatusLabel:preview?.statusLabel || 'unresolved'");
     expect(html).toContain('if(!isCurrentIdentityRequest(requestId)) return;');
   });
 
@@ -107,6 +109,7 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
     expect(html).toContain('Authorize only when this summary matches your intent and wallet.');
+    expect(html).toContain('function trapAlphaIdentityReviewFocus(evt)');
   });
 
   it('removes public compatibility-alias wording and legacy duplicate identity review modal', () => {
@@ -120,12 +123,14 @@ describe('standalone v43 artifact', () => {
 
   it('renders executive review memo sections with preview/root source and advanced disclosure', () => {
     const html = loadHtml();
-    expect(html).toContain('Mainnet Authorization Memo');
+    expect(html).toContain('Mainnet authorization memorandum');
     expect(html).toContain('Source: preview(label) + rootHealth()');
     expect(html).toContain('Decision summary');
     expect(html).toContain('Action facts');
     expect(html).toContain('Why this action is available now');
     expect(html).toContain('Advanced technical facts');
+    expect(html).toContain('Operational readiness');
+    expect(html).toContain('Read inconsistency — refresh required before write.');
     expect(html).toContain('Authorize register(string)');
     expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
   });
