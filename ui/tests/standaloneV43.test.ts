@@ -131,10 +131,21 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain('Action facts');
     expect(html).toContain('Why this action is available now');
     expect(html).toContain('Advanced technical facts');
+    expect(html).toContain('Advanced token facts');
     expect(html).toContain('Operational readiness');
     expect(html).toContain('Read inconsistency — refresh required before write.');
+    expect(html).toContain('Ready — coherent snapshot');
     expect(html).toContain('Authorize register(string)');
     expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
+    expect(html).not.toContain('Token / node posture');
+  });
+
+  it('keeps mobile-safe sticky review footer and removes legacy hidden-control copy', () => {
+    const html = loadHtml();
+    expect(html).toContain('#alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;');
+    expect(html).toContain('#alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(168px + env(safe-area-inset-bottom))}');
+    expect(html).toContain('Reserved hidden control');
+    expect(html).not.toContain('Legacy hidden control');
   });
 
   it('hardens admin argument modal wiring with null guards and contract-specific subtitle address', () => {

@@ -476,14 +476,15 @@
     .alphaReviewAdvanced summary{cursor:pointer;font-weight:600}
     .alphaReviewAdvanced pre{margin:8px 0 0;padding:10px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);white-space:pre-wrap;overflow-wrap:anywhere}
     .alphaReviewBody{display:grid;gap:14px;padding:4px 2px calc(132px + env(safe-area-inset-bottom));}
-    #alphaIdentityReviewModal .reviewModalCard{background:linear-gradient(180deg,#ffffff 0%,#f7f2fb 100%)!important;border:1px solid rgba(121,96,150,.2)!important;box-shadow:0 34px 90px rgba(54,34,84,.24)!important;border-radius:24px;max-height:min(calc(var(--app-vh,1vh) * 100 - 20px),95vh);padding:0!important;overflow:hidden}
+    #alphaIdentityReviewModal .reviewModalCard{background:linear-gradient(180deg,#ffffff 0%,#f7f2fb 100%)!important;border:1px solid rgba(121,96,150,.2)!important;box-shadow:0 34px 90px rgba(54,34,84,.24)!important;border-radius:24px;max-height:min(calc(var(--app-vh,1vh) * 100 - 20px),95vh);padding:0!important;overflow:hidden;display:flex;flex-direction:column}
     #alphaIdentityReviewModal .alphaReviewHeader{position:sticky;top:0;z-index:5;padding:20px 22px 16px;margin:0;border-radius:24px 24px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.985),rgba(248,241,252,.96));border-bottom:1px solid rgba(121,96,150,.16);align-items:flex-start}
+    #alphaIdentityReviewModal .alphaReviewHeader .eyebrow{font-weight:700;letter-spacing:.08em;color:#4a3765}
     #alphaIdentityReviewModal .alphaReviewHeader h2{color:#1f1428;font-size:clamp(1.35rem,2.4vw,1.75rem);line-height:1.15;letter-spacing:-.02em}
     #alphaIdentityReviewModal .alphaReviewHeader .helper{color:rgba(60,43,77,.82)!important;font-size:.95rem;line-height:1.5;max-width:68ch}
     #alphaIdentityReviewModal .alphaReviewPill{background:rgba(111,75,195,.12);border-color:rgba(111,75,195,.3);color:#3a2860;font-weight:700}
     #alphaIdentityReviewModal .alphaReviewPill.subtle{background:rgba(255,255,255,.8);border-color:rgba(121,96,150,.22);color:#503b64;font-weight:600}
     #alphaIdentityReviewModal .alphaReviewClose{width:48px;min-width:48px;height:48px;border-radius:14px;background:#fff;border:1px solid rgba(121,96,150,.22)!important;color:#342343!important;box-shadow:0 8px 22px rgba(74,52,106,.14)}
-    #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:16px 22px 0;display:block;overflow:auto;min-height:0}
+    #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:16px 22px 0;display:block;overflow:auto;min-height:0;flex:1 1 auto}
     #alphaIdentityReviewModal .alphaReviewSection{border:1px solid rgba(121,96,150,.15);background:rgba(255,255,255,.78);border-radius:16px;padding:14px 15px}
     #alphaIdentityReviewModal .alphaReviewSection h3{font-size:.89rem;letter-spacing:.09em;text-transform:uppercase;color:rgba(74,52,89,.68);margin:0 0 10px}
     #alphaIdentityReviewModal .alphaReviewGrid{gap:12px}
@@ -494,16 +495,19 @@
     #alphaIdentityReviewModal .alphaReviewCopy{border-color:rgba(121,96,150,.24);background:rgba(111,75,195,.08);color:#4b3577;font-weight:600}
     #alphaIdentityReviewModal .alphaReviewAdvanced summary{font-size:.88rem;color:#3d2a58}
     #alphaIdentityReviewModal .alphaReviewAdvanced pre{background:rgba(49,36,59,.96);border-color:rgba(121,96,150,.26);color:#f7f0ff;max-height:230px;overflow:auto}
-    #alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;background:linear-gradient(180deg,rgba(255,255,255,.9),#f9f6fb 20%,#f7f2fb 100%);border-top:1px solid rgba(121,96,150,.18);box-shadow:0 -16px 26px rgba(84,60,118,.12);margin:0;padding:14px 22px calc(14px + env(safe-area-inset-bottom));align-items:center}
+    #alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;background:linear-gradient(180deg,rgba(255,255,255,.92),#faf7fc 22%,#f7f2fb 100%);border-top:1px solid rgba(121,96,150,.18);box-shadow:0 -12px 22px rgba(84,60,118,.1);margin:0;padding:14px 22px calc(14px + env(safe-area-inset-bottom));align-items:center}
     #alphaIdentityReviewModal .alphaReviewFooter .helper{color:rgba(67,50,82,.76)}
     #alphaIdentityReviewModal .alphaReviewFooter .actions{display:flex;gap:10px;justify-content:flex-end}
     #alphaIdentityReviewModal .alphaReviewFooter .btn{min-height:46px;min-width:170px}
+    #alphaIdentityReviewModal .alphaReviewFooter .btn:not(.btn-primary){background:#fff;border-color:rgba(121,96,150,.24)}
+    #alphaIdentityReviewModal .alphaReviewAddress{gap:6px}
+    #alphaIdentityReviewModal .alphaReviewAddress code{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     @media (max-width:900px){
       #alphaIdentityReviewModal{align-items:flex-end!important;padding:0!important}
       #alphaIdentityReviewModal .reviewModalCard{width:100vw;max-width:100vw;max-height:calc(var(--app-vh,1vh) * 100 - env(safe-area-inset-top));border-radius:22px 22px 0 0}
       #alphaIdentityReviewModal .alphaReviewHeader{padding:16px 16px 12px;border-radius:22px 22px 0 0}
       #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:12px 16px 0}
-      #alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(156px + env(safe-area-inset-bottom))}
+      #alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(168px + env(safe-area-inset-bottom))}
       #alphaIdentityReviewModal .alphaReviewFooter{padding:12px 16px calc(18px + env(safe-area-inset-bottom));margin:0}
       #alphaIdentityReviewModal .alphaReviewFooter .actions{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
       #alphaIdentityReviewModal .alphaReviewFooter .btn{width:100%;min-width:0;min-height:50px}
@@ -2335,7 +2339,7 @@
     </div>
 
     <input id="mintAlphaRecipient" type="hidden" value="">
-    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Legacy hidden control</button>
+    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Reserved hidden control</button>
 
     <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
       <div class="modalCard reviewModalCard" aria-labelledby="alphaIdentityReviewTitle" aria-describedby="alphaIdentityReviewHelper">
@@ -6329,7 +6333,10 @@ function syncModalState(){
       const previewStatus = `${preview?.statusLabel || 'unresolved'} (${preview?.status ?? 'n/a'})`;
       const rootPosture = (preview?.rootUsable ?? health?.rootUsable) ? 'Usable' : 'Blocked';
       const etherscanBase = isMainnet ? 'https://etherscan.io/address/' : 'https://etherscan.io/address/';
-      const whyNow = `preview status: ${previewStatus} · registrable: ${String(!!preview?.registrable)} · claimable: ${String(!!preview?.claimable)} · root usable: ${String(!!(preview?.rootUsable ?? health?.rootUsable))} · identity exists: ${String(!!preview?.identityExists)}`;
+      const fullName = preview?.fullName || `${local.label}.${ALPHA_AGENT_PARENT}`;
+      const readCoherence = preview?.inconsistencies?.length ? 'Read inconsistency — refresh required.' : 'preview(label) and rootHealth() are coherent for this label and wallet.';
+      const preflightVerdict = (ui.snapshot?.preflightVerdict === 'ready' && !preview?.inconsistencies?.length) ? 'Ready — coherent snapshot' : 'Blocked — refresh required';
+      APP_STATE.identity.snapshot = {...(ui.snapshot || {}), review:{action, fullName, previewStatus, preflightVerdict, readCoherence}};
       const factsHtml = `
         <div class="alphaReviewBody">
           <section class="alphaReviewSection">
@@ -6343,7 +6350,7 @@ function syncModalState(){
               <div class="alphaReviewItem"><span class="k">Terms accepted</span><span class="v">${hasAcceptedTerms ? 'Yes' : 'No'}</span></div>
               <div class="alphaReviewItem"><span class="k">Contract</span><span class="v">${escapeHtml(contractShort)}</span></div>
               <div class="alphaReviewItem"><span class="k">Value</span><span class="v">0 ETH (gas only)</span></div>
-              <div class="alphaReviewItem"><span class="k">Preflight verdict</span><span class="v">Ready</span></div>
+              <div class="alphaReviewItem"><span class="k">Preflight verdict</span><span class="v">${escapeHtml(preflightVerdict)}</span></div>
             </div>
           </section>
           <section class="alphaReviewSection">
@@ -6352,7 +6359,7 @@ function syncModalState(){
               <div class="alphaReviewItem"><span class="k">Action label</span><span class="v">${escapeHtml(actionMeta.title)}</span></div>
               <div class="alphaReviewItem"><span class="k">ABI method</span><span class="v">${escapeHtml(methodAbi)}</span></div>
               <div class="alphaReviewItem"><span class="k">Label</span><span class="v">${escapeHtml(local.label)}</span></div>
-              <div class="alphaReviewItem"><span class="k">Full name</span><span class="v">${escapeHtml(`${local.label}.${ALPHA_AGENT_PARENT}`)}</span></div>
+              <div class="alphaReviewItem"><span class="k">Full name</span><span class="v">${escapeHtml(fullName)}</span></div>
               <div class="alphaReviewItem"><span class="k">Recipient wallet</span><span class="v alphaReviewAddress"><code title="${escapeHtml(userAccount || '')}">${escapeHtml(walletShort || 'Connect wallet')}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(userAccount || '')}">Copy</button><a href="${etherscanBase}${escapeHtml(userAccount || '')}" target="_blank" rel="noopener">Explorer</a></span></div>
               <div class="alphaReviewItem"><span class="k">Contract address</span><span class="v alphaReviewAddress"><code title="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">${escapeHtml(contractShort)}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">Copy</button><a href="${etherscanBase}${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}" target="_blank" rel="noopener">Explorer</a></span></div>
               <div class="alphaReviewItem"><span class="k">Route statement</span><span class="v">${escapeHtml(action==='register' ? 'Wrapped label and soulbound identity are issued together in one public transaction.' : action==='claimIdentity' ? 'Identity is issued for an already-owned wrapped label.' : 'Identity posture is synchronized after stale/desynced state.')}</span></div>
@@ -6363,8 +6370,12 @@ function syncModalState(){
           <section class="alphaReviewSection">
             <h3>Why this action is available now</h3>
             <div class="alphaReviewGrid">
-              <div class="alphaReviewItem"><span class="k">Source summary</span><span class="v">${escapeHtml(whyNow)}</span></div>
-              <div class="alphaReviewItem"><span class="k">Read coherence</span><span class="v">preview(label) and rootHealth() are coherent for this label and wallet.</span></div>
+              <div class="alphaReviewItem"><span class="k">preview status</span><span class="v">${escapeHtml(previewStatus)}</span></div>
+              <div class="alphaReviewItem"><span class="k">registrable</span><span class="v">${String(!!preview?.registrable)}</span></div>
+              <div class="alphaReviewItem"><span class="k">claimable</span><span class="v">${String(!!preview?.claimable)}</span></div>
+              <div class="alphaReviewItem"><span class="k">root usable</span><span class="v">${String(!!(preview?.rootUsable ?? health?.rootUsable))}</span></div>
+              <div class="alphaReviewItem"><span class="k">identity exists</span><span class="v">${String(!!preview?.identityExists)}</span></div>
+              <div class="alphaReviewItem"><span class="k">Read coherence</span><span class="v">${escapeHtml(readCoherence)}</span></div>
             </div>
           </section>
           <section class="alphaReviewSection">
@@ -6382,9 +6393,10 @@ function syncModalState(){
             <summary>Advanced technical facts</summary>
             <div class="alphaReviewGrid" style="margin-top:10px">
               <div class="alphaReviewItem"><span class="k">Method selector</span><span class="v">${escapeHtml(selector || 'Unavailable')}</span></div>
-              <div class="alphaReviewItem"><span class="k">Token/node posture</span><span class="v">${escapeHtml(preview?.tokenId ? `tokenId ${preview.tokenId}` : 'Identity not yet issued for this label')}</span></div>
+              <div class="alphaReviewItem"><span class="k">Advanced token facts</span><span class="v">${escapeHtml(preview?.tokenId ? `tokenId ${preview.tokenId}` : 'Identity not yet issued for this label')}</span></div>
             </div>
-            <pre>${escapeHtml(`Args: ["${local.label}"]
+            <pre>${escapeHtml(`Args:
+- label: "${local.label}"
 Calldata: ${calldata || 'Unavailable'}
 Preview: ${JSON.stringify({status:preview?.status,statusLabel:preview?.statusLabel,registrable:!!preview?.registrable,claimable:!!preview?.claimable,identityExists:!!preview?.identityExists,rootUsable:!!preview?.rootUsable}, null, 2)}
 rootHealth: ${JSON.stringify({active:health?.active,pausedOut:health?.pausedOut,rootUsable:health?.rootUsable}, null, 2)}`)}</pre>
