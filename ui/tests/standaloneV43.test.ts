@@ -38,16 +38,18 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("const state = !local.label ? 'idle_no_label'");
     expect(html).toContain(": !local.ok ? 'invalid_label'");
     expect(html).toContain("? 'loading_reads'");
-    expect(html).toContain("? 'preview_failed'");
+    expect(html).toContain("? 'read_failed'");
+    expect(html).toContain("? 'preview_inconsistent'");
+    expect(html).toContain("'preview_ready'");
     expect(html).toContain("'write_ready'");
-    expect(html).toContain("'write_blocked'");
+    expect(html).toContain("APP_STATE.identity.state = local.ok ? (preview ? (preview?.inconsistencies?.length ? 'preview_inconsistent' : 'preview_ready') : 'read_failed')");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loading';");
     expect(html).toContain("APP_STATE.identity.state = 'dossier_loaded';");
-    expect(html).toContain("APP_STATE.identity.state = 'tx_review';");
+    expect(html).toContain("APP_STATE.identity.state = 'review_open';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_pending';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_success';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_failed';");
-    expect(html).toContain("const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY");
+    expect(html).toContain("const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, fullName:local.label ? `${local.label}.${ALPHA_AGENT_PARENT}` : '', contract:FREE_TRIAL_REGISTRAR_IDENTITY");
     expect(html).toContain('if(!isCurrentIdentityRequest(requestId)) return;');
   });
 
@@ -128,6 +130,9 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain('Advanced technical facts');
     expect(html).toContain('Authorize register(string)');
     expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
+    expect(html).toContain("if(!preview || !previewFresh) return setToast('Reads are still resolving for this label. Wait for preview(label) and rootHealth() before opening review.', 'warn');");
+    expect(html).toContain('Explorer</a>');
+    expect(html).toContain("bindAlphaIdentityReviewFocusTrap();");
   });
 
   it('hardens admin argument modal wiring with null guards and contract-specific subtitle address', () => {
