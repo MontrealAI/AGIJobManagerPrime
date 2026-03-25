@@ -41,9 +41,8 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("? 'read_failed'");
     expect(html).toContain("'preview_inconsistent'");
     expect(html).toContain("'write_ready'");
+    expect(html).toContain("'preview_ready'");
     expect(html).toContain("'write_blocked'");
-    expect(html).toContain("APP_STATE.identity.state = 'dossier_loading';");
-    expect(html).toContain("APP_STATE.identity.state = 'dossier_loaded';");
     expect(html).toContain("APP_STATE.identity.state = 'review_open';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_pending';");
     expect(html).toContain("APP_STATE.identity.state = 'tx_success';");
@@ -108,7 +107,7 @@ describe('standalone v43 artifact', () => {
     const html = loadHtml();
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
-    expect(html).toContain('Authorize only when this summary matches your intent and wallet.');
+    expect(html).toContain('Authorize only when the action, label, wallet, and contract all match your intent.');
     expect(html).toContain('function trapAlphaIdentityReviewFocus(evt)');
     expect(html).toContain("const wasOpen = !!(m && m.classList.contains('open'));");
     expect(html).toContain('APP_STATE.identity.lastFocusedBeforeReview = null;');
@@ -143,7 +142,7 @@ describe('standalone v43 artifact', () => {
   it('keeps mobile-safe sticky review footer and removes legacy hidden-control copy', () => {
     const html = loadHtml();
     expect(html).toContain('#alphaIdentityReviewModal .alphaReviewFooter{position:sticky;bottom:0;z-index:6;');
-    expect(html).toContain('#alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(168px + env(safe-area-inset-bottom))}');
+    expect(html).toContain('#alphaIdentityReviewModal .alphaReviewBody{padding-bottom:calc(192px + env(safe-area-inset-bottom))}');
     expect(html).toContain('Reserved hidden control');
     expect(html).not.toContain('Legacy hidden control');
   });
