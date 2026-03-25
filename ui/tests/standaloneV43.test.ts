@@ -4,14 +4,15 @@ import { describe, expect, it } from 'vitest';
 
 describe('standalone v43 artifact', () => {
   const file = path.resolve(__dirname, '../agijobmanager_genesis_job_mainnet_2026-03-05-v43.html');
-  const html = fs.readFileSync(file, 'utf8');
+  const loadHtml = () => fs.readFileSync(file, 'utf8');
 
   it('exists and is versioned as v43', () => {
     expect(fs.existsSync(file)).toBe(true);
-    expect(html).toContain('Prime Mainnet Console · v43');
+    expect(loadHtml()).toContain('Prime Mainnet Console · v43');
   });
 
   it('pins required identity contract and ABI reads/writes', () => {
+    const html = loadHtml();
     expect(html).toContain('const FREE_TRIAL_REGISTRAR_IDENTITY = "0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a";');
     [
       'ROOT_NAME','ROOT_NODE','TRIAL_PERIOD','PARENT_GRACE_PERIOD','MIN_LABEL_LENGTH','MAX_LABEL_LENGTH','REQUIRED_CHILD_FUSES',
@@ -21,6 +22,7 @@ describe('standalone v43 artifact', () => {
   });
 
   it('keeps direct identity routing on FreeTrialSubdomainRegistrarIdentity with 0 ETH', () => {
+    const html = loadHtml();
     expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.claimIdentity(local.label).send({from:userAccount, value:'0'})");
     expect(html).toContain("freeTrialRegistrarIdentity.methods.syncIdentityByLabel(local.label).send({from:userAccount, value:'0'})");
@@ -32,6 +34,7 @@ describe('standalone v43 artifact', () => {
   });
 
   it('uses deterministic state machine + normalized snapshot + stale-request guards', () => {
+    const html = loadHtml();
     expect(html).toContain("identity:{preview:null,rootHealth:null,label:\"\",tokenData:null,previewLabel:\"\",requestId:0,activeRequestId:0,state:'idle_no_label',snapshot:null");
     expect(html).toContain("const state = !local.label ? 'idle_no_label'");
     expect(html).toContain(": !local.ok ? 'invalid_label'");
@@ -50,6 +53,7 @@ describe('standalone v43 artifact', () => {
   });
 
   it('parses preview/rootHealth deterministically and maps status-to-recommendation', () => {
+    const html = loadHtml();
     expect(html).toContain('function parseIdentityPreviewResult(v)');
     expect(html).toContain('if(fromArray && v.length < 22) return null;');
     expect(html).toContain('function parseIdentityRootHealthResult(health)');
@@ -66,6 +70,7 @@ describe('standalone v43 artifact', () => {
   });
 
   it('keeps preview-failure posture conservative without expert register fallback', () => {
+    const html = loadHtml();
     expect(html).toContain("reason:'preview(label) read failed'");
     expect(html).toContain("recommendation='No write recommended'");
     expect(html).toContain("title='preview(label) failed for this label.'");
@@ -75,6 +80,7 @@ describe('standalone v43 artifact', () => {
   });
 
   it('keeps register write-gating independent of agent/validator verification posture', () => {
+    const html = loadHtml();
     const gateStart = html.indexOf('function identityWriteLockedReason(preview)');
     const gateEnd = html.indexOf('function deriveAlphaIdentityUiState()', gateStart);
     expect(gateStart).toBeGreaterThan(-1);
@@ -90,19 +96,22 @@ describe('standalone v43 artifact', () => {
   });
 
   it('renders not-applicable and graceful tokenURI parsing outcomes', () => {
+    const html = loadHtml();
     expect(html).toContain("'Not applicable (identity not issued)'");
     expect(html).toContain("'Identity not yet issued'");
-    expect(html).toContain("APP_STATE.identity.errors.tokenDossier = `tokenURI parse failed:");
+    expect(html).toContain('APP_STATE.identity.errors.tokenDossier = `tokenURI parse failed:');
     expect(html).toContain("if(el('alphaIdentityTokenMetaName')) el('alphaIdentityTokenMetaName').textContent = 'Malformed tokenURI metadata payload';");
   });
 
   it('keeps mobile action rail + sticky review affordance copy in place', () => {
+    const html = loadHtml();
     expect(html).toContain('Mobile-ready action rail');
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
     expect(html).toContain('Final authorize control remains sticky and reachable on mobile.');
   });
 
   it('removes public compatibility-alias wording from identity flow and keeps compatibility controls inert', () => {
+    const html = loadHtml();
     expect(html).not.toContain('Compatibility register alias');
     expect(html).not.toContain('Compatibility-only alias');
     expect(html).toContain('Legacy hidden control');
