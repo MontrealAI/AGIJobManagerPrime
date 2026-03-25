@@ -475,6 +475,18 @@
     .alphaReviewAdvanced{grid-column:1 / -1}
     .alphaReviewAdvanced summary{cursor:pointer;font-weight:600}
     .alphaReviewAdvanced pre{margin:8px 0 0;padding:10px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);white-space:pre-wrap;overflow-wrap:anywhere}
+    .alphaReviewModalCard{background:linear-gradient(180deg,#160d24,#0f0a18);border:1px solid rgba(201,179,245,.24);box-shadow:0 34px 90px rgba(4,6,16,.62)}
+    .alphaReviewModalCard .alphaReviewBody{min-height:0;overflow:auto;padding:6px 2px calc(140px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(160px + env(safe-area-inset-bottom))}
+    #alphaIdentityReviewFacts{display:grid;gap:12px}
+    .alphaReviewHeader{padding-bottom:14px}
+    .alphaReviewHeader .eyebrow{color:#cfb8ff}
+    .alphaReviewHeader h2{font-size:1.42rem;letter-spacing:.01em}
+    .alphaReviewSection{background:rgba(242,233,255,.035);border-color:rgba(220,206,248,.18)}
+    .alphaReviewItem .k{color:#c5b6dc}
+    .alphaReviewItem .v{color:#f7f2ff}
+    .alphaReviewFooter{margin:0 -18px calc(-40px - env(safe-area-inset-bottom));padding:14px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(15,10,24,.4),#120c1d 22%,#120c1d);border-top:1px solid rgba(222,206,248,.2);box-shadow:none}
+    .alphaReviewFooter .helper{color:#ddd0ef}
+    .alphaReviewCopy{min-height:44px;display:inline-flex;align-items:center}
     #alphaAgentMintSection .mintGrid,#alphaAgentMintSection .actions,#alphaAgentMintSection .reviewFacts{align-items:start}
     #alphaAgentMintSection .mintPreview,#alphaAgentMintSection #alphaIdentityRootHealthCard{height:auto;min-height:0;overflow:hidden}
     #alphaAgentMintSection .miniTable td:last-child,#alphaAgentMintSection .reviewFact .v{overflow-wrap:anywhere;word-break:break-word}
@@ -764,6 +776,11 @@
       .reviewFooter .actions{display:grid;width:100%}
       .reviewFooter .btn-primary,.reviewFooter .btn[data-primary="true"],.actions .btn-primary,.builderActions .btn-primary,.heroActions .btn-primary,.premiumRoleActionRow .btn-primary{order:-2}
       .reviewFooter .btn-danger,.actions .btn-danger,.builderActions .btn-danger,.premiumRoleActionRow .btn-danger{order:3}
+      #alphaIdentityReviewModal .alphaReviewModalCard{padding-bottom:0!important;border-radius:20px 20px 0 0}
+      #alphaIdentityReviewModal .alphaReviewBody{padding:6px 0 calc(156px + env(safe-area-inset-bottom))!important}
+      #alphaIdentityReviewModal .alphaReviewFooter{margin:0!important;padding:12px 14px calc(18px + env(safe-area-inset-bottom))!important;border-radius:0!important;background:linear-gradient(180deg,rgba(13,9,22,.72),#120c1d)!important}
+      #alphaIdentityReviewModal .alphaReviewFooter .actions{grid-template-columns:1fr}
+      #alphaIdentityReviewModal .alphaReviewFooter .actions .btn{width:100%;min-height:52px}
       .premiumStickyBar{position:sticky;bottom:0;border-radius:20px 20px 0 0;padding:14px 16px calc(22px + env(safe-area-inset-bottom));margin:18px -4px 0;box-shadow:0 -18px 34px rgba(88,67,119,.12)}
       .modalBackdrop{padding:0;align-items:flex-end;overflow-y:auto;-webkit-overflow-scrolling:touch}
       .modalCard,.commandModalCard,.reviewModalCard{width:100vw;max-width:100vw;height:auto;max-height:calc(var(--app-vh,1vh) * 100);min-height:0;border-radius:18px 18px 0 0;padding:14px 12px calc(44px + env(safe-area-inset-bottom));margin-top:auto;overflow:hidden;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom))}
@@ -803,6 +820,7 @@
       .noticeTitle,.subtleTitle{font-size:1rem}
       .starBtn{width:44px;min-width:44px;height:44px}
       .reviewFooter{gap:10px}
+      #alphaIdentityReviewModal .alphaReviewFooter{padding-bottom:calc(20px + env(safe-area-inset-bottom))!important}
       .alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaModeGrid,.alphaReadinessGrid,.alphaReadinessFoot,.alphaLabelDossier,.alphaPreviewMetrics,.alphaPreviewSupport,.alphaActionGuideGrid,.alphaActionGuideRow,.alphaDecisionList,.alphaIntroStats,.alphaVerificationDeck,.alphaVerificationSignals{grid-template-columns:1fr!important}
       .alphaQuickFacts{grid-template-columns:1fr}
       .alphaPrimaryActions,.alphaSecondaryActions,.alphaModeTabs,.alphaTermsInlineActions{grid-template-columns:1fr!important;display:grid}
@@ -2302,12 +2320,14 @@
     </div>
 
     <input id="mintAlphaRecipient" type="hidden" value="">
-    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Legacy hidden control</button>
+    <button id="mintAlphaAgentBtn" class="sr-only" type="button" hidden aria-hidden="true" tabindex="-1">Hidden compatibility control (disabled)</button>
 
     <div id="alphaIdentityReviewModal" class="modalBackdrop" aria-hidden="true">
-      <div class="modalCard reviewModalCard">
+      <div class="modalCard reviewModalCard alphaReviewModalCard">
         <div class="modalHeader alphaReviewHeader"><div><div class="eyebrow">Mainnet Authorization Memo</div><h2 style="margin:4px 0 8px" id="alphaIdentityReviewTitle">Alpha identity action</h2><div class="helper" id="alphaIdentityReviewHelper">Contract-faithful action preview.</div><div class="alphaReviewHeaderPills"><span class="alphaReviewPill" id="alphaIdentityRoutePill">Route</span><span class="alphaReviewPill subtle" id="alphaIdentitySourcePill">Source: preview(label) + rootHealth()</span></div></div><button class="modalClose alphaReviewClose" id="closeAlphaIdentityReviewBtn" aria-label="Close identity transaction review">×</button></div>
-        <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
+        <div class="alphaReviewBody">
+          <div id="alphaIdentityReviewFacts" class="reviewFacts"></div>
+        </div>
         <div class="reviewFooter alphaReviewFooter" style="margin-top:12px">
           <div class="helper" id="alphaIdentityReviewFooterNote">Authorize only when this summary matches your intent and wallet.</div>
           <div class="actions"><button class="btn" id="cancelAlphaIdentityReviewBtn" aria-label="Cancel identity transaction">Cancel</button><button class="btn btn-primary" id="confirmAlphaIdentityReviewBtn" aria-label="Authorize identity transaction">Authorize on mainnet</button></div>
@@ -5900,9 +5920,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const state = !local.label ? 'idle_no_label'
         : !local.ok ? 'invalid_label'
         : (APP_STATE.identity?.async?.rootHealth === 'loading' || APP_STATE.identity?.async?.preview === 'loading') ? 'loading_reads'
-        : APP_STATE.identity?.async?.preview === 'failed' ? 'preview_failed'
-        : preview ? (preview?.inconsistencies?.length ? 'write_blocked' : (registerEnabled || claimEnabled || syncEnabled ? 'write_ready' : 'write_blocked')) : 'loading_reads';
-      const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY, requestId:Number(APP_STATE.identity?.activeRequestId||0), state, recommendation, registerEnabled, claimEnabled, syncEnabled, lockedReason:lockedReason||''};
+        : APP_STATE.identity?.async?.preview === 'failed' ? 'read_failed'
+        : !preview ? 'loading_reads'
+        : preview?.inconsistencies?.length ? 'preview_inconsistent'
+        : (registerEnabled || claimEnabled || syncEnabled) ? 'write_ready'
+        : 'preview_ready';
+      const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, fullName:local.label ? `${local.label}.${ALPHA_AGENT_PARENT}` : '', contract:FREE_TRIAL_REGISTRAR_IDENTITY, requestId:Number(APP_STATE.identity?.activeRequestId||0), state, recommendation, registerEnabled, claimEnabled, syncEnabled, lockedReason:lockedReason||'', previewStatus:preview?.status ?? null, previewStatusLabel:preview?.statusLabel || '', rootUsable:preview?.rootUsable ?? health?.rootUsable ?? null, termsAccepted:!!hasAcceptedTerms};
       APP_STATE.identity.snapshot = snapshot;
       APP_STATE.identity.state = state;
       return {local, preview, previewFresh, health, rootMismatch, lockedReason, registerEnabled, claimEnabled, syncEnabled, recommendation, tone, title, body, state, snapshot};
@@ -6159,7 +6182,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       APP_STATE.identity.preview = preview;
       APP_STATE.identity.previewLabel = local.label || '';
       APP_STATE.identity.async.preview = local.ok ? (preview ? 'loaded' : 'failed') : 'idle';
-      APP_STATE.identity.state = local.ok ? (preview ? 'preview_loaded' : 'preview_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
+      APP_STATE.identity.state = local.ok ? (preview ? (preview?.inconsistencies?.length ? 'preview_inconsistent' : 'preview_ready') : 'read_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : (APP_STATE.identity?.async?.preview === 'failed' ? 'preview failed' : 'loading');
       if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
@@ -6256,10 +6279,12 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       updateMissionControl();
     }
     function openAlphaIdentityReview(action){
-      const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
-      const preview = APP_STATE.identity.preview;
-      const health = APP_STATE.identity.rootHealth;
-      const previewFresh = alphaIdentityPreviewIsFresh(local.label);
+      const ui = deriveAlphaIdentityUiState();
+      const local = ui.local;
+      const preview = ui.preview;
+      const health = ui.health;
+      const snapshot = APP_STATE.identity?.snapshot || {};
+      const previewFresh = ui.previewFresh;
       const lockedReason = previewFresh ? identityWriteLockedReason(preview) : 'Preview is refreshing for this label.';
       const actionMeta = {
         register:{title:'Register Alpha-Agent identity', helper:'This authorizes register(string) to issue the wrapped name and soulbound identity to your connected wallet in one transaction.', route:'Register now', enabled:!lockedReason && !!preview?.registrable, cta:'Authorize register(string)', outcome:'Issues wrapped name + soulbound identity together.'},
@@ -6267,6 +6292,9 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         syncIdentityByLabel:{title:'Sync stale Alpha-Agent identity', helper:'This authorizes syncIdentityByLabel(string) to repair desynced or expired local identity posture.', route:'Sync stale identity', enabled:!lockedReason && !!preview?.identityExists && (preview?.status===3 || preview?.status===4), cta:'Authorize syncIdentityByLabel(string)', outcome:'Repairs stale/desynced identity posture and refreshes reads.'}
       }[action] || {title:`${action} Alpha Agent Identity`, helper:'Contract-faithful action preview.', enabled:false, cta:'Submit'};
       if(!local.ok) return setToast(local.reason, 'warn');
+      if(!preview || !previewFresh) return setToast('Reads are still resolving for this label. Wait for preview(label) and rootHealth() before opening review.', 'warn');
+      if(snapshot.state === 'read_failed') return setToast('preview(label) read failed. Retry reads before opening transaction review.', 'warn');
+      if(snapshot.state === 'preview_inconsistent') return setToast('Read inconsistency detected. Refresh preview/root reads before write review.', 'warn');
       if(lockedReason) return setToast(lockedReason, 'warn');
       if(!actionMeta.enabled) return setToast('Current preview does not allow that identity action yet.', 'warn');
       const methodLabel = action==='register' ? 'register(label)' : action==='claimIdentity' ? 'claimIdentity(label)' : 'syncIdentityByLabel(label)';
@@ -6275,9 +6303,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       APP_STATE.identity.parity = {contract:FREE_TRIAL_REGISTRAR_IDENTITY, method:methodLabel, args:[local.label], value:'0', chainId:isMainnet ? 1 : (APP_STATE.wallet?.chainId || null), from:userAccount || '', calldata};
       const walletShort = shortAddr(userAccount || '');
       const contractShort = shortAddr(FREE_TRIAL_REGISTRAR_IDENTITY);
-      const previewStatus = `${preview?.statusLabel || 'unknown'} (${preview?.status ?? 'n/a'})`;
+      const previewStatus = `${preview?.statusLabel || 'unresolved'} (${preview?.status ?? 'n/a'})`;
       const rootPosture = health?.rootUsable === true ? 'Usable' : health?.rootUsable === false ? 'Blocked' : 'Pending';
       const preflightVerdict = lockedReason ? 'Blocked' : 'Ready';
+      const walletHref = userAccount ? `https://etherscan.io/address/${userAccount}` : '';
+      const contractHref = `https://etherscan.io/address/${FREE_TRIAL_REGISTRAR_IDENTITY}`;
       const factsHtml = `
         <section class="alphaReviewSection">
           <h3>Decision summary</h3>
@@ -6285,8 +6315,11 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
             <div class="alphaReviewItem"><span class="k">Recommended action</span><span class="v">${escapeHtml(actionMeta.route || methodLabel)}</span></div>
             <div class="alphaReviewItem"><span class="k">Preview status</span><span class="v">${escapeHtml(previewStatus)}</span></div>
             <div class="alphaReviewItem"><span class="k">Root posture</span><span class="v">${escapeHtml(rootPosture)}</span></div>
+            <div class="alphaReviewItem"><span class="k">Wallet</span><span class="v">${escapeHtml(walletShort || 'Not connected')}</span></div>
             <div class="alphaReviewItem"><span class="k">Network</span><span class="v">${isMainnet ? 'Ethereum Mainnet (chainId 1)' : `chainId ${escapeHtml(String(APP_STATE.wallet?.chainId || 'unknown'))}`}</span></div>
             <div class="alphaReviewItem"><span class="k">Terms accepted</span><span class="v">${hasAcceptedTerms ? 'Yes' : 'No'}</span></div>
+            <div class="alphaReviewItem"><span class="k">Contract</span><span class="v">${escapeHtml(contractShort)}</span></div>
+            <div class="alphaReviewItem"><span class="k">ETH value</span><span class="v">0 ETH (gas only)</span></div>
             <div class="alphaReviewItem"><span class="k">Preflight verdict</span><span class="v">${escapeHtml(preflightVerdict)}</span></div>
           </div>
         </section>
@@ -6297,9 +6330,8 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
             <div class="alphaReviewItem"><span class="k">ABI method</span><span class="v">${escapeHtml(action==='register'?'register(string)':action==='claimIdentity'?'claimIdentity(string)':'syncIdentityByLabel(string)')}</span></div>
             <div class="alphaReviewItem"><span class="k">Label</span><span class="v">${escapeHtml(local.label)}</span></div>
             <div class="alphaReviewItem"><span class="k">Full name</span><span class="v">${escapeHtml(`${local.label}.${ALPHA_AGENT_PARENT}`)}</span></div>
-            <div class="alphaReviewItem"><span class="k">Recipient wallet</span><span class="v alphaReviewAddress"><code title="${escapeHtml(userAccount || '')}">${escapeHtml(walletShort || 'Connect wallet')}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(userAccount || '')}">Copy</button></span></div>
-            <div class="alphaReviewItem"><span class="k">Contract</span><span class="v alphaReviewAddress"><code title="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">${escapeHtml(contractShort)}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">Copy</button></span></div>
-            <div class="alphaReviewItem"><span class="k">ETH value</span><span class="v">0 ETH (gas only)</span></div>
+            <div class="alphaReviewItem"><span class="k">Recipient wallet</span><span class="v alphaReviewAddress"><code title="${escapeHtml(userAccount || '')}">${escapeHtml(walletShort || 'Connect wallet')}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(userAccount || '')}">Copy</button>${walletHref ? `<a class="alphaReviewCopy" href="${walletHref}" target="_blank" rel="noopener noreferrer">Explorer</a>` : ''}</span></div>
+            <div class="alphaReviewItem"><span class="k">Contract</span><span class="v alphaReviewAddress"><code title="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">${escapeHtml(contractShort)}</code><button type="button" class="alphaReviewCopy" data-copy="${escapeHtml(FREE_TRIAL_REGISTRAR_IDENTITY)}">Copy</button><a class="alphaReviewCopy" href="${contractHref}" target="_blank" rel="noopener noreferrer">Explorer</a></span></div>
             <div class="alphaReviewItem"><span class="k">Route statement</span><span class="v">${escapeHtml(action==='register' ? 'Combined wrapped name + soulbound identity in one public route.' : action==='claimIdentity' ? 'Recovery route for wrapped ownership already in this wallet.' : 'Repair route for stale/desynced identity posture.')}</span></div>
             <div class="alphaReviewItem"><span class="k">One-line consequence</span><span class="v">${escapeHtml(actionMeta.outcome || 'This action updates identity posture on-chain.')}</span></div>
             <div class="alphaReviewItem"><span class="k">Soulbound posture</span><span class="v">Identity token is non-transferable (locked)</span></div>
@@ -6318,7 +6350,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
           <summary>Advanced technical facts</summary>
           <div class="alphaReviewGrid" style="margin-top:10px">
             <div class="alphaReviewItem"><span class="k">Method selector</span><span class="v">${escapeHtml(selector || 'Unavailable')}</span></div>
-            <div class="alphaReviewItem"><span class="k">Token / node facts</span><span class="v">${escapeHtml(preview?.tokenId ? `tokenId ${preview.tokenId}` : (preview?.node || 'Not issued yet'))}</span></div>
+            <div class="alphaReviewItem"><span class="k">Token and node facts</span><span class="v">${escapeHtml(preview?.tokenId ? `tokenId ${preview.tokenId}` : (preview?.node || 'Not issued yet'))}</span></div>
           </div>
           <pre>${escapeHtml(`Args: ["${local.label}"]\nCalldata: ${calldata || 'Unavailable'}\nPreview: ${JSON.stringify({status:preview?.status,statusLabel:preview?.statusLabel,registrable:!!preview?.registrable,claimable:!!preview?.claimable,identityExists:!!preview?.identityExists,rootUsable:!!preview?.rootUsable}, null, 2)}\nrootHealth: ${JSON.stringify({active:health?.active,pausedOut:health?.pausedOut,rootUsable:health?.rootUsable}, null, 2)}`)}</pre>
         </details>`;
@@ -6327,15 +6359,37 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       if(el('alphaIdentityReviewHelper')) el('alphaIdentityReviewHelper').textContent = actionMeta.helper;
       if(el('alphaIdentityRoutePill')) el('alphaIdentityRoutePill').textContent = actionMeta.route || methodLabel;
       if(el('alphaIdentityReviewFooterNote')) el('alphaIdentityReviewFooterNote').textContent = `Authorize only if ${local.label}.${ALPHA_AGENT_PARENT} and wallet ${walletShort || 'connected wallet'} are correct.`;
-      APP_STATE.identity.state = 'tx_review';
+      APP_STATE.identity.state = 'review_open';
       if(el('confirmAlphaIdentityReviewBtn')){
         el('confirmAlphaIdentityReviewBtn').dataset.identityAction = action;
         el('confirmAlphaIdentityReviewBtn').textContent = actionMeta.cta;
       }
       const m=el('alphaIdentityReviewModal'); if(m){ m.classList.add('open'); m.setAttribute('aria-hidden','false'); m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); }
+      bindAlphaIdentityReviewFocusTrap();
+      setTimeout(()=>el('confirmAlphaIdentityReviewBtn')?.focus(), 30);
       syncModalState();
     }
-    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize on mainnet'; syncModalState(); }
+    function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } unbindAlphaIdentityReviewFocusTrap(); if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize on mainnet'; syncModalState(); }
+    let alphaReviewFocusHandler = null;
+    function bindAlphaIdentityReviewFocusTrap(){
+      const modal = el('alphaIdentityReviewModal');
+      if(!modal) return;
+      alphaReviewFocusHandler = (evt)=>{
+        if(evt.key !== 'Tab') return;
+        const focusables = [...modal.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((node)=>!node.disabled && node.offsetParent !== null);
+        if(!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if(evt.shiftKey && document.activeElement === first){ evt.preventDefault(); last.focus(); }
+        else if(!evt.shiftKey && document.activeElement === last){ evt.preventDefault(); first.focus(); }
+      };
+      modal.addEventListener('keydown', alphaReviewFocusHandler);
+    }
+    function unbindAlphaIdentityReviewFocusTrap(){
+      const modal = el('alphaIdentityReviewModal');
+      if(modal && alphaReviewFocusHandler) modal.removeEventListener('keydown', alphaReviewFocusHandler);
+      alphaReviewFocusHandler = null;
+    }
     async function runAlphaIdentityAction(action){
       if(!requireWalletForRegistrarWrite()) return;
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
