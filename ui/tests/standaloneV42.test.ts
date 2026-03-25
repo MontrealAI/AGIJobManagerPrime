@@ -24,4 +24,25 @@ describe('standalone v42 artifact', () => {
     expect(html).toContain('Compatibility ENS URI (preview/effective)');
     expect(html).toContain('authority snapshot established');
   });
+
+  it('uses decision-card wording for preview(label) instead of authoritative issuance wording', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain('Live preview(label) decision card');
+    expect(html).not.toContain('Authoritative identity preview');
+  });
+
+  it('contains deterministic preview status mapping and expert fallback messaging', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain("0:'available',1:'active',2:'claimable',3:'expired',4:'desynced',5:'invalid-label',6:'root-inactive',7:'parent-unusable',8:'unavailable'");
+    expect(html).toContain('preview(label) failed; expert direct register fallback available');
+  });
+
+  it('renders direct register review facts against FreeTrialSubdomainRegistrarIdentity', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain("['Contract', 'FreeTrialSubdomainRegistrarIdentity']");
+    expect(html).toContain("['Contract address', FREE_TRIAL_REGISTRAR_IDENTITY]");
+    expect(html).toContain("['Method', methodLabel]");
+    expect(html).toContain("['ETH value', '0']");
+    expect(html).toContain("freeTrialRegistrarIdentity.methods.register(local.label).send({from:userAccount, value:'0'})");
+  });
 });
