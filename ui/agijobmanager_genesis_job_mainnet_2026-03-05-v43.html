@@ -8850,15 +8850,31 @@ createJobPage:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{n
     async function collectAdminArgs(target, method, danger){
       const schema = ADMIN_METHOD_SCHEMAS[method] || [];
       return new Promise((resolve)=>{
-        if(el('adminArgsTitle')) el('adminArgsTitle').textContent = `Prepare ${method}`;
-        if(el('adminArgsSubtitle')) el('adminArgsSubtitle').textContent = `${target === 'ens' ? 'ENSJobPages' : 'AGIJobManager'} · ${resolvedEnsJobPagesAddress || 'unresolved address'}`;
-        if(el('adminArgsRisk')) el('adminArgsRisk').textContent = danger ? 'High-risk action. Confirm authorization posture, arguments, and irreversible impact.' : 'Routine admin action. Confirm method arguments before wallet submission.';
-        if(el('adminArgsFacts')) el('adminArgsFacts').innerHTML = `<div class="reviewFact"><span class="k">Target contract</span><span class="v">${escapeHtml(target === 'ens' ? 'ENSJobPages' : 'AGIJobManager')}</span></div><div class="reviewFact"><span class="k">Method</span><span class="v">${escapeHtml(method)}</span></div><div class="reviewFact"><span class="k">Authorization posture</span><span class="v">Wallet must already match owner/moderator constraints.</span></div>`;
-        if(el('adminArgsForm')) el('adminArgsForm').innerHTML = schema.map((field, idx)=>`<div><label for="adminArg_${idx}">${escapeHtml(field.name)} <span class="muted">(${escapeHtml(field.type)})</span></label><input id="adminArg_${idx}" type="text" placeholder="${escapeHtml(field.placeholder || field.type)}"></div>`).join('') || '<div class="helper">This method takes no explicit arguments.</div>';
-        const close=(result)=>{ el('adminArgsModal')?.classList.remove('open'); el('adminArgsModal')?.setAttribute('aria-hidden','true'); resolve(result); };
+        const modal = el('adminArgsModal');
+        const formNode = el('adminArgsForm');
         const confirmBtn = el('confirmAdminArgsBtn');
         const cancelBtn = el('cancelAdminArgsBtn');
         const closeBtn = el('closeAdminArgsModal');
+        if(!modal || !formNode || !confirmBtn || !cancelBtn || !closeBtn){
+          setToast('Admin argument modal is unavailable in this build.', 'bad');
+          resolve(null);
+          return;
+        }
+        if(el('adminArgsTitle')) el('adminArgsTitle').textContent = `Prepare ${method}`;
+        const targetAddress = target === 'ens'
+          ? (resolvedEnsJobPagesAddress || ensJobPages?.options?.address || 'unresolved ENSJobPages address')
+          : (AGI_JOB_MANAGER || agiJobManager?.options?.address || 'unresolved AGIJobManager address');
+        if(el('adminArgsSubtitle')) el('adminArgsSubtitle').textContent = `${target === 'ens' ? 'ENSJobPages' : 'AGIJobManager'} · ${targetAddress}`;
+        if(el('adminArgsRisk')) el('adminArgsRisk').textContent = danger ? 'High-risk action. Confirm authorization posture, arguments, and irreversible impact.' : 'Routine admin action. Confirm method arguments before wallet submission.';
+        if(el('adminArgsFacts')) el('adminArgsFacts').innerHTML = `<div class="reviewFact"><span class="k">Target contract</span><span class="v">${escapeHtml(target === 'ens' ? 'ENSJobPages' : 'AGIJobManager')}</span></div><div class="reviewFact"><span class="k">Method</span><span class="v">${escapeHtml(method)}</span></div><div class="reviewFact"><span class="k">Authorization posture</span><span class="v">Wallet must already match owner/moderator constraints.</span></div>`;
+        formNode.innerHTML = schema.map((field, idx)=>`<div><label for="adminArg_${idx}">${escapeHtml(field.name)} <span class="muted">(${escapeHtml(field.type)})</span></label><input id="adminArg_${idx}" type="text" placeholder="${escapeHtml(field.placeholder || field.type)}"></div>`).join('') || '<div class="helper">This method takes no explicit arguments.</div>';
+        const close=(result)=>{
+          modal.classList.remove('open');
+          modal.setAttribute('aria-hidden','true');
+          modal.removeEventListener('click', onBackdropClick);
+          resolve(result);
+        };
+        const onBackdropClick = (evt)=>{ if(evt?.target?.id === 'adminArgsModal') close(null); };
         confirmBtn.onclick = ()=>{
           try{
             const args = schema.map((field, idx)=>parseAdminArg(field.type, el(`adminArg_${idx}`)?.value, field.name || `arg${idx+1}`));
@@ -8869,8 +8885,9 @@ createJobPage:[{name:'jobId',type:'uint256'},{name:'employer',type:'address'},{n
         };
         cancelBtn.onclick = ()=>close(null);
         closeBtn.onclick = ()=>close(null);
-        el('adminArgsModal')?.classList.add('open');
-        el('adminArgsModal')?.setAttribute('aria-hidden','false');
+        modal.addEventListener('click', onBackdropClick);
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden','false');
       });
     }
     async function executeAdminControl(target, method, danger=false){

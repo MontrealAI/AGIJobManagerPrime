@@ -130,4 +130,13 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain('Authorize register(string)');
     expect(html).toContain("if(lockedReason) return setToast(lockedReason, 'warn');");
   });
+
+  it('hardens admin argument modal wiring with null guards and contract-specific subtitle address', () => {
+    const html = loadHtml();
+    expect(html).toContain("if(!modal || !formNode || !confirmBtn || !cancelBtn || !closeBtn){");
+    expect(html).toContain("setToast('Admin argument modal is unavailable in this build.', 'bad');");
+    expect(html).toContain("resolvedEnsJobPagesAddress || ensJobPages?.options?.address || 'unresolved ENSJobPages address'");
+    expect(html).toContain("AGI_JOB_MANAGER || agiJobManager?.options?.address || 'unresolved AGIJobManager address'");
+    expect(html).toContain("modal.addEventListener('click', onBackdropClick);");
+  });
 });
