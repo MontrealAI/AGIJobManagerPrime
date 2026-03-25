@@ -28,7 +28,7 @@ npm run dev
 
 ## Demo mode
 
-`.env.example` is prefilled with the official `Prime mainnet stack (2026-03-05 lineage)` Ethereum mainnet deployment defaults.
+`.env.example` is prefilled with the official `v0.1.0-mainnet-beta` Ethereum mainnet deployment defaults.
 ```bash
 NEXT_PUBLIC_DEMO_MODE=1 NEXT_PUBLIC_DEMO_ACTOR=visitor npm run dev
 ```
