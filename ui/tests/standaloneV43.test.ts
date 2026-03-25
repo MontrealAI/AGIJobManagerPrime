@@ -110,6 +110,8 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain('Final transaction review keeps the authorize control pinned within reach on mobile.');
     expect(html).toContain('Authorize only when this summary matches your intent and wallet.');
     expect(html).toContain('function trapAlphaIdentityReviewFocus(evt)');
+    expect(html).toContain("const wasOpen = !!(m && m.classList.contains('open'));");
+    expect(html).toContain('APP_STATE.identity.lastFocusedBeforeReview = null;');
   });
 
   it('removes public compatibility-alias wording and legacy duplicate identity review modal', () => {

@@ -6406,7 +6406,7 @@ rootHealth: ${JSON.stringify({active:health?.active,pausedOut:health?.pausedOut,
       if(focusTarget) setTimeout(()=>focusTarget.focus(), 10);
       syncModalState();
     }
-        function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize on Ethereum mainnet'; if(APP_STATE.identity?.lastFocusedBeforeReview?.focus){ setTimeout(()=>APP_STATE.identity.lastFocusedBeforeReview.focus(), 20); } syncModalState(); }
+        function closeAlphaIdentityReview(){ const m=el('alphaIdentityReviewModal'); const wasOpen = !!(m && m.classList.contains('open')); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } if(el('confirmAlphaIdentityReviewBtn')) el('confirmAlphaIdentityReviewBtn').textContent = 'Authorize on Ethereum mainnet'; const priorFocus = APP_STATE.identity?.lastFocusedBeforeReview; APP_STATE.identity.lastFocusedBeforeReview = null; if(wasOpen && priorFocus?.focus){ setTimeout(()=>priorFocus.focus(), 20); } syncModalState(); }
     async function runAlphaIdentityAction(action){
       if(!requireWalletForRegistrarWrite()) return;
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
