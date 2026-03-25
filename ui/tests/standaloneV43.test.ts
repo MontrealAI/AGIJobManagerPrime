@@ -25,6 +25,12 @@ describe('standalone v43 artifact', () => {
     expect(html).toContain("identity:{preview:null,rootHealth:null,label:\"\",tokenData:null,previewLabel:\"\",requestId:0,activeRequestId:0,state:'idle_no_label',snapshot:null");
     expect(html).toContain("const snapshot = {chainId:isMainnet?1:(APP_STATE.wallet?.chainId||null), wallet:userAccount||'', label:local.label, contract:FREE_TRIAL_REGISTRAR_IDENTITY");
     expect(html).toContain("reason:'preview(label) read failed'");
+    expect(html).toContain('function identityPreviewInconsistencies(p)');
+    expect(html).toContain("if(preview?.inconsistencies?.length) return setToast('preview(label) returned inconsistent status/booleans. Retry preview before write.', 'warn');");
+    expect(html).toContain("APP_STATE.identity.state = 'tx_review';");
+    expect(html).toContain("APP_STATE.identity.state = 'tx_pending';");
+    expect(html).toContain("APP_STATE.identity.state = 'tx_success';");
+    expect(html).toContain("APP_STATE.identity.state = 'tx_failed';");
     expect(html).not.toContain('expert direct register fallback available');
   });
 
