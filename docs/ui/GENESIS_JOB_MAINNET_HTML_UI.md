@@ -58,10 +58,12 @@ Based on the file contents, this standalone page includes:
 - Mission/readiness dashboards for employer/agent/validator posture.
 - Live jobs table with search, filters, sorting, watchlist, and detail modals.
 - On-chain actions for lifecycle paths (create/apply/approve/disapprove/finalize/dispute/expire/cancel, ENS lock, request completion), with tracked transaction UX.
+- Premium Discovery writes now run a review-time preflight (`estimateGas` + `eth_call`) before the authorize step is treated as ready, so obvious chain/blocker failures surface before wallet signing.
 - Local-first job metadata builder and IPFS upload helpers (configurable endpoint/JWT fields stored in browser context).
 - Completion helper that normalizes URIs and submits completion requests.
 - `$AGIALPHA` bridge/conversion console (deBridge widget embedding plus `depositExact` flow into `AGIALPHAEqualMinterVault`).
 - Embedded Terms & Conditions section and in-page acceptance gating for write controls.
+- Procurement inspector reads include freshness guards so stale responses from older requests do not overwrite newer procurement loads.
 
 Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v44` file.
 
