@@ -136,6 +136,13 @@ describe('standalone v45 identity tuple/decode regressions', () => {
     expect(isCurrentIdentityRequest(requestB)).toBe(true);
   });
 
+
+  it('keeps copy sources machine-safe while still flagging derived state separately', () => {
+    expect(html.includes("alphaIdentityFullName').textContent = preview?.fullName || (local.ok ? (derivedFullName || `${local.label}.${ALPHA_AGENT_PARENT}`)")).toBe(true);
+    expect(html.includes("alphaIdentityTokenId').textContent = preview?.tokenId || (local.ok ? (derivedTokenId || 'Derived after preview(label)')")).toBe(true);
+    expect(html.includes('Derived fields shown below are derived locally; not yet confirmed on-chain')).toBe(true);
+  });
+
   it('keeps registrable unresolved copy conservative when preview is unavailable', () => {
     expect(html.includes('Unknown (preview required)')).toBe(true);
     expect(html.includes("derivedAvailable === null ? 'Loading preview(label)' : String(!!derivedAvailable)")).toBe(false);
