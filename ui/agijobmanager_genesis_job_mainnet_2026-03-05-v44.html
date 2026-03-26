@@ -2155,7 +2155,7 @@
                     <label for="mintAlphaLabel">Desired label</label>
                     <input id="mintAlphaLabel" type="text" placeholder="e.g. eliteagent01" autocomplete="off" spellcheck="false">
                     <div class="alphaFieldHint">The canonical identity route issues only to the connected wallet. Lowercase letters and digits only, with length between 8 and 63. Full issuance remains beneath <b>alpha.agent.agi.eth</b>.</div>
-                    <div class="inlineError" id="mintLabelValidation">Enter a label to begin.</div>
+                    <div class="inlineError" id="mintLabelValidation">Awaiting valid label.</div>
                   </div>
                   <div class="alphaCompactList alphaLabelDossier">
                     <div class="alphaCompactItem"><span class="k">Full name</span><span class="v" id="mintAlphaFullName">Awaiting valid label for derived full name</span></div>
@@ -6150,6 +6150,28 @@ function syncModalState(){
       APP_STATE.identity.state = state;
       return {local, preview, previewFresh, health, rootMismatch, lockedReason, registerEnabled, claimEnabled, syncEnabled, recommendation, tone, title, body, state, snapshot};
     }
+    function updateMintLabelValidation(ui){
+      const node = el('mintLabelValidation');
+      if(!node) return;
+      const local = ui?.local || validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
+      if(!local.label){
+        node.textContent = 'Awaiting valid label.';
+        return;
+      }
+      if(!local.ok){
+        node.textContent = local.reason;
+        return;
+      }
+      if(APP_STATE.identity?.async?.preview === 'failed'){
+        node.textContent = 'preview(label) failed. Retry preview before authorizing a write.';
+        return;
+      }
+      if(ui?.preview){
+        node.textContent = `Label format valid. Live status: ${String(ui.preview.statusLabel || 'unavailable').toUpperCase()}.`;
+        return;
+      }
+      node.textContent = 'Label format valid. Loading preview(label) + rootHealth()…';
+    }
 
     function setAlphaIdentityMode(mode){
       const nextMode = 'recommended';
@@ -6192,6 +6214,7 @@ function syncModalState(){
     }
     function updateAlphaIdentityReadiness(){
       const ui = deriveAlphaIdentityUiState();
+      updateMintLabelValidation(ui);
       const preview = ui.preview;
       const health = ui.health;
       const setItem = (id, value, state='caution')=>{
@@ -6303,7 +6326,7 @@ function syncModalState(){
           writePosture = 'Label unavailable under current root posture.';
         }
       }
-      if(!lockedReason && ui.local?.ok && !preview){
+      if(!lockedReason && ui.local?.ok && !preview && APP_STATE.identity?.async?.preview !== 'failed'){
         suggestedMethod = 'Loading preview(label)';
       }
       if(banner) banner.dataset.tone = tone;

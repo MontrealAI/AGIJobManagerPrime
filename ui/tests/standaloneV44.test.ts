@@ -75,8 +75,17 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("recommendation='No write recommended'");
     expect(html).toContain("title='preview(label) failed for this label.'");
     expect(html).toContain("body='Retry preview(label). rootHealth() remains visible, but write controls stay conservative until preview is available.';");
+    expect(html).toContain("if(!lockedReason && ui.local?.ok && !preview && APP_STATE.identity?.async?.preview !== 'failed'){");
     expect(html).not.toContain('expert direct register fallback available');
     expect(html).not.toContain('register(label) fallback');
+  });
+
+  it('keeps label validation guidance aligned with live preview status', () => {
+    const html = loadHtml();
+    expect(html).toContain('id="mintLabelValidation">Awaiting valid label.<');
+    expect(html).toContain("function updateMintLabelValidation(ui)");
+    expect(html).toContain("node.textContent = 'preview(label) failed. Retry preview before authorizing a write.';");
+    expect(html).toContain("node.textContent = 'Label format valid. Loading preview(label) + rootHealth()…';");
   });
 
   it('keeps register write-gating independent of agent/validator verification posture', () => {
