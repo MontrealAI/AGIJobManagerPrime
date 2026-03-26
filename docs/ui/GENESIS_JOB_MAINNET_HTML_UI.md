@@ -248,6 +248,8 @@ Write-gate conditions in v45 are explicitly tied to:
 2. Ethereum mainnet (`chainId 1`), and
 3. in-page terms acceptance checkbox.
 
+For the Alpha identity lane specifically, v45 adds an additional hard gate: `preview(label)` must decode successfully and remain coherent with `rootHealth()` before any write route is unlocked. If preview fails (network/provider, ABI decode, or contract revert), the console keeps root diagnostics visible but forces write posture to locked with explicit failure classification.
+
 ## Embedded network and contract assumptions (v45)
 
 The page hardcodes the following addresses/constants in the script block:

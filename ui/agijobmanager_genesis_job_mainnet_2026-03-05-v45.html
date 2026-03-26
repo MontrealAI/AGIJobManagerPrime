@@ -4343,6 +4343,16 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
     function decodeManagerCustomError(error){
       return decodeCustomErrorFromMap(error, buildManagerErrorSelectorMap());
     }
+    function classifyIdentityReadError(error){
+      const msg = normalizedErrorMessage(error).toLowerCase();
+      if(!msg) return 'unknown';
+      const decoded = decodeIdentityCustomError(error);
+      if(decoded) return `custom-revert:${decoded.name}`;
+      if(msg.includes('execution reverted') || msg.includes('revert')) return 'contract-revert';
+      if(msg.includes('invalid response') || msg.includes('decode') || msg.includes('abi') || msg.includes('could not decode')) return 'abi-decode';
+      if(msg.includes('network') || msg.includes('failed to fetch') || msg.includes('timeout') || msg.includes('429') || msg.includes('503') || msg.includes('gateway') || msg.includes('provider')) return 'network-provider';
+      return 'unknown';
+    }
     async function runIdentityPreflight(action, label){
       if(!web3 || !userAccount || !freeTrialRegistrarIdentity) return {ok:false, verdict:'Unavailable', note:'Wallet/provider unavailable', calldata:'', estimateGas:null};
       if(!isMainnet) return {ok:false, verdict:'Blocked', note:'Switch to Ethereum mainnet before preflight.', calldata:'', estimateGas:null};
@@ -5891,9 +5901,9 @@ function syncModalState(){
       const local = validateAlphaLabelLocal(el('mintAlphaLabel')?.value || '');
       const full = local.ok ? `${local.label}.${ALPHA_AGENT_PARENT}` : '—';
       const previewIsFresh = local.ok && alphaIdentityPreviewIsFresh(local.label);
-      if(el('mintAlphaFullName')) el('mintAlphaFullName').textContent = full;
+      if(el('mintAlphaFullName')) el('mintAlphaFullName').textContent = local.ok ? `${full} (derived locally; not yet confirmed on-chain)` : full;
       if(el('mintAlphaEnsUri')) el('mintAlphaEnsUri').textContent = local.ok ? `https://app.ens.domains/name/${full}` : '—';
-      if(el('mintAlphaNode')) el('mintAlphaNode').textContent = local.ok ? namehash(full) : '—';
+      if(el('mintAlphaNode')) el('mintAlphaNode').textContent = local.ok ? `${namehash(full)} (derived locally; not yet confirmed on-chain)` : '—';
       if(el('mintAlphaParentUsable')) el('mintAlphaParentUsable').textContent = APP_STATE.identity?.rootHealth?.rootUsable === true ? 'usable' : APP_STATE.identity?.rootHealth?.rootUsable === false ? 'blocked' : 'checking…';
       if(!previewIsFresh){
         APP_STATE.identity = APP_STATE.identity || {};
@@ -5979,6 +5989,13 @@ function unwrapTupleOutput(raw, expectedKey){
       }
       return raw;
     }
+    function tupleField(tupleLike, key, index){
+      if(tupleLike == null) return undefined;
+      if(Array.isArray(tupleLike)) return tupleLike[index];
+      if(Object.prototype.hasOwnProperty.call(tupleLike, key)) return tupleLike[key];
+      if(Object.prototype.hasOwnProperty.call(tupleLike, String(index))) return tupleLike[String(index)];
+      return undefined;
+    }
     function parseIdentityRootHealthResult(health){
       const unwrapped = unwrapTupleOutput(health, "rootName");
       if(!unwrapped) return null;
@@ -5998,19 +6015,19 @@ function unwrapTupleOutput(raw, expectedKey){
         effectiveParentExpiry:normalizeInt(health[11],0),
         rootUsable:normalizeBool(health[12])
       } : {
-        rootName:String(health.rootName||''),
-        rootNode:String(health.rootNode||''),
-        active:normalizeBool(health.active),
-        pausedOut:normalizeBool(health.pausedOut),
-        wrapperAddress:normalizeAddress(health.wrapperAddress),
-        ensRegistryAddress:normalizeAddress(health.ensRegistryAddress),
-        contractOwner:normalizeAddress(health.contractOwner),
-        wrappedParentOwner:normalizeAddress(health.wrappedParentOwner),
-        parentWrapped:normalizeBool(health.parentWrapped),
-        parentLocked:normalizeBool(health.parentLocked),
-        registrarAuthorised:normalizeBool(health.registrarAuthorised),
-        effectiveParentExpiry:normalizeInt(health.effectiveParentExpiry,0),
-        rootUsable:normalizeBool(health.rootUsable)
+        rootName:String(tupleField(health,'rootName',0)||''),
+        rootNode:String(tupleField(health,'rootNode',1)||''),
+        active:normalizeBool(tupleField(health,'active',2)),
+        pausedOut:normalizeBool(tupleField(health,'pausedOut',3)),
+        wrapperAddress:normalizeAddress(tupleField(health,'wrapperAddress',4)),
+        ensRegistryAddress:normalizeAddress(tupleField(health,'ensRegistryAddress',5)),
+        contractOwner:normalizeAddress(tupleField(health,'contractOwner',6)),
+        wrappedParentOwner:normalizeAddress(tupleField(health,'wrappedParentOwner',7)),
+        parentWrapped:normalizeBool(tupleField(health,'parentWrapped',8)),
+        parentLocked:normalizeBool(tupleField(health,'parentLocked',9)),
+        registrarAuthorised:normalizeBool(tupleField(health,'registrarAuthorised',10)),
+        effectiveParentExpiry:normalizeInt(tupleField(health,'effectiveParentExpiry',11),0),
+        rootUsable:normalizeBool(tupleField(health,'rootUsable',12))
       };
       return out;
     }
@@ -6035,7 +6052,7 @@ function unwrapTupleOutput(raw, expectedKey){
       if(fromArray && v.length < 22) return null;
       const p = fromArray
         ? {validLabel:normalizeBool(v[0]), fullName:String(v[1]||''), labelOut:String(v[2]||''), labelhash:String(v[3]||''), node:String(v[4]||''), tokenId:String(v[5]||''), rootActiveOut:normalizeBool(v[6]), pausedOut:normalizeBool(v[7]), parentWrapped:normalizeBool(v[8]), parentLocked:normalizeBool(v[9]), registrarAuthorised:normalizeBool(v[10]), rootUsable:normalizeBool(v[11]), availableOut:normalizeBool(v[12]), identityExists:normalizeBool(v[13]), registrable:normalizeBool(v[14]), claimable:normalizeBool(v[15]), tokenOwner:normalizeAddress(v[16]), wrappedOwner:normalizeAddress(v[17]), resolver:normalizeAddress(v[18]), currentWrappedExpiry:normalizeInt(v[19],0), expectedNewExpiry:normalizeInt(v[20],0), status:normalizeInt(v[21],8)}
-        : {validLabel:normalizeBool(v.validLabel), fullName:String(v.fullName||''), labelOut:String(v.labelOut||''), labelhash:String(v.labelhash||''), node:String(v.node||''), tokenId:String(v.tokenId||''), rootActiveOut:normalizeBool(v.rootActiveOut), pausedOut:normalizeBool(v.pausedOut), parentWrapped:normalizeBool(v.parentWrapped), parentLocked:normalizeBool(v.parentLocked), registrarAuthorised:normalizeBool(v.registrarAuthorised), rootUsable:normalizeBool(v.rootUsable), availableOut:normalizeBool(v.availableOut), identityExists:normalizeBool(v.identityExists), registrable:normalizeBool(v.registrable), claimable:normalizeBool(v.claimable), tokenOwner:normalizeAddress(v.tokenOwner), wrappedOwner:normalizeAddress(v.wrappedOwner), resolver:normalizeAddress(v.resolver), currentWrappedExpiry:normalizeInt(v.currentWrappedExpiry,0), expectedNewExpiry:normalizeInt(v.expectedNewExpiry,0), status:normalizeInt(v.status,8)};
+        : {validLabel:normalizeBool(tupleField(v,'validLabel',0)), fullName:String(tupleField(v,'fullName',1)||''), labelOut:String(tupleField(v,'labelOut',2)||''), labelhash:String(tupleField(v,'labelhash',3)||''), node:String(tupleField(v,'node',4)||''), tokenId:String(tupleField(v,'tokenId',5)||''), rootActiveOut:normalizeBool(tupleField(v,'rootActiveOut',6)), pausedOut:normalizeBool(tupleField(v,'pausedOut',7)), parentWrapped:normalizeBool(tupleField(v,'parentWrapped',8)), parentLocked:normalizeBool(tupleField(v,'parentLocked',9)), registrarAuthorised:normalizeBool(tupleField(v,'registrarAuthorised',10)), rootUsable:normalizeBool(tupleField(v,'rootUsable',11)), availableOut:normalizeBool(tupleField(v,'availableOut',12)), identityExists:normalizeBool(tupleField(v,'identityExists',13)), registrable:normalizeBool(tupleField(v,'registrable',14)), claimable:normalizeBool(tupleField(v,'claimable',15)), tokenOwner:normalizeAddress(tupleField(v,'tokenOwner',16)), wrappedOwner:normalizeAddress(tupleField(v,'wrappedOwner',17)), resolver:normalizeAddress(tupleField(v,'resolver',18)), currentWrappedExpiry:normalizeInt(tupleField(v,'currentWrappedExpiry',19),0), expectedNewExpiry:normalizeInt(tupleField(v,'expectedNewExpiry',20),0), status:normalizeInt(tupleField(v,'status',21),8)};
       if(!p.tokenId && p.node){ try{ p.tokenId = BigInt(p.node).toString(); }catch{} }
       p.statusLabel = IDENTITY_PREVIEW_STATUS[p.status] || `unknown-${p.status}`;
       p.inconsistencies = identityPreviewInconsistencies(p);
@@ -6375,6 +6392,8 @@ function unwrapTupleOutput(raw, expectedKey){
       APP_STATE.identity.errors.rootHealth = '';
       APP_STATE.identity.errors.preview = '';
       APP_STATE.identity.errors.tokenDossier = '';
+      APP_STATE.identity.errors.previewClass = '';
+      APP_STATE.identity.errors.previewDecoded = null;
       APP_STATE.identity.label = local.label || '';
       APP_STATE.identity.preview = null;
       APP_STATE.identity.previewLabel = '';
@@ -6388,7 +6407,7 @@ function unwrapTupleOutput(raw, expectedKey){
       const derivedTokenId = derivedNode ? (()=>{ try{ return BigInt(String(derivedNode)).toString(); }catch{ return ''; } })() : '';
       if(el('alphaIdentityFullName')) el('alphaIdentityFullName').textContent = local.ok ? (derivedFullName || `${local.label}.${ALPHA_AGENT_PARENT}`) : 'Not applicable (invalid/empty label)';
       if(el('alphaIdentityTokenId')) el('alphaIdentityTokenId').textContent = local.ok ? (derivedTokenId || 'Derived after preview(label)') : 'Not applicable (invalid/empty label)';
-      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = derivedAvailable === null ? 'Loading preview(label)' : String(!!derivedAvailable);
+      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = local.ok ? 'Unknown (preview required)' : 'Not applicable';
       const [rootName,rootNode,rootActive,paused,wrapper,registry,owner,pendingOwner,fuses,name,symbol,health,identityBalance] = await Promise.all([
         freeTrialRegistrarIdentity.methods.ROOT_NAME().call().catch(()=>''),
         freeTrialRegistrarIdentity.methods.ROOT_NODE().call().catch(()=>''),
@@ -6437,19 +6456,24 @@ function unwrapTupleOutput(raw, expectedKey){
       if(managerEns && registry && managerEns.toLowerCase() !== registry.toLowerCase()) mismatchWarnings.push('Identity ensRegistry differs from AGIJobManager.ens().');
       if(managerWrapper && wrapper && managerWrapper.toLowerCase() !== wrapper.toLowerCase()) mismatchWarnings.push('Identity wrapper differs from AGIJobManager.nameWrapper().');
 
-      const previewRaw = local.ok ? await freeTrialRegistrarIdentity.methods.preview(local.label).call().catch((err)=>{ APP_STATE.identity.errors.preview = normalizedErrorMessage(err) || 'preview(label) read failed'; return null; }) : null;
+      const previewRaw = local.ok ? await freeTrialRegistrarIdentity.methods.preview(local.label).call().catch((err)=>{
+        APP_STATE.identity.errors.preview = normalizedErrorMessage(err) || 'preview(label) read failed';
+        APP_STATE.identity.errors.previewDecoded = decodeIdentityCustomError(err);
+        APP_STATE.identity.errors.previewClass = classifyIdentityReadError(err);
+        return null;
+      }) : null;
       if(!isCurrentIdentityRequest(requestId)) return;
       const preview = parseIdentityPreviewResult(previewRaw);
       APP_STATE.identity.preview = preview;
       APP_STATE.identity.previewLabel = local.label || '';
       APP_STATE.identity.async.preview = local.ok ? (preview ? 'loaded' : 'failed') : 'idle';
       APP_STATE.identity.state = local.ok ? (preview ? 'preview_ready' : 'read_failed') : (local.label ? 'invalid_label' : 'idle_no_label');
-      if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : (APP_STATE.identity?.async?.preview === 'failed' ? 'preview failed' : 'loading');
-      if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : 'No preview loaded';
+      if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').textContent = preview ? `${preview.statusLabel} (${preview.status})` : (APP_STATE.identity?.async?.preview === 'failed' ? 'Preview read failed' : 'Preview loading');
+      if(el('alphaIdentityStatusPill')) el('alphaIdentityStatusPill').title = preview ? `preview(label) status ${preview.status}: ${preview.statusLabel}` : (APP_STATE.identity?.errors?.previewClass ? `preview(label) failed: ${APP_STATE.identity.errors.previewClass}` : 'No preview loaded');
       if(el('alphaIdentityRootPosture')) el('alphaIdentityRootPosture').textContent = preview ? `${preview.rootUsable ? 'usable' : 'blocked'} · ${preview.rootActiveOut ? 'active' : 'inactive'}` : (h ? `${h.rootUsable ? 'usable' : 'blocked'} · ${h.active ? 'active' : 'inactive'}` : '—');
       if(el('alphaIdentityExpectedExpiry')) el('alphaIdentityExpectedExpiry').textContent = preview ? formatTimestamp(preview.expectedNewExpiry || preview.currentWrappedExpiry) : '—';
       const helper = el('alphaIdentityActionHelper');
-      if(helper) helper.textContent = !preview ? (APP_STATE.identity?.async?.preview === 'failed' ? 'preview(label) failed. Retry preview; write controls remain conservative until preview resolves.' : 'The recommendation banner above will indicate whether register(label), claimIdentity(label), syncIdentityByLabel(label), or no write action is appropriate.') : preview.status === 0 ? 'Ready to use register(label) for the recommended route. This mints the wrapped name and soulbound identity together in one transaction.' : preview.status === 2 ? 'Use claimIdentity(label) when the wrapped name already belongs to the connected wallet.' : (preview.status === 3 || preview.status === 4) ? 'Use syncIdentityByLabel(label) only for stale, expired, or desynced identity posture.' : 'No write action is currently preferred for this preview state. Review the banner and diagnostics for exact posture.';
+      if(helper) helper.textContent = !preview ? (APP_STATE.identity?.async?.preview === 'failed' ? `preview(label) failed (${APP_STATE.identity?.errors?.previewClass || 'unknown'}). Retry preview; write controls remain locked until preview resolves.${APP_STATE.identity?.errors?.previewDecoded ? ` ${APP_STATE.identity.errors.previewDecoded.name}: ${APP_STATE.identity.errors.previewDecoded.remediation}` : ''}` : 'The recommendation banner above will indicate whether register(label), claimIdentity(label), syncIdentityByLabel(label), or no write action is appropriate.') : preview.status === 0 ? 'Ready to use register(label) for the recommended route. This mints the wrapped name and soulbound identity together in one transaction.' : preview.status === 2 ? 'Use claimIdentity(label) when the wrapped name already belongs to the connected wallet.' : (preview.status === 3 || preview.status === 4) ? 'Use syncIdentityByLabel(label) only for stale, expired, or desynced identity posture.' : 'No write action is currently preferred for this preview state. Review the banner and diagnostics for exact posture.';
       if(helper && preview?.inconsistencies?.length) helper.textContent = `Preview inconsistency detected: ${preview.inconsistencies.join(' ')}`;
       updateAlphaIdentityReadiness();
       updateAlphaIdentityExperience();
@@ -6457,7 +6481,7 @@ function unwrapTupleOutput(raw, expectedKey){
       if(el('alphaIdentityTokenId')) el('alphaIdentityTokenId').textContent = preview?.tokenId || (local.ok ? `${derivedTokenId || 'Derived after preview(label)'} (derived locally; not yet confirmed on-chain)` : 'Not applicable (invalid/empty label)');
       if(el('alphaIdentityExists')) el('alphaIdentityExists').textContent = preview ? String(!!preview.identityExists) : (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable');
       if(el('alphaIdentityClaimable')) el('alphaIdentityClaimable').textContent = preview ? String(!!preview.claimable) : (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable');
-      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = preview ? String(!!preview.registrable) : (derivedAvailable === null ? (local.ok ? 'Unknown (preview pending/failed)' : 'Not applicable') : String(!!derivedAvailable));
+      if(el('alphaIdentityRegistrable')) el('alphaIdentityRegistrable').textContent = preview ? String(!!preview.registrable) : (local.ok ? 'Unknown (preview required)' : 'Not applicable');
       const ui = deriveAlphaIdentityUiState();
       const lockedReason = ui.lockedReason;
       const registerEnabled = ui.registerEnabled;
@@ -6471,7 +6495,7 @@ function unwrapTupleOutput(raw, expectedKey){
         else if(registerEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: register(label) mints wrapped ENS name + soulbound identity to the connected wallet.';
         else if(claimEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: claimIdentity(label) for wrapped names already owned by the connected wallet.';
         else if(syncEnabled) el('alphaIdentityActionStatus').textContent = 'Ready: syncIdentityByLabel(label) repair path for desynced or expired identity posture.';
-        else if(APP_STATE.identity?.async?.preview === 'failed') el('alphaIdentityActionStatus').textContent = 'preview(label) read failed. Retry preview before authorizing writes.';
+        else if(APP_STATE.identity?.async?.preview === 'failed') el('alphaIdentityActionStatus').textContent = `preview(label) read failed (${APP_STATE.identity?.errors?.previewClass || 'unknown'}). Retry preview before authorizing writes.${APP_STATE.identity?.errors?.previewDecoded ? ` ${APP_STATE.identity.errors.previewDecoded.name}: ${APP_STATE.identity.errors.previewDecoded.remediation}` : ''}`;
         else if(preview?.inconsistencies?.length) el('alphaIdentityActionStatus').textContent = `Preview mismatch: ${preview.inconsistencies.join(' ')}`;
         else if(mismatchWarnings.length) el('alphaIdentityActionStatus').textContent = mismatchWarnings.join(' ');
         else el('alphaIdentityActionStatus').textContent = 'Preview loaded. No combined Alpha-Agent write is currently recommended for this label.';
