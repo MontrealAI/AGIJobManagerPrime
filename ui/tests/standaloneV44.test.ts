@@ -211,6 +211,16 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("Target contract', value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`");
   });
 
+  it('decodes discovery/manager custom errors for discovery preflight guidance', () => {
+    const html = loadHtml();
+    expect(html).toContain('const DISCOVERY_CUSTOM_ERROR_SIGNATURES = {');
+    expect(html).toContain('const MANAGER_CUSTOM_ERROR_SIGNATURES = {');
+    expect(html).toContain('function decodeDiscoveryCustomError(error)');
+    expect(html).toContain('function decodeManagerCustomError(error)');
+    expect(html).toContain('decodeDiscoveryCustomError(error) || decodeManagerCustomError(error) || decodeIdentityCustomError(error)');
+    ['NoAdvanceableAction()','SettlementPaused()','DisputeAlreadyOpen()'].forEach((signature) => expect(html).toContain(signature));
+  });
+
   it('hardens ENS preview reads with stale-request guards and authoritative vs projected copy', () => {
     const html = loadHtml();
     expect(html).toContain('let ensPreviewLoadRequestId = 0;');

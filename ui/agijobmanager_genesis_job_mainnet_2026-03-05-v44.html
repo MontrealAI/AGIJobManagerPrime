@@ -4268,15 +4268,49 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       EtherNotAccepted:{sig:'EtherNotAccepted()', rem:'This method requires exactly 0 ETH value. Keep value at zero and retry.'},
       Soulbound:{sig:'Soulbound()', rem:'Identity tokens are soulbound. Transfers and approvals are intentionally disabled.'}
     };
-    function buildIdentityErrorSelectorMap(){
-      const hash = (sig)=>{
-        if(window.ethers?.id) return window.ethers.id(sig).slice(0,10).toLowerCase();
-        if(web3?.utils?.sha3) return web3.utils.sha3(sig).slice(0,10).toLowerCase();
-        return '';
-      };
+    const DISCOVERY_CUSTOM_ERROR_SIGNATURES = {
+      InvalidParameters:{sig:'InvalidParameters()', rem:'Parameters are invalid for this procurement stage. Recheck IDs, windows, counts, and stake values.'},
+      InvalidState:{sig:'InvalidState()', rem:'Procurement state does not permit this action yet. Load latest state and use nextAction guidance.'},
+      NotAuthorized:{sig:'NotAuthorized()', rem:'Connected wallet lacks authority for this discovery action at this stage.'},
+      TooManyApplicants:{sig:'TooManyApplicants()', rem:'Applicant cap has been reached for this procurement. Wait for phase transition.'},
+      NoWinner:{sig:'NoWinner()', rem:'Winner is not finalized yet. Complete shortlist/finalist scoring flow first.'},
+      NoAdvanceableAction:{sig:'NoAdvanceableAction()', rem:'No automated phase advance is currently available. Wait for deadline or complete missing steps.'},
+      RenounceOwnershipDisabled:{sig:'RenounceOwnershipDisabled()', rem:'Ownership renounce is intentionally disabled for this contract.'}
+    };
+    const MANAGER_CUSTOM_ERROR_SIGNATURES = {
+      NotModerator:{sig:'NotModerator()', rem:'Only moderator role may execute this action.'},
+      NotAuthorized:{sig:'NotAuthorized()', rem:'Connected wallet is not authorized for this ManagerPrime path.'},
+      NotDiscovery:{sig:'NotDiscovery()', rem:'Only AGIJobDiscoveryPrime is allowed to call this entrypoint.'},
+      Blacklisted:{sig:'Blacklisted()', rem:'Wallet is blacklisted for this action in ManagerPrime policy.'},
+      InvalidParameters:{sig:'InvalidParameters()', rem:'One or more call parameters are invalid for this job state.'},
+      InvalidState:{sig:'InvalidState()', rem:'Job state does not allow this action now. Refresh live job state and retry only if eligible.'},
+      JobNotFound:{sig:'JobNotFound()', rem:'Job ID does not exist. Reload jobs and verify the target id.'},
+      SettlementPaused:{sig:'SettlementPaused()', rem:'Settlement-side writes are paused by protocol governance.'},
+      InvalidValidatorThresholds:{sig:'InvalidValidatorThresholds()', rem:'Validator thresholds are misconfigured for this transition.'},
+      IneligibleAgentPayout:{sig:'IneligibleAgentPayout()', rem:'Assigned agent is ineligible for payout under current AGI type entitlement rules.'},
+      InsufficientWithdrawableBalance:{sig:'InsufficientWithdrawableBalance()', rem:'Withdrawable AGI balance is insufficient for this claim.'},
+      InsolventEscrowBalance:{sig:'InsolventEscrowBalance()', rem:'Escrow balance cannot satisfy this transition. Admin intervention may be required.'},
+      RenounceOwnershipDisabled:{sig:'RenounceOwnershipDisabled()', rem:'Ownership renounce is intentionally disabled for this contract.'},
+      DisputeAlreadyOpen:{sig:'DisputeAlreadyOpen()', rem:'This job already has an active dispute.'}
+    };
+    function signatureSelector(sig){
+      if(window.ethers?.id) return window.ethers.id(sig).slice(0,10).toLowerCase();
+      if(web3?.utils?.sha3) return web3.utils.sha3(sig).slice(0,10).toLowerCase();
+      return '';
+    }
+    function buildErrorSelectorMap(signatures){
       return Object.fromEntries(
-        Object.entries(IDENTITY_CUSTOM_ERROR_SIGNATURES).map(([name, meta])=>[hash(meta.sig), {name, ...meta}]).filter(([k])=>!!k)
+        Object.entries(signatures || {}).map(([name, meta])=>[signatureSelector(meta.sig), {name, ...meta}]).filter(([k])=>!!k)
       );
+    }
+    function buildIdentityErrorSelectorMap(){
+      return buildErrorSelectorMap(IDENTITY_CUSTOM_ERROR_SIGNATURES);
+    }
+    function buildDiscoveryErrorSelectorMap(){
+      return buildErrorSelectorMap(DISCOVERY_CUSTOM_ERROR_SIGNATURES);
+    }
+    function buildManagerErrorSelectorMap(){
+      return buildErrorSelectorMap(MANAGER_CUSTOM_ERROR_SIGNATURES);
     }
     function extractRevertData(error){
       if(!error) return '';
@@ -4292,13 +4326,22 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const match = msg.match(/(0x[0-9a-fA-F]{8,})/);
       return match ? match[1] : '';
     }
-    function decodeIdentityCustomError(error){
+    function decodeCustomErrorFromMap(error, selectorMap){
       const revertData = extractRevertData(error);
       if(!revertData || revertData.length < 10) return null;
       const selector = revertData.slice(0,10).toLowerCase();
-      const mapped = buildIdentityErrorSelectorMap()[selector];
+      const mapped = selectorMap?.[selector];
       if(!mapped) return null;
       return {name:mapped.name, signature:mapped.sig, remediation:mapped.rem, selector};
+    }
+    function decodeIdentityCustomError(error){
+      return decodeCustomErrorFromMap(error, buildIdentityErrorSelectorMap());
+    }
+    function decodeDiscoveryCustomError(error){
+      return decodeCustomErrorFromMap(error, buildDiscoveryErrorSelectorMap());
+    }
+    function decodeManagerCustomError(error){
+      return decodeCustomErrorFromMap(error, buildManagerErrorSelectorMap());
     }
     async function runIdentityPreflight(action, label){
       if(!web3 || !userAccount || !freeTrialRegistrarIdentity) return {ok:false, verdict:'Unavailable', note:'Wallet/provider unavailable', calldata:'', estimateGas:null};
@@ -4738,7 +4781,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
         await web3.eth.call(callTx, 'latest');
         return {ok:true, verdict:'Ready', note:`Preflight call + estimateGas succeeded for ${method}.`, gasEstimate:String(gasEstimate)};
       }catch(error){
-        const decoded = decodeIdentityCustomError(error);
+        const decoded = decodeDiscoveryCustomError(error) || decodeManagerCustomError(error) || decodeIdentityCustomError(error);
         const reason = decoded ? `${decoded.name}: ${decoded.remediation}` : normalizedErrorMessage(error);
         return {ok:false, verdict:'Blocked', note:`Preflight blocked: ${reason}`};
       }
