@@ -59,6 +59,7 @@ Based on the file contents, this standalone page includes:
 - Live jobs table with search, filters, sorting, watchlist, and detail modals.
 - On-chain actions for lifecycle paths (create/apply/approve/disapprove/finalize/dispute/expire/cancel, ENS lock, request completion), with tracked transaction UX.
 - Premium Discovery writes now run a review-time preflight (`estimateGas` + `eth_call`) before the authorize step is treated as ready, so obvious chain/blocker failures surface before wallet signing.
+- Premium Discovery and Alpha Identity cards now use explicit readiness copy (for example, “Awaiting procurement quote”, “Awaiting rootHealth() read”, “Not applicable before issuance”) instead of ambiguous dash placeholders on critical operator fields.
 - Local-first job metadata builder and IPFS upload helpers (configurable endpoint/JWT fields stored in browser context).
 - Completion helper that normalizes URIs and submits completion requests.
 - `$AGIALPHA` bridge/conversion console (deBridge widget embedding plus `depositExact` flow into `AGIALPHAEqualMinterVault`).
