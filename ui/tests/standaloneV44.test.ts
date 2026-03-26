@@ -101,6 +101,9 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("'Identity not yet issued'");
     expect(html).toContain('APP_STATE.identity.errors.tokenDossier = `tokenURI parse failed:');
     expect(html).toContain("if(el('alphaIdentityTokenMetaName')) el('alphaIdentityTokenMetaName').textContent = 'Malformed tokenURI metadata payload';");
+    expect(html).toContain('id="alphaIdentityTokenOwner">Not applicable before issuance<');
+    expect(html).toContain('id="alphaIdentityTokenMetaDescription">Token metadata appears after issuance<');
+    expect(html).toContain('id="alphaIdentityRootName">Awaiting rootHealth() read<');
   });
 
   it('keeps mobile action rail + sticky review affordance copy in place', () => {
@@ -230,5 +233,14 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("TEXT_PREVIEW_ONLY = 'Preview projection only'");
     expect(html).toContain('Authority snapshot established on-chain; effective label is available.');
     expect(html).toContain('Compatibility getter + resolver projection only until authority snapshot is established.');
+  });
+
+  it('replaces placeholder dashes on critical premium and network summary fields', () => {
+    const html = loadHtml();
+    expect(html).toContain('id="premiumDiscoveryPayoutEscrowValue">Awaiting payout input<');
+    expect(html).toContain('id="premiumDiscoveryBudgetValue">Awaiting procurement quote<');
+    expect(html).toContain('id="premiumDiscoveryClaimable">Load wallet + procurement to read claimable balance<');
+    expect(html).toContain('id="chainStatus">Connect wallet to detect network<');
+    expect(html).toContain('id="missionNetworkStatus">Connect wallet to detect network<');
   });
 });

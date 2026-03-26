@@ -56,6 +56,7 @@ Recommended operator posture:
 
 Safety reminder:
 - UI convenience does not change protocol authority; AGIJobManager and ENSJobPages contracts remain authoritative.
+- v44 defaults now intentionally avoid ambiguous “—” placeholders on critical action cards; readiness fields use explicit language so operators can distinguish “awaiting read”, “not applicable before issuance”, and “wallet required” states at a glance.
 
 ### Run the broader Next.js UI locally
 
