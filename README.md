@@ -11,7 +11,8 @@ AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work a
 > [!IMPORTANT]
 > **New here? Start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html).**  
 > This is the fastest way to open the current hosted standalone Prime mainnet console.  
-> **Repo-pinned equivalent artifact:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`  
+> **Repo-pinned equivalent artifact:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`  
+> **Previous canonical snapshot:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v44.html`  
 > **Current standalone/operator guide path:** `docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`  
 > **Deployment / cutover authority remains:** `hardhat/README.md` and `docs/DEPLOYMENT/README.md`
 
@@ -20,7 +21,7 @@ AGIJobManager Prime is an Ethereum smart-contract system for escrowed AGI work a
 | Need | Go here |
 | --- | --- |
 | Launch the hosted Genesis Console | [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html) |
-| Inspect the pinned repo artifact | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) |
+| Inspect the pinned repo artifact | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html) |
 | Current standalone/operator guide path | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) |
 | Standalone UI inventory | [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md) |
 | Broader UI docs | [`docs/ui/README.md`](docs/ui/README.md) and [`ui/README.md`](ui/README.md) |
@@ -42,12 +43,12 @@ Canonical deployment path for Prime is now **Hardhat** (`hardhat/scripts/deploy.
 
 ## Start here by role (30-second routing)
 
-- **Newcomer / evaluator / reviewer:** start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html), then use [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) for the repo-pinned artifact and [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) as supporting operator context.
+- **Newcomer / evaluator / reviewer:** start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html), then use [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html) for the repo-pinned artifact and [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) as supporting operator context.
 - **New operator / deployer:** start with [`hardhat/README.md`](hardhat/README.md) (**official path**) and then the deployment index [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md).
 - **Contract owner (Etherscan-first):** start with [`docs/DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md`](docs/DEPLOYMENT/OWNER_MAINNET_DEPLOYMENT_AND_OPERATIONS_GUIDE.md), then [`docs/OWNER_RUNBOOK.md`](docs/OWNER_RUNBOOK.md).
 - **ENSJobPages replacement operator:** use one canonical flow in [`docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md`](docs/DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md).
 - **Troubleshooting during deployment/cutover:** go to [`docs/TROUBLESHOOTING_DEPLOYMENT_AND_ENS.md`](docs/TROUBLESHOOTING_DEPLOYMENT_AND_ENS.md).
-- **Standalone HTML UI operator/reviewer:** start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html). For the repo-pinned versioned artifact, use [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html). Use [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) as secondary operator/reference documentation.
+- **Standalone HTML UI operator/reviewer:** start with the [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html). For the repo-pinned versioned artifact, use [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html). Use [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) as secondary operator/reference documentation.
 - **Broader/full UI contributor:** use [`docs/ui/README.md`](docs/ui/README.md) for Next.js UI roadmap, runbooks, and release/testing docs.
 
 ## Canonical operator answers (quick reference)
@@ -89,7 +90,7 @@ Irreversible actions (delay until validated):
 ### UI surfaces (what exists now)
 
 - **Hosted newcomer console (canonical first click):** [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html)
-- **Repo-pinned standalone HTML artifact (versioned):** [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html)
+- **Repo-pinned standalone HTML artifact (versioned):** [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html)
 - **Current standalone/operator guide path:** [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - **Standalone inventory / broader UI docs:** [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md), [`ui/README.md`](ui/README.md), [`docs/ui/README.md`](docs/ui/README.md)
 - **Deployment/operator tooling (official):** `hardhat/` + `docs/DEPLOYMENT/`
@@ -101,7 +102,7 @@ Irreversible actions (delay until validated):
 | If you need to... | Use this | Why |
 | --- | --- | --- |
 | Open the current standalone Prime mainnet UI immediately | [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html) | Fastest newcomer/operator entry point for the current standalone Prime console. |
-| Inspect the repo-pinned standalone artifact | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html) | Versioned, in-repo equivalent artifact for provenance, review, and pinned inspection. |
+| Inspect the repo-pinned standalone artifact | [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html) | Versioned, in-repo equivalent artifact for provenance, review, and pinned inspection. |
 | Read current standalone/operator context | [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md) | Secondary operator/reference guide path for the standalone surface. |
 | Browse standalone artifact inventory or broader UI docs | [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md), [`ui/README.md`](ui/README.md), [`docs/ui/README.md`](docs/ui/README.md) | Artifact inventory and broader UI/documentation context. |
 | Deploy/replace contracts and ENS components | [`hardhat/README.md`](hardhat/README.md) + [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md) | Canonical deployment and operator runbooks; the UI is not the deployment authority. |
@@ -119,7 +120,7 @@ Irreversible actions (delay until validated):
 
 ### Documentation entry points
 - Hosted Genesis Console (newcomer entry): [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html)
-- Repo-pinned standalone artifact: [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html)
+- Repo-pinned standalone artifact: [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html)
 - Current standalone/operator guide path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - Standalone inventory: [`docs/ui/STANDALONE_HTML_UIS.md`](docs/ui/STANDALONE_HTML_UIS.md)
 - Canonical deployment index: [`docs/DEPLOYMENT/README.md`](docs/DEPLOYMENT/README.md)
@@ -252,7 +253,7 @@ Legacy Truffle build/test flows remain available for reference compatibility (`n
 - Main documentation index: [`docs/README.md`](docs/README.md)
 - UI docs hub (broader UI): [`docs/ui/README.md`](docs/ui/README.md)
 - Hosted Genesis Console: [AGIJobManager Prime Genesis Console](https://montrealai.github.io/agijobmanagerprimev0.html)
-- Pinned standalone artifact (repo): [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v39.html)
+- Pinned standalone artifact (repo): [`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`](ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html)
 - Current standalone/operator guide path: [`docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md`](docs/ui/GENESIS_JOB_MAINNET_HTML_UI.md)
 - UI directory inventory: [`ui/README.md`](ui/README.md)
 - Quintessential walkthrough: [`docs/QUINTESSENTIAL_USE_CASE.md`](docs/QUINTESSENTIAL_USE_CASE.md)
