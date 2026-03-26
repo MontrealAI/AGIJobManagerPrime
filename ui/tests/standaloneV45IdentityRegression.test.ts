@@ -15,7 +15,7 @@ function extractAbiJsonArray(name: string) {
 }
 
 function loadIdentityRuntimeFns() {
-  const start = html.indexOf('const IDENTITY_PREVIEW_STATUS = {');
+  const start = html.indexOf('function validateAlphaLabelLocal(raw){');
   const end = html.indexOf('async function refreshIdentityState()', start);
   if (start < 0 || end < 0) throw new Error('Unable to locate identity runtime function block');
   const source = html.slice(start, end);
@@ -105,6 +105,35 @@ describe('standalone v45 identity tuple/decode regressions', () => {
     expect(deriveIdentityRecommendation({ status: 2, claimable: true, inconsistencies: [] }, baseHealth, local).method).toBe('claimIdentity');
     expect(deriveIdentityRecommendation({ status: 3, identityExists: true, inconsistencies: [] }, baseHealth, local).method).toBe('syncIdentityByLabel');
     expect(deriveIdentityRecommendation({ status: 4, identityExists: true, inconsistencies: [] }, baseHealth, local).method).toBe('syncIdentityByLabel');
+  });
+
+  it('requires successful preview for AVAILABLE-state register unlock (local validation alone is insufficient)', () => {
+    const ctx = loadIdentityRuntimeFns();
+    const deriveIdentityRecommendation = ctx.deriveIdentityRecommendation as (p: any, h: any, l: any) => any;
+    const local = { ok: true, label: '99999999' };
+    const rootHealth = { active: true, rootUsable: true, pausedOut: false };
+    const previewAvailable = {
+      status: 0,
+      validLabel: true,
+      availableOut: true,
+      registrable: true,
+      pausedOut: false,
+      rootActiveOut: true,
+      rootUsable: true,
+      inconsistencies: [],
+    };
+
+    // Phase A (regression case): rootHealth/local validation succeed but preview failed => conservative lock.
+    ctx.APP_STATE.identity.async.preview = 'failed';
+    ctx.APP_STATE.identity.recommendation = deriveIdentityRecommendation(null, rootHealth, local);
+    expect(ctx.APP_STATE.identity.recommendation.method).toBe('none');
+    expect(ctx.APP_STATE.identity.recommendation.reason).toBe('preview(label) read failed');
+
+    // Phase B: preview succeeds with AVAILABLE status => canonical register path unlocks.
+    ctx.APP_STATE.identity.async.preview = 'ok';
+    ctx.APP_STATE.identity.recommendation = deriveIdentityRecommendation(previewAvailable, rootHealth, local);
+    expect(ctx.APP_STATE.identity.recommendation.method).toBe('register');
+    expect(ctx.APP_STATE.identity.recommendation.reason).toBe('Status AVAILABLE');
   });
 
   it('enforces root inactive and parent unusable gating ahead of preview optimism', () => {
