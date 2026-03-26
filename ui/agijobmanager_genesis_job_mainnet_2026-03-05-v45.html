@@ -6485,7 +6485,8 @@ function unwrapTupleOutput(raw, expectedKey){
           freeTrialRegistrarIdentity.methods.tokenURI(preview.tokenId).call().catch(()=>''),
           freeTrialRegistrarIdentity.methods.locked(preview.tokenId).call().catch(()=>true),
         ]);
-        const ld = labelData ? (Array.isArray(labelData) ? {label:String(labelData[0]||''), labelhash:String(labelData[1]||''), mintedAt:Number(labelData[2]||0)} : {label:String(labelData.label||''), labelhash:String(labelData.labelhash||''), mintedAt:Number(labelData.mintedAt||0)}) : null;
+        const unwrappedLabelData = unwrapTupleOutput(labelData, "label");
+        const ld = unwrappedLabelData ? (Array.isArray(unwrappedLabelData) ? {label:String(unwrappedLabelData[0]||''), labelhash:String(unwrappedLabelData[1]||''), mintedAt:Number(unwrappedLabelData[2]||0)} : {label:String(unwrappedLabelData.label||''), labelhash:String(unwrappedLabelData.labelhash||''), mintedAt:Number(unwrappedLabelData.mintedAt||0)}) : null;
         if(!isCurrentIdentityRequest(requestId)) return;
         APP_STATE.identity.async.tokenDossier = 'loaded';
         if(el('alphaIdentityTokenOwner')) el('alphaIdentityTokenOwner').textContent = ownerOf || preview?.tokenOwner || 'Unavailable from ownerOf(tokenId)';

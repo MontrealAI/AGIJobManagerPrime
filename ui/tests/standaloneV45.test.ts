@@ -110,6 +110,7 @@ describe('standalone v45 artifact', () => {
 
   it('renders not-applicable and graceful tokenURI parsing outcomes', () => {
     const html = loadHtml();
+    expect(html).toContain('const unwrappedLabelData = unwrapTupleOutput(labelData, "label");');
     expect(html).toContain("'Not applicable (identity not issued)'");
     expect(html).toContain("'Identity not yet issued'");
     expect(html).toContain('APP_STATE.identity.errors.tokenDossier = `tokenURI parse failed:');
