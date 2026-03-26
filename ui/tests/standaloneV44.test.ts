@@ -210,4 +210,15 @@ describe('standalone v44 artifact', () => {
     expect(html).toContain("Awaiting live nextActionForProcurement()");
     expect(html).toContain("Target contract', value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`");
   });
+
+  it('hardens ENS preview reads with stale-request guards and authoritative vs projected copy', () => {
+    const html = loadHtml();
+    expect(html).toContain('let ensPreviewLoadRequestId = 0;');
+    expect(html).toContain('const requestId = ++ensPreviewLoadRequestId;');
+    expect(html).toContain('if(requestId !== ensPreviewLoadRequestId) return;');
+    expect(html).toContain("TEXT_AWAITING_LIVE_READ = 'Awaiting live read'");
+    expect(html).toContain("TEXT_PREVIEW_ONLY = 'Preview projection only'");
+    expect(html).toContain('Authority snapshot established on-chain; effective label is available.');
+    expect(html).toContain('Compatibility getter + resolver projection only until authority snapshot is established.');
+  });
 });

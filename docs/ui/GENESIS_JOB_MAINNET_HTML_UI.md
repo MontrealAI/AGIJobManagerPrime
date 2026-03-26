@@ -64,6 +64,7 @@ Based on the file contents, this standalone page includes:
 - `$AGIALPHA` bridge/conversion console (deBridge widget embedding plus `depositExact` flow into `AGIALPHAEqualMinterVault`).
 - Embedded Terms & Conditions section and in-page acceptance gating for write controls.
 - Procurement inspector reads include freshness guards so stale responses from older requests do not overwrite newer procurement loads.
+- ENS preview reads include freshness guards and explicitly label projected compatibility outputs versus authority-established values when `jobLabelSnapshot` is unavailable.
 
 Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v44` file.
 
