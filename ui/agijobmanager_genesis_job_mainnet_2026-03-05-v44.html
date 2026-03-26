@@ -5632,21 +5632,28 @@ function syncModalState(){
       if(el("jobDetails")) el("jobDetails").value = details.slice(0, 2048);
       setToast("Details field updated from the builder.", "ok");
     }
+    const TEXT_NOT_APPLICABLE = 'Not applicable before issuance';
+    const TEXT_AWAITING_LIVE_READ = 'Awaiting live read';
+    const TEXT_PREVIEW_ONLY = 'Preview projection only';
+    let ensPreviewLoadRequestId = 0;
+
     function useGeneratedUri(){
       const uri = lastUploadedMetadataURI || (el("generatedSpecURI")?.textContent || "").trim();
-      if(!uri || uri === "—"){ setToast("No generated URI available yet.", "warn"); return; }
+      if(!uri || uri === "—" || uri === TEXT_AWAITING_LIVE_READ){ setToast("No generated URI available yet.", "warn"); return; }
       if(el("jobSpecURI")) el("jobSpecURI").value = uri;
       setToast("Generated URI inserted into Job Spec URI.", "ok");
     }
     function useEnsUriPreview(){
       const uri = (el("predictedEnsURI")?.textContent || "").trim();
-      if(!uri || uri === "—"){ setToast("No ENS URI preview available.", "warn"); return; }
+      if(!uri || uri === "—" || uri === TEXT_AWAITING_LIVE_READ || uri === TEXT_PREVIEW_ONLY){ setToast("No ENS URI preview available.", "warn"); return; }
       navigator.clipboard.writeText(uri).then(()=>setToast("Compatibility ENS URI copied.", "ok")).catch(()=>setToast(uri, "ok"));
     }
     async function updateEnsJobPagePreview(){
+      const requestId = ++ensPreviewLoadRequestId;
       try{
         if(!web3 || !agiJobManager){ clearEnsPreview('missing connected contracts'); return; }
         const ensContract = await resolveEnsJobPagesContract();
+        if(requestId !== ensPreviewLoadRequestId) return;
         if(!ensContract){
           if(el('ensHookReadiness')) el('ensHookReadiness').textContent = 'ENSJobPages unavailable. Degraded state: live preview is not fully available.';
           return;
@@ -5668,24 +5675,25 @@ function syncModalState(){
           ensContract.methods.jobEnsURI(String(nextJobId)).call().catch(()=>''),
           ensContract.methods.jobEnsNode(String(nextJobId)).call().catch(()=>''),
         ]);
+        if(requestId !== ensPreviewLoadRequestId) return;
         const snapIsSet = Array.isArray(snapshot) ? !!snapshot[0] : !!(snapshot?.isSet ?? snapshot?.[0]);
         const snapLabel = Array.isArray(snapshot) ? String(snapshot[1] || '') : String(snapshot?.label ?? snapshot?.[1] ?? '');
         const effectiveLabel = String(label || snapLabel || 'unavailable');
-        if(el('ensPagesOwner')) el('ensPagesOwner').textContent = owner || '—';
-        if(el('ensRegistryAddress')) el('ensRegistryAddress').textContent = ensRegistry || '—';
-        if(el('ensNameWrapperAddress')) el('ensNameWrapperAddress').textContent = nameWrapper || '—';
-        if(el('ensPublicResolverAddress')) el('ensPublicResolverAddress').textContent = publicResolver || '—';
-        if(el('ensRootName')) el('ensRootName').textContent = rootName || '—';
-        if(el('ensRootNode')) el('ensRootNode').textContent = rootNode || '—';
-        if(el('ensLinkedJobManager')) el('ensLinkedJobManager').textContent = jobManager || '—';
+        if(el('ensPagesOwner')) el('ensPagesOwner').textContent = owner || TEXT_AWAITING_LIVE_READ;
+        if(el('ensRegistryAddress')) el('ensRegistryAddress').textContent = ensRegistry || TEXT_AWAITING_LIVE_READ;
+        if(el('ensNameWrapperAddress')) el('ensNameWrapperAddress').textContent = nameWrapper || TEXT_AWAITING_LIVE_READ;
+        if(el('ensPublicResolverAddress')) el('ensPublicResolverAddress').textContent = publicResolver || TEXT_AWAITING_LIVE_READ;
+        if(el('ensRootName')) el('ensRootName').textContent = rootName || TEXT_AWAITING_LIVE_READ;
+        if(el('ensRootNode')) el('ensRootNode').textContent = rootNode || TEXT_AWAITING_LIVE_READ;
+        if(el('ensLinkedJobManager')) el('ensLinkedJobManager').textContent = jobManager || TEXT_AWAITING_LIVE_READ;
         if(el('ensJobLabelPrefixPreview')) el('ensJobLabelPrefixPreview').textContent = prefix || 'unavailable';
         if(el('ensNextJobId')) el('ensNextJobId').textContent = String(nextJobId);
         if(el('ensSnapshotStatus')) el('ensSnapshotStatus').textContent = snapIsSet ? `authority snapshot established (${snapLabel || effectiveLabel})` : 'no authority snapshot yet (compatibility getters may still show preview values)';
-        if(el('predictedJobLabel')) el('predictedJobLabel').textContent = effectiveLabel;
-        if(el('predictedEnsName')) el('predictedEnsName').textContent = ensName || '—';
-        if(el('predictedEnsURI')) el('predictedEnsURI').textContent = ensURI || '—';
-        if(el('predictedEnsNode')) el('predictedEnsNode').textContent = ensNode || '—';
-        if(el('ensMetadataPosture')) el('ensMetadataPosture').textContent = 'Compatibility getter + public resolver checks (preview/effective can differ before authority snapshot)';
+        if(el('predictedJobLabel')) el('predictedJobLabel').textContent = effectiveLabel || TEXT_PREVIEW_ONLY;
+        if(el('predictedEnsName')) el('predictedEnsName').textContent = ensName || TEXT_PREVIEW_ONLY;
+        if(el('predictedEnsURI')) el('predictedEnsURI').textContent = ensURI || TEXT_PREVIEW_ONLY;
+        if(el('predictedEnsNode')) el('predictedEnsNode').textContent = ensNode || TEXT_PREVIEW_ONLY;
+        if(el('ensMetadataPosture')) el('ensMetadataPosture').textContent = snapIsSet ? 'Authority snapshot established on-chain; effective label is available.' : 'Compatibility getter + resolver projection only until authority snapshot is established.';
         if(el('ensConfigLocked')) el('ensConfigLocked').textContent = configLocked ? 'true' : 'false';
         if(el('managerTokenUriMode')) el('managerTokenUriMode').textContent = 'Unavailable in public ABI';
         const linked = !!jobManager && String(jobManager).toLowerCase() === AGI_JOB_MANAGER.toLowerCase();
@@ -5693,6 +5701,7 @@ function syncModalState(){
         if(el('ensHookReadiness')) el('ensHookReadiness').textContent = prereqs ? 'Public prerequisites satisfied. jobEnsReady/jobEnsExists/jobEnsIssued and authority internals require dedicated getters for full proof.' : 'Public prerequisites incomplete; authoritative readiness cannot be proven from currently loaded getters alone.';
         window.protocolState = {...(window.protocolState||{}), ensJobLabelPrefix: prefix || '' };
       }catch(e){
+        if(requestId !== ensPreviewLoadRequestId) return;
         clearEnsPreview('ENS preview read failed');
         if(el('ensHookReadiness')) el('ensHookReadiness').textContent = 'Unable to load ENSJobPages public state.';
       }
