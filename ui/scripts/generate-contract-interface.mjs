@@ -50,9 +50,9 @@ const getGeneratedStamp = (trackedPaths) => {
 };
 
 const stamp = getGeneratedStamp(['ui/src/abis/agiJobManager.ts', 'ui/scripts/generate-contract-interface.mjs']);
-const standaloneIdentityRouteNote = `## Standalone identity route compatibility note (v44)
+const standaloneIdentityRouteNote = `## Standalone identity route compatibility note (v45)
 
-The canonical standalone artifact (\`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v44.html\`) binds the public Alpha-Agent identity write path directly to:
+The canonical standalone artifact (\`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html\`) binds the public Alpha-Agent identity write path directly to:
 
 - Contract: \`FreeTrialSubdomainRegistrarIdentity\`
 - Address: \`0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a\`
