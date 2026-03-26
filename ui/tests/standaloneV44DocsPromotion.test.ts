@@ -24,6 +24,14 @@ describe('v45 standalone canon promotion docs', () => {
     expect(genesisRunbook).toContain('`v45` is the documented standalone artifact for this runbook.');
   });
 
+
+  it('promotes v45 in the root README and retires stale v39 routing', () => {
+    const rootReadme = read('README.md');
+    expect(rootReadme).toContain('agijobmanager_genesis_job_mainnet_2026-03-05-v45.html');
+    expect(rootReadme).toContain('Previous canonical snapshot:** `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v44.html`');
+    expect(rootReadme).not.toContain('agijobmanager_genesis_job_mainnet_2026-03-05-v39.html');
+  });
+
   it('documents direct register(string) parity on FreeTrialSubdomainRegistrarIdentity', () => {
     const identityLayer = read('docs/ui/IDENTITY_LAYER.md');
     const contractInterface = read('docs/ui/CONTRACT_INTERFACE.md');
