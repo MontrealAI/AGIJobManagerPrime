@@ -57,6 +57,7 @@ Recommended operator posture:
 Safety reminder:
 - UI convenience does not change protocol authority; AGIJobManager and ENSJobPages contracts remain authoritative.
 - v45 defaults now intentionally avoid ambiguous “—” placeholders on critical action cards; readiness fields use explicit language so operators can distinguish “awaiting read”, “not applicable before issuance”, and “wallet required” states at a glance.
+- Alpha identity recommendation now remains strictly preview-driven: derived full name/node/token fields are explicitly marked as locally derived until `preview(label)` confirms, and registrable posture stays unresolved when preview is unavailable.
 
 ### Run the broader Next.js UI locally
 
