@@ -26,4 +26,12 @@ describe('standalone v41 artifact', () => {
     expect(html).toContain('syncIdentityByLabel(label)');
     expect(html).toContain('soulbound identity');
   });
+
+  it('uses v41 continuity metadata and exposes historical-score read provenance', () => {
+    const html = fs.readFileSync(file, 'utf8');
+    expect(html).toContain('agijobmanagerprime.v41.uiContinuity');
+    expect(html).toContain('previewHistoricalScore');
+    expect(html).toContain('Historical score preview');
+    expect(html).not.toContain('Unavailable in ENSJobPages public ABI (v40)');
+  });
 });
