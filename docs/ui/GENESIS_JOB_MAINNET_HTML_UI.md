@@ -1,9 +1,9 @@
-# Standalone HTML UI: `agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`
+# Standalone HTML UI: `agijobmanager_genesis_job_mainnet_2026-04-01.html`
 
 ## At-a-glance navigation
 
 - [Quick start (safe and practical)](#quick-start-safe-and-practical)
-- [Embedded network and contract assumptions (v45)](#embedded-network-and-contract-assumptions-v45)
+- [Embedded network and contract assumptions (2026-04-01)](#embedded-network-and-contract-assumptions-2026-04-01)
 - [Security and trust hygiene](#security-and-trust-hygiene)
 - [Troubleshooting (standalone page)](#troubleshooting-standalone-page)
 - [What this page does not replace](#what-this-page-does-not-replace)
@@ -11,10 +11,10 @@
 
 ## What this page is
 
-`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html` is a **standalone, versioned HTML interface artifact** for AGIJobManager mainnet operations and demonstrations.
+`ui/agijobmanager_genesis_job_mainnet_2026-04-01.html` is a **standalone, versioned HTML interface artifact** for AGIJobManager mainnet operations and demonstrations.
 
 Version/lifecycle posture:
-- This file is a point-in-time artifact (`v45`) committed in-repo for reproducible browser-based operations and review.
+- This file is a point-in-time artifact (`2026-04-01`) committed in-repo for reproducible browser-based operations and review.
 - It is intentionally additive to the broader/full UI effort (Next.js app in `ui/src/`, docs in [docs/ui/README.md](./README.md)).
 - It is not the deployment authority and not a replacement for Hardhat runbooks.
 
@@ -48,7 +48,7 @@ Do not use it as a deployment source of truth:
 
 This page is a UI client for that ecosystem, not a deployment framework.
 
-## Grounded capabilities in v45
+## Grounded capabilities in 2026-04-01 artifact
 
 Based on the file contents, this standalone page includes:
 
@@ -67,11 +67,11 @@ Based on the file contents, this standalone page includes:
 - Procurement inspector reads include freshness guards so stale responses from older requests do not overwrite newer procurement loads.
 - ENS preview reads include freshness guards and explicitly label projected compatibility outputs versus authority-established values when `jobLabelSnapshot` is unavailable.
 
-Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `v45` file.
+Grounding note: this list is based on visible controls, embedded ABIs, and in-page handlers in the `2026-04-01` file.
 
 Alpha identity review modal is a single canonical signing surface fed by a normalized preview(label)+rootHealth() snapshot. The public register route directly signs `register(string)` on `FreeTrialSubdomainRegistrarIdentity` with `value = 0` on mainnet.
 
-## Grounded page sections and expected outcomes (v45)
+## Grounded page sections and expected outcomes (2026-04-01)
 
 | Section in page | What you do there | Expected result |
 | --- | --- | --- |
@@ -81,7 +81,7 @@ Alpha identity review modal is a single canonical signing surface fed by a norma
 | AGIALPHA bridge/conversion area | Review bridged vs official balances, run approval, run vault conversion, optionally use embedded deBridge route. | Bridged token can be converted into official Ethereum `$AGIALPHA` (when wallet and vault state permit). |
 | Terms & Conditions area | Review and accept embedded terms. | Write controls remain intentionally locked until terms are accepted in-page. |
 
-Inference boundary: this table describes visible UX and method wiring present in `v45`; it does not redefine protocol-level permissions.
+Inference boundary: this table describes visible UX and method wiring present in `2026-04-01`; it does not redefine protocol-level permissions.
 
 ## Grounded non-goals (important)
 
@@ -106,7 +106,7 @@ This section maps major UI actions to the contract methods surfaced in the file'
 
 If uncertain about exact callable semantics, confirm against contract docs/runbooks before signing.
 
-## Write-capable transaction methods exposed in v45
+## Write-capable transaction methods exposed in 2026-04-01 artifact
 
 The standalone page includes handlers that can submit the following transactions (subject to role/state checks enforced by contracts):
 
@@ -135,7 +135,7 @@ Primary:
 - Reviewers/auditors/demo participants validating end-to-end operator UX without running the full Next.js stack.
 
 Secondary:
-- Developers comparing standalone snapshots (`v13` ... `v45`) during UI iteration.
+- Developers comparing standalone snapshots (`v13` ... `2026-04-01`) during UI iteration.
 
 ## Quick start (safe and practical)
 
@@ -149,7 +149,7 @@ python3 -m http.server 8000
 Open:
 
 ```text
-http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html
+http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-04-01.html
 ```
 
 (Direct `file://` open can work, but local HTTP is more reliable for wallet/provider behavior.)
@@ -172,7 +172,7 @@ No local backend, indexer, or database is required for this standalone page.
 ### Open method
 
 Use either:
-1. Direct file open (`file://.../ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`), or
+1. Direct file open (`file://.../ui/agijobmanager_genesis_job_mainnet_2026-04-01.html`), or
 2. Serve over HTTP from repository root.
 
 Recommended HTTP approach:
@@ -185,7 +185,7 @@ python3 -m http.server 8000
 Then open:
 
 ```text
-http://localhost:8000/ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html
+http://localhost:8000/ui/agijobmanager_genesis_job_mainnet_2026-04-01.html
 ```
 
 HTTP serving is generally safer for extension compatibility and future browser restrictions.
@@ -201,7 +201,7 @@ HTTP serving is generally safer for extension compatibility and future browser r
 ### Minimal safe operating sequence
 
 1. Open via local HTTP.
-2. Confirm filename/path ends with `agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`.
+2. Confirm filename/path ends with `agijobmanager_genesis_job_mainnet_2026-04-01.html`.
 3. Connect wallet and confirm Ethereum Mainnet.
 4. Confirm address panel values against deployment docs.
 5. Accept terms in-page.
@@ -243,14 +243,14 @@ Use this checklist before each write transaction:
 - **Read-only (no wallet):** You can view static sections and most dashboard content, but cannot submit on-chain transactions.
 - **Action-capable (wallet + mainnet + terms accepted):** Write buttons unlock and the page can submit contract transactions through your wallet.
 
-Write-gate conditions in v45 are explicitly tied to:
+Write-gate conditions in 2026-04-01 artifact are explicitly tied to:
 1. wallet connection,
 2. Ethereum mainnet (`chainId 1`), and
 3. in-page terms acceptance checkbox.
 
-For the Alpha identity lane specifically, v45 adds an additional hard gate: `preview(label)` must decode successfully and remain coherent with `rootHealth()` before any write route is unlocked. If preview fails (network/provider, ABI decode, or contract revert), the console keeps root diagnostics visible but forces write posture to locked with explicit failure classification.
+For the Alpha identity lane specifically, the 2026-04-01 artifact adds an additional hard gate: `preview(label)` must decode successfully and remain coherent with `rootHealth()` before any write route is unlocked. If preview fails (network/provider, ABI decode, or contract revert), the console keeps root diagnostics visible but forces write posture to locked with explicit failure classification.
 
-## Embedded network and contract assumptions (v45)
+## Embedded network and contract assumptions (2026-04-01)
 
 The page hardcodes the following addresses/constants in the script block:
 
@@ -275,11 +275,11 @@ The broader UI is a separate Next.js surface that continues to evolve in paralle
 - Broader UI docs hub: [docs/ui/README.md](./README.md)
 - UI directory inventory (artifact + app): [ui/README.md](../../ui/README.md)
 
-Use this `v45` runbook when you intentionally need a single-file, versioned browser interface. Use the broader UI docs when you need roadmap/development/testing context.
+Use this `2026-04-01` runbook when you intentionally need a single-file, versioned browser interface. Use the broader UI docs when you need roadmap/development/testing context.
 
 ## Relationship to other UI artifacts in `ui/`
 
-- `v45` is the documented standalone artifact for this runbook.
+- `2026-04-01` is the documented standalone artifact for this runbook.
 - Other `agijobmanager_genesis_job_mainnet_2026-03-05-v*.html` files are adjacent snapshots for comparison/reproducibility.
 - The Next.js app in `ui/` remains the broader/full UI effort under active development.
 
@@ -333,7 +333,7 @@ Operationally, AGIJobManager settlement/dispute outcomes remain authoritative ev
 
 ## Status and lifecycle
 
-- This file documents a **versioned standalone artifact**: `v45`.
+- This file documents a **versioned standalone artifact**: `2026-04-01`.
 - It is intended as an additive, practical browser interface for current operator/reviewer workflows.
 - The broader/full UI effort is still in active development in `ui/` (Next.js surface) and tracked in [docs/ui/README.md](./README.md).
 - When operational guidance conflicts, treat deployment/operator docs and on-chain contract behavior as canonical.
@@ -358,7 +358,7 @@ For full UI development and operations docs, use:
 
 ### Write buttons remain disabled
 
-Typical causes in v45:
+Typical causes in 2026-04-01 artifact:
 - Wallet not connected.
 - Not on Ethereum Mainnet.
 - Terms not accepted in-page.
