@@ -38,8 +38,8 @@ describe('2026-04-01 standalone canon promotion docs', () => {
     expect(contractInterface).toContain('Value semantics: `0 ETH` (gas-only call path)');
     expect(contractInterface).toContain('chainId = 1');
 
+    expect(deploymentMainnet).toContain('agijobmanager_genesis_job_mainnet_2026-04-01.html');
     expect(deploymentMainnet).toContain('agijobmanager_genesis_job_mainnet_2026-03-05-v45.html');
-    expect(deploymentMainnet).toContain('agijobmanager_genesis_job_mainnet_2026-03-05-v44.html');
     expect(versions).toContain('Genesis Mainnet standalone HTML');
   });
 });
