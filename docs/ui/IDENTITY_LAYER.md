@@ -2,13 +2,13 @@
 
 The Sovereign Ops Console includes a dedicated `#/identity` route for ENS Job Pages operations on Ethereum mainnet.
 
-## Standalone canonical operator artifact (v45)
+## Standalone canonical operator artifact (2026-04-01)
 
 For operator-facing, single-file browser execution, the canonical standalone artifact is:
 
-- `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`
+- `ui/agijobmanager_genesis_job_mainnet_2026-04-01.html`
 
-This v45 standalone path includes the public Alpha-Agent identity route wired to `FreeTrialSubdomainRegistrarIdentity` at `0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a`, with `register(string)` as the primary issuance transaction (`value = 0`, gas only, Ethereum mainnet). Historical standalone snapshots such as `v44` are retained for audit comparison and are non-canonical.
+This 2026-04-01 standalone path includes the public Alpha-Agent identity route wired to `FreeTrialSubdomainRegistrarIdentity` at `0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a`, with `register(string)` as the primary issuance transaction (`value = 0`, gas only, Ethereum mainnet). Historical standalone snapshots such as `v45` are retained for audit comparison and are non-canonical.
 
 ## Intent
 
