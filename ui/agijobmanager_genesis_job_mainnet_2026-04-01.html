@@ -9930,16 +9930,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
             if(pel('premiumDiscoveryStipendPerFinalist')) pel('premiumDiscoveryStipendPerFinalist').value = FIRST_LIVE_MAINNET_FIXTURE.proc.stipendPerFinalist;
             if(pel('premiumDiscoveryValidatorRewardPerReveal')) pel('premiumDiscoveryValidatorRewardPerReveal').value = FIRST_LIVE_MAINNET_FIXTURE.proc.validatorRewardPerReveal;
             if(pel('premiumDiscoveryValidatorScoreBond')) pel('premiumDiscoveryValidatorScoreBond').value = FIRST_LIVE_MAINNET_FIXTURE.proc.validatorScoreBond;
-            premiumState.rawMode = true;
-            if(pel('premiumDiscoveryRawTimes')) pel('premiumDiscoveryRawTimes').style.display = 'grid';
-            [
-              ['premiumDiscoveryCommitDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.commitDeadline],
-              ['premiumDiscoveryRevealDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.revealDeadline],
-              ['premiumDiscoveryFinalistAcceptDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.finalistAcceptDeadline],
-              ['premiumDiscoveryTrialDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.trialDeadline],
-              ['premiumDiscoveryScoreCommitDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.scoreCommitDeadline],
-              ['premiumDiscoveryScoreRevealDeadline', FIRST_LIVE_MAINNET_FIXTURE.proc.scoreRevealDeadline]
-            ].forEach(([id,v])=>{ if(pel(id)) pel(id).value = String(v); });
+            premiumState.rawMode = false;
+            if(pel('premiumDiscoveryRawTimes')) pel('premiumDiscoveryRawTimes').style.display = 'none';
           }else{
             premiumState.rawMode = false;
             if(pel('premiumDiscoveryRawTimes')) pel('premiumDiscoveryRawTimes').style.display = 'none';
@@ -10496,11 +10488,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const originalMissionAction = window.missionAction;
         window.missionAction = function(action){
           if(action === 'premium') return scrollToId('premiumDiscoverySection');
-          if(action === 'premium-open-create') { if(typeof setPanel === 'function') setPanel('create'); return scrollToId('premiumDiscoverySection'); }
-          if(action === 'premium-open-attach') { if(typeof setPanel === 'function') setPanel('attach'); return scrollToId('premiumAttachPanel'); }
-          if(action === 'premium-open-inspector') { if(typeof setPanel === 'function') setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
-          if(action === 'premium-load-procurement') { if(typeof setPanel === 'function') setPanel('inspect'); return typeof loadProcurement === 'function' ? loadProcurement() : undefined; }
-          if(action === 'premium-claim-discovery') { if(typeof setPanel === 'function') setPanel('claims'); return typeof reviewClaim === 'function' ? reviewClaim() : undefined; }
+          if(action === 'premium-open-create') { document.getElementById('premiumTabCreate')?.click(); return scrollToId('premiumDiscoverySection'); }
+          if(action === 'premium-open-attach') { document.getElementById('premiumTabAttach')?.click(); return scrollToId('premiumAttachPanel'); }
+          if(action === 'premium-open-inspector') { document.getElementById('premiumTabInspect')?.click(); return scrollToId('premiumInspectorPanel'); }
+          if(action === 'premium-load-procurement') { document.getElementById('premiumTabInspect')?.click(); return document.getElementById('premiumInspectorLoadBtn')?.click(); }
+          if(action === 'premium-claim-discovery') { document.getElementById('premiumTabClaims')?.click(); return document.getElementById('premiumDiscoveryClaimBtn')?.click(); }
           if(action === 'premium-recommended') return premiumUsePreset('first-live-mainnet', true);
           if(action === 'premium-fast') return premiumUsePreset('fast', true);
           if(action === 'premium-assurance') return premiumUsePreset('assurance', true);
