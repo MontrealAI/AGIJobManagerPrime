@@ -9,6 +9,7 @@ describe('standalone 2026-04-01 premium canonical template regression', () => {
   it('exists and carries 2026-04-01 version header', () => {
     expect(fs.existsSync(file)).toBe(true);
     expect(html()).toContain('Prime Mainnet Console · 2026-04-01');
+    expect(html()).toContain('Mainnet Console 2026-04-01');
     expect(html()).toContain('agijobmanagerprime.v2026_04_01.procurementVault');
   });
 
@@ -33,7 +34,7 @@ describe('standalone 2026-04-01 premium canonical template regression', () => {
 
   it('renders non-fatal ENS hook messaging and minReputation inheritance semantics', () => {
     const page = html();
-    expect(page).toContain('Hook skipped (NOT_CONFIGURED), create succeeded');
+    expect(page).toContain('Success + non-fatal hook skip (NOT_CONFIGURED)');
     expect(page).toContain('minReputation = 0 inherits ManagerPrime premium threshold; it does not mean open access.');
   });
 
@@ -51,4 +52,21 @@ describe('standalone 2026-04-01 premium canonical template regression', () => {
     expect(page).toContain('Applicant announcement copied.');
     expect(page).toContain('Validator briefing copied.');
   });
+
+  it('ships an explicit 11-step create wizard rail with pass/warn/blocked language', () => {
+    const page = html();
+    expect(page).toContain('Create wizard rail (11-step operational checklist)');
+    expect(page).toContain('id="premiumCreateWizardRail"');
+    expect(page).toContain('Step 11 · Sign + success handoff');
+    expect(page).toContain('Payout escrow allowance + discovery reserve allowance both sufficient');
+  });
+
+  it('promotes the first-live strip with explicit payout/discovery allowance targets and fixture URI', () => {
+    const page = html();
+    expect(page).toContain('verified production template');
+    expect(page).toContain('Payout escrow allowance target');
+    expect(page).toContain('Discovery reserve allowance target');
+    expect(page).toContain('ipfs://bafkreihrscquk3h2zo6rsgtycp7lwxz2fqk24fmwcfkvvx3dapfmaxyyca');
+  });
+
 });
