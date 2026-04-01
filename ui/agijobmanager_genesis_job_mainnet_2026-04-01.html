@@ -10444,7 +10444,16 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const firstLiveSummary = `First successful mainnet premium create\njobId=0 procurementId=0\n100000 payout + 7020 reserve = 107020 total exposure\nDuration 604800 seconds\n3/5/7 structure · 35/65 weighting · 300/1250/1500/120/350 economics\nENS hook skipped (NOT_CONFIGURED), create succeeded.`;
         if(pel('premiumLoadFirstLiveTemplateBtn')) pel('premiumLoadFirstLiveTemplateBtn').addEventListener('click', ()=>premiumUsePreset('first-live-mainnet', true));
         if(pel('premiumUseFirstLiveDraftBtn')) pel('premiumUseFirstLiveDraftBtn').addEventListener('click', ()=>premiumUsePreset('first-live-mainnet', true));
-        if(pel('premiumOpenFirstLiveInspectorBtn')) pel('premiumOpenFirstLiveInspectorBtn').addEventListener('click', ()=>{ premiumSetSurface('inspect'); const pid=pel('premiumInspectorId'); if(pid) pid.value='0'; premiumLoadInspector(); });
+        if(pel('premiumOpenFirstLiveInspectorBtn')) pel('premiumOpenFirstLiveInspectorBtn').addEventListener('click', ()=>{
+          if(typeof setPanel === 'function') setPanel('inspect');
+          const pid = pel('premiumInspectorProcurementId');
+          if(pid) pid.value = '0';
+          if(typeof loadProcurement === 'function'){
+            loadProcurement('0').catch(e=>setToast(e.message||String(e),'bad'));
+          }else{
+            document.getElementById('premiumInspectorPanel')?.scrollIntoView({behavior:'smooth', block:'start'});
+          }
+        });
         if(pel('premiumCopyFirstLiveTupleBtn')) pel('premiumCopyFirstLiveTupleBtn').addEventListener('click', ()=>copyText(JSON.stringify(FIRST_LIVE_MAINNET_FIXTURE, null, 2),'First-live tuple JSON copied.'));
         if(pel('premiumCopyFirstLiveSummaryBtn')) pel('premiumCopyFirstLiveSummaryBtn').addEventListener('click', ()=>copyText(firstLiveSummary,'First-live summary copied.'));
         const premiumParityTest = (()=>{ try{ const f=FIRST_LIVE_MAINNET_FIXTURE; const budget=(BigInt(f.proc.finalistCount)*BigInt(f.proc.stipendPerFinalist))+(BigInt(f.proc.finalistCount)*BigInt(f.proc.maxValidatorRevealsPerFinalist)*BigInt(f.proc.validatorRewardPerReveal)); return budget===7020n && BigInt(f.job.durationSeconds)===604800n && f.proc.finalistCount===3 && f.proc.minValidatorReveals===5 && f.proc.maxValidatorRevealsPerFinalist===7 && f.proc.historicalWeightBps===3500 && f.proc.trialWeightBps===6500 && f.proc.applicationStake==='300' && f.proc.finalistStakeTotal==='1250' && f.proc.stipendPerFinalist==='1500' && f.proc.validatorRewardPerReveal==='120' && f.proc.validatorScoreBond==='350'; }catch{return false;} })();
@@ -10487,11 +10496,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const originalMissionAction = window.missionAction;
         window.missionAction = function(action){
           if(action === 'premium') return scrollToId('premiumDiscoverySection');
-          if(action === 'premium-open-create') { if(setPanel) setPanel('create'); return scrollToId('premiumDiscoverySection'); }
-          if(action === 'premium-open-attach') { if(setPanel) setPanel('attach'); return scrollToId('premiumAttachPanel'); }
-          if(action === 'premium-open-inspector') { if(setPanel) setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
-          if(action === 'premium-load-procurement') { if(setPanel) setPanel('inspect'); return loadProcurement(); }
-          if(action === 'premium-claim-discovery') { if(setPanel) setPanel('claims'); return reviewClaim(); }
+          if(action === 'premium-open-create') { if(typeof setPanel === 'function') setPanel('create'); return scrollToId('premiumDiscoverySection'); }
+          if(action === 'premium-open-attach') { if(typeof setPanel === 'function') setPanel('attach'); return scrollToId('premiumAttachPanel'); }
+          if(action === 'premium-open-inspector') { if(typeof setPanel === 'function') setPanel('inspect'); return scrollToId('premiumInspectorPanel'); }
+          if(action === 'premium-load-procurement') { if(typeof setPanel === 'function') setPanel('inspect'); return typeof loadProcurement === 'function' ? loadProcurement() : undefined; }
+          if(action === 'premium-claim-discovery') { if(typeof setPanel === 'function') setPanel('claims'); return typeof reviewClaim === 'function' ? reviewClaim() : undefined; }
           if(action === 'premium-recommended') return premiumUsePreset('first-live-mainnet', true);
           if(action === 'premium-fast') return premiumUsePreset('fast', true);
           if(action === 'premium-assurance') return premiumUsePreset('assurance', true);
