@@ -66,7 +66,7 @@ The UI assumes the listed selectors remain available and semantically stable. If
 
 ## Standalone identity route compatibility note (v45)
 
-The canonical standalone artifact (`ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`) binds the public Alpha-Agent identity write path directly to:
+The canonical standalone artifact (`ui/agijobmanager_genesis_job_mainnet_2026-04-01.html`) binds the public Alpha-Agent identity write path directly to:
 
 - Contract: `FreeTrialSubdomainRegistrarIdentity`
 - Address: `0x7811993CbcCa3b8bb35a3d919F3BA59eeFbeAA9a`
