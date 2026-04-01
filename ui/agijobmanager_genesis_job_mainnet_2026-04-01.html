@@ -9911,6 +9911,12 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const d = Number(pel('premiumDiscoveryDurationDays')?.value || 0);
         return BigInt(Math.max(0, Math.round(d*86400)));
       }
+      function premiumSyncDurationChipState(){
+        const current = String(pel('premiumDiscoveryDurationDays')?.value || '').trim();
+        document.querySelectorAll('[data-premium-duration-days]').forEach(chip=>{
+          chip.classList.toggle('active', String(chip.dataset.premiumDurationDays || '') === current);
+        });
+      }
       function premiumUsePreset(name, forceEconomics=true){
         premiumState.preset = name;
         if(name !== 'custom'){
@@ -9924,6 +9930,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
             if(pel('premiumDiscoveryPayout')) pel('premiumDiscoveryPayout').value = FIRST_LIVE_MAINNET_FIXTURE.job.payout;
             premiumState.exactDurationSeconds = Number(FIRST_LIVE_MAINNET_FIXTURE.job.durationSeconds);
             if(pel('premiumDiscoveryDurationDays')) pel('premiumDiscoveryDurationDays').value = String(Number(FIRST_LIVE_MAINNET_FIXTURE.job.durationSeconds) / 86400);
+            premiumSyncDurationChipState();
             if(pel('premiumDiscoveryMinReputation')) pel('premiumDiscoveryMinReputation').value = String(FIRST_LIVE_MAINNET_FIXTURE.proc.minReputation);
             if(pel('premiumDiscoveryApplicationStake')) pel('premiumDiscoveryApplicationStake').value = FIRST_LIVE_MAINNET_FIXTURE.proc.applicationStake;
             if(pel('premiumDiscoveryFinalistStakeTotal')) pel('premiumDiscoveryFinalistStakeTotal').value = FIRST_LIVE_MAINNET_FIXTURE.proc.finalistStakeTotal;
@@ -10437,6 +10444,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumLoadFirstLiveTemplateBtn')) pel('premiumLoadFirstLiveTemplateBtn').addEventListener('click', ()=>premiumUsePreset('first-live-mainnet', true));
         if(pel('premiumUseFirstLiveDraftBtn')) pel('premiumUseFirstLiveDraftBtn').addEventListener('click', ()=>premiumUsePreset('first-live-mainnet', true));
         if(pel('premiumOpenFirstLiveInspectorBtn')) pel('premiumOpenFirstLiveInspectorBtn').addEventListener('click', ()=>{
+          document.getElementById('premiumTabInspect')?.click();
           if(typeof setPanel === 'function') setPanel('inspect');
           const pid = pel('premiumInspectorProcurementId');
           if(pid) pid.value = '0';
