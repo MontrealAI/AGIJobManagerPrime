@@ -6,7 +6,7 @@ These files are **additive** to the broader Next.js UI effort in `ui/`; they are
 
 ## Canonical routing
 
-- **Primary operator runbook for the documented mainnet artifact (`v45`):** [GENESIS_JOB_MAINNET_HTML_UI.md](./GENESIS_JOB_MAINNET_HTML_UI.md)
+- **Primary operator runbook for the documented mainnet artifact (`2026-04-01`):** [GENESIS_JOB_MAINNET_HTML_UI.md](./GENESIS_JOB_MAINNET_HTML_UI.md)
 - **Broader/full UI docs hub (Next.js):** [README.md](./README.md)
 - **Deployment/operator authority (Hardhat):** [../../hardhat/README.md](../../hardhat/README.md)
 - **ENS replacement/cutover flow:** [../DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md](../DEPLOYMENT/ENS_JOB_PAGES_MAINNET_REPLACEMENT.md)
@@ -15,8 +15,8 @@ These files are **additive** to the broader Next.js UI effort in `ui/`; they are
 
 | File | Purpose | Network assumptions | Audience | Status |
 | --- | --- | --- | --- | --- |
-| `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html` | Standalone, versioned browser interface artifact with live AGIJobManager/ENSJobPages reads and action-capable controls. | Mainnet-focused (`chainId 1`) with embedded contract constants. | Operators, reviewers, demos/audits needing a single-file client. | **Canonical standalone artifact for this repo runbook.** |
-| `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v13.html` ... `v44.html` | Earlier standalone snapshots kept for comparison and reproducibility (including prior canonical `v44`). | Mainnet-oriented snapshots. | Auditors/reviewers comparing behavior across versions. | Historical snapshots (non-canonical by default). |
+| `ui/agijobmanager_genesis_job_mainnet_2026-04-01.html` | Standalone, versioned browser interface artifact with live AGIJobManager/ENSJobPages reads and action-capable controls. | Mainnet-focused (`chainId 1`) with embedded contract constants. | Operators, reviewers, demos/audits needing a single-file client. | **Canonical standalone artifact for this repo runbook.** |
+| `ui/agijobmanager_genesis_job_mainnet_2026-03-05-v13.html` ... `v45.html` | Earlier standalone snapshots kept for comparison and reproducibility (including prior canonical `v45`). | Mainnet-oriented snapshots. | Auditors/reviewers comparing behavior across versions. | Historical snapshots (non-canonical by default). |
 | `ui/dist-ipfs/agijobmanager.html` | Generated single-file output from the Next.js/IPFS build pipeline. | Depends on build-time environment/config. | Release operators and distribution maintainers. | Generated artifact. |
 
 ## Operator-safe expectations
@@ -27,7 +27,7 @@ These files are **additive** to the broader Next.js UI effort in `ui/`; they are
 
 ## Quick open guidance
 
-For the canonical `v45` artifact:
+For the canonical `2026-04-01` artifact:
 
 1. Open the runbook: [GENESIS_JOB_MAINNET_HTML_UI.md](./GENESIS_JOB_MAINNET_HTML_UI.md).
 2. Prefer local HTTP serving for browser compatibility:
@@ -35,4 +35,4 @@ For the canonical `v45` artifact:
    cd ui
    python3 -m http.server 8000
    ```
-3. Open: `http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-03-05-v45.html`.
+3. Open: `http://127.0.0.1:8000/agijobmanager_genesis_job_mainnet_2026-04-01.html`.
