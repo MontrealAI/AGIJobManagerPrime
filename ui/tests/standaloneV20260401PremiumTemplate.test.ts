@@ -12,6 +12,13 @@ describe('standalone 2026-04-01 premium canonical template regression', () => {
     expect(html()).toContain('agijobmanagerprime.v2026_04_01.procurementVault');
   });
 
+  it('preserves local vault compatibility with legacy v45 key migration fallback', () => {
+    const page = html();
+    expect(page).toContain("const PRIME_LOCAL_VAULT_LEGACY_KEYS = ['agijobmanagerprime.v45.procurementVault'];");
+    expect(page).toContain("const PRIME_LOCAL_VAULT_MIGRATION_MARK = 'agijobmanagerprime.v2026_04_01.procurementVault.migrated';");
+    expect(page).toContain('localStorage.setItem(PRIME_LOCAL_VAULT_KEY, JSON.stringify(legacy));');
+  });
+
   it('pins first-live-mainnet fixture values and derived budgets', () => {
     const page = html();
     expect(page).toContain('0xe90422f666b87e4962dd976015c18ee7a592dc40ddd6070b0f000a9404f93d1b');

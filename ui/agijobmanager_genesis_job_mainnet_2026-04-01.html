@@ -3698,8 +3698,26 @@ Evaluation methodology"></textarea>
   <script>
 
     const PRIME_LOCAL_VAULT_KEY = 'agijobmanagerprime.v2026_04_01.procurementVault';
+    const PRIME_LOCAL_VAULT_LEGACY_KEYS = ['agijobmanagerprime.v45.procurementVault'];
+    const PRIME_LOCAL_VAULT_MIGRATION_MARK = 'agijobmanagerprime.v2026_04_01.procurementVault.migrated';
+    function primeVaultReadRaw(key){
+      try{return JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(_){return {};}}
     function primeVaultLoad(){
-      try{return JSON.parse(localStorage.getItem(PRIME_LOCAL_VAULT_KEY)||'{}')||{};}catch(_){return {};}}
+      const current = primeVaultReadRaw(PRIME_LOCAL_VAULT_KEY);
+      if(current && Object.keys(current).length) return current;
+      for(const legacyKey of PRIME_LOCAL_VAULT_LEGACY_KEYS){
+        const legacy = primeVaultReadRaw(legacyKey);
+        if(!legacy || !Object.keys(legacy).length) continue;
+        try{
+          if(localStorage.getItem(PRIME_LOCAL_VAULT_MIGRATION_MARK) !== '1'){
+            localStorage.setItem(PRIME_LOCAL_VAULT_KEY, JSON.stringify(legacy));
+            localStorage.setItem(PRIME_LOCAL_VAULT_MIGRATION_MARK, '1');
+          }
+        }catch(_){}
+        return legacy;
+      }
+      return {};
+    }
     function primeVaultSave(data){ localStorage.setItem(PRIME_LOCAL_VAULT_KEY, JSON.stringify(data)); primeVaultRender(); }
     function randomSaltHex(){
       if(window.crypto?.getRandomValues){
