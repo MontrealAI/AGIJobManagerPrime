@@ -37,10 +37,14 @@ jobs:
         run: FOUNDRY_PROFILE=ci forge test --no-match-path "forge-test/invariant/*.t.sol"
 
       - name: Prime focused fuzz campaigns (CI profile)
-        run: npm run forge:fuzz:ci
+        run: |
+          npm run forge:fuzz:ci
+          npm run forge:fuzz:manager
 
       - name: Prime stateful invariants (all handlers, CI profile)
-        run: npm run forge:invariant:all
+        run: |
+          npm run forge:invariant:all
+          npm run forge:invariant:clock
 
       - name: Prime replayable invariant commands
         run: |

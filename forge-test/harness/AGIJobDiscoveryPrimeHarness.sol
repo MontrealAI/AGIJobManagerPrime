@@ -83,4 +83,16 @@ contract AGIJobDiscoveryPrimeHarness is AGIJobDiscoveryPrime {
     function revealedScoreCount(uint256 procurementId, address finalist) external view returns (uint256) {
         return revealedScores[procurementId][finalist].length;
     }
+
+    function pausedSecondsNowView() external view returns (uint64) {
+        return _pausedSecondsNow();
+    }
+
+    function effectiveTimestampView(uint256 procurementId) external view returns (uint256) {
+        return _effectiveTimestamp(procurements[procurementId]);
+    }
+
+    function procurementPauseBaselineView(uint256 procurementId) external view returns (uint64) {
+        return procurements[procurementId].pauseSecondsBaseline;
+    }
 }
