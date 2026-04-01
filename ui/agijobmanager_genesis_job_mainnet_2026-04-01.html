@@ -10376,6 +10376,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(pel('premiumDiscoveryCoachRisk')) pel('premiumDiscoveryCoachRisk').textContent = `Applicant reveal failure can forfeit ${premiumFormat(applicationStake)}; finalists recover ${premiumFormat(finalistStake)} and earn ${premiumFormat(premiumReadAmount('premiumDiscoveryStipendPerFinalist'))} on compliant trials; validators risk ${premiumFormat(validatorBond)} to earn ${premiumFormat(validatorReward)} per credible reveal.`;
         premiumSyncHeroSummary();
         const validation = premiumValidation(struct);
+        const allowancesReady = (String(pel('premiumManagerApprovalState')?.textContent || '').trim() === 'Approved')
+          && (String(pel('premiumDiscoveryApprovalState')?.textContent || '').trim() === 'Approved');
         const wizardRail = [
           {label:'Step 1 · Choose template', state:'ok', text:`Preset ${premiumState.preset || 'custom'} active.`},
           {label:'Step 2 · Metadata + Job Spec URI', state:(String(struct.job.jobSpecURI||'').trim() ? 'ok' : 'warn'), text:(String(struct.job.jobSpecURI||'').trim() ? 'Job Spec URI present.' : 'Provide a Job Spec URI or import from builder.')},

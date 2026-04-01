@@ -58,6 +58,7 @@ describe('standalone 2026-04-01 premium canonical template regression', () => {
     expect(page).toContain('Create wizard rail (11-step operational checklist)');
     expect(page).toContain('id="premiumCreateWizardRail"');
     expect(page).toContain('Step 11 · Sign + success handoff');
+    expect(page).toContain("const allowancesReady = (String(pel('premiumManagerApprovalState')?.textContent || '').trim() === 'Approved')");
     expect(page).toContain('Payout escrow allowance + discovery reserve allowance both sufficient');
   });
 
