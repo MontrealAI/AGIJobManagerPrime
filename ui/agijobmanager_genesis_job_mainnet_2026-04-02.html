@@ -9960,6 +9960,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function pel(id){ return document.getElementById(id); }
       function premiumRoundUnits(raw, bps){ return raw <= 0n ? 0n : (raw * BigInt(bps)) / 10000n; }
       function premiumFormat(raw){ try{ return `${formatUnitsToAmount(raw)} $AGIALPHA`; }catch{ return '—'; } }
+      function formatNumber(value){
+        const n = typeof value === 'bigint' ? Number(value) : Number(value);
+        if(!Number.isFinite(n)) return String(value ?? '—');
+        return n.toLocaleString('en-US');
+      }
       const PREMIUM_SETTLEMENT_DEFAULTS = {premiumReputationThreshold:10000,requiredValidatorApprovals:3,requiredValidatorDisapprovals:3,voteQuorum:3,validationRewardPercentage:8,completionReviewPeriod:7*86400,disputeReviewPeriod:14*86400,challengePeriodAfterApproval:86400,validatorBondBps:1500,validatorBondMin:1_0000000000000000000n*10n,validatorBondMax:88888888_000000000000000000n,validatorSlashBps:8000,agentBondBps:500,agentBondMin:1_0000000000000000000n,agentBondMax:88888888_000000000000000000n,jobDurationLimit:10000000,DISPUTE_BOND_BPS:50,DISPUTE_BOND_MIN:1_0000000000000000000n,DISPUTE_BOND_MAX:200_000000000000000000n};
       function premiumProtocolNumber(key){ const live=getProtocolNumber(key); return live != null ? live : PREMIUM_SETTLEMENT_DEFAULTS[key]; }
       function premiumProtocolBigInt(key, fallback=0n){
@@ -10405,8 +10410,10 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         }
         if(pel('premiumScoreBandExplain')){
           const payoutLabel = payout > 0n ? formatUnitsToAmount(payout) : '100000';
-          const minRevealCount = BigInt(Math.max(1, minReveal));
-          const maxRevealCount = BigInt(Math.max(Number(minRevealCount), maxReveal));
+          const minReveal = Math.max(1, minRevealsPerFinalist);
+          const maxReveal = Math.max(minReveal, maxRevealsPerFinalist);
+          const minRevealCount = BigInt(minReveal);
+          const maxRevealCount = BigInt(maxReveal);
           const minPool = validatorReward * minRevealCount;
           const maxPool = validatorReward * maxRevealCount;
           const minLivenessPool = (minPool * 2000n) / 10000n;
