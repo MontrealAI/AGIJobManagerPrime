@@ -1400,7 +1400,7 @@
         <div class="v35-brandmark">◎</div>
         <div>
           <div class="v35-brandeyebrow">Prime mainnet</div>
-          <div class="v35-brandtitle">AGIJobManager Prime · Mainnet Console 2026-04-01</div>
+          <div class="v35-brandtitle">AGIJobManager Prime · Mainnet Console 2026-04-02</div>
         </div>
       </div>
       <nav class="v35-nav" aria-label="Section navigation">
@@ -1849,7 +1849,6 @@
                 </div>
 
                 <div class="premiumStepCard"><div class="premiumStepHeader"><div><h3>Claims quick links</h3><p class="premiumStepLead">Participation actions have moved to the dedicated Participate tab for applicant/finalist/validator/claimant role rails.</p></div></div><div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn" type="button" id="premiumClaimsGoParticipateApplicant">Open Participate · Applicant</button><button class="btn" type="button" id="premiumClaimsGoParticipateValidator">Open Participate · Validator</button><button class="btn" type="button" id="premiumClaimsGoParticipateClaimant">Open Participate · Claimant</button></div></div>
-</div>
               </div>
 
               <aside class="premiumStickyRail">
@@ -10408,6 +10407,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if(pel('premiumTimelineSettlementNote')) pel('premiumTimelineSettlementNote').textContent = `Posting → Commitment → Reveal → Shortlisting → Trials → Validator Scoring → Designation takes ${totalCycleDays % 1 === 0 ? totalCycleDays.toFixed(0) : totalCycleDays.toFixed(2)} days under the current editable schedule. Only after designation does the ${selectedAcceptanceHours} hour selected-slot claim window open in ManagerPrime, followed by a ${checkpointWindowHours} hour checkpoint window if the designated winner actually claims the slot.`;
         }
         if(pel('premiumScoreBandExplain')){
+          const minReveal = Number(struct.proc.minValidatorReveals || 0);
+          const maxReveal = Number(struct.proc.maxValidatorRevealsPerFinalist || 0);
           const payoutLabel = payout > 0n ? formatUnitsToAmount(payout) : '100000';
           const minRevealCount = BigInt(Math.max(1, minReveal));
           const maxRevealCount = BigInt(Math.max(Number(minRevealCount), maxReveal));
@@ -10733,7 +10734,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         };
       }
       async function refreshAttachPreview(){
-        if(!window.agiJobDiscovery?.methods) return;
+        if(!agiJobDiscovery?.methods) return;
         const proc=attachStruct();
         let budget='0';
         try{ budget = await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); }catch(e){}
