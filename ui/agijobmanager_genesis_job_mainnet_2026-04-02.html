@@ -10838,7 +10838,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if($('scoreCommitProcurementId')) $('scoreCommitProcurementId').value = pid;
           if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value = pid; if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value = pid;
           if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
-          updateParticipateStudio(proc).catch(()=>{});
+          updateParticipateStudio(proc, requestId).catch(()=>{});
         }catch(err){ if(requestId !== premiumProcurementLoadRequestId) return; if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `Inspector load failed: ${err.message||err}`; }
       }
       async function loadInspectorByJob(){ const jobId=String($('premiumInspectorJobId')?.value||'').trim(); if(!jobId) return; const has=await agiJobDiscovery.methods.hasProcurementByJobId(jobId).call().catch(()=>false); const pid=has ? await agiJobDiscovery.methods.procurementByJobId(jobId).call().catch(()=> '') : ''; if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(pid||''); if(pid) await loadProcurement(pid); else if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `No procurement found for job ${jobId}.`; }
@@ -10932,22 +10932,29 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         });
         if(prior && list.some(x=>String(x).toLowerCase()===prior)) sel.value = list.find(x=>String(x).toLowerCase()===prior) || '';
       }
-      async function updateParticipateStudio(proc){
+      async function updateParticipateStudio(proc, requestId=null){
         if(!proc) return;
+        const isLatest = ()=> requestId == null || requestId === premiumProcurementLoadRequestId;
+        if(!isLatest()) return;
         const pid = String($('premiumActionProcurementId')?.value || '');
+        if(!isLatest()) return;
         if($('premiumParticipateProcurement')) $('premiumParticipateProcurement').textContent = `Procurement ${pid || '—'} · employer ${proc.employer || '—'}`;
         const meta = await agiJobDiscovery?.methods?.discoveryState?.().call().catch(()=>null);
+        if(!isLatest()) return;
         const effectiveNow = computeEffectiveNow(proc, meta);
         const phase = effectiveNow <= Number(proc.commitDeadline) ? 'Commit applications' : (effectiveNow <= Number(proc.revealDeadline) ? 'Reveal applications' : (effectiveNow <= Number(proc.finalistAcceptDeadline) ? 'Finalist acceptance' : (effectiveNow <= Number(proc.trialDeadline) ? 'Trial submission' : (effectiveNow <= Number(proc.scoreCommitDeadline) ? 'Validator score commit' : (effectiveNow <= Number(proc.scoreRevealDeadline) ? 'Validator score reveal' : 'Post-score / finalization')))));
+        if(!isLatest()) return;
         if($('premiumParticipatePhase')) $('premiumParticipatePhase').textContent = phase;
         const nextTs = [proc.commitDeadline,proc.revealDeadline,proc.finalistAcceptDeadline,proc.trialDeadline,proc.scoreCommitDeadline,proc.scoreRevealDeadline].map(Number).find(t=>effectiveNow<=t) || Number(proc.scoreRevealDeadline);
         if($('premiumParticipateCountdown')) $('premiumParticipateCountdown').textContent = `effectiveNow ${effectiveNow} · next deadline ${humanTs(nextTs)} (pause-adjusted).`;
         if($('premiumApplicantMinRep')) $('premiumApplicantMinRep').textContent = `This live procurement currently requires reputation ${proc.minReputation}.`;
         const rep = userAccount ? await (agiJobManager.methods.reputation?.(userAccount)?.call?.().catch(()=>null) || agiJobManager.methods.reputationOf?.(userAccount)?.call?.().catch(()=>null) || Promise.resolve('0')) : '0';
+        if(!isLatest()) return;
         if($('premiumApplicantRep')) $('premiumApplicantRep').textContent = `Wallet reputation ${rep} · ${BigInt(rep||0) >= BigInt(proc.minReputation||0) ? 'Pass' : 'Below requirement'}.`;
         const required = BigInt(proc.applicationStake || 0);
         const bal = userAccount ? BigInt(await agiToken.methods.balanceOf(userAccount).call().catch(()=> '0')) : 0n;
         const allow = userAccount ? BigInt(await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call().catch(()=> '0')) : 0n;
+        if(!isLatest()) return;
         const short = required > allow ? required - allow : 0n;
         if($('premiumApplicantAllowance')) $('premiumApplicantAllowance').textContent = `Required ${fmtUnits(required)} · balance ${fmtUnits(bal)} · allowance ${fmtUnits(allow)}.`;
         if($('premiumApplicantAllowanceHint')) $('premiumApplicantAllowanceHint').textContent = short>0n ? `Allowance shortfall ${fmtUnits(short)}. Approve to AGIJobDiscoveryPrime before commit.` : (required===0n ? 'applicationStake is zero for this procurement.' : 'Allowance posture is sufficient for commit.');
