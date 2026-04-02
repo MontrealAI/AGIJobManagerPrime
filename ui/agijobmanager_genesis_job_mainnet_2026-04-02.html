@@ -5692,7 +5692,12 @@ function syncModalState(){
       if(box){
         if(image && isValidUriLoose(image)){
           const src = normalizeIpfsToHttp(image);
-          box.innerHTML = `<img src="${src}" alt="Job cover preview" onerror="this.parentNode.textContent='Image unavailable'">`;
+          box.textContent = '';
+          const img = document.createElement('img');
+          img.alt = 'Job cover preview';
+          img.src = src;
+          img.onerror = ()=>{ box.textContent = 'Image unavailable'; };
+          box.appendChild(img);
         }else{
           box.textContent = "No image";
         }
@@ -9963,6 +9968,19 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function pel(id){ return document.getElementById(id); }
       function premiumRoundUnits(raw, bps){ return raw <= 0n ? 0n : (raw * BigInt(bps)) / 10000n; }
       function premiumFormat(raw){ try{ return `${formatUnitsToAmount(raw)} $AGIALPHA`; }catch{ return '—'; } }
+      function formatNumber(value){
+        const n = typeof value === 'bigint' ? Number(value) : Number(value);
+        if(!Number.isFinite(n)) return String(value ?? '—');
+        return n.toLocaleString('en-US');
+      }
+      async function copyText(value, okMessage='Copied.'){
+        try{
+          await navigator.clipboard.writeText(String(value ?? ''));
+          setToast(okMessage, 'ok');
+        }catch(_){
+          setToast('Clipboard unavailable in this environment.', 'warn');
+        }
+      }
       const PREMIUM_SETTLEMENT_DEFAULTS = {premiumReputationThreshold:10000,requiredValidatorApprovals:3,requiredValidatorDisapprovals:3,voteQuorum:3,validationRewardPercentage:8,completionReviewPeriod:7*86400,disputeReviewPeriod:14*86400,challengePeriodAfterApproval:86400,validatorBondBps:1500,validatorBondMin:1_0000000000000000000n*10n,validatorBondMax:88888888_000000000000000000n,validatorSlashBps:8000,agentBondBps:500,agentBondMin:1_0000000000000000000n,agentBondMax:88888888_000000000000000000n,jobDurationLimit:10000000,DISPUTE_BOND_BPS:50,DISPUTE_BOND_MIN:1_0000000000000000000n,DISPUTE_BOND_MAX:200_000000000000000000n};
       function premiumProtocolNumber(key){ const live=getProtocolNumber(key); return live != null ? live : PREMIUM_SETTLEMENT_DEFAULTS[key]; }
       function premiumProtocolBigInt(key, fallback=0n){
@@ -10962,7 +10980,13 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         $('premiumClaimsLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumClaimsProcurementId')?.value, $('premiumClaimsAgent')?.value, 'premiumClaimsApplicationView')); $('premiumDiscoveryApplicationInspectBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumDiscoveryApplicationInspectProcurementId')?.value, $('premiumDiscoveryApplicationInspectAgent')?.value, 'premiumDiscoveryApplicationInspectResult'));
         $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, ($('premiumInspectorAgentAddress')?.value || $('premiumInspectorApplicationAgent')?.value), 'premiumInspectorApplicationView'));
         $('premiumOpenActionsBtn')?.addEventListener('click', ()=>setPanel('participate'));
-        document.querySelectorAll('[data-premium-role-action]').forEach(btn=>btn.addEventListener('click', ()=>setPanel('participate')));
+        document.querySelectorAll('[data-premium-role-action]').forEach(btn=>btn.addEventListener('click', ()=>{
+          const pid = String($('premiumInspectorProcurementId')?.value || '');
+          if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value = pid;
+          if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
+          setPanel('participate');
+          refreshParticipate().catch(()=>{});
+        }));
         $('premiumParticipateLoadBtn')?.addEventListener('click', ()=>refreshParticipate());
         $('premiumParticipateUseInspectorBtn')?.addEventListener('click', ()=>{ if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value=String($('premiumInspectorProcurementId')?.value||''); refreshParticipate(); });
         $('premiumParticipateUseFixtureBtn')?.addEventListener('click', ()=>{ if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value='0'; refreshParticipate(); });
@@ -11026,7 +11050,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       }
       function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims'; }
       function syncInspectorIds(){ if($('premiumInspectorNextActionReadable') && $('premiumInspectorNextActionMeta')) $('premiumInspectorNextActionMeta').textContent = $('premiumInspectorNextActionMeta').textContent || 'Load a procurement to translate live state.'; }
-      function boot(){ relabelTabs(); updateCoach(); syncInspectorIds(); assemblePreflightBand(); restoreUiContinuity({ restoreHash:true }); bindUiContinuity(); persistUiContinuity(); $('preflightOpenAlphaDiagnosticsBtn')?.addEventListener('click', ()=>{ $('alphaJumpDiagnosticsBtn')?.click(); document.getElementById('alphaAgentMintSection')?.scrollIntoView({behavior:'smooth', block:'start'}); }); document.querySelectorAll("[data-premium-role-action]").forEach(btn=>btn.addEventListener("click", ()=>{ const pid=$("premiumInspectorProcurementId")?.value||""; if($("premiumActionProcurementId")) $("premiumActionProcurementId").value=pid; const agent=$("premiumInspectorApplicationAgent")?.value||""; if(agent && $("premiumActionFinalist")) $("premiumActionFinalist").value=agent; const map={commit:"premiumActionCommitApplicationBtn",reveal:"premiumActionRevealApplicationBtn",accept:"premiumActionAcceptFinalistBtn",trial:"premiumActionSubmitTrialBtn","score-commit":"premiumActionCommitScoreBtn","score-reveal":"premiumActionRevealScoreBtn"}; const target=map[btn.dataset.premiumRoleAction]; if(target && $(target)) $(target).click(); })); ['input','change'].forEach(evt=>document.addEventListener(evt, e=>{ if(e.target && String(e.target.id||'').startsWith('premiumDiscovery')) updateCoach(); if(e.target && ['termsAccepted','preflightTermsAccepted','agentSub','clubSub','alphaTermsAcceptedTop','mintAlphaLabel'].includes(String(e.target.id||''))) updatePreflightSummary(); })); window.addEventListener('hashchange', persistUiContinuity); window.addEventListener('pagehide', persistUiContinuity); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') persistUiContinuity(); }); updatePreflightSummary(); setInterval(updateCoach, 1200); }
+      function boot(){ relabelTabs(); updateCoach(); syncInspectorIds(); assemblePreflightBand(); restoreUiContinuity({ restoreHash:true }); bindUiContinuity(); persistUiContinuity(); $('preflightOpenAlphaDiagnosticsBtn')?.addEventListener('click', ()=>{ $('alphaJumpDiagnosticsBtn')?.click(); document.getElementById('alphaAgentMintSection')?.scrollIntoView({behavior:'smooth', block:'start'}); }); document.querySelectorAll("[data-premium-role-action]").forEach(btn=>btn.addEventListener("click", ()=>{ const pid=$("premiumInspectorProcurementId")?.value||""; if($("premiumActionProcurementId")) $("premiumActionProcurementId").value=pid; if($("premiumParticipateProcurementId")) $("premiumParticipateProcurementId").value=pid; const agent=$("premiumInspectorApplicationAgent")?.value||""; if(agent && $("premiumActionFinalist")) $("premiumActionFinalist").value=agent; const map={commit:"premiumActionCommitApplicationBtn",reveal:"premiumActionRevealApplicationBtn",accept:"premiumActionAcceptFinalistBtn",trial:"premiumActionSubmitTrialBtn","score-commit":"premiumActionCommitScoreBtn","score-reveal":"premiumActionRevealScoreBtn"}; const target=map[btn.dataset.premiumRoleAction]; if(target && $(target)) $(target).click(); })); ['input','change'].forEach(evt=>document.addEventListener(evt, e=>{ if(e.target && String(e.target.id||'').startsWith('premiumDiscovery')) updateCoach(); if(e.target && ['termsAccepted','preflightTermsAccepted','agentSub','clubSub','alphaTermsAcceptedTop','mintAlphaLabel'].includes(String(e.target.id||''))) updatePreflightSummary(); })); window.addEventListener('hashchange', persistUiContinuity); window.addEventListener('pagehide', persistUiContinuity); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') persistUiContinuity(); }); updatePreflightSummary(); setInterval(updateCoach, 1200); }
       if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true}); else boot();
     })();
 
