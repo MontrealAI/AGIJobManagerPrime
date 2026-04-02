@@ -1795,7 +1795,7 @@
 
                 <div class="premiumStepCard" data-participate-panel="claimant" style="display:none">
                   <div class="premiumStepHeader"><div><h3>Claimant / balances rail</h3><p class="premiumStepLead">Claimable balance with source hints: returned applicant stake, finalist stipend + stake return, validator bond + reward, employer unused reserve refunds.</p></div></div>
-                  <div class="builderActions"><button class="btn" type="button" id="premiumClaimsRefreshBtn">Refresh claimable + discovery stats</button><button class="btn btn-primary" type="button" id="premiumDiscoveryClaimBtn">Review claim()</button></div>
+                  <div class="builderActions"><button class="btn" type="button" id="premiumParticipateClaimsRefreshBtn">Refresh claimable + discovery stats</button><button class="btn btn-primary" type="button" id="premiumParticipateDiscoveryClaimBtn">Review claim()</button></div>
                 </div>
               </div>
 
@@ -10832,6 +10832,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if($('premiumInspectorDeadlines')) $('premiumInspectorDeadlines').innerHTML = `Commit ${humanTs(proc.commitDeadline)}<br>Reveal ${humanTs(proc.revealDeadline)}<br>Finalist accept ${humanTs(proc.finalistAcceptDeadline)}<br>Trial ${humanTs(proc.trialDeadline)}<br>Score commit ${humanTs(proc.scoreCommitDeadline)}<br>Score reveal ${humanTs(proc.scoreRevealDeadline)}<br>Selected acceptance window ${secondsToHuman(proc.selectedAcceptanceWindow)} · Checkpoint ${secondsToHuman(proc.checkpointWindow)}`;
           if($('premiumInspectorApplicants')) $('premiumInspectorApplicants').innerHTML = applicants.length ? applicants.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No applicants loaded.';
           if($('premiumInspectorFinalists')) $('premiumInspectorFinalists').innerHTML = finalists.length ? finalists.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No finalists yet.';
+          populateValidatorFinalistSelector(finalists);
           if($('premiumInspectorRaw')) $('premiumInspectorRaw').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2); if($('premiumInspectorProcurementStruct')) $('premiumInspectorProcurementStruct').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2);
           if($('procurementCommitId')) $('procurementCommitId').value = pid;
           if($('scoreCommitProcurementId')) $('scoreCommitProcurementId').value = pid;
@@ -10909,6 +10910,24 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function setParticipateSuccess(msg){
         if($('premiumParticipateSuccess')) $('premiumParticipateSuccess').innerHTML = msg;
       }
+      function populateValidatorFinalistSelector(finalists=[]){
+        const sel = $('premiumActionFinalistSelect');
+        if(!sel) return;
+        const list = Array.isArray(finalists) ? finalists.filter(Boolean) : [];
+        const prior = String(sel.value || '').toLowerCase();
+        sel.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = list.length ? 'Select finalist address' : 'No finalists loaded yet';
+        sel.appendChild(placeholder);
+        list.forEach(addr=>{
+          const opt = document.createElement('option');
+          opt.value = addr;
+          opt.textContent = addr;
+          sel.appendChild(opt);
+        });
+        if(prior && list.some(x=>String(x).toLowerCase()===prior)) sel.value = list.find(x=>String(x).toLowerCase()===prior) || '';
+      }
       async function updateParticipateStudio(proc){
         if(!proc) return;
         const pid = String($('premiumActionProcurementId')?.value || '');
@@ -10955,6 +10974,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if($('premiumActionSubdomain')) $('premiumActionSubdomain').value = normalizeSubdomainLabel($('premiumActionSubdomain')?.value);
         });
         $('premiumActionGenerateSaltBtn')?.addEventListener('click', ()=>{ if($('premiumActionSalt')) $('premiumActionSalt').value = randomSalt(); setCommitmentHelper('Secure local salt generated with crypto.getRandomValues. Losing the salt makes reveal impossible.'); });
+        $('premiumActionFinalistSelect')?.addEventListener('change', ()=>{ if($('premiumActionFinalist')) $('premiumActionFinalist').value = $('premiumActionFinalistSelect')?.value || ''; });
         $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(btn=>btn.addEventListener('click', ()=>{
           const role = btn.getAttribute('data-participate-role');
           $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(b=>b.classList.toggle('active', b===btn));
@@ -10978,7 +10998,8 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         $('premiumInspectorLoadBtn')?.addEventListener('click', ()=>loadProcurement().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorResolveBtn')?.addEventListener('click', ()=>loadInspectorByJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumClaimsRefreshBtn')?.addEventListener('click', ()=>loadClaims().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
+        $('premiumParticipateClaimsRefreshBtn')?.addEventListener('click', ()=>loadClaims().catch(e=>setToast(e.message||String(e),'bad')));
+        $('premiumClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumParticipateDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumClaimsLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumClaimsProcurementId')?.value, $('premiumClaimsAgent')?.value, 'premiumClaimsApplicationView')); $('premiumDiscoveryApplicationInspectBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumDiscoveryApplicationInspectProcurementId')?.value, $('premiumDiscoveryApplicationInspectAgent')?.value, 'premiumDiscoveryApplicationInspectResult'));
         $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, ($('premiumInspectorAgentAddress')?.value || $('premiumInspectorApplicationAgent')?.value), 'premiumInspectorApplicationView')); $('premiumOpenActionsBtn')?.addEventListener('click', ()=>setPanel('participate'));
         const inspectorButtons=[['premiumInspectorAdvanceBtn','advanceProcurement(procurementId)','Review advanceProcurement',pid=>agiJobDiscovery.methods.advanceProcurement(pid)],['premiumInspectorFinalizeShortlistBtn','finalizeShortlist(procurementId)','Review finalizeShortlist',pid=>agiJobDiscovery.methods.finalizeShortlist(pid)],['premiumInspectorFinalizeWinnerBtn','finalizeWinner(procurementId)','Review finalizeWinner',pid=>agiJobDiscovery.methods.finalizeWinner(pid)],['premiumInspectorFallbackBtn','promoteFallbackFinalist(procurementId)','Review promoteFallbackFinalist',pid=>agiJobDiscovery.methods.promoteFallbackFinalist(pid)],['premiumInspectorCancelBtn','cancelProcurement(procurementId)','Review cancelProcurement',pid=>agiJobDiscovery.methods.cancelProcurement(pid)]];
