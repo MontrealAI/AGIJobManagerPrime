@@ -10729,7 +10729,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         };
       }
       async function refreshAttachPreview(){
-        if(!window.agiJobDiscovery?.methods) return;
+        if(!agiJobDiscovery?.methods) return;
         const proc=attachStruct();
         let budget='0';
         try{ budget = await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); }catch(e){}
@@ -10878,7 +10878,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const parts = cleaned.split('.').filter(Boolean);
         return parts[0] || '';
       }
-      function actionInputs(){ return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:normalizeSubdomainLabel($('premiumActionSubdomain')?.value), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:String(($('premiumActionFinalistSelect')?.value || $('premiumActionFinalist')?.value)||'').trim(), score:String($('premiumActionScore')?.value||'').trim()}; }
+      function actionInputs(){
+        const finalistText = String($('premiumActionFinalist')?.value || '').trim();
+        const finalistSelect = String($('premiumActionFinalistSelect')?.value || '').trim();
+        return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:normalizeSubdomainLabel($('premiumActionSubdomain')?.value), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:finalistText || finalistSelect, score:String($('premiumActionScore')?.value||'').trim()};
+      }
       function setCommitmentHelper(message){ if($('premiumActionCommitmentHelper')) $('premiumActionCommitmentHelper').textContent = message; }
       function randomSalt(){
         const bytes = new Uint8Array(32);
@@ -10975,6 +10979,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         });
         $('premiumActionGenerateSaltBtn')?.addEventListener('click', ()=>{ if($('premiumActionSalt')) $('premiumActionSalt').value = randomSalt(); setCommitmentHelper('Secure local salt generated with crypto.getRandomValues. Losing the salt makes reveal impossible.'); });
         $('premiumActionFinalistSelect')?.addEventListener('change', ()=>{ if($('premiumActionFinalist')) $('premiumActionFinalist').value = $('premiumActionFinalistSelect')?.value || ''; });
+        $('premiumActionFinalist')?.addEventListener('input', ()=>{ if($('premiumActionFinalistSelect') && $('premiumActionFinalist')?.value) $('premiumActionFinalistSelect').value = ''; });
         $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(btn=>btn.addEventListener('click', ()=>{
           const role = btn.getAttribute('data-participate-role');
           $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(b=>b.classList.toggle('active', b===btn));
