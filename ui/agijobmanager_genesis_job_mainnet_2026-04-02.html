@@ -9965,6 +9965,14 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         if(!Number.isFinite(n)) return String(value ?? '—');
         return n.toLocaleString('en-US');
       }
+      async function copyText(value, okMessage='Copied.'){
+        try{
+          await navigator.clipboard.writeText(String(value ?? ''));
+          setToast(okMessage, 'ok');
+        }catch(_){
+          setToast('Clipboard unavailable in this environment.', 'warn');
+        }
+      }
       const PREMIUM_SETTLEMENT_DEFAULTS = {premiumReputationThreshold:10000,requiredValidatorApprovals:3,requiredValidatorDisapprovals:3,voteQuorum:3,validationRewardPercentage:8,completionReviewPeriod:7*86400,disputeReviewPeriod:14*86400,challengePeriodAfterApproval:86400,validatorBondBps:1500,validatorBondMin:1_0000000000000000000n*10n,validatorBondMax:88888888_000000000000000000n,validatorSlashBps:8000,agentBondBps:500,agentBondMin:1_0000000000000000000n,agentBondMax:88888888_000000000000000000n,jobDurationLimit:10000000,DISPUTE_BOND_BPS:50,DISPUTE_BOND_MIN:1_0000000000000000000n,DISPUTE_BOND_MAX:200_000000000000000000n};
       function premiumProtocolNumber(key){ const live=getProtocolNumber(key); return live != null ? live : PREMIUM_SETTLEMENT_DEFAULTS[key]; }
       function premiumProtocolBigInt(key, fallback=0n){
@@ -10454,6 +10462,11 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const validation = premiumValidation(struct);
         const allowancesReady = (String(pel('premiumManagerApprovalState')?.textContent || '').trim() === 'Approved')
           && (String(pel('premiumDiscoveryApprovalState')?.textContent || '').trim() === 'Approved');
+        const timelineMonotonic = Number(struct.proc.commitDeadline||0) <= Number(struct.proc.revealDeadline||0)
+          && Number(struct.proc.revealDeadline||0) <= Number(struct.proc.finalistAcceptDeadline||0)
+          && Number(struct.proc.finalistAcceptDeadline||0) <= Number(struct.proc.trialDeadline||0)
+          && Number(struct.proc.trialDeadline||0) <= Number(struct.proc.scoreCommitDeadline||0)
+          && Number(struct.proc.scoreCommitDeadline||0) <= Number(struct.proc.scoreRevealDeadline||0);
         const wizardRail = [
           {label:'Step 1 · Choose template', state:'ok', text:`Preset ${premiumState.preset || 'custom'} active.`},
           {label:'Step 2 · Metadata + Job Spec URI', state:(String(struct.job.jobSpecURI||'').trim() ? 'ok' : 'warn'), text:(String(struct.job.jobSpecURI||'').trim() ? 'Job Spec URI present.' : 'Provide a Job Spec URI or import from builder.')},
@@ -10746,6 +10759,15 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const attachValidationHtml = `<div class="premiumValidationItem ${valid?'good':'bad'}">${valid?'Attach procurement inputs look internally consistent.':'Adjust finalists, reveal counts, weights, and acceptance window before attaching.'}</div>`; if($('premiumAttachValidationList')) $('premiumAttachValidationList').innerHTML = attachValidationHtml; if($('premiumAttachValidation')) $('premiumAttachValidation').innerHTML = attachValidationHtml;
         try{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent = `${fmtUnits(allowance)} approved`; }catch(e){ if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent='Allowance unavailable'; }
       }
+      async function attachApproveDiscovery(amount, label='attach procurement budget'){
+        if(!userAccount || !agiToken?.methods) throw new Error('Connect wallet before approving discovery allowance.');
+        const amt = BigInt(amount || 0);
+        if(amt <= 0n) return;
+        await runTrackedTx(`Approve ${label}`, ()=>agiToken.methods.approve(AGI_JOB_DISCOVERY, amt.toString()).send({from:userAccount}), {
+          pendingDetail:`Approving ${premiumFormat(amt)} for AGIJobDiscoveryPrime.`,
+          successDetail:`Approved ${premiumFormat(amt)} for AGIJobDiscoveryPrime.`
+        });
+      }
       async function inspectAttachJob(){
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId||!agiJobManager?.methods) return;
         try{
@@ -10782,7 +10804,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId) return setToast('Enter a job id before attaching procurement.','warn');
         const proc=attachStruct();
         const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call();
-        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value=String(procurementId); if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
+        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await attachApproveDiscovery(BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value=String(procurementId); if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
       }
       let premiumProcurementLoadRequestId = 0;
       async function loadProcurement(id){
@@ -11021,7 +11043,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         ['premiumAttachJobId',...attachIds.map(x=>'premiumAttach'+x)].forEach(id=>$(id)?.addEventListener('input', refreshAttachPreview));
         $('premiumAttachInspectJobBtn')?.addEventListener('click', ()=>inspectAttachJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumAttachRefreshAllowanceBtn')?.addEventListener('click', ()=>refreshAttachPreview().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumAttachApproveBtn')?.addEventListener('click', async ()=>{ const proc=attachStruct(); const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); await refreshAttachPreview(); });
+        $('premiumAttachApproveBtn')?.addEventListener('click', async ()=>{ const proc=attachStruct(); const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); await attachApproveDiscovery(BigInt(budget), 'attach procurement budget'); await refreshAttachPreview(); });
         $('premiumAttachSubmitBtn')?.addEventListener('click', ()=>reviewAttach().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorLoadBtn')?.addEventListener('click', ()=>loadProcurement().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorResolveBtn')?.addEventListener('click', ()=>loadInspectorByJob().catch(e=>setToast(e.message||String(e),'bad')));
