@@ -10878,10 +10878,15 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const parts = cleaned.split('.').filter(Boolean);
         return parts[0] || '';
       }
+      function activeParticipateRole(){
+        return $('premiumParticipateRoleTabs')?.querySelector('[data-participate-role].active')?.getAttribute('data-participate-role') || 'applicant';
+      }
       function actionInputs(){
         const finalistText = String($('premiumActionFinalist')?.value || '').trim();
         const finalistSelect = String($('premiumActionFinalistSelect')?.value || '').trim();
-        return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:normalizeSubdomainLabel($('premiumActionSubdomain')?.value), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:(finalistText || finalistSelect), score:String($('premiumActionScore')?.value||'').trim()};
+        const role = activeParticipateRole();
+        const finalist = role === 'validator' ? (finalistSelect || finalistText) : (finalistText || finalistSelect);
+        return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:normalizeSubdomainLabel($('premiumActionSubdomain')?.value), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist, score:String($('premiumActionScore')?.value||'').trim()};
       }
       function setCommitmentHelper(message){ if($('premiumActionCommitmentHelper')) $('premiumActionCommitmentHelper').textContent = message; }
       function randomSalt(){
@@ -10931,6 +10936,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           sel.appendChild(opt);
         });
         if(prior && list.some(x=>String(x).toLowerCase()===prior)) sel.value = list.find(x=>String(x).toLowerCase()===prior) || '';
+        if($('premiumActionFinalist')) $('premiumActionFinalist').value = String(sel.value || '').trim();
       }
       async function updateParticipateStudio(proc, requestId=null){
         if(!proc) return;
@@ -10990,6 +10996,10 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           const role = btn.getAttribute('data-participate-role');
           $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(b=>b.classList.toggle('active', b===btn));
           document.querySelectorAll('[data-participate-panel]').forEach(panel=>{ panel.style.display = panel.getAttribute('data-participate-panel')===role ? '' : 'none'; });
+          if(role === 'validator'){
+            const selected = String($('premiumActionFinalistSelect')?.value || '').trim();
+            if($('premiumActionFinalist')) $('premiumActionFinalist').value = selected;
+          }
         }));
         $('premiumApplicantPacketSaveBtn')?.addEventListener('click', ()=>{ const x = actionInputs(); const packet = {schemaVersion:'2026-04-02-applicant', procurementId:x.pid, applicant:userAccount||'', normalizedSubdomain:x.subdomain, proofRouteSummary:x.proof?.length?'Merkle/additional':'ENS-first', applicationURI:x.uri, salt:x.salt, commitment:x.commitment, createdAt:new Date().toISOString()}; saveLocalPacket('premiumApplicantPacket', packet); setToast('Applicant packet saved locally.', 'ok'); });
         $('premiumApplicantPacketDownloadBtn')?.addEventListener('click', ()=>{ const p = loadLocalPacket('premiumApplicantPacket'); if(!p) return setToast('No local applicant packet saved yet.', 'warn'); downloadPacket(`applicant_packet_${p.procurementId||'draft'}.json`, p); });
