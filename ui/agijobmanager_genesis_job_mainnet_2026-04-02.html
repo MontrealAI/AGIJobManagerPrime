@@ -5741,7 +5741,16 @@ function syncModalState(){
       if(box){
         if(image && isValidUriLoose(image)){
           const src = normalizeIpfsToHttp(image);
-          box.innerHTML = `<img src="${src}" alt="Job cover preview" onerror="this.parentNode.textContent='Image unavailable'">`;
+          box.innerHTML = "";
+          const img = document.createElement("img");
+          img.alt = "Job cover preview";
+          img.src = src;
+          img.onerror = () => {
+            if(img.parentNode){
+              img.parentNode.textContent = "Image unavailable";
+            }
+          };
+          box.appendChild(img);
         }else{
           box.textContent = "No image";
         }
