@@ -688,7 +688,12 @@
     #alphaIdentityReviewModal .reviewFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
     #alphaIdentityReviewModal .reviewFooter{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
     #actionReviewModal .reviewFooter{justify-content:flex-end}
-    @media (max-width:1200px){.alphaSectionIntro,.alphaVerificationDeck{grid-template-columns:1fr}}
+    
+    .premiumRoleChip.active{background:linear-gradient(135deg,#6c49bd,#8b71d7);color:#fff;border-color:rgba(108,73,189,.4)}
+    #premiumParticipateAdvancedVault{opacity:.9}
+    #premiumParticipateAdvancedVault summary{cursor:pointer;padding:10px 0;color:var(--text-soft)}
+    .premiumStickyCtaMobile{position:sticky;bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:9}
+@media (max-width:1200px){.alphaSectionIntro,.alphaVerificationDeck{grid-template-columns:1fr}}
     @media (max-width:1040px){.opsGrid,.syncGrid,.reviewFacts,#alphaAgentMintSection .mintGrid,.alphaSectionIntro,.alphaQuickStartGrid,.alphaPreviewGrid,.alphaIntroStats,.alphaActionGuideGrid,.alphaPrimaryActions,.alphaIdentityActions,.alphaControlGrid,.alphaPreviewMetrics,.alphaQuickFacts,.alphaPreviewSupport,.alphaReadinessFoot,.alphaModeGrid,.alphaLabelDossier,.alphaVerificationSignals{grid-template-columns:1fr}}
     @media (max-width:700px){
       .modalBackdrop{align-items:flex-end;padding:0;overflow:auto}
@@ -933,7 +938,7 @@
     @media (max-width:1100px){.primeDeckGrid,.vaultGrid,.registryGrid,.primeOpsGrid{grid-template-columns:1fr;}}
     @media (max-width:700px){body{background-attachment:scroll}.container{width:min(100%,94%);padding-bottom:96px;}}
   
-    /* 2026-04-01 identity review pass: canonical premium signing surface */
+    /* 2026-04-02 identity review pass: canonical premium signing surface */
     #alphaIdentityReviewModal{background:rgba(12,10,22,.58)!important;backdrop-filter:blur(16px)!important}
     #alphaIdentityReviewModal .reviewModalCard{display:flex!important;flex-direction:column!important;overflow:hidden!important;border-radius:26px!important;border:1px solid rgba(94,74,129,.26)!important;box-shadow:0 30px 92px rgba(36,24,58,.28)!important}
     #alphaIdentityReviewModal #alphaIdentityReviewFacts{padding:18px 22px 0!important;overflow:auto!important;overscroll-behavior:contain}
@@ -1395,7 +1400,7 @@
         <div class="v35-brandmark">◎</div>
         <div>
           <div class="v35-brandeyebrow">Prime mainnet</div>
-          <div class="v35-brandtitle">AGIJobManager Prime · Mainnet Console 2026-04-01</div>
+          <div class="v35-brandtitle">AGIJobManager Prime · Mainnet Console 2026-04-02</div>
         </div>
       </div>
       <nav class="v35-nav" aria-label="Section navigation">
@@ -1506,7 +1511,7 @@
           <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumOverviewPanel" id="premiumTabOverview" data-premium-surface="overview">Overview</button>
           <button type="button" class="premiumSurfaceTab active" role="tab" aria-selected="true" aria-controls="premiumCreatePanel" id="premiumTabCreate" data-premium-surface="create">Create premium job</button>
           <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumAttachPanelTab" id="premiumTabAttach" data-premium-surface="attach">Attach procurement</button>
-          <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumInspectPanel" id="premiumTabInspect" data-premium-surface="inspect">Inspector</button>
+          <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumInspectPanel" id="premiumTabInspect" data-premium-surface="inspect">Procurement inspector</button>
           <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumParticipatePanel" id="premiumTabParticipate" data-premium-surface="participate">Participate</button>
           <button type="button" class="premiumSurfaceTab" role="tab" aria-selected="false" aria-controls="premiumClaimsPanel" id="premiumTabClaims" data-premium-surface="claims">Claims</button>
         </div>
@@ -1736,88 +1741,94 @@
             </div>
           </section>
 
+
           <section class="premiumSurfacePanel" data-premium-panel="participate" id="premiumParticipatePanel" role="tabpanel" aria-labelledby="premiumTabParticipate">
             <div class="premiumClaimsGrid">
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><h3>Participate · premium commitment studio</h3><p class="premiumStepLead">Commitment flows are primary. This studio is phase-aware, wallet-aware, proof-aware, allowance-aware, and review-first for applicants, finalists, validators, and claimants.</p></div><span class="premiumStepStatus" id="premiumParticipatePhaseChip" data-state="warning">Load procurement</span></div>
-                  <div class="premiumInspectorStatusGrid">
-                    <div class="premiumInspectorCard"><span class="k">Procurement</span><span class="v" id="premiumParticipateProcurement">Load from inspector or enter id below</span><small id="premiumParticipateDeadlines">Deadlines appear after load.</small></div>
-                    <div class="premiumInspectorCard"><span class="k">Live phase</span><span class="v" id="premiumParticipatePhase">Awaiting load</span><small id="premiumParticipateCountdown">Pause-adjusted countdown unavailable.</small></div>
-                    <div class="premiumInspectorCard"><span class="k">Next action</span><span class="v" id="premiumParticipateNextAction">Awaiting nextActionForProcurement</span><small id="premiumParticipateActorHint">Actor guidance appears after load.</small></div>
-                    <div class="premiumInspectorCard"><span class="k">Wallet posture</span><span class="v" id="premiumParticipateWallet">Connect wallet on Ethereum mainnet</span><small id="premiumParticipateWalletTerms">Terms acceptance still required.</small></div>
+                  <div class="premiumStepHeader"><div><h3>Participate</h3><p class="premiumStepLead">Premium participation studio with role rails, phase-aware readiness, allowance posture, and review-first writes. Applicant commit/reveal is the primary gold path.</p></div><span class="premiumStepStatus" id="premiumParticipatePhaseBadge" data-state="warning">Load procurement</span></div>
+                  <div class="premiumInputGrid three">
+                    <div class="premiumField"><label for="premiumParticipateProcurementId">Procurement id</label><input id="premiumParticipateProcurementId" type="number" min="0" placeholder="e.g. 0"></div>
+                    <div class="premiumField"><label for="premiumParticipateSubdomain">Agent / validator label</label><input id="premiumParticipateSubdomain" type="text" placeholder="alice · alice.agent.agi.eth"></div>
+                    <div class="premiumField"><label>&nbsp;</label><div class="premiumQuickChips"><button class="btn" type="button" id="premiumParticipateLoadBtn">Load live state</button><button class="btn" type="button" id="premiumParticipateUseInspectorBtn">Use inspector procurement</button><button class="btn" type="button" id="premiumParticipateUseFixtureBtn">Use first-live fixture</button></div></div>
                   </div>
-                  <div class="premiumInputGrid three" style="margin-top:12px">
-                    <div class="premiumField"><label for="premiumActionProcurementId">Procurement id</label><input id="premiumActionProcurementId" type="number" min="0" placeholder="e.g. 0"></div>
-                    <div class="premiumField"><label for="premiumActionSubdomain">ENS label / subdomain</label><input id="premiumActionSubdomain" type="text" placeholder="alice · alice.agent.agi.eth · alice.alpha.agent.agi.eth"></div>
-                    <div class="premiumField"><label>&nbsp;</label><div class="premiumQuickChips"><button class="btn" type="button" id="premiumParticipateNormalizeSubdomainBtn">Normalize label</button><button class="btn" type="button" id="premiumParticipatePrefillFromInspectorBtn">Prefill from inspector</button></div></div>
+                  <div class="premiumQuickChips" style="margin-top:12px">
+                    <button class="btn btn-primary premiumRoleChip active" data-premium-role="applicant" type="button">Applicant</button>
+                    <button class="btn premiumRoleChip" data-premium-role="finalist" type="button">Finalist</button>
+                    <button class="btn premiumRoleChip" data-premium-role="validator" type="button">Validator</button>
+                    <button class="btn premiumRoleChip" data-premium-role="claimant" type="button">Claimant</button>
                   </div>
-                  <div class="premiumRoleTabs" id="premiumParticipateRoleTabs" style="margin-top:12px">
-                    <button class="premiumRoleTab active" type="button" data-participate-role="applicant">Applicant</button>
-                    <button class="premiumRoleTab" type="button" data-participate-role="finalist">Finalist</button>
-                    <button class="premiumRoleTab" type="button" data-participate-role="validator">Validator</button>
-                    <button class="premiumRoleTab" type="button" data-participate-role="claimant">Claimant / balances</button>
+                  <div class="premiumInspectorStatusGrid" style="margin-top:12px">
+                    <div class="premiumInspectorCard"><span class="k">Phase</span><span class="v" id="premiumParticipatePhase">Load procurement to resolve phase</span><small id="premiumParticipateCountdown">Pause-adjusted countdown pending.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Wallet posture</span><span class="v" id="premiumParticipateWallet">Connect wallet</span><small id="premiumParticipateWalletReady">Terms and mainnet checks pending.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Authorization</span><span class="v" id="premiumParticipateAuth">Waiting for normalized subdomain</span><small id="premiumParticipateAuthMeta">ENS-first route. Merkle proof hidden until advanced mode.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Reputation</span><span class="v" id="premiumParticipateReputation">Load procurement + wallet</span><small id="premiumParticipateReputationMeta">This live procurement currently requires reputation —.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Allowance posture</span><span class="v" id="premiumParticipateAllowance">Load role + procurement</span><small id="premiumParticipateAllowanceMeta">Role-specific stake / bond readiness.</small></div>
+                    <div class="premiumInspectorCard"><span class="k">Local packet state</span><span class="v" id="premiumParticipatePacketState">Local packet only</span><small id="premiumParticipatePacketMeta">Local packet != on-chain state.</small></div>
                   </div>
                 </div>
 
-                <div class="premiumStepCard" data-participate-panel="applicant">
-                  <div class="premiumStepHeader"><div><h3>Applicant gold path · commit then reveal</h3><p class="premiumStepLead">This is the primary participation flow. Build commitment locally, verify authorization and economics, then submit reviewed on-chain writes.</p></div></div>
-                  <div class="premiumLocalNote"><b>Local packet banner:</b> packet data is local-only until commit lands on-chain. Losing the salt makes reveal impossible.</div>
-                  <div class="premiumInputGrid" style="margin-top:12px">
-                    <div class="premiumField"><label for="premiumActionApplicationUri">Application URI</label><input id="premiumActionApplicationUri" type="text" placeholder="ipfs://…"></div>
-                    <div class="premiumField"><label for="premiumActionSalt">Salt (bytes32)</label><input id="premiumActionSalt" type="text" placeholder="0x…"></div>
-                    <div class="premiumField"><label for="premiumActionProof">Proof (optional advanced)</label><input id="premiumActionProof" type="text" placeholder="Default ENS route: leave empty. Supports JSON/comma/newline bytes32."></div>
-                    <div class="premiumField"><label for="premiumActionCommitment">Commitment</label><input id="premiumActionCommitment" type="text" placeholder="0x…"></div>
+                <div class="premiumStepCard" id="premiumApplicantRail">
+                  <div class="premiumStepHeader"><div><h3>Applicant rail · flagship</h3><p class="premiumStepLead">Commit application first. Reveal later with the exact same URI + salt. Commitment transaction does <b>not</b> publish the URI.</p></div></div>
+                  <div class="premiumInputGrid three">
+                    <div class="premiumField"><label for="premiumActionApplicationUri">Application URI (private until reveal)</label><input id="premiumActionApplicationUri" type="text" placeholder="ipfs://..."><small>The commit stores only a hash. URI is published only during reveal.</small></div>
+                    <div class="premiumField"><label for="premiumActionSalt">Salt (bytes32 local secret)</label><input id="premiumActionSalt" type="text" placeholder="0x..."></div>
+                    <div class="premiumField"><label for="premiumActionCommitment">Commitment</label><input id="premiumActionCommitment" type="text" placeholder="0x..." readonly></div>
                   </div>
-                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumActionGenerateSaltBtn">Generate secure salt</button><button class="btn" type="button" id="premiumActionGenerateApplicationCommitmentBtn">Compute commitment</button><button class="btn" type="button" id="premiumApplicantPacketSaveBtn">Save local packet</button><button class="btn" type="button" id="premiumApplicantPacketDownloadBtn">Download packet JSON</button><button class="btn" type="button" id="premiumApplicantPacketImportBtn">Import packet JSON</button></div>
-                  <div class="premiumStepNote" id="premiumActionCommitmentHelper" style="margin-top:10px">Formula: keccak256(abi.encodePacked(procurementId, applicant, applicationURI, salt)).</div>
-                  <div class="premiumInspectorStatusGrid" style="margin-top:12px"><div class="premiumInspectorCard"><span class="k">Authorization preflight</span><span class="v" id="premiumApplicantAuth">Awaiting check</span><small id="premiumApplicantAuthHint">Default route is ENS ownership. Advanced proof route is optional.</small></div><div class="premiumInspectorCard"><span class="k">Live procurement requirement</span><span class="v" id="premiumApplicantMinRep">This live procurement currently requires reputation —</span><small id="premiumApplicantRep">Wallet reputation pending.</small></div><div class="premiumInspectorCard"><span class="k">Applicant allowance cockpit</span><span class="v" id="premiumApplicantAllowance">Load wallet to compute AGIALPHA stake allowance</span><small id="premiumApplicantAllowanceHint">Required = applicationStake. Employer allowance is separate.</small></div></div>
-                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionCommitApplicationBtn">Review commit application</button><button class="btn" type="button" id="premiumActionRevealApplicationBtn">Review reveal application</button></div>
+                  <div class="premiumFormulaRow" style="margin-top:10px"><span class="premiumFormulaPill">keccak256(abi.encodePacked(procurementId, applicant, applicationURI, salt))</span></div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumParticipateGenerateSaltBtn">Generate secure salt</button><button class="btn" type="button" id="premiumActionGenerateApplicationCommitmentBtn">Recompute commitment</button><button class="btn" type="button" id="premiumParticipateSavePacketBtn">Save local packet</button><button class="btn" type="button" id="premiumParticipateDownloadPacketBtn">Download packet JSON</button><button class="btn" type="button" id="premiumParticipateImportPacketBtn">Import packet JSON</button></div>
+                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionCommitApplicationBtn">Review commit application</button><button class="btn" type="button" id="premiumActionRevealApplicationBtn">Review reveal application</button><button class="btn" type="button" id="premiumParticipateOpenRevealModeBtn">Open reveal mode</button></div>
+                  <div class="statusline" style="margin-top:12px"><b>Applicant result</b>: <span id="premiumActionResult">No participant action submitted yet.</span></div>
                 </div>
 
-                <div class="premiumStepCard" data-participate-panel="finalist" style="display:none">
-                  <div class="premiumStepHeader"><div><h3>Finalist rail · accept then submit trial</h3><p class="premiumStepLead">Shows shortlist status, locked stake, required top-up, stipend visibility, and deadline-aware readiness.</p></div></div>
-                  <div class="premiumInputGrid"><div class="premiumField"><label for="premiumActionFinalist">Finalist address (optional override)</label><input id="premiumActionFinalist" type="text" placeholder="Defaults to connected wallet"></div></div>
-                  <div class="premiumInspectorStatusGrid" style="margin-top:12px"><div class="premiumInspectorCard"><span class="k">Finalist stake posture</span><span class="v" id="premiumFinalistStakePosture">Awaiting procurement + wallet reads</span><small id="premiumFinalistStakeHint">Top-up required = finalistStakeTotal - lockedStake.</small></div><div class="premiumInspectorCard"><span class="k">Allowance cockpit</span><span class="v" id="premiumFinalistAllowance">Awaiting AGIALPHA allowance read</span><small>Approval target: AGIJobDiscoveryPrime.</small></div></div>
-                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionAcceptFinalistBtn">Review finalist accepted</button><button class="btn" type="button" id="premiumActionSubmitTrialBtn">Review submit trial</button></div>
+                <div class="premiumStepCard" id="premiumFinalistRail" hidden>
+                  <div class="premiumStepHeader"><div><h3>Finalist rail</h3><p class="premiumStepLead">Accept finalist slot before deadline, top up stake if needed, then submit trial URI.</p></div></div>
+                  <div class="premiumField"><label for="premiumActionApplicationUriFinalist">Trial URI</label><input id="premiumActionApplicationUriFinalist" type="text" placeholder="ipfs://..."/></div>
+                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionAcceptFinalistBtn">Review accept finalist slot</button><button class="btn" type="button" id="premiumActionSubmitTrialBtn">Review submit finalist trial</button></div>
                 </div>
 
-                <div class="premiumStepCard" data-participate-panel="validator" style="display:none">
-                  <div class="premiumStepHeader"><div><h3>Validator rail · commit score then reveal score</h3><p class="premiumStepLead">Choose finalist, keep score hidden during commit, then reveal with salt in reveal window. Employer and applicant conflict checks are explicit.</p></div></div>
+                <div class="premiumStepCard" id="premiumValidatorRail" hidden>
+                  <div class="premiumStepHeader"><div><h3>Validator rail</h3><p class="premiumStepLead">Choose finalist from live list, commit score hash first, then reveal score + salt in reveal window.</p></div></div>
+                  <div class="premiumInputGrid three"><div class="premiumField"><label for="premiumActionFinalist">Finalist</label><input id="premiumActionFinalist" type="text" placeholder="0x... or select below"></div><div class="premiumField"><label for="premiumActionScore">Score (0-100)</label><input id="premiumActionScore" type="number" min="0" max="100" step="1"></div><div class="premiumField"><label for="premiumActionCommitmentScore">Score commitment</label><input id="premiumActionCommitmentScore" type="text" placeholder="Generated locally" readonly></div></div>
+                  <div id="premiumParticipateFinalistList" class="premiumLocalNote" style="margin-top:8px">Load procurement to show finalist addresses.</div>
+                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumActionGenerateScoreCommitmentBtn">Generate score commitment</button><button class="btn" type="button" id="premiumParticipateGenerateScoreSaltBtn">Generate score salt</button></div>
+                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionCommitScoreBtn">Review commit validator score</button><button class="btn" type="button" id="premiumActionRevealScoreBtn">Review reveal validator score</button></div>
+                </div>
+
+                <div class="premiumStepCard" id="premiumClaimantRail" hidden>
+                  <div class="premiumStepHeader"><div><h3>Claimant rail</h3><p class="premiumStepLead">Claim available balance. Typical sources: returned application stake, finalist stake return, stipend, validator bond refund + reward, employer unused reserve.</p></div></div>
+                  <div class="builderActions"><button class="btn" type="button" id="premiumParticipateClaimsRefreshBtn">Refresh claim posture</button><button class="btn btn-primary" type="button" id="premiumParticipateClaimBtn">Review claim balance</button></div>
+                </div>
+
+                <details class="premiumStepCard" id="premiumParticipateAdvancedVault"><summary><b>Advanced local packet vault (archival / local-only)</b></summary>
+                  <div class="premiumLocalNote" style="margin-top:10px">This drawer is intentionally secondary. Local packet only is not on-chain. Losing salt makes reveal impossible.</div>
                   <div class="premiumInputGrid">
-                    <div class="premiumField"><label for="premiumActionFinalistSelect">Finalist selector (from live list)</label><select id="premiumActionFinalistSelect"></select></div>
-                    <div class="premiumField"><label for="premiumActionScore">Validator score (0-100 integer)</label><input id="premiumActionScore" type="number" min="0" max="100" step="1"></div>
+                    <div class="premiumField"><label for="premiumActionProof">Advanced proof editor</label><input id="premiumActionProof" type="text" placeholder='JSON array / comma / newline bytes32'></div>
+                    <div class="premiumField"><label for="premiumActionSubdomain">Normalized subdomain (bare label)</label><input id="premiumActionSubdomain" type="text" placeholder="alice"></div>
                   </div>
-                  <div class="premiumQuickChips" style="margin-top:12px"><button class="btn" type="button" id="premiumActionGenerateScoreCommitmentBtn">Compute score commitment</button><button class="btn" type="button" id="premiumValidatorPacketSaveBtn">Save validator packet</button><button class="btn" type="button" id="premiumValidatorPacketDownloadBtn">Download validator packet JSON</button><button class="btn" type="button" id="premiumValidatorPacketImportBtn">Import validator packet JSON</button></div>
-                  <div class="premiumInspectorStatusGrid" style="margin-top:12px"><div class="premiumInspectorCard"><span class="k">Validator authorization</span><span class="v" id="premiumValidatorAuth">Awaiting preflight</span><small id="premiumValidatorAuthHint">Default route is ENS validator identity. Advanced proof optional.</small></div><div class="premiumInspectorCard"><span class="k">Bond + allowance</span><span class="v" id="premiumValidatorAllowance">Awaiting AGIALPHA balance/allowance</span><small id="premiumValidatorAllowanceHint">Required = validatorScoreBond (if > 0).</small></div></div>
-                  <div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumActionCommitScoreBtn">Review score committed</button><button class="btn" type="button" id="premiumActionRevealScoreBtn">Review score revealed</button></div>
-                </div>
-
-                <div class="premiumStepCard" data-participate-panel="claimant" style="display:none">
-                  <div class="premiumStepHeader"><div><h3>Claimant / balances rail</h3><p class="premiumStepLead">Claimable balance with source hints: returned applicant stake, finalist stipend + stake return, validator bond + reward, employer unused reserve refunds.</p></div></div>
-                  <div class="builderActions"><button class="btn" type="button" id="premiumParticipateClaimsRefreshBtn">Refresh claimable + discovery stats</button><button class="btn btn-primary" type="button" id="premiumParticipateDiscoveryClaimBtn">Review claim()</button></div>
-                </div>
+                  <div class="premiumStepNote" id="premiumActionCommitmentHelper" style="margin-top:10px">Advanced mode supports proof JSON, comma-separated proof, and newline proof.</div>
+                </details>
               </div>
 
               <aside class="premiumStickyRail">
                 <div class="premiumAsideCard">
-                  <div class="subtleTitle">Exact preflight checklist</div>
-                  <div id="premiumParticipateChecklist">Load procurement + wallet to compute contract-faithful readiness checks for each role action.</div>
+                  <div class="subtleTitle">Readiness checklist</div>
+                  <div class="premiumNextStepsList" id="premiumParticipateChecklist"><div>Load procurement, connect wallet, normalize subdomain, and generate local commitment packet first.</div></div>
                 </div>
                 <div class="premiumAsideCard">
-                  <div class="subtleTitle">Success handoff</div>
-                  <div id="premiumParticipateSuccess">No participation transaction submitted yet.</div>
+                  <div class="subtleTitle">Inspector deep links</div>
+                  <div class="premiumRoleActionRow"><button class="btn" type="button" id="premiumParticipateJumpApplicantBtn">Participate as applicant</button><button class="btn" type="button" id="premiumParticipateJumpRevealBtn">Reveal as applicant</button><button class="btn" type="button" id="premiumParticipateJumpFinalistBtn">Participate as finalist</button><button class="btn" type="button" id="premiumParticipateJumpValidatorBtn">Score as validator</button><button class="btn" type="button" id="premiumParticipateJumpClaimBtn">Claim balance</button></div>
                 </div>
+                <div class="premiumLocalNote">Deep links keep procurement context in sync with Inspector and Claims.</div>
               </aside>
             </div>
           </section>
-
 
           <section class="premiumSurfacePanel" data-premium-panel="claims" id="premiumClaimsPanel" role="tabpanel" aria-labelledby="premiumTabClaims">
             <div class="premiumClaimsGrid">
               <div class="premiumBuilderSteps">
                 <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><h3>Claimant / balances rail</h3><p class="premiumStepLead">Claims is now intentionally narrow: claimable balances, penalty preview, wallet discovery stats, and review-first <code>claim()</code>. Participation flows now live in the dedicated Participate studio.</p></div></div><div class="premiumParticipationGuide"><b>How a candidate or validator participates in this exemplar</b><small>Applicant: commits 0.30% and reveals or risks forfeiture. Finalist: tops up to 1.25% and receives a 1.50% stipend if trial participation is compliant. Discovery validator: posts a 0.35% score bond per finalist, participates in a 0.12% reveal-slot budget per finalist, and actual take-home then depends on median proximity, 20% liveness share, and relative quality weights. Settlement agent: if designated and the selected slot is claimed at 45 days via <code>applyForJob(...)</code>, posts a 6.944% ManagerPrime bond. Settlement validator: later faces a separate 15% bond per completion vote and 80% slash risk on the wrong side. Employer: claims unused discovery reserve refunds through pull-based balances.</small></div>
+                  <div class="premiumStepHeader"><div><h3>Claims</h3><p class="premiumStepLead">Claimable balances, penalty preview, discovery stats, and optional application inspection. Operational writes now live in Participate.</p></div></div><div class="premiumParticipationGuide"><b>How a candidate or validator participates in this exemplar</b><small>Applicant: commits 0.30% and reveals or risks forfeiture. Finalist: tops up to 1.25% and receives a 1.50% stipend if trial participation is compliant. Discovery validator: posts a 0.35% score bond per finalist, participates in a 0.12% reveal-slot budget per finalist, and actual take-home then depends on median proximity, 20% liveness share, and relative quality weights. Settlement agent: if designated and the selected slot is claimed at 45 days via <code>applyForJob(...)</code>, posts a 6.944% ManagerPrime bond. Settlement validator: later faces a separate 15% bond per completion vote and 80% slash risk on the wrong side. Employer: claims unused discovery reserve refunds through pull-based balances.</small></div>
                   <div class="premiumInspectorStatusGrid">
                     <div class="premiumInspectorCard"><span class="k">Claimable balances</span><span class="v" id="premiumDiscoveryClaimable">Load wallet + procurement to read claimable balance</span><small id="premiumClaimableHint">Connect wallet to load.</small></div>
                     <div class="premiumInspectorCard"><span class="k">Discovery penalty preview</span><span class="v" id="premiumDiscoveryPenalty">Load wallet + procurement to preview penalties</span><small id="premiumPenaltyPreviewHint">Discovery default risk on current wallet.</small></div>
@@ -1837,12 +1848,7 @@
                   <pre class="premiumCode" id="premiumDiscoveryApplicationInspectResult" style="margin-top:12px">No applicationView loaded.</pre>
                 </div>
 
-                <div class="premiumStepCard">
-                  <div class="premiumStepHeader"><div><h3>Participant actions moved</h3><p class="premiumStepLead">All applicant/finalist/validator writes are now first-class in the <b>Participate</b> tab, with phase-aware preflight, role-aware approvals, and packet-aware review modals.</p></div></div>
-                  <div class="premiumLocalNote">Use <b>Participate</b> for commit/reveal/accept/trial/score flows. This Claims rail remains balance-first to reduce operator confusion.</div>
-                  <div class="builderActions" style="margin-top:12px"><button class="btn btn-primary" type="button" id="premiumGoParticipateBtn">Open Participate studio</button></div>
-                  <div class="statusline" style="margin-top:12px"><b>Participant result</b>: <span id="premiumActionResult">No participant action submitted yet.</span></div>
-                </div>
+                <div class="premiumStepCard"><div class="premiumStepHeader"><div><h3>Claims quick links</h3><p class="premiumStepLead">Participation actions have moved to the dedicated Participate tab for applicant/finalist/validator/claimant role rails.</p></div></div><div class="premiumRoleActionRow" style="margin-top:12px"><button class="btn" type="button" id="premiumClaimsGoParticipateApplicant">Open Participate · Applicant</button><button class="btn" type="button" id="premiumClaimsGoParticipateValidator">Open Participate · Validator</button><button class="btn" type="button" id="premiumClaimsGoParticipateClaimant">Open Participate · Claimant</button></div></div>
               </div>
 
               <aside class="premiumStickyRail">
@@ -1873,7 +1879,6 @@
           </div>
           <button class="btn btn-primary" type="button" id="premiumDiscoveryStickySubmitBtn">Review premium creation</button>
         </div>
-        </section>
       </div>
     </div><div class="card" id="accessWalletCard">
       <div class="row">
@@ -3184,9 +3189,8 @@ Evaluation methodology"></textarea>
 
 
     <div class="card primePanel">
-      <details>
-        <summary class="primeSectionTitle"><h2>Advanced local packet archive (secondary)</h2><span class="pill">Optional · local-only</span></summary>
-      <div class="helper" style="margin-bottom:12px">Use the flagship discovery Participate studio above for primary commit/reveal/finalist/validator flow. This lower archive is optional local packet storage only; salts and commitments here are local helpers, not on-chain state, and losing salt makes reveal impossible.</div>
+      <div class="primeSectionTitle"><h2>Advanced local commitment notebook (secondary)</h2><span class="pill">Prime procurement operations</span></div>
+      <div class="helper" style="margin-bottom:12px">Use the flagship discovery workbench above for the main workflow. Use this notebook only as the advanced secondary local helper for commit/reveal preparation and salt storage. Salts and commitments here are local helpers, not on-chain state; store them safely until reveal, and treat countdowns as approximate unless live pause-adjusted reconstruction is available.</div>
       <div class="primeOpsGrid">
         <div class="primeStat"><span class="label">Application flow</span><div class="value">Commit application → reveal application URI → shortlist → finalist acceptance → trial submission.</div></div>
         <div class="primeStat"><span class="label">Validator scoring</span><div class="value">Commit score → reveal score → finalize winner → fallback promote if needed → claim balances.</div></div>
@@ -3230,8 +3234,7 @@ Evaluation methodology"></textarea>
           <div class="commitFormula">Suggested local commitment: keccak256(abi.encodePacked(procurementId, finalist, validator, score, salt))</div>
         </div>
       </div>
-      <div class="statusline" style="margin-top:14px"><b>Vault archive</b>: <span id="procurementVaultStatus">No local Prime procurement notes yet.</span></div>
-      </details>
+      <div class="statusline" style="margin-top:14px"><b>Vault notebook</b>: <span id="procurementVaultStatus">No local Prime procurement notes yet.</span></div>
     </div>
 
     <div class="card" id="jobsSection">
@@ -4054,8 +4057,6 @@ const AGIJobDiscoveryPrimeABI = [
 
 const AGIJobManagerABI = [
       {"inputs":[],"name":"agiToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"moderators","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"nextJobId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"requiredValidatorApprovals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"requiredValidatorDisapprovals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -4096,46 +4097,6 @@ const AGIJobManagerABI = [
       {"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"settlementPaused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"disputeReviewPeriod","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"bool","name":"paused","type":"bool"}],"name":"setSettlementPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_moderator","type":"address"}],"name":"addModerator","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_moderator","type":"address"}],"name":"removeModerator","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_agent","type":"address"},{"internalType":"bool","name":"_status","type":"bool"}],"name":"blacklistAgent","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_validator","type":"address"},{"internalType":"bool","name":"_status","type":"bool"}],"name":"blacklistValidator","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"bytes32","name":"_validatorMerkleRoot","type":"bytes32"},{"internalType":"bytes32","name":"_agentMerkleRoot","type":"bytes32"}],"name":"updateMerkleRoots","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_approvals","type":"uint256"}],"name":"setRequiredValidatorApprovals","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_disapprovals","type":"uint256"}],"name":"setRequiredValidatorDisapprovals","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_threshold","type":"uint256"}],"name":"setPremiumReputationThreshold","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_quorum","type":"uint256"}],"name":"setVoteQuorum","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_maxPayout","type":"uint256"}],"name":"setMaxJobPayout","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_limit","type":"uint256"}],"name":"setJobDurationLimit","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"value","type":"uint256"}],"name":"setMaxActiveJobsPerAgent","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_period","type":"uint256"}],"name":"setCompletionReviewPeriod","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_period","type":"uint256"}],"name":"setDisputeReviewPeriod","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"bps","type":"uint256"},{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setValidatorBondParams","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"bps","type":"uint256"},{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setAgentBondParams","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"bps","type":"uint256"}],"name":"setValidatorSlashBps","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"period","type":"uint256"}],"name":"setChallengePeriodAfterApproval","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_percentage","type":"uint256"}],"name":"setValidationRewardPercentage","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"validator","type":"address"}],"name":"addAdditionalValidator","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"validator","type":"address"}],"name":"removeAdditionalValidator","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"agent","type":"address"}],"name":"addAdditionalAgent","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"agent","type":"address"}],"name":"removeAdditionalAgent","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"nftAddress","type":"address"},{"internalType":"uint256","name":"payoutPercentage","type":"uint256"}],"name":"addAGIType","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"nftAddress","type":"address"}],"name":"disableAGIType","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_newTokenAddress","type":"address"}],"name":"updateAGITokenAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_newEnsRegistry","type":"address"}],"name":"updateEnsRegistry","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_newNameWrapper","type":"address"}],"name":"updateNameWrapper","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"bytes32","name":"_agentRootNode","type":"bytes32"},{"internalType":"bytes32","name":"_validatorRootNode","type":"bytes32"}],"name":"updateRootNodes","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_ensJobPages","type":"address"}],"name":"setEnsJobPages","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"lockIdentityConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"rescueETH","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"rescueERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"rescueToken","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"uint8","name":"code","type":"uint8"}],"name":"resolveDisputeWithCode","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"_jobId","type":"uint256"},{"internalType":"bool","name":"employerWins","type":"bool"}],"name":"resolveStaleDispute","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawAGI","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"employer","type":"address"},{"indexed":false,"internalType":"uint256","name":"payout","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"duration","type":"uint256"},{"indexed":false,"internalType":"string","name":"jobSpecURI","type":"string"},{"indexed":false,"internalType":"uint8","name":"intakeMode","type":"uint8"},{"indexed":true,"internalType":"bytes32","name":"perJobAgentRoot","type":"bytes32"},{"indexed":false,"internalType":"string","name":"details","type":"string"}],"name":"JobCreated","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"JobCancelled","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"jobId","type":"uint256"},{"indexed":true,"internalType":"address","name":"agent","type":"address"}],"name":"JobApplied","type":"event"},
@@ -4162,32 +4123,15 @@ const AGIJobManagerABI = [
     ];
 
     const ENSJobPagesABI = [
-      {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"ens","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobsRootName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobsRootNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"jobManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"configLocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"nameWrapper","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"publicResolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"jobLabelPrefix","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobLabelSnapshot","outputs":[{"internalType":"bool","name":"isSet","type":"bool"},{"internalType":"string","name":"label","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsLabel","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"string","name":"newPrefix","type":"string"}],"name":"setJobLabelPrefix","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"ensAddress","type":"address"}],"name":"setENSRegistry","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"nameWrapperAddress","type":"address"}],"name":"setNameWrapper","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"publicResolverAddress","type":"address"}],"name":"setPublicResolver","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"bytes32","name":"rootNode","type":"bytes32"},{"internalType":"string","name":"rootName","type":"string"}],"name":"setJobsRoot","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"manager","type":"address"}],"name":"setJobManager","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"string","name":"specURI","type":"string"}],"name":"createJobPage","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"agent","type":"address"}],"name":"onAgentAssigned","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"string","name":"completionURI","type":"string"}],"name":"onCompletionRequested","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"}],"name":"revokePermissions","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"},{"internalType":"address","name":"employer","type":"address"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"bool","name":"burnFuses","type":"bool"}],"name":"lockJobENS","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"lockConfiguration","outputs":[],"stateMutability":"nonpayable","type":"function"}
+      {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],"name":"jobEnsNode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"}
     ];
 
 
@@ -5163,7 +5107,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       return true;
     }
     const UI_CONTINUITY_KEY = 'agijobmanagerprime.v40.uiContinuity';
-    const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','preflightTermsAccepted','agentSub','clubSub','mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
+    const UI_CONTINUITY_FIELDS = ['termsAccepted','alphaTermsAcceptedTop','preflightTermsAccepted','agentSub','clubSub','mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumParticipateProcurementId','premiumParticipateSubdomain','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails'];
     const UI_CONTINUITY_TOGGLES = ['alphaEnsExpertDetails'];
     function continuityLoad(){
       try{ return JSON.parse(localStorage.getItem(UI_CONTINUITY_KEY) || '{}') || {}; }catch(_){ return {}; }
@@ -5235,7 +5179,7 @@ function abiHas(name){ return (x)=>x.type==='function' && x.name===name; }
       const continuityScopedToWallet = !!stored.lastWallet && !!userAccount && stored.lastWallet.toLowerCase() === String(userAccount).toLowerCase();
       const continuityScopedToChain = (stored.lastChainId == null || chainId == null) ? true : String(stored.lastChainId) === String(chainId);
       const sameSessionContext = continuityScopedToWallet && continuityScopedToChain;
-      const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
+      const portableFieldIds = new Set(['mintAlphaLabel','premiumActionProcurementId','premiumActionSubdomain','premiumActionProof','premiumActionCommitment','premiumActionSalt','premiumActionApplicationUri','premiumActionFinalist','premiumActionScore','premiumParticipateProcurementId','premiumParticipateSubdomain','premiumInspectorProcurementId','premiumInspectorJobId','premiumDiscoveryApplicationInspectProcurementId','premiumDiscoveryApplicationInspectAgent','premiumAttachJobId','premiumDiscoveryJobSpecURI','premiumDiscoveryDetails']);
       if(!sameSessionContext){
         UI_CONTINUITY_FIELDS.forEach(id=>{
           if(portableFieldIds.has(id)) return;
@@ -5748,16 +5692,7 @@ function syncModalState(){
       if(box){
         if(image && isValidUriLoose(image)){
           const src = normalizeIpfsToHttp(image);
-          box.innerHTML = "";
-          const img = document.createElement("img");
-          img.alt = "Job cover preview";
-          img.src = src;
-          img.onerror = () => {
-            if(img.parentNode){
-              img.parentNode.textContent = "Image unavailable";
-            }
-          };
-          box.appendChild(img);
+          box.innerHTML = `<img src="${src}" alt="Job cover preview" onerror="this.parentNode.textContent='Image unavailable'">`;
         }else{
           box.textContent = "No image";
         }
@@ -9340,9 +9275,9 @@ function normalizeIpfsToHttp(uri){
       addAdditionalAgent:[{name:'a',type:'address'}], removeAdditionalAgent:[{name:'a',type:'address'}],
       addAGIType:[{name:'token',type:'address'},{name:'agiType',type:'uint256'}], disableAGIType:[{name:'token',type:'address'}],
       updateAGITokenAddress:[{name:'newToken',type:'address'}], updateEnsRegistry:[{name:'newRegistry',type:'address'}], updateNameWrapper:[{name:'newWrapper',type:'address'}],
-      updateRootNodes:[{name:'agentRootNode',type:'bytes32'},{name:'validatorRootNode',type:'bytes32'}],
+      updateRootNodes:[{name:'clubRoot',type:'bytes32'},{name:'agentRoot',type:'bytes32'},{name:'alphaClubRoot',type:'bytes32'},{name:'alphaAgentRoot',type:'bytes32'}],
       setEnsJobPages:[{name:'newEnsPages',type:'address'}], rescueETH:[{name:'amount',type:'uint256'}], rescueERC20:[{name:'token',type:'address'},{name:'to',type:'address'},{name:'amount',type:'uint256'}], rescueToken:[{name:'token',type:'address'},{name:'data',type:'bytes'}],
-      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'code',type:'uint8'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'employerWins',type:'bool'}],
+      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'winner',type:'uint8'},{name:'reasonURI',type:'string'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'employerWins',type:'bool'}],
       setJobLabelPrefix:[{name:'prefix',type:'string'}], setENSRegistry:[{name:'registry',type:'address'}], setNameWrapper:[{name:'wrapper',type:'address'}], setPublicResolver:[{name:'resolver',type:'address'}],
       setJobsRoot:[{name:'rootNode',type:'bytes32'},{name:'rootName',type:'string'}], setJobManager:[{name:'jobManager',type:'address'}],
       lockConfiguration:[],
@@ -10028,19 +9963,6 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function pel(id){ return document.getElementById(id); }
       function premiumRoundUnits(raw, bps){ return raw <= 0n ? 0n : (raw * BigInt(bps)) / 10000n; }
       function premiumFormat(raw){ try{ return `${formatUnitsToAmount(raw)} $AGIALPHA`; }catch{ return '—'; } }
-      function formatNumber(value){
-        const n = typeof value === 'bigint' ? Number(value) : Number(value);
-        if(!Number.isFinite(n)) return String(value ?? '—');
-        return n.toLocaleString('en-US');
-      }
-      async function copyText(value, okMessage='Copied.'){
-        try{
-          await navigator.clipboard.writeText(String(value ?? ''));
-          setToast(okMessage, 'ok');
-        }catch(_){
-          setToast('Clipboard unavailable in this environment.', 'warn');
-        }
-      }
       const PREMIUM_SETTLEMENT_DEFAULTS = {premiumReputationThreshold:10000,requiredValidatorApprovals:3,requiredValidatorDisapprovals:3,voteQuorum:3,validationRewardPercentage:8,completionReviewPeriod:7*86400,disputeReviewPeriod:14*86400,challengePeriodAfterApproval:86400,validatorBondBps:1500,validatorBondMin:1_0000000000000000000n*10n,validatorBondMax:88888888_000000000000000000n,validatorSlashBps:8000,agentBondBps:500,agentBondMin:1_0000000000000000000n,agentBondMax:88888888_000000000000000000n,jobDurationLimit:10000000,DISPUTE_BOND_BPS:50,DISPUTE_BOND_MIN:1_0000000000000000000n,DISPUTE_BOND_MAX:200_000000000000000000n};
       function premiumProtocolNumber(key){ const live=getProtocolNumber(key); return live != null ? live : PREMIUM_SETTLEMENT_DEFAULTS[key]; }
       function premiumProtocolBigInt(key, fallback=0n){
@@ -10486,10 +10408,10 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         }
         if(pel('premiumScoreBandExplain')){
           const payoutLabel = payout > 0n ? formatUnitsToAmount(payout) : '100000';
-          const minReveal = Math.max(1, minRevealsPerFinalist);
-          const maxReveal = Math.max(minReveal, maxRevealsPerFinalist);
-          const minRevealCount = BigInt(minReveal);
-          const maxRevealCount = BigInt(maxReveal);
+          const minReveal = minRevealsPerFinalist;
+          const maxReveal = maxRevealsPerFinalist;
+          const minRevealCount = BigInt(Math.max(1, minReveal));
+          const maxRevealCount = BigInt(Math.max(Number(minRevealCount), maxReveal));
           const minPool = validatorReward * minRevealCount;
           const maxPool = validatorReward * maxRevealCount;
           const minLivenessPool = (minPool * 2000n) / 10000n;
@@ -10530,11 +10452,6 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const validation = premiumValidation(struct);
         const allowancesReady = (String(pel('premiumManagerApprovalState')?.textContent || '').trim() === 'Approved')
           && (String(pel('premiumDiscoveryApprovalState')?.textContent || '').trim() === 'Approved');
-        const timelineMonotonic = Number(struct.proc.commitDeadline||0) <= Number(struct.proc.revealDeadline||0)
-          && Number(struct.proc.revealDeadline||0) <= Number(struct.proc.finalistAcceptDeadline||0)
-          && Number(struct.proc.finalistAcceptDeadline||0) <= Number(struct.proc.trialDeadline||0)
-          && Number(struct.proc.trialDeadline||0) <= Number(struct.proc.scoreCommitDeadline||0)
-          && Number(struct.proc.scoreCommitDeadline||0) <= Number(struct.proc.scoreRevealDeadline||0);
         const wizardRail = [
           {label:'Step 1 · Choose template', state:'ok', text:`Preset ${premiumState.preset || 'custom'} active.`},
           {label:'Step 2 · Metadata + Job Spec URI', state:(String(struct.job.jobSpecURI||'').trim() ? 'ok' : 'warn'), text:(String(struct.job.jobSpecURI||'').trim() ? 'Job Spec URI present.' : 'Provide a Job Spec URI or import from builder.')},
@@ -10827,15 +10744,6 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const attachValidationHtml = `<div class="premiumValidationItem ${valid?'good':'bad'}">${valid?'Attach procurement inputs look internally consistent.':'Adjust finalists, reveal counts, weights, and acceptance window before attaching.'}</div>`; if($('premiumAttachValidationList')) $('premiumAttachValidationList').innerHTML = attachValidationHtml; if($('premiumAttachValidation')) $('premiumAttachValidation').innerHTML = attachValidationHtml;
         try{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent = `${fmtUnits(allowance)} approved`; }catch(e){ if($('premiumAttachAllowanceValue')) $('premiumAttachAllowanceValue').textContent='Allowance unavailable'; }
       }
-      async function attachApproveDiscovery(amount, label='attach procurement budget'){
-        if(!userAccount || !agiToken?.methods) throw new Error('Connect wallet before approving discovery allowance.');
-        const amt = BigInt(amount || 0);
-        if(amt <= 0n) return;
-        await runTrackedTx(`Approve ${label}`, ()=>agiToken.methods.approve(AGI_JOB_DISCOVERY, amt.toString()).send({from:userAccount}), {
-          pendingDetail:`Approving ${premiumFormat(amt)} for AGIJobDiscoveryPrime.`,
-          successDetail:`Approved ${premiumFormat(amt)} for AGIJobDiscoveryPrime.`
-        });
-      }
       async function inspectAttachJob(){
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId||!agiJobManager?.methods) return;
         try{
@@ -10872,7 +10780,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const jobId=String($('premiumAttachJobId')?.value||'').trim(); if(!jobId) return setToast('Enter a job id before attaching procurement.','warn');
         const proc=attachStruct();
         const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call();
-        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await attachApproveDiscovery(BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value=String(procurementId); if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
+        openActionReview({title:'Attach procurement to existing job',body:'You are about to call AGIJobDiscoveryPrime.attachProcurementToExistingJob(...) for an existing SelectedAgentOnly job. This funds procurement budget only and preserves the existing settlement escrow posture.',facts:[{label:'Function',value:'attachProcurementToExistingJob'},{label:'Target contract',value:`AGIJobDiscoveryPrime · ${AGI_JOB_DISCOVERY}`},{label:'Existing job id',value:jobId},{label:'Procurement budget only',value:fmtUnits(budget)},{label:'Settlement escrow impact',value:'No new payout escrow is funded by this attach path.'},{label:'ABI-ready tuple',value:`<pre class="premiumCode" style="margin:0">${escapeHtml(JSON.stringify(proc,null,2))}</pre>`,html:true}],checks:[{state:'Eligibility',badge:'warn',text:'The job must still be unassigned and use SelectedAgentOnly intake.'},{state:'Allowance',badge:'warn',text:'Discovery approval may be requested if allowance is below the procurement budget.'}],confirmLabel:'Attach procurement',method:'attachProcurementToExistingJob(jobId,proc)',footer:'On success the procurement inspector will load the new procurement automatically.',run:async()=>{ const allowance = userAccount ? await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call() : '0'; if(BigInt(allowance) < BigInt(budget)) await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); const receipt = await runTrackedTx('Attach procurement', ()=>agiJobDiscovery.methods.attachProcurementToExistingJob(String(jobId), proc).send({from:userAccount}), {pendingDetail:'Attaching discovery procurement to the existing job.', successDetail:'Procurement attached successfully.'}); const evt = receipt?.events?.ProcurementCreated?.returnValues || Object.values(receipt?.events||{}).find(ev=>ev?.event==='ProcurementCreated')?.returnValues; const procurementId = evt?.procurementId ?? ''; if($('premiumAttachResult')) $('premiumAttachResult').textContent = `Procurement attached. procurementId ${procurementId || 'unknown'} for job ${jobId}.`; if(procurementId){ if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(procurementId); if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value=String(procurementId); if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value=String(procurementId); setPanel('inspect'); await loadProcurement(procurementId); } }});
       }
       let premiumProcurementLoadRequestId = 0;
       async function loadProcurement(id){
@@ -10929,13 +10837,13 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           if($('premiumInspectorDeadlines')) $('premiumInspectorDeadlines').innerHTML = `Commit ${humanTs(proc.commitDeadline)}<br>Reveal ${humanTs(proc.revealDeadline)}<br>Finalist accept ${humanTs(proc.finalistAcceptDeadline)}<br>Trial ${humanTs(proc.trialDeadline)}<br>Score commit ${humanTs(proc.scoreCommitDeadline)}<br>Score reveal ${humanTs(proc.scoreRevealDeadline)}<br>Selected acceptance window ${secondsToHuman(proc.selectedAcceptanceWindow)} · Checkpoint ${secondsToHuman(proc.checkpointWindow)}`;
           if($('premiumInspectorApplicants')) $('premiumInspectorApplicants').innerHTML = applicants.length ? applicants.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No applicants loaded.';
           if($('premiumInspectorFinalists')) $('premiumInspectorFinalists').innerHTML = finalists.length ? finalists.map(a=>`<code>${escapeHtml(a)}</code>`).join('<br>') : 'No finalists yet.';
-          populateValidatorFinalistSelector(finalists);
           if($('premiumInspectorRaw')) $('premiumInspectorRaw').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2); if($('premiumInspectorProcurementStruct')) $('premiumInspectorProcurementStruct').textContent = JSON.stringify({procurementId:pid, proc, applicants, finalists, nextCode, shortlistOk, winnerOk, fallbackOk}, null, 2);
           if($('procurementCommitId')) $('procurementCommitId').value = pid;
           if($('scoreCommitProcurementId')) $('scoreCommitProcurementId').value = pid;
           if($('premiumClaimsProcurementId')) $('premiumClaimsProcurementId').value = pid; if($('premiumDiscoveryApplicationInspectProcurementId')) $('premiumDiscoveryApplicationInspectProcurementId').value = pid;
           if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
-          updateParticipateStudio(proc, requestId).catch(()=>{});
+          if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value = pid;
+          refreshParticipate().catch(()=>{});
         }catch(err){ if(requestId !== premiumProcurementLoadRequestId) return; if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `Inspector load failed: ${err.message||err}`; }
       }
       async function loadInspectorByJob(){ const jobId=String($('premiumInspectorJobId')?.value||'').trim(); if(!jobId) return; const has=await agiJobDiscovery.methods.hasProcurementByJobId(jobId).call().catch(()=>false); const pid=has ? await agiJobDiscovery.methods.procurementByJobId(jobId).call().catch(()=> '') : ''; if($('premiumInspectorProcurementId')) $('premiumInspectorProcurementId').value=String(pid||''); if(pid) await loadProcurement(pid); else if($('premiumInspectorResult')) $('premiumInspectorResult').textContent = `No procurement found for job ${jobId}.`; }
@@ -10967,144 +10875,75 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
           }
         });
       }
-      function normalizeSubdomainLabel(raw){
-        const s = String(raw||'').trim().toLowerCase();
-        if(!s) return '';
-        if(!s.includes('.')) return s;
-        const cleaned = s.replace(/\.eth$/,'');
-        const parts = cleaned.split('.').filter(Boolean);
-        return parts[0] || '';
+      function actionInputs(){ return {pid:String($('premiumActionProcurementId')?.value||$('premiumParticipateProcurementId')?.value||'').trim(), subdomain:String($('premiumActionSubdomain')?.value||'').trim(), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist:String($('premiumActionFinalist')?.value||'').trim(), score:String($('premiumActionScore')?.value||'').trim()}; }
+      function normalizeSubdomain(raw){
+        const value = String(raw||'').trim().toLowerCase();
+        if(!value) return {ok:false, label:'', reason:'Enter a label like alice or alice.agent.agi.eth.'};
+        let label=value;
+        if(value.endsWith('.alpha.agent.agi.eth')) label = value.replace('.alpha.agent.agi.eth','');
+        else if(value.endsWith('.agent.agi.eth')) label = value.replace('.agent.agi.eth','');
+        if(!/^[a-z0-9-]{1,63}$/.test(label)) return {ok:false, label, reason:'Use lower-case letters, numbers, and hyphen only.'};
+        return {ok:true, label, reason:'Normalized to bare label for contract call.'};
       }
-      function activeParticipateRole(){
-        return $('premiumParticipateRoleTabs')?.querySelector('[data-participate-role].active')?.getAttribute('data-participate-role') || 'applicant';
+      function setRole(role){
+        document.querySelectorAll('.premiumRoleChip').forEach(btn=>btn.classList.toggle('active', btn.dataset.premiumRole===role));
+        const map={applicant:'premiumApplicantRail',finalist:'premiumFinalistRail',validator:'premiumValidatorRail',claimant:'premiumClaimantRail'};
+        Object.entries(map).forEach(([k,id])=>{ const el=$(id); if(el) el.hidden = k!==role; });
       }
-      function actionInputs(){
-        const finalistText = String($('premiumActionFinalist')?.value || '').trim();
-        const finalistSelect = String($('premiumActionFinalistSelect')?.value || '').trim();
-        const role = activeParticipateRole();
-        const finalist = role === 'validator' ? (finalistSelect || finalistText) : (finalistText || finalistSelect);
-        return {pid:String($('premiumActionProcurementId')?.value||'').trim(), subdomain:normalizeSubdomainLabel($('premiumActionSubdomain')?.value), proof:parseProof($('premiumActionProof')?.value), commitment:String($('premiumActionCommitment')?.value||'').trim(), salt:String($('premiumActionSalt')?.value||'').trim(), uri:String($('premiumActionApplicationUri')?.value||'').trim(), finalist, score:String($('premiumActionScore')?.value||'').trim()};
+      async function refreshParticipate(){
+        const pid=String($('premiumParticipateProcurementId')?.value||'').trim();
+        if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
+        const norm = normalizeSubdomain($('premiumParticipateSubdomain')?.value);
+        if($('premiumActionSubdomain')) $('premiumActionSubdomain').value = norm.ok ? norm.label : '';
+        if($('premiumParticipateAuth')) $('premiumParticipateAuth').textContent = norm.ok ? `Needs on-chain check · ${norm.label}` : 'Likely wrong label';
+        if($('premiumParticipateAuthMeta')) $('premiumParticipateAuthMeta').textContent = norm.reason;
+        if($('premiumParticipateWallet')) $('premiumParticipateWallet').textContent = userAccount ? `${userAccount.slice(0,6)}…${userAccount.slice(-4)}${isMainnet?' · mainnet':' · wrong network'}` : 'Wallet not connected';
+        if($('premiumParticipateWalletReady')) $('premiumParticipateWalletReady').textContent = (userAccount && isMainnet) ? 'Write-ready posture available after preflight checks.' : 'Connect wallet on Ethereum mainnet.';
+        if(!pid || !agiJobDiscovery?.methods) return;
+        try{
+          const [proc, penalty, rep, hist] = await Promise.all([
+            agiJobDiscovery.methods.procurements(pid).call(),
+            userAccount ? agiJobDiscovery.methods.previewDiscoveryPenaltyBps(userAccount).call().catch(()=>'0') : Promise.resolve('0'),
+            userAccount ? agiJobDiscovery.methods.reputation(userAccount).call().catch(()=>'0') : Promise.resolve('0'),
+            userAccount ? agiJobDiscovery.methods.previewHistoricalScore(userAccount).call().catch(()=>'0') : Promise.resolve('0')
+          ]);
+          const now = Math.floor(Date.now()/1000);
+          const paused = await agiJobDiscovery.methods.paused().call().catch(()=>false);
+          const pauseStartedAt = Number(await agiJobDiscovery.methods.pauseStartedAt().call().catch(()=>0));
+          const pausedAccum = Number(await agiJobDiscovery.methods.pausedSecondsAccumulated().call().catch(()=>0));
+          const pausedNow = paused ? (pausedAccum + Math.max(0, now - pauseStartedAt)) : pausedAccum;
+          const baseline = Number(proc.pauseSecondsBaseline||0);
+          const effectiveNow = now - Math.max(0, pausedNow - baseline);
+          const commit = Number(proc.commitDeadline||0), reveal=Number(proc.revealDeadline||0);
+          const phase = effectiveNow<=commit ? 'Commit window' : (effectiveNow<=reveal ? 'Reveal window' : 'Post reveal');
+          if($('premiumParticipatePhase')) $('premiumParticipatePhase').textContent = `${phase} · nextAction ${String(await agiJobDiscovery.methods.nextActionForProcurement(pid).call().catch(()=>'' )||'—')}`;
+          if($('premiumParticipateCountdown')) $('premiumParticipateCountdown').textContent = `effectiveNow ${effectiveNow} | commit ${commit} | reveal ${reveal} (pause-adjusted).`;
+          if($('premiumParticipateReputation')) $('premiumParticipateReputation').textContent = `Wallet ${rep} vs required ${proc.minReputation||'0'}`;
+          const effectiveScore = Math.max(0, Number(hist)-Number(penalty));
+          if($('premiumParticipateReputationMeta')) $('premiumParticipateReputationMeta').textContent = `Live procurement requires reputation ${proc.minReputation||'0'}. Historical ${hist} - penalty ${penalty} = shortlist preview ${effectiveScore}.`;
+          if($('premiumParticipateAllowance')) $('premiumParticipateAllowance').textContent = `Applicant stake ${fmtUnits(proc.applicationStake||0)} · Finalist total ${fmtUnits(proc.finalistStakeTotal||0)} · Validator bond ${fmtUnits(proc.validatorScoreBond||0)}`;
+          if($('premiumParticipateAllowanceMeta')) $('premiumParticipateAllowanceMeta').textContent = 'Allowance cockpit updates by selected role. Approve only what is needed.';
+          const finalists = await agiJobDiscovery.methods.procurementFinalists(pid).call().catch(()=>[]);
+          if($('premiumParticipateFinalistList')) $('premiumParticipateFinalistList').innerHTML = finalists.length ? finalists.map(a=>`<button class="btn" type="button" data-finalist="${a}" style="margin:4px 6px 0 0">${a.slice(0,8)}…${a.slice(-4)}</button>`).join('') : 'No finalist list loaded yet.';
+          document.querySelectorAll('#premiumParticipateFinalistList [data-finalist]').forEach(btn=>btn.addEventListener('click',()=>{ if($('premiumActionFinalist')) $('premiumActionFinalist').value = btn.dataset.finalist || ''; }));
+        }catch(e){}
       }
       function setCommitmentHelper(message){ if($('premiumActionCommitmentHelper')) $('premiumActionCommitmentHelper').textContent = message; }
-      function randomSalt(){
-        const bytes = new Uint8Array(32);
-        crypto.getRandomValues(bytes);
-        return '0x' + [...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
-      }
-      function computeEffectiveNow(proc, discoveryMeta){
-        const now = Math.floor(Date.now()/1000);
-        const paused = !!(discoveryMeta?.paused);
-        const pausedAccum = Number(discoveryMeta?.pausedSecondsAccumulated || 0);
-        const pauseStartedAt = Number(discoveryMeta?.pauseStartedAt || 0);
-        const pausedSecondsNow = paused ? (pausedAccum + Math.max(0, now - pauseStartedAt)) : pausedAccum;
-        const baseline = Number(proc?.pauseSecondsBaseline || 0);
-        return now - (pausedSecondsNow - baseline);
-      }
-      function loadLocalPacket(key){
-        try{ return JSON.parse(localStorage.getItem(key) || 'null'); }catch(_){ return null; }
-      }
-      function saveLocalPacket(key, payload){
-        localStorage.setItem(key, JSON.stringify(payload));
-      }
-      function downloadPacket(filename, payload){
-        const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-      }
-      function setParticipateSuccess(msg){
-        if($('premiumParticipateSuccess')) $('premiumParticipateSuccess').innerHTML = msg;
-      }
-      function populateValidatorFinalistSelector(finalists=[]){
-        const sel = $('premiumActionFinalistSelect');
-        if(!sel) return;
-        const list = Array.isArray(finalists) ? finalists.filter(Boolean) : [];
-        const prior = String(sel.value || '').toLowerCase();
-        sel.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = list.length ? 'Select finalist address' : 'No finalists loaded yet';
-        sel.appendChild(placeholder);
-        list.forEach(addr=>{
-          const opt = document.createElement('option');
-          opt.value = addr;
-          opt.textContent = addr;
-          sel.appendChild(opt);
-        });
-        if(prior && list.some(x=>String(x).toLowerCase()===prior)) sel.value = list.find(x=>String(x).toLowerCase()===prior) || '';
-        if($('premiumActionFinalist')) $('premiumActionFinalist').value = String(sel.value || '').trim();
-      }
-      async function updateParticipateStudio(proc, requestId=null){
-        if(!proc) return;
-        const isLatest = ()=> requestId == null || requestId === premiumProcurementLoadRequestId;
-        if(!isLatest()) return;
-        const pid = String($('premiumActionProcurementId')?.value || '');
-        if(!isLatest()) return;
-        if($('premiumParticipateProcurement')) $('premiumParticipateProcurement').textContent = `Procurement ${pid || '—'} · employer ${proc.employer || '—'}`;
-        const discoveryStateMethod = agiJobDiscovery?.methods?.discoveryState;
-        const meta = discoveryStateMethod ? await discoveryStateMethod().call().catch(()=>null) : null;
-        if(!isLatest()) return;
-        const effectiveNow = computeEffectiveNow(proc, meta);
-        const phase = effectiveNow <= Number(proc.commitDeadline) ? 'Commit applications' : (effectiveNow <= Number(proc.revealDeadline) ? 'Reveal applications' : (effectiveNow <= Number(proc.finalistAcceptDeadline) ? 'Finalist acceptance' : (effectiveNow <= Number(proc.trialDeadline) ? 'Trial submission' : (effectiveNow <= Number(proc.scoreCommitDeadline) ? 'Validator score commit' : (effectiveNow <= Number(proc.scoreRevealDeadline) ? 'Validator score reveal' : 'Post-score / finalization')))));
-        if(!isLatest()) return;
-        if($('premiumParticipatePhase')) $('premiumParticipatePhase').textContent = phase;
-        const nextTs = [proc.commitDeadline,proc.revealDeadline,proc.finalistAcceptDeadline,proc.trialDeadline,proc.scoreCommitDeadline,proc.scoreRevealDeadline].map(Number).find(t=>effectiveNow<=t) || Number(proc.scoreRevealDeadline);
-        if($('premiumParticipateCountdown')) $('premiumParticipateCountdown').textContent = `effectiveNow ${effectiveNow} · next deadline ${humanTs(nextTs)} (pause-adjusted).`;
-        if($('premiumApplicantMinRep')) $('premiumApplicantMinRep').textContent = `This live procurement currently requires reputation ${proc.minReputation}.`;
-        const rep = userAccount ? await (agiJobManager.methods.reputation?.(userAccount)?.call?.().catch(()=>null) || agiJobManager.methods.reputationOf?.(userAccount)?.call?.().catch(()=>null) || Promise.resolve('0')) : '0';
-        if(!isLatest()) return;
-        if($('premiumApplicantRep')) $('premiumApplicantRep').textContent = `Wallet reputation ${rep} · ${BigInt(rep||0) >= BigInt(proc.minReputation||0) ? 'Pass' : 'Below requirement'}.`;
-        const required = BigInt(proc.applicationStake || 0);
-        const bal = userAccount ? BigInt(await agiToken.methods.balanceOf(userAccount).call().catch(()=> '0')) : 0n;
-        const allow = userAccount ? BigInt(await agiToken.methods.allowance(userAccount, AGI_JOB_DISCOVERY).call().catch(()=> '0')) : 0n;
-        if(!isLatest()) return;
-        const short = required > allow ? required - allow : 0n;
-        if($('premiumApplicantAllowance')) $('premiumApplicantAllowance').textContent = `Required ${fmtUnits(required)} · balance ${fmtUnits(bal)} · allowance ${fmtUnits(allow)}.`;
-        if($('premiumApplicantAllowanceHint')) $('premiumApplicantAllowanceHint').textContent = short>0n ? `Allowance shortfall ${fmtUnits(short)}. Approve to AGIJobDiscoveryPrime before commit.` : (required===0n ? 'applicationStake is zero for this procurement.' : 'Allowance posture is sufficient for commit.');
-        const validatorRequired = BigInt(proc.validatorScoreBond || 0);
-        if($('premiumValidatorAllowance')) $('premiumValidatorAllowance').textContent = `Validator score bond ${fmtUnits(validatorRequired)} · allowance ${fmtUnits(allow)}.`;
-      }
       function generateApplicationCommitment(){
         const {pid, uri, salt} = actionInputs();
         const applicant = String(userAccount || '').trim();
         if(!web3?.utils?.soliditySha3 || !applicant || !pid || !uri || !salt){ setCommitmentHelper('Application commitment needs connected wallet, procurement id, application URI, and salt.'); return; }
         $('premiumActionCommitment').value = web3.utils.soliditySha3({type:'uint256',value:pid},{type:'address',value:applicant},{type:'string',value:uri},{type:'bytes32',value:salt}) || '';
-        setCommitmentHelper(`Application commitment generated locally for wallet ${applicant}. This is not on-chain yet.`); }
+        setCommitmentHelper(`Application commitment generated locally for wallet ${applicant}. It stays local until you submit commitApplication.`); }
       function generateScoreCommitment(){
         const {pid, finalist, salt, score} = actionInputs();
         const validator = String(userAccount || '').trim();
         const scoreNum = Number(score);
         if(!web3?.utils?.soliditySha3 || !validator || !pid || !finalist || !salt || score==='' || !Number.isFinite(scoreNum) || scoreNum < 0 || scoreNum > 100){ setCommitmentHelper('Score commitment needs connected wallet, procurement id, finalist, score 0-100, and salt.'); return; }
         $('premiumActionCommitment').value = web3.utils.soliditySha3({type:'uint256',value:pid},{type:'address',value:finalist},{type:'address',value:validator},{type:'uint8',value:scoreNum},{type:'bytes32',value:salt}) || '';
+        if($('premiumActionCommitmentScore')) $('premiumActionCommitmentScore').value = $('premiumActionCommitment').value;
         setCommitmentHelper(`Score commitment generated locally for validator ${validator}. It stays local until you submit commitFinalistScore.`); }
       function bind(){
-        $('premiumGoParticipateBtn')?.addEventListener('click', ()=>setPanel('participate'));
-        $('premiumParticipatePrefillFromInspectorBtn')?.addEventListener('click', ()=>{
-          const pid = $('premiumInspectorProcurementId')?.value || '';
-          if($('premiumActionProcurementId')) $('premiumActionProcurementId').value = pid;
-          if($('premiumActionFinalist')) $('premiumActionFinalist').value = $('premiumInspectorApplicationAgent')?.value || '';
-        });
-        $('premiumParticipateNormalizeSubdomainBtn')?.addEventListener('click', ()=>{
-          if($('premiumActionSubdomain')) $('premiumActionSubdomain').value = normalizeSubdomainLabel($('premiumActionSubdomain')?.value);
-        });
-        $('premiumActionGenerateSaltBtn')?.addEventListener('click', ()=>{ if($('premiumActionSalt')) $('premiumActionSalt').value = randomSalt(); setCommitmentHelper('Secure local salt generated with crypto.getRandomValues. Losing the salt makes reveal impossible.'); });
-        $('premiumActionFinalistSelect')?.addEventListener('change', ()=>{ if($('premiumActionFinalist')) $('premiumActionFinalist').value = $('premiumActionFinalistSelect')?.value || ''; });
-        $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(btn=>btn.addEventListener('click', ()=>{
-          const role = btn.getAttribute('data-participate-role');
-          $('premiumParticipateRoleTabs')?.querySelectorAll('[data-participate-role]').forEach(b=>b.classList.toggle('active', b===btn));
-          document.querySelectorAll('[data-participate-panel]').forEach(panel=>{ panel.style.display = panel.getAttribute('data-participate-panel')===role ? '' : 'none'; });
-          if(role === 'validator'){
-            const selected = String($('premiumActionFinalistSelect')?.value || '').trim();
-            if($('premiumActionFinalist')) $('premiumActionFinalist').value = selected;
-          }
-        }));
-        $('premiumApplicantPacketSaveBtn')?.addEventListener('click', ()=>{ const x = actionInputs(); const packet = {schemaVersion:'2026-04-02-applicant', procurementId:x.pid, applicant:userAccount||'', normalizedSubdomain:x.subdomain, proofRouteSummary:x.proof?.length?'Merkle/additional':'ENS-first', applicationURI:x.uri, salt:x.salt, commitment:x.commitment, createdAt:new Date().toISOString()}; saveLocalPacket('premiumApplicantPacket', packet); setToast('Applicant packet saved locally.', 'ok'); });
-        $('premiumApplicantPacketDownloadBtn')?.addEventListener('click', ()=>{ const p = loadLocalPacket('premiumApplicantPacket'); if(!p) return setToast('No local applicant packet saved yet.', 'warn'); downloadPacket(`applicant_packet_${p.procurementId||'draft'}.json`, p); });
-        $('premiumApplicantPacketImportBtn')?.addEventListener('click', ()=>{ const input=document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=async()=>{ const f=input.files?.[0]; if(!f) return; const t=await f.text(); const p=JSON.parse(t); if($('premiumActionProcurementId')) $('premiumActionProcurementId').value=String(p.procurementId||''); if($('premiumActionSubdomain')) $('premiumActionSubdomain').value=String(p.normalizedSubdomain||''); if($('premiumActionApplicationUri')) $('premiumActionApplicationUri').value=String(p.applicationURI||''); if($('premiumActionSalt')) $('premiumActionSalt').value=String(p.salt||''); if($('premiumActionCommitment')) $('premiumActionCommitment').value=String(p.commitment||''); saveLocalPacket('premiumApplicantPacket', p); setToast('Applicant packet imported locally.', 'ok'); }; input.click(); });
-        $('premiumValidatorPacketSaveBtn')?.addEventListener('click', ()=>{ const x = actionInputs(); const packet = {schemaVersion:'2026-04-02-validator', procurementId:x.pid, finalist:x.finalist, validator:userAccount||'', normalizedSubdomain:x.subdomain, proofRouteSummary:x.proof?.length?'Merkle/additional':'ENS-first', score:x.score, salt:x.salt, commitment:x.commitment, createdAt:new Date().toISOString()}; saveLocalPacket('premiumValidatorPacket', packet); setToast('Validator packet saved locally.', 'ok'); });
-        $('premiumValidatorPacketDownloadBtn')?.addEventListener('click', ()=>{ const p = loadLocalPacket('premiumValidatorPacket'); if(!p) return setToast('No local validator packet saved yet.', 'warn'); downloadPacket(`validator_packet_${p.procurementId||'draft'}.json`, p); });
-        $('premiumValidatorPacketImportBtn')?.addEventListener('click', ()=>{ const input=document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=async()=>{ const f=input.files?.[0]; if(!f) return; const t=await f.text(); const p=JSON.parse(t); if($('premiumActionProcurementId')) $('premiumActionProcurementId').value=String(p.procurementId||''); if($('premiumActionSubdomain')) $('premiumActionSubdomain').value=String(p.normalizedSubdomain||''); if($('premiumActionFinalist')) $('premiumActionFinalist').value=String(p.finalist||''); if($('premiumActionScore')) $('premiumActionScore').value=String(p.score||''); if($('premiumActionSalt')) $('premiumActionSalt').value=String(p.salt||''); if($('premiumActionCommitment')) $('premiumActionCommitment').value=String(p.commitment||''); saveLocalPacket('premiumValidatorPacket', p); setToast('Validator packet imported locally.', 'ok'); }; input.click(); });
         $('premiumAttachUseRecommendedBtn')?.addEventListener('click', useBalancedAttach);
         const mirrorAttachFromCreate = ()=>{ attachIds.forEach(id=>{ const a=$("premiumAttach"+id); const b=$("premiumDiscovery"+id); if(a&&b&&b.value!=='') a.value=b.value; }); refreshAttachPreview(); };
         $('premiumAttachImportFromCreateBtn')?.addEventListener('click', mirrorAttachFromCreate);
@@ -11112,25 +10951,45 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         ['premiumAttachJobId',...attachIds.map(x=>'premiumAttach'+x)].forEach(id=>$(id)?.addEventListener('input', refreshAttachPreview));
         $('premiumAttachInspectJobBtn')?.addEventListener('click', ()=>inspectAttachJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumAttachRefreshAllowanceBtn')?.addEventListener('click', ()=>refreshAttachPreview().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumAttachApproveBtn')?.addEventListener('click', async ()=>{ const proc=attachStruct(); const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); await attachApproveDiscovery(BigInt(budget), 'attach procurement budget'); await refreshAttachPreview(); });
+        $('premiumAttachApproveBtn')?.addEventListener('click', async ()=>{ const proc=attachStruct(); const budget=await agiJobDiscovery.methods.quoteProcurementBudget(proc.finalistCount, proc.maxValidatorRevealsPerFinalist, proc.stipendPerFinalist, proc.validatorRewardPerReveal).call(); await premiumApprove(AGI_JOB_DISCOVERY, BigInt(budget), 'attach procurement budget'); await refreshAttachPreview(); });
         $('premiumAttachSubmitBtn')?.addEventListener('click', ()=>reviewAttach().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorLoadBtn')?.addEventListener('click', ()=>loadProcurement().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumInspectorResolveBtn')?.addEventListener('click', ()=>loadInspectorByJob().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumClaimsRefreshBtn')?.addEventListener('click', ()=>loadClaims().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumParticipateClaimsRefreshBtn')?.addEventListener('click', ()=>loadClaims().catch(e=>setToast(e.message||String(e),'bad')));
-        $('premiumClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumParticipateDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
+        $('premiumClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad'))); $('premiumDiscoveryClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
+        $('premiumParticipateClaimBtn')?.addEventListener('click', ()=>reviewClaim().catch(e=>setToast(e.message||String(e),'bad')));
         $('premiumClaimsLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumClaimsProcurementId')?.value, $('premiumClaimsAgent')?.value, 'premiumClaimsApplicationView')); $('premiumDiscoveryApplicationInspectBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumDiscoveryApplicationInspectProcurementId')?.value, $('premiumDiscoveryApplicationInspectAgent')?.value, 'premiumDiscoveryApplicationInspectResult'));
-        $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, ($('premiumInspectorAgentAddress')?.value || $('premiumInspectorApplicationAgent')?.value), 'premiumInspectorApplicationView')); $('premiumOpenActionsBtn')?.addEventListener('click', ()=>setPanel('participate'));
+        $('premiumInspectorLoadApplicationBtn')?.addEventListener('click', ()=>loadApplicationView($('premiumInspectorProcurementId')?.value, ($('premiumInspectorAgentAddress')?.value || $('premiumInspectorApplicationAgent')?.value), 'premiumInspectorApplicationView'));
+        $('premiumOpenActionsBtn')?.addEventListener('click', ()=>setPanel('participate'));
+        document.querySelectorAll('[data-premium-role-action]').forEach(btn=>btn.addEventListener('click', ()=>setPanel('participate')));
+        $('premiumParticipateLoadBtn')?.addEventListener('click', ()=>refreshParticipate());
+        $('premiumParticipateUseInspectorBtn')?.addEventListener('click', ()=>{ if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value=String($('premiumInspectorProcurementId')?.value||''); refreshParticipate(); });
+        $('premiumParticipateUseFixtureBtn')?.addEventListener('click', ()=>{ if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value='0'; refreshParticipate(); });
+        $('premiumParticipateGenerateSaltBtn')?.addEventListener('click', ()=>{ const bytes = new Uint8Array(32); crypto.getRandomValues(bytes); if($('premiumActionSalt')) $('premiumActionSalt').value = '0x'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''); generateApplicationCommitment(); });
+        $('premiumParticipateGenerateScoreSaltBtn')?.addEventListener('click', ()=>{ const bytes = new Uint8Array(32); crypto.getRandomValues(bytes); if($('premiumActionSalt')) $('premiumActionSalt').value = '0x'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''); generateScoreCommitment(); });
+        $('premiumActionApplicationUriFinalist')?.addEventListener('input', ()=>{ if($('premiumActionApplicationUri')) $('premiumActionApplicationUri').value = $('premiumActionApplicationUriFinalist').value; });
+        $('premiumParticipateSubdomain')?.addEventListener('input', refreshParticipate);
+        $('premiumParticipateProcurementId')?.addEventListener('input', refreshParticipate);
+        document.querySelectorAll('.premiumRoleChip').forEach(btn=>btn.addEventListener('click', ()=>setRole(btn.dataset.premiumRole||'applicant')));
+        const savePacket = ()=>{ const x=actionInputs(); const packet={schemaVersion:'2026-04-02',procurementId:x.pid,wallet:userAccount||'',subdomain:x.subdomain,proofMode:x.proof?.length?'proof':'ens',proof:x.proof||[],applicationURI:x.uri,salt:x.salt,commitment:x.commitment,createdAt:new Date().toISOString(),commitDeadline:null,revealDeadline:null,status:'Local packet only'}; localStorage.setItem(`agijob.packet.${x.pid}.${(userAccount||'').toLowerCase()}`, JSON.stringify(packet)); if($('premiumParticipatePacketState')) $('premiumParticipatePacketState').textContent='Local packet only'; if($('premiumParticipatePacketMeta')) $('premiumParticipatePacketMeta').textContent='Saved locally in this browser. Not on-chain yet.'; };
+        $('premiumParticipateSavePacketBtn')?.addEventListener('click', savePacket);
+        $('premiumParticipateDownloadPacketBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); const key=`agijob.packet.${x.pid}.${(userAccount||'').toLowerCase()}`; const payload=localStorage.getItem(key); if(!payload) return setToast('No local packet saved yet.','warn'); const blob=new Blob([payload],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`agijob-packet-${x.pid||'unknown'}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); });
+        $('premiumParticipateImportPacketBtn')?.addEventListener('click', ()=>{ const el=document.createElement('input'); el.type='file'; el.accept='application/json'; el.onchange=async()=>{ const file=el.files?.[0]; if(!file) return; const text=await file.text(); const pkt=JSON.parse(text); if($('premiumParticipateProcurementId')) $('premiumParticipateProcurementId').value=String(pkt.procurementId||''); if($('premiumActionProcurementId')) $('premiumActionProcurementId').value=String(pkt.procurementId||''); if($('premiumParticipateSubdomain')) $('premiumParticipateSubdomain').value=String(pkt.subdomain||''); if($('premiumActionApplicationUri')) $('premiumActionApplicationUri').value=String(pkt.applicationURI||''); if($('premiumActionSalt')) $('premiumActionSalt').value=String(pkt.salt||''); if($('premiumActionCommitment')) $('premiumActionCommitment').value=String(pkt.commitment||''); if($('premiumActionProof')) $('premiumActionProof').value=JSON.stringify(pkt.proof||[]); refreshParticipate(); }; el.click(); });
+        $('premiumParticipateOpenRevealModeBtn')?.addEventListener('click', ()=>{ setRole('applicant'); setToast('Reveal mode: verify stored commitment hash then submit reveal with exact URI + salt.','ok'); });
+        [['premiumParticipateJumpApplicantBtn','applicant'],['premiumParticipateJumpRevealBtn','applicant'],['premiumParticipateJumpFinalistBtn','finalist'],['premiumParticipateJumpValidatorBtn','validator'],['premiumParticipateJumpClaimBtn','claimant'],['premiumClaimsGoParticipateApplicant','applicant'],['premiumClaimsGoParticipateValidator','validator'],['premiumClaimsGoParticipateClaimant','claimant']].forEach(([id,role])=>$(id)?.addEventListener('click',()=>{ setPanel('participate'); setRole(role); if($('premiumParticipateProcurementId') && $('premiumInspectorProcurementId')) $('premiumParticipateProcurementId').value=String($('premiumInspectorProcurementId').value||''); refreshParticipate(); }));
         const inspectorButtons=[['premiumInspectorAdvanceBtn','advanceProcurement(procurementId)','Review advanceProcurement',pid=>agiJobDiscovery.methods.advanceProcurement(pid)],['premiumInspectorFinalizeShortlistBtn','finalizeShortlist(procurementId)','Review finalizeShortlist',pid=>agiJobDiscovery.methods.finalizeShortlist(pid)],['premiumInspectorFinalizeWinnerBtn','finalizeWinner(procurementId)','Review finalizeWinner',pid=>agiJobDiscovery.methods.finalizeWinner(pid)],['premiumInspectorFallbackBtn','promoteFallbackFinalist(procurementId)','Review promoteFallbackFinalist',pid=>agiJobDiscovery.methods.promoteFallbackFinalist(pid)],['premiumInspectorCancelBtn','cancelProcurement(procurementId)','Review cancelProcurement',pid=>agiJobDiscovery.methods.cancelProcurement(pid)]];
         inspectorButtons.forEach(([id,method,title,buildMethod])=>$(id)?.addEventListener('click', ()=>{ const pid=String($('premiumInspectorProcurementId')?.value||'').trim(); if(!pid) return setToast('Enter a procurement id first.','warn'); reviewDiscoveryWrite({title, method, facts:[{label:'Procurement id', value:pid}], txBuilder:()=>buildMethod(pid), run:async()=>{ await runTrackedTx(title, ()=>buildMethod(pid).send({from:userAccount}), {pendingDetail:`Submitting ${method}.`, successDetail:`${method} confirmed.`}); if($('premiumInspectorResult')) $('premiumInspectorResult').textContent=`${method} confirmed for procurement ${pid}.`; await loadProcurement(pid); await loadClaims(); }}).catch(e=>setToast(e.message||String(e),'bad')); }));
-        $('premiumActionCommitApplicationBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.commitment) return setToast('Enter procurement id and commitment.','warn'); reviewDiscoveryWrite({title:'Review commitApplication', method:'commitApplication(procurementId,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Commitment',value:x.commitment},{label:'Subdomain (normalized)',value:x.subdomain||'(empty for ENS route)'}], txBuilder:()=>agiJobDiscovery.methods.commitApplication(x.pid, x.commitment, x.subdomain, x.proof), run:async()=>{ const receipt = await runTrackedTx('commitApplication', ()=>agiJobDiscovery.methods.commitApplication(x.pid, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting application commitment.', successDetail:'Application commitment confirmed.'}); $('premiumActionResult').textContent=`committed for procurement ${x.pid}.`; const p=loadLocalPacket('premiumApplicantPacket'); if(p) saveLocalPacket('premiumApplicantPacket', {...p, committed:true, txHash:receipt?.transactionHash||''}); setParticipateSuccess(`Application committed. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Next recommended action: reveal application during reveal window.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
-        $('premiumActionRevealApplicationBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.salt||!x.uri) return setToast('Enter procurement id, salt, and application URI.','warn'); reviewDiscoveryWrite({title:'Review revealApplication', method:'revealApplication(procurementId,subdomain,proof,salt,applicationURI)', facts:[{label:'Procurement id',value:x.pid},{label:'Application URI',value:x.uri},{label:'Reveal semantics',value:'This reveals URI + salt matching earlier commitment hash.'}], txBuilder:()=>agiJobDiscovery.methods.revealApplication(x.pid, x.subdomain, x.proof, x.salt, x.uri), run:async()=>{ const receipt = await runTrackedTx('revealApplication', ()=>agiJobDiscovery.methods.revealApplication(x.pid, x.subdomain, x.proof, x.salt, x.uri).send({from:userAccount}), {pendingDetail:'Revealing application.', successDetail:'Application reveal confirmed.'}); $('premiumActionResult').textContent=`revealed for procurement ${x.pid}.`; const p=loadLocalPacket('premiumApplicantPacket'); if(p) saveLocalPacket('premiumApplicantPacket', {...p, revealed:true, revealTxHash:receipt?.transactionHash||''}); setParticipateSuccess(`Application revealed. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Inspector deep-link ready for audit.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
-        $('premiumActionAcceptFinalistBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid) return setToast('Enter procurement id.','warn'); reviewDiscoveryWrite({title:'Review acceptFinalist', method:'acceptFinalist(procurementId)', facts:[{label:'Procurement id',value:x.pid}], txBuilder:()=>agiJobDiscovery.methods.acceptFinalist(x.pid), run:async()=>{ const receipt=await runTrackedTx('acceptFinalist', ()=>agiJobDiscovery.methods.acceptFinalist(x.pid).send({from:userAccount}), {pendingDetail:'Accepting finalist slot.', successDetail:'Finalist acceptance confirmed.'}); $('premiumActionResult').textContent=`finalist accepted for procurement ${x.pid}.`; setParticipateSuccess(`Finalist accepted. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Next: submit trial URI before trial deadline.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
-        $('premiumActionSubmitTrialBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.uri) return setToast('Enter procurement id and trial URI.','warn'); reviewDiscoveryWrite({title:'Review submitTrial', method:'submitTrial(procurementId,trialURI)', facts:[{label:'Procurement id',value:x.pid},{label:'Trial URI',value:x.uri}], txBuilder:()=>agiJobDiscovery.methods.submitTrial(x.pid, x.uri), run:async()=>{ const receipt=await runTrackedTx('submitTrial', ()=>agiJobDiscovery.methods.submitTrial(x.pid, x.uri).send({from:userAccount}), {pendingDetail:'Submitting finalist trial.', successDetail:'Finalist trial confirmed.'}); $('premiumActionResult').textContent=`trial submitted for procurement ${x.pid}.`; setParticipateSuccess(`Trial submitted. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Next: validator score commit phase.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
-        $('premiumActionCommitScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.commitment) return setToast('Enter procurement id, finalist, and commitment.','warn'); reviewDiscoveryWrite({title:'Review commitFinalistScore', method:'commitFinalistScore(procurementId,finalist,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Commitment',value:x.commitment},{label:'Commit semantics',value:'Commitment hides score until reveal.'}], txBuilder:()=>agiJobDiscovery.methods.commitFinalistScore(x.pid, x.finalist, x.commitment, x.subdomain, x.proof), run:async()=>{ const receipt=await runTrackedTx('commitFinalistScore', ()=>agiJobDiscovery.methods.commitFinalistScore(x.pid, x.finalist, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting validator score commitment.', successDetail:'Validator score commitment confirmed.'}); $('premiumActionResult').textContent=`score committed for procurement ${x.pid}.`; const p=loadLocalPacket('premiumValidatorPacket'); if(p) saveLocalPacket('premiumValidatorPacket', {...p, committed:true, txHash:receipt?.transactionHash||''}); setParticipateSuccess(`Score committed. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Next: reveal score during score reveal window.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
-        $('premiumActionRevealScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.salt||x.score==='') return setToast('Enter procurement id, finalist, score, and salt.','warn'); reviewDiscoveryWrite({title:'Review revealFinalistScore', method:'revealFinalistScore(procurementId,finalist,score,salt,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Score',value:x.score}], txBuilder:()=>agiJobDiscovery.methods.revealFinalistScore(x.pid, x.finalist, Number(x.score), x.salt, x.subdomain, x.proof), run:async()=>{ const receipt=await runTrackedTx('revealFinalistScore', ()=>agiJobDiscovery.methods.revealFinalistScore(x.pid, x.finalist, Number(x.score), x.salt, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Revealing validator score.', successDetail:'Validator score reveal confirmed.'}); $('premiumActionResult').textContent=`score revealed for procurement ${x.pid}.`; const p=loadLocalPacket('premiumValidatorPacket'); if(p) saveLocalPacket('premiumValidatorPacket', {...p, revealed:true, revealTxHash:receipt?.transactionHash||''}); setParticipateSuccess(`Score revealed. tx <code>${escapeHtml(receipt?.transactionHash||'')}</code><br>Likely next step: finalize winner when quorum conditions are met.`); }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionCommitApplicationBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.commitment) return setToast('Enter procurement id and commitment.','warn'); reviewDiscoveryWrite({title:'Review commit application', method:'commitApplication(procurementId,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Connected wallet',value:userAccount||'—'},{label:'Normalized subdomain',value:x.subdomain||'—'},{label:'Proof mode',value:x.proof?.length?'Merkle proof (advanced)':'ENS authorization path'},{label:'Application stake at risk',value:'Loaded from procurement state'},{label:'Commitment',value:x.commitment},{label:'Explicit note',value:'The application URI is NOT written on-chain by this transaction.'}], txBuilder:()=>agiJobDiscovery.methods.commitApplication(x.pid, x.commitment, x.subdomain, x.proof), run:async()=>{ const receipt=await runTrackedTx('commitApplication', ()=>agiJobDiscovery.methods.commitApplication(x.pid, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting application commitment.', successDetail:'Application commitment confirmed.'}); $('premiumActionResult').textContent=`commitApplication confirmed for procurement ${x.pid}.`; savePacket(); if(receipt?.events?.ApplicationCommitted || Object.values(receipt?.events||{}).find(e=>e?.event==='ApplicationCommitted')){ if($('premiumParticipatePacketState')) $('premiumParticipatePacketState').textContent='On-chain committed'; if($('premiumParticipatePacketMeta')) $('premiumParticipatePacketMeta').textContent='Commitment confirmed. Keep packet safe for reveal.'; } }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionRevealApplicationBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.salt||!x.uri) return setToast('Enter procurement id, salt, and application URI.','warn'); reviewDiscoveryWrite({title:'Review reveal application', method:'revealApplication(procurementId,subdomain,proof,salt,applicationURI)', facts:[{label:'Procurement id',value:x.pid},{label:'Connected wallet',value:userAccount||'—'},{label:'Application URI',value:x.uri},{label:'Salt',value:x.salt},{label:'Reveal meaning',value:'This reveals the URI and proves it matches your prior commitment hash.'}], txBuilder:()=>agiJobDiscovery.methods.revealApplication(x.pid, x.subdomain, x.proof, x.salt, x.uri), run:async()=>{ const receipt=await runTrackedTx('revealApplication', ()=>agiJobDiscovery.methods.revealApplication(x.pid, x.subdomain, x.proof, x.salt, x.uri).send({from:userAccount}), {pendingDetail:'Revealing application.', successDetail:'Application reveal confirmed.'}); $('premiumActionResult').textContent=`revealApplication confirmed for procurement ${x.pid}.`; if(receipt?.events?.ApplicationRevealed || Object.values(receipt?.events||{}).find(e=>e?.event==='ApplicationRevealed')){ if($('premiumParticipatePacketState')) $('premiumParticipatePacketState').textContent='On-chain revealed'; if($('premiumParticipatePacketMeta')) $('premiumParticipatePacketMeta').textContent='Reveal confirmed on-chain.'; } }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionAcceptFinalistBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid) return setToast('Enter procurement id.','warn'); reviewDiscoveryWrite({title:'Review acceptFinalist', method:'acceptFinalist(procurementId)', facts:[{label:'Procurement id',value:x.pid}], txBuilder:()=>agiJobDiscovery.methods.acceptFinalist(x.pid), run:async()=>{ await runTrackedTx('acceptFinalist', ()=>agiJobDiscovery.methods.acceptFinalist(x.pid).send({from:userAccount}), {pendingDetail:'Accepting finalist slot.', successDetail:'Finalist acceptance confirmed.'}); $('premiumActionResult').textContent=`acceptFinalist confirmed for procurement ${x.pid}.`; }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionSubmitTrialBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.uri) return setToast('Enter procurement id and trial URI.','warn'); reviewDiscoveryWrite({title:'Review submitTrial', method:'submitTrial(procurementId,trialURI)', facts:[{label:'Procurement id',value:x.pid},{label:'Trial URI',value:x.uri}], txBuilder:()=>agiJobDiscovery.methods.submitTrial(x.pid, x.uri), run:async()=>{ await runTrackedTx('submitTrial', ()=>agiJobDiscovery.methods.submitTrial(x.pid, x.uri).send({from:userAccount}), {pendingDetail:'Submitting finalist trial.', successDetail:'Finalist trial confirmed.'}); $('premiumActionResult').textContent=`submitTrial confirmed for procurement ${x.pid}.`; }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionCommitScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.commitment) return setToast('Enter procurement id, finalist, and commitment.','warn'); reviewDiscoveryWrite({title:'Review commitFinalistScore', method:'commitFinalistScore(procurementId,finalist,commitment,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Commitment',value:x.commitment}], txBuilder:()=>agiJobDiscovery.methods.commitFinalistScore(x.pid, x.finalist, x.commitment, x.subdomain, x.proof), run:async()=>{ await runTrackedTx('commitFinalistScore', ()=>agiJobDiscovery.methods.commitFinalistScore(x.pid, x.finalist, x.commitment, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Submitting validator score commitment.', successDetail:'Validator score commitment confirmed.'}); $('premiumActionResult').textContent=`commitFinalistScore confirmed for procurement ${x.pid}.`; }}).catch(e=>setToast(e.message||String(e),'bad')); });
+        $('premiumActionRevealScoreBtn')?.addEventListener('click', ()=>{ const x=actionInputs(); if(!x.pid||!x.finalist||!x.salt||x.score==='') return setToast('Enter procurement id, finalist, score, and salt.','warn'); reviewDiscoveryWrite({title:'Review revealFinalistScore', method:'revealFinalistScore(procurementId,finalist,score,salt,subdomain,proof)', facts:[{label:'Procurement id',value:x.pid},{label:'Finalist',value:x.finalist},{label:'Score',value:x.score}], txBuilder:()=>agiJobDiscovery.methods.revealFinalistScore(x.pid, x.finalist, Number(x.score), x.salt, x.subdomain, x.proof), run:async()=>{ await runTrackedTx('revealFinalistScore', ()=>agiJobDiscovery.methods.revealFinalistScore(x.pid, x.finalist, Number(x.score), x.salt, x.subdomain, x.proof).send({from:userAccount}), {pendingDetail:'Revealing validator score.', successDetail:'Validator score reveal confirmed.'}); $('premiumActionResult').textContent=`revealFinalistScore confirmed for procurement ${x.pid}.`; }}).catch(e=>setToast(e.message||String(e),'bad')); });
         $('premiumActionGenerateApplicationCommitmentBtn')?.addEventListener('click', generateApplicationCommitment);
         $('premiumActionGenerateScoreCommitmentBtn')?.addEventListener('click', generateScoreCommitment);
+        setRole('applicant');
+        refreshParticipate().catch(()=>{});
         useBalancedAttach();
         refreshAttachPreview().catch(()=>{});
         loadClaims().catch(()=>{});
@@ -11165,7 +11024,7 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
       function updateCoach(){
         if($('premiumDiscoveryStats')) $('premiumDiscoveryStats').textContent = `${$('premiumStatsUnrevealed')?.textContent || '—'} unrevealed / ${$('premiumStatsFinalistDefaults')?.textContent || '—'} finalist defaults`;
       }
-      function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims'; const inspectBtn=document.querySelector('[data-premium-surface="inspect"]'); if(inspectBtn) inspectBtn.textContent='Inspector'; const participateBtn=document.querySelector('[data-premium-surface="participate"]'); if(participateBtn) participateBtn.textContent='Participate'; }
+      function relabelTabs(){ const claimsBtn=document.querySelector('[data-premium-surface="claims"]'); if(claimsBtn) claimsBtn.textContent='Claims'; }
       function syncInspectorIds(){ if($('premiumInspectorNextActionReadable') && $('premiumInspectorNextActionMeta')) $('premiumInspectorNextActionMeta').textContent = $('premiumInspectorNextActionMeta').textContent || 'Load a procurement to translate live state.'; }
       function boot(){ relabelTabs(); updateCoach(); syncInspectorIds(); assemblePreflightBand(); restoreUiContinuity({ restoreHash:true }); bindUiContinuity(); persistUiContinuity(); $('preflightOpenAlphaDiagnosticsBtn')?.addEventListener('click', ()=>{ $('alphaJumpDiagnosticsBtn')?.click(); document.getElementById('alphaAgentMintSection')?.scrollIntoView({behavior:'smooth', block:'start'}); }); document.querySelectorAll("[data-premium-role-action]").forEach(btn=>btn.addEventListener("click", ()=>{ const pid=$("premiumInspectorProcurementId")?.value||""; if($("premiumActionProcurementId")) $("premiumActionProcurementId").value=pid; const agent=$("premiumInspectorApplicationAgent")?.value||""; if(agent && $("premiumActionFinalist")) $("premiumActionFinalist").value=agent; const map={commit:"premiumActionCommitApplicationBtn",reveal:"premiumActionRevealApplicationBtn",accept:"premiumActionAcceptFinalistBtn",trial:"premiumActionSubmitTrialBtn","score-commit":"premiumActionCommitScoreBtn","score-reveal":"premiumActionRevealScoreBtn"}; const target=map[btn.dataset.premiumRoleAction]; if(target && $(target)) $(target).click(); })); ['input','change'].forEach(evt=>document.addEventListener(evt, e=>{ if(e.target && String(e.target.id||'').startsWith('premiumDiscovery')) updateCoach(); if(e.target && ['termsAccepted','preflightTermsAccepted','agentSub','clubSub','alphaTermsAcceptedTop','mintAlphaLabel'].includes(String(e.target.id||''))) updatePreflightSummary(); })); window.addEventListener('hashchange', persistUiContinuity); window.addEventListener('pagehide', persistUiContinuity); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') persistUiContinuity(); }); updatePreflightSummary(); setInterval(updateCoach, 1200); }
       if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true}); else boot();
