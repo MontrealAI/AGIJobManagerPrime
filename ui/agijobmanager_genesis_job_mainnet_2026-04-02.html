@@ -9324,9 +9324,9 @@ function normalizeIpfsToHttp(uri){
       addAdditionalAgent:[{name:'a',type:'address'}], removeAdditionalAgent:[{name:'a',type:'address'}],
       addAGIType:[{name:'token',type:'address'},{name:'agiType',type:'uint256'}], disableAGIType:[{name:'token',type:'address'}],
       updateAGITokenAddress:[{name:'newToken',type:'address'}], updateEnsRegistry:[{name:'newRegistry',type:'address'}], updateNameWrapper:[{name:'newWrapper',type:'address'}],
-      updateRootNodes:[{name:'clubRoot',type:'bytes32'},{name:'agentRoot',type:'bytes32'},{name:'alphaClubRoot',type:'bytes32'},{name:'alphaAgentRoot',type:'bytes32'}],
+      updateRootNodes:[{name:'agentRootNode',type:'bytes32'},{name:'validatorRootNode',type:'bytes32'}],
       setEnsJobPages:[{name:'newEnsPages',type:'address'}], rescueETH:[{name:'amount',type:'uint256'}], rescueERC20:[{name:'token',type:'address'},{name:'to',type:'address'},{name:'amount',type:'uint256'}], rescueToken:[{name:'token',type:'address'},{name:'data',type:'bytes'}],
-      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'winner',type:'uint8'},{name:'reasonURI',type:'string'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'employerWins',type:'bool'}],
+      resolveDisputeWithCode:[{name:'jobId',type:'uint256'},{name:'code',type:'uint8'}], resolveStaleDispute:[{name:'jobId',type:'uint256'},{name:'employerWins',type:'bool'}],
       setJobLabelPrefix:[{name:'prefix',type:'string'}], setENSRegistry:[{name:'registry',type:'address'}], setNameWrapper:[{name:'wrapper',type:'address'}], setPublicResolver:[{name:'resolver',type:'address'}],
       setJobsRoot:[{name:'rootNode',type:'bytes32'},{name:'rootName',type:'string'}], setJobManager:[{name:'jobManager',type:'address'}],
       lockConfiguration:[],
@@ -11026,7 +11026,9 @@ The designated winner enters SelectedAgentOnly settlement, has 72 hours to accep
         const pid = String($('premiumActionProcurementId')?.value || '');
         if(!isLatest()) return;
         if($('premiumParticipateProcurement')) $('premiumParticipateProcurement').textContent = `Procurement ${pid || '—'} · employer ${proc.employer || '—'}`;
-        const meta = await agiJobDiscovery?.methods?.discoveryState?.().call().catch(()=>null);
+        const meta = await (agiJobDiscovery?.methods?.discoveryState
+          ? agiJobDiscovery.methods.discoveryState().call().catch(()=>null)
+          : Promise.resolve(null));
         if(!isLatest()) return;
         const effectiveNow = computeEffectiveNow(proc, meta);
         const phase = effectiveNow <= Number(proc.commitDeadline) ? 'Commit applications' : (effectiveNow <= Number(proc.revealDeadline) ? 'Reveal applications' : (effectiveNow <= Number(proc.finalistAcceptDeadline) ? 'Finalist acceptance' : (effectiveNow <= Number(proc.trialDeadline) ? 'Trial submission' : (effectiveNow <= Number(proc.scoreCommitDeadline) ? 'Validator score commit' : (effectiveNow <= Number(proc.scoreRevealDeadline) ? 'Validator score reveal' : 'Post-score / finalization')))));
