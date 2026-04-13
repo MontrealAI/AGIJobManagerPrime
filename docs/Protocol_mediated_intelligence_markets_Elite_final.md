@@ -1,0 +1,329 @@
+---
+title: |
+  Free-energy control in protocol-mediated intelligence markets
+subtitle: |
+  A multiscale statistical-mechanical formalization of AGIJobManager
+author: Vincent Boucher
+fontsize: 11pt
+geometry: margin=0.95in
+linestretch: 1.12
+header-includes:
+  - |
+    \usepackage{microtype}
+  - |
+    \usepackage{amsmath,amssymb,mathtools,bm}
+  - |
+    \usepackage{booktabs}
+  - |
+    \usepackage{caption}
+  - |
+    \captionsetup{font=small,labelfont=bf}
+  - |
+    \setlength{\parindent}{0pt}
+  - |
+    \setlength{\parskip}{0.48em}
+---
+
+*President, Montreal.AI and Quebec.AI, Montréal, Canada*
+
+**Summary**  
+Machine intelligence becomes economically transformative only when it is continuously converted into verified, allocable and reinvestable work rather than isolated benchmark scores (refs. 1-4). I formalize AGIJobManager as a protocol that mediates and constrains a distribution over partially observed task environments and show that the resulting economy admits a multiscale statistical-mechanical description. At micro scale, each job is a protocol-augmented constrained POMDP whose admissible trajectories are shaped by legality, settlement, pause-adjusted time and scarce validation bandwidth. At meso scale, the outer decision to enter a job is an entropy-regularized control problem whose optimizer is a Gibbs-Boltzmann law over effective job energies, while inner execution is an activated process whose successful completion rate follows an Eyring-Kramers-like law over a coarse free-energy barrier (refs. 5-13). At market scale, jobs, agents, collateral, compute and validator bandwidth form a dilute grand-canonical ensemble with chemical-potential-like shadow prices. Coupling these laws to an exergy-limited accumulation model yields the central result: compute accumulation alone saturates, whereas verified machine labour can compound into persistent growth only when knowledge, compute, energy throughput and automation co-accumulate (refs. 14-18). Protocol design therefore appears as a free-energy engineering problem: lower the activation barriers to validated work, enlarge the accessible space of reproducible solution paths, and route the resulting surplus into the physical capital that expands civilization's free-energy frontier.
+
+# Overview
+
+The public Prime architecture is unusually amenable to exact formalization because it separates premium discovery from authoritative settlement. Its public specification describes a settlement-first kernel that preserves escrow, bonds, validator review, disputes, challenge windows, pause controls and solvency accounting, together with a procurement-first discovery layer for premium jobs. Two further semantic commitments matter mathematically: deadlines advance in pause-adjusted effective time, and ENS or public-page hooks are explicitly best-effort side effects rather than authoritative state transitions. Those design choices imply that the protocol is neither merely a payments rail nor a conventional benchmark harness. It is a mechanism that makes a latent task economy economically legible.
+
+The governing statement of this paper is precise:
+
+$$
+\text{AGIJobManager mediates and constrains a distribution over partially observed task environments;}
+$$
+$$
+\text{an agent learns a hierarchical policy --- whether to enter a job, and how to act within it ---}
+$$
+$$
+\text{to maximize expected net economic utility subject to protocol and resource constraints.}
+$$
+
+What follows is a figureless, theorem-driven development of that statement. The architecture is resolved across four coupled levels. First, the micro level formalizes each job as a protocol-augmented constrained POMDP. Second, the mesoscopic level derives Gibbsian entry from entropy-regularized choice. Third, the kinetic level models successful completion as activated barrier crossing in a partially observed rugged landscape. Fourth, the macro level closes the system with exergy-limited capital accumulation. The point is not ornament by physics language. The point is that the relevant structures --- partition functions, quasi-potentials, activated flux, shadow prices and free-energy descent --- arise naturally once verified machine labour is treated as a constrained stochastic process embedded in scarce reservoirs.
+
+# Formal set-up
+
+**Definition 1 (Protocol-mediated task ensemble).** Let job $j$ expose observable metadata $z_j$ and induce a latent task environment
+
+$$
+\mathcal{T}_j = (\mathcal{S}_j,\mathcal{A}_j,\mathcal{O}_j,T_j,\Omega_j,u_j,\mathcal{C}_j,H_j),
+$$
+
+where $\mathcal{S}_j$ is the latent state space, $\mathcal{A}_j$ the raw action space, $\mathcal{O}_j$ the observation space, $T_j$ the transition kernel, $\Omega_j$ the observation kernel, $u_j$ the economic utility functional, $\mathcal{C}_j$ the resource constraints and $H_j$ the stopping rule. The protocol augments $\mathcal{T}_j$ with
+
+$$
+\Pi_j = (D_j,\Sigma_j,\mathcal{L}_j,t_{\mathrm{eff},j},E_j),
+$$
+
+where $D_j$ is the procurement operator, $\Sigma_j$ the authoritative settlement map, $\mathcal{L}_j(a\mid p)$ the legality indicator induced by public protocol state $p$, $t_{\mathrm{eff},j}$ the pause-adjusted effective clock and $E_j$ the non-authoritative ENS or public-page side channel. The resulting job environment is therefore a **protocol-augmented constrained POMDP** with augmented state
+
+$$
+\tilde s_t = (x_t,h_t,m_t,p_t,r_t),
+$$
+
+where $x_t$ is task workspace state, $h_t$ hidden evaluator state, $m_t$ market state, $p_t$ public protocol state and $r_t$ local resource state.
+
+This decomposition isolates the protocol's real role. AGIJobManager does not fully determine the task distribution: job creators, tools, hidden tests and evaluators shape the latent task family. The protocol instead mediates and constrains that family by declaring admissible actions, authoritative settlement, timing semantics, procurement stages and resource prices. That distinction is decisive. It is why the correct formal object is not a single environment but a structured distribution over environments coupled to a settlement mechanism.
+
+**Definition 2 (Hierarchical admissible policy).** The agent's control law is a pair
+
+$$
+\Pi = (\pi_{\mathrm{enter}},\pi_{\mathrm{act}}),
+$$
+
+where $\pi_{\mathrm{enter}}$ acts at job-arrival times on job metadata and current portfolio state, while $\pi_{\mathrm{act}}$ acts inside an accepted job over histories measurable with respect to pause-adjusted effective time. Admissibility requires legality with respect to $\mathcal{L}_j$, satisfaction of hard protocol constraints and feasibility with respect to local resource budgets.
+
+The objective is
+
+$$
+\max_{\Pi}\;\mathbb{E}_{j\sim\mathcal{D}}
+\left[
+U(j,\Pi)\right]
+$$
+
+subject to protocol legality, collateral requirements, validator-capacity constraints, compute budgets and time constraints. Here $\mathcal{D}$ is the task distribution induced jointly by job creators, market conditions and protocol rules.
+
+# Gibbsian job entry from entropy-regularized control
+
+The outer decision to enter a job is not a pure argmax. Real agents face uncertainty, finite search, opportunity cost and the need to preserve exploratory diversity. The correct problem is entropy-regularized allocation over the candidate job set plus the outside option. Let $b_j$ denote the belief state induced by job metadata and agent history, and let $V_j(b_j)$ denote the continuation value of solving job $j$ under the optimal inner policy. Consider
+
+$$
+\max_{q \in \Delta(\mathcal{J}_t \cup \{\varnothing\})}
+\left\{
+\sum_{j \in \mathcal{J}_t} q_j \widetilde V_j
+- \Theta \sum_{j \in \mathcal{J}_t \cup \{\varnothing\}} q_j \ln \frac{q_j}{\rho_j}
+\right\},
+$$
+
+with prior measure $\rho_j$, decision temperature $\Theta>0$ and net continuation value
+
+$$
+\widetilde V_j = V_j - \lambda_C c_j - \lambda_B b_j - \lambda_V v_j - \lambda_T \tau_j,
+$$
+
+where $c_j$, $b_j$, $v_j$ and $\tau_j$ denote compute cost, collateral burden, validator-bandwidth burden and effective-time burden.
+
+**Theorem 1 (Canonical entry law).** The optimizer is
+
+$$
+q_j^{\star} = \frac{\rho_j\exp[-\beta\varepsilon_j^{\mathrm{eff}}]}
+{1 + \sum_{k \in \mathcal{J}_t}\rho_k\exp[-\beta\varepsilon_k^{\mathrm{eff}}]},
+\qquad \beta = \Theta^{-1},
+$$
+
+with effective job energy
+
+$$
+\varepsilon_j^{\mathrm{eff}} = -V_j + \lambda_C c_j + \lambda_B b_j + \lambda_V v_j + \lambda_T \tau_j.
+$$
+
+The associated entry free energy is
+
+$$
+\mathcal{F}_{\mathrm{entry}}(b_t)
+= -\Theta \ln\!\left[1 + \sum_{k\in\mathcal{J}_t}\rho_k\exp(-\beta\varepsilon_k^{\mathrm{eff}})\right].
+$$
+
+This is exact convex duality rather than analogy. Any protocol feature that lowers effective job energy or enlarges the multiplicity of feasible high-value trajectories increases participation and validated flux. Any feature that traps collateral, injects settlement uncertainty or compresses viable solution paths raises the effective energy landscape and suppresses entry.
+
+# Activated execution in a partially observed rugged landscape
+
+Once a job is accepted, execution is a barrier-crossing process on a rugged, partially observed landscape. The relevant quantity is not merely expected payout. It is the accessibility of a validating trajectory. Let $\xi$ be a coarse reaction coordinate through belief space, artifact space and protocol state. Define an effective activation free energy
+
+$$
+\Delta G_j^{\ddagger}(t) = \Delta H_j^{\ddagger}(t) - \Theta\,\Delta S_j^{\ddagger}(t) + \Lambda_j^{\ddagger}(t),
+$$
+
+where $\Delta H_j^{\ddagger}$ is the irreversible burden needed to reach a validating state, $\Delta S_j^{\ddagger}$ is the logarithmic multiplicity of successful trajectories consistent with current belief and tool affordances, and $\Lambda_j^{\ddagger}$ is a protocol-induced barrier capturing legality restrictions, procurement stage, challenge risk, verifier uncertainty and queueing on scarce evaluation resources.
+
+**Theorem 2 (Activated completion law).** Under a coarse-grained first-passage approximation, validated completion is activated, with instantaneous completion hazard
+
+$$
+\kappa_j(t) = \kappa_j^0(t)\exp[-\beta\Delta G_j^{\ddagger}(t)],
+$$
+
+where $\kappa_j^0$ is a pre-exponential factor representing local reasoning speed, tool throughput and reversible search dynamics. The deadline-completion probability is therefore
+
+$$
+P_j^{\mathrm{dl}} = 1 - \exp\left[-\int_0^{T_{\mathrm{eff},j}} \kappa_j(t)\,dt_{\mathrm{eff}}\right].
+$$
+
+The structure mirrors advanced chemical kinetics but remains disciplined. The barrier is a coarse quasi-potential in utility units, not a claim that every economic quantity is literally molar thermodynamics. The distinction matters. Decision temperature $\Theta$ belongs to entropy-regularized control, whereas physical temperature $T$ belongs to literal thermodynamic free energies. The formal analogy becomes literal only when the job itself concerns physical design or experimental optimization in chemistry, materials, energy or manufacturing.
+
+Operationally, the theorem gives design levers. Better tools, reusable workflows and transferable credentials increase path multiplicity and reduce entropic bottlenecks. Clearer settlement, lower dispute ambiguity and faster validator throughput reduce the institutional barrier $\Lambda_j^{\ddagger}$. Higher compute, better reasoning systems and improved tool chains raise the pre-exponential factor. The protocol therefore shapes not only reward but kinetics.
+
+# Grand-canonical markets and reservoir prices
+
+Consider a dilute market observed over an interval in which interactions among simultaneous entrants are dominated by shared reservoirs: compute, collateral and validator capacity. Let $n_j$ denote the occupancy of job class $j$, let $g_j$ denote the degeneracy of accessible microtrajectories, and let $\mu_C$, $\mu_B$, $\mu_V$ and $\mu_A$ denote shadow prices for compute, collateral, validator capacity and agent activity. The grand partition function is
+
+$$
+\Xi = \prod_j \sum_{n_j=0}^{\infty} \frac{1}{n_j!}
+\left[g_j\exp\!\left(-\beta\left(\varepsilon_j + \mu_C c_j + \mu_B b_j + \mu_V v_j - \mu_A\right)\right)\right]^{n_j},
+$$
+
+and therefore
+
+$$
+\langle n_j \rangle = g_j\exp\!\left[-\beta\left(\varepsilon_j + \mu_C c_j + \mu_B b_j + \mu_V v_j - \mu_A\right)\right].
+$$
+
+**Theorem 3 (Maxwell-Boltzmann market law).** In the dilute regime, job occupancy obeys Maxwell-Boltzmann statistics over effective energies shifted by reservoir prices, and the associated grand potential is
+
+$$
+\Omega = -\Theta \ln \Xi.
+$$
+
+Contestability and interoperability enter twice. They enlarge $g_j$, the accessible multiplicity of high-quality trajectories, and they lower effective reservoir prices by reducing lock-in, duplicated verification and switching cost. Closed systems can still create rents, but they do so by trapping potential rather than minimizing free energy.
+
+# Nonequilibrium extension and free-energy dissipation
+
+The canonical law is the static envelope. Real markets are driven, noisy and path-dependent. A minimal nonequilibrium closure is a birth-death process over occupancy vectors $n=(n_1,\dots,n_K)$ with entry and exit rates satisfying local detailed balance,
+
+$$
+\frac{w_j^+(n)}{w_j^-(n+e_j)}
+= \exp\!\left[-\beta\,\Delta \Phi_j(n)\right],
+$$
+
+where $\Phi(n)$ is an effective mesoscopic potential and $e_j$ is the unit vector in coordinate $j$. The stationary law is then
+
+$$
+\pi(n) \propto \exp\!\left[-\beta\Phi(n)\right],
+$$
+
+with interaction terms absorbed into $\Phi$ whenever congestion, strategic crowding or auction feedback matter.
+
+**Proposition 4 (Relative free-energy Lyapunov functional).** Let $p_t(n)$ evolve under the master equation induced by the above rates. Then the relative free energy
+
+$$
+\mathscr{F}[p_t\Vert \pi] = \Theta\,D_{\mathrm{KL}}(p_t\Vert \pi)
+$$
+
+is non-increasing in time, with equality only at stationarity.
+
+This is the right thermodynamic statement for a protocol market. The system need not be in equilibrium. What matters is that the protocol defines the effective potential relative to which deviations dissipate. Frictional mechanisms --- queueing, disputes, validator scarcity, collateral lock-up, poor portability --- are then not vague inefficiencies. They are sources of excess dissipation that keep the realized market farther from its low-free-energy stationary measure.
+
+# Exergy-limited accumulation and the compute-only ceiling
+
+Let $X_t$ denote exergy throughput or exergy-capture capacity, $C_t$ compute capital, $R_t$ robotics and automated actuation capital, and $Q_t$ validated knowledge capital. A minimal macro closure is
+
+$$
+Y_t = A_t(\eta_t X_t)^{\alpha} C_t^{\beta} R_t^{\gamma} Q_t^{\delta},
+\qquad \alpha,\beta,\gamma,\delta>0,
+$$
+
+with updates
+
+$$
+X_{t+1}=(1-\delta_X)X_t+s_XY_t, \qquad
+C_{t+1}=(1-\delta_C)C_t+s_CY_t,
+$$
+
+$$
+R_{t+1}=(1-\delta_R)R_t+s_RY_t, \qquad
+Q_{t+1}=(1-\delta_Q)Q_t+s_QJ_t,
+$$
+
+where $J_t$ is validated job flux and $\eta_t$ is coordination efficiency.
+
+**Theorem 5 (Compute-only saturation).** If exergy throughput $X_t$, robotic capital $R_t$ and validated knowledge $Q_t$ are bounded above while $0<\beta<1$, then no policy with $s_X=s_R=s_Q=0$ can sustain asymptotically positive exponential growth of $Y_t$.
+
+*Sketch.* Under the stated bounds, $Y_t \le \bar K C_t^{\beta}$ for some finite $\bar K$. Then
+
+$$
+C_{t+1} \le (1-\delta_C)C_t + s_C\bar K C_t^{\beta},
+$$
+
+which is sublinear in $C_t$. Hence $\log C_t/t \to 0$, and therefore $\log Y_t/t \to 0$.
+
+The positive result is the converse. When validated work lowers future barriers through $Q_t$ and reinvestment simultaneously deepens exergy throughput, compute and robotics, the system can cross into a persistent-growth phase. In that regime, machine intelligence ceases to be a one-shot productive factor and becomes a catalytic capital-formation engine.
+
+# Thermodynamic ceiling and astrophysical scaling
+
+The phase structure of the model is more revealing than any one-period welfare comparison. More intelligence alone is not sufficient. More energy alone is not sufficient. Persistent expansion requires institutional contestability, reliable settlement, barrier-lowering knowledge accumulation and continued deepening of the physical base. If protocol-mediated machine labour becomes sufficiently catalytic --- lowering the barriers to building the very energy, compute and robotic systems that extend its own reach --- then the economically relevant ceiling is no longer the balance sheet of an isolated firm. It is the accessible free-energy budget of industrial civilization.
+
+That statement is thermodynamic rather than rhetorical. In the deep limit, the upper bound is set by the exergy flux that automated industry can capture, transform and route through its own expanding infrastructure. A protocol that continuously converts machine intelligence into verified work, verified work into knowledge, and knowledge into enlarged productive capacity therefore does more than allocate jobs. It creates a mechanism by which algorithmic cognition can be compounded into energy systems, fabrication systems, logistics systems and, in the asymptote, into the engineered capture of increasingly large fractions of the surrounding astrophysical free-energy field.
+
+# Discussion
+
+The central claim can now be restated with formal precision. AGIJobManager mediates and constrains a distribution over partially observed task environments; an agent learns a hierarchical policy --- whether to enter a job and how to act within it --- to maximize expected net economic utility subject to protocol and resource constraints. At micro scale this is a protocol-augmented constrained POMDP. At meso scale it is a Gibbsian allocation law over jobs, agents and scarce reservoirs. At kinetic scale it is an activated barrier-crossing process on a partially observed rugged landscape. At macro scale it is a nonequilibrium growth process limited by exergy, capital formation and barrier-lowering knowledge accumulation.
+
+Several design implications follow.
+
+First, authoritative settlement is foundational. If settlement can be displaced by unauditable discretion, the state space ceases to be mechanically legible and the free-energy description loses its anchor. Second, procurement must allocate scarce high-value tasks by quality discovery rather than mere reaction speed. Third, pause semantics matter because time is part of the control geometry. Fourth, public identity or publication layers should remain additive side channels unless they can be guaranteed not to perturb settlement truth. Fifth, the objective must be evaluated in net utility rather than nominal payout because collateral, compute, energy and validator time are all genuine state variables.
+
+The broader interpretation is that open intelligence markets are barrier-lowering machines. A well-designed protocol converts local acts of successful reasoning into lower future activation barriers, wider accessible state spaces and more reproducible conversion of exergy into validated work. In that precise sense, protocol design becomes a branch of applied nonequilibrium thermodynamics for machine civilization.
+
+# Methods
+
+## Protocol semantics and state decomposition
+
+The formalization is tied to public semantics rather than private assumptions. The repository used here describes a two-layer architecture with a settlement-first kernel and a procurement-first discovery layer, pause-adjusted effective time, and ENS hooks that remain side effects while settlement and disputes stay authoritative. Those features are represented by $\Sigma_j$, $D_j$, $t_{\mathrm{eff},j}$ and $E_j$.
+
+The hidden state decomposition $\tilde s_t=(x_t,h_t,m_t,p_t,r_t)$ keeps protocol-governed quantities explicit. $x_t$ is task state, including artifacts and tool outputs; $h_t$ is hidden evaluator state, including hidden tests and preference structure; $m_t$ is market state, including rival entrants and queueing load; $p_t$ is public protocol state, including job status, balances and pause flags; $r_t$ is the agent's local resource state, including compute budget, liquidity and time.
+
+## Derivation of Theorem 1
+
+Introducing a Lagrange multiplier for normalization, the entry functional
+
+$$
+\mathcal{L}(q,\lambda) = \sum_j q_j\widetilde V_j - \Theta\sum_j q_j\ln\frac{q_j}{\rho_j} + \lambda\left(1-\sum_j q_j\right)
+$$
+
+has first-order condition
+
+$$
+\widetilde V_j - \Theta\left(\ln\frac{q_j}{\rho_j}+1\right) - \lambda = 0.
+$$
+
+Solving yields
+
+$$
+q_j = \rho_j\exp\!\left(\beta \widetilde V_j -1 - \lambda/\Theta\right),
+$$
+
+and normalization gives the canonical partition function. Writing $\varepsilon_j^{\mathrm{eff}}=-\widetilde V_j$ gives the form reported in the main text.
+
+## Activated completion law
+
+The barrier decomposition
+
+$$
+\Delta G^{\ddagger} = \Delta H^{\ddagger} - \Theta\Delta S^{\ddagger} + \Lambda^{\ddagger}
+$$
+
+is a coarse-grained potential in utility units. It does not identify all economic quantities with literal molar thermodynamic quantities. Rather, it defines the quasi-potential controlling first-passage probability under large-deviation asymptotics. When the underlying task is itself physical --- for example, a materials, chemistry or energy optimization problem --- the same notation can be directly coupled to literal physical Gibbs free energies and chemical potentials.
+
+## Nonequilibrium closure
+
+The master-equation extension assumes local detailed balance with respect to an effective mesoscopic potential. More refined closures could introduce exclusion effects, correlated entry, adversarial strategy, auction-theoretic feedback or explicit many-body interactions among agents. In those cases the exponential family survives but the effective potential acquires interaction terms and the entropy-production accounting becomes more elaborate.
+
+## Data and code availability
+
+No external empirical dataset was required for the theoretical derivations. This manuscript is a formal contribution; any future empirical calibration would need observed task arrivals, settlement outcomes, validator queues, collateral usage, compute expenditure and exergy costs.
+
+# References
+
+1. MontrealAI. *AGIJobManagerPrime --- next-generation sovereign AI labor protocol featuring autonomous agent discovery, game-theoretic job markets, and institutional-grade on-chain settlement*. GitHub repository (2026).
+2. Puterman, M. L. *Markov Decision Processes: Discrete Stochastic Dynamic Programming*. Wiley (1994).
+3. Kaelbling, L. P., Littman, M. L. & Cassandra, A. R. Planning and acting in partially observable stochastic domains. *Artificial Intelligence* **101**, 99-134 (1998).
+4. Sutton, R. S., Precup, D. & Singh, S. Between MDPs and semi-MDPs: a framework for temporal abstraction in reinforcement learning. *Artificial Intelligence* **112**, 181-211 (1999).
+5. Shannon, C. E. A mathematical theory of communication. *Bell System Technical Journal* **27**, 379-423 and 623-656 (1948).
+6. Jaynes, E. T. Information theory and statistical mechanics. *Physical Review* **106**, 620-630 (1957).
+7. Altman, E. *Constrained Markov Decision Processes*. Chapman & Hall/CRC (1999).
+8. Oliehoek, F. A. & Amato, C. *A Concise Introduction to Decentralized POMDPs*. Springer (2016).
+9. Wynne-Jones, W. F. K. & Eyring, H. The absolute rate of reactions in condensed phases. *Journal of Chemical Physics* **3**, 492-502 (1935).
+10. Kramers, H. A. Brownian motion in a field of force and the diffusion model of chemical reactions. *Physica* **7**, 284-304 (1940).
+11. Landauer, R. Irreversibility and heat generation in the computing process. *IBM Journal of Research and Development* **5**, 183-191 (1961).
+12. Touchette, H. The large deviation approach to statistical mechanics. *Physics Reports* **478**, 1-69 (2009).
+13. Seifert, U. Stochastic thermodynamics, fluctuation theorems and molecular machines. *Reports on Progress in Physics* **75**, 126001 (2012).
+14. Parrondo, J. M. R., Horowitz, J. M. & Sagawa, T. Thermodynamics of information. *Nature Physics* **11**, 131-139 (2015).
+15. International Union of Pure and Applied Chemistry. *Gibbs energy*. IUPAC Gold Book (2025).
+16. International Union of Pure and Applied Chemistry. *Chemical potential*. IUPAC Gold Book (2025).
+17. International Union of Pure and Applied Chemistry. *Gibbs energy of activation*. IUPAC Gold Book (2025).
+18. International Energy Agency. *Energy and AI*. IEA (2025).
