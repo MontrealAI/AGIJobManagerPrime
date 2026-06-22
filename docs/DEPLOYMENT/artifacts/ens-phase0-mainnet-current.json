@@ -1,0 +1,55 @@
+{
+  "schema": "agijobmanager.ens.phase0.v2",
+  "generatedAtUtc": "2026-03-24T00:57:40.204Z",
+  "rpcSource": "https://ethereum-rpc.publicnode.com",
+  "chain": {
+    "chainId": 1,
+    "blockNumber": 24723894,
+    "blockHash": "0xf6230ad6645d32f190332fddb257fd5417e8bcdb53e78ee4c28fda56308f31c2",
+    "blockTimestamp": 1774313231
+  },
+  "manager": {
+    "address": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
+    "owner": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+    "discoveryModule": "0xd5EF1dde7Ac60488f697ff2A7967a52172A78F29",
+    "ensJobPages": "0x97E03F7BFAC116E558A25C8f09aEf09108a2779d",
+    "nextJobId": 0
+  },
+  "root": {
+    "rootName": "alpha.jobs.agi.eth",
+    "rootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
+    "ensRegistry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "rootOwner": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "rootResolver": "0xF29100983E058B709F3D539b0c765937B804AC15",
+    "wrapped": true,
+    "wrapperOwner": "0xd57243B80FBc5CFB2560E5a644651FEcd7Dc2512",
+    "wrapperApprovedAddress": "0x0000000000000000000000000000000000000000",
+    "wrapperApprovalForHelper": true
+  },
+  "helperConfig": {
+    "owner": "0xa9eD0539c2fbc5C6BC15a2E168bd9BCd07c01201",
+    "jobManager": "0xF8fc6572098DDcAc4560E17cA4A683DF30ea993e",
+    "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "publicResolver": "0xF29100983E058B709F3D539b0c765937B804AC15",
+    "jobsRootNode": "0xc164c9558a3c429519a9b2eba9f650025731fccc46b3a5664283bcab84f7e690",
+    "jobsRootName": "alpha.jobs.agi.eth",
+    "jobLabelPrefix": "agijob-",
+    "configLocked": false,
+    "validateConfiguration": "0",
+    "configurationStatus": null
+  },
+  "repairSummary": {
+    "scannedJobs": 0,
+    "needsAuthorityRepair": [],
+    "needsTextRepair": [],
+    "needsAuthRepair": []
+  },
+  "jobs": [],
+  "notes": [
+    "Phase 0 now avoids unavailable Prime V1 getters by reconstructing URIs from manager logs and using Prime public employer/agent getters only where available.",
+    "Compatibility jobEnsIssued/jobEnsReady values are reported separately from richer observed state so operator dashboards do not overclaim.",
+    "If authReadSupported is false, resolver write compatibility may still be present, but auth truth requires manual/operator confirmation."
+  ]
+}
