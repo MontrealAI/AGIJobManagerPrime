@@ -55,10 +55,25 @@ jobs:
         with:
           node-version: 20
 
+      - name: Harden legacy-endpoint handling
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/becoming-snapshot.mjs')
+          s = p.read_text()
+          s = s.replace('async function paginate(url) {', 'async function paginate(url, allow404 = false) {')
+          s = s.replace('const payload = await fetchJson(fingerprint);', 'const payload = await fetchJson(fingerprint, {}, allow404);\n    if (payload === null) return items;')
+          s = s.replace('const holders = await paginate(holdersUrl);', 'const holders = await paginate(holdersUrl, true);')
+          s = s.replace('const transfers = await paginate(url);', 'const transfers = await paginate(url, true);')
+          s = s.replace('unresolved_tokens: audit.filter(row => row.status !== "FAIL")', 'unresolved_tokens: audit.filter(row => row.status !== "PASS")')
+          p.write_text(s)
+          PY
+          node --check scripts/becoming-snapshot.mjs
+
       - name: Collect and verify all 556 holdings at one Ethereum block
         env:
           SNAPSHOT_OUT: snapshot_output
-          SNAPSHOT_WORKERS: '4'
+          SNAPSHOT_WORKERS: '6'
           SNAPSHOT_HTTP_RETRIES: '8'
           SNAPSHOT_HTTP_TIMEOUT_MS: '45000'
           SNAPSHOT_BALANCE_BATCH_SIZE: '80'
